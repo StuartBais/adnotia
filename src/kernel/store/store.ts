@@ -34,6 +34,9 @@ export interface KernelStore extends Store {
   load(): Promise<void>;
   /** Persist now rather than on the debounce. */
   flush(): Promise<void>;
+  replaceDocument(next: AdnotiaDocument): void;
+  persistence(): 'saved' | 'pending' | 'error';
+  subscribePersistence(listener: () => void): () => void;
   space(): Space;
   useSpace(space: Space): void;
   profile(): string | undefined;
@@ -87,6 +90,8 @@ export function createStore(options: CreateStoreOptions = {}): KernelStore {
   let profileId: string | undefined;
 
   const listeners = new Map<string, Set<() => void>>();
+  const persistenceListeners = new Set<() => void>();
+  let persistence: 'saved' | 'pending' | 'error' = 'saved';
   let timer: ReturnType<typeof setTimeout> | undefined;
   let writing: Promise<void> = Promise.resolve();
 
@@ -94,24 +99,36 @@ export function createStore(options: CreateStoreOptions = {}): KernelStore {
     for (const listener of listeners.get(sliceId) ?? []) listener();
   }
 
+  function setPersistence(next: typeof persistence): void {
+    if (persistence === next) return;
+    persistence = next;
+    for (const listener of persistenceListeners) listener();
+  }
+
   function persistNow(): Promise<void> {
+    setPersistence('pending');
     // Chained so two writes cannot interleave and leave a torn document.
-    writing = writing.then(async () => {
+    const pending = writing.then(async () => {
+      const snapshot = document;
       try {
-        await adapter.write(key, await codec.encode(document));
+        await adapter.write(key, await codec.encode(snapshot));
+        if (document === snapshot) setPersistence('saved');
       } catch (error) {
-        if (onPersistError) onPersistError(error);
-        else throw error;
+        setPersistence('error');
+        onPersistError?.(error);
+        throw error;
       }
     });
-    return writing;
+    writing = pending.catch(() => undefined);
+    return pending;
   }
 
   function schedulePersist(): void {
+    setPersistence('pending');
     if (timer !== undefined) clearTimeout(timer);
     timer = setTimeout(() => {
       timer = undefined;
-      void persistNow();
+      void persistNow().catch(() => undefined);
     }, debounceMs);
   }
 
@@ -139,6 +156,17 @@ export function createStore(options: CreateStoreOptions = {}): KernelStore {
   return {
     document() {
       return document;
+    },
+
+    persistence() {
+      return persistence;
+    },
+
+    subscribePersistence(listener) {
+      persistenceListeners.add(listener);
+      return () => {
+        persistenceListeners.delete(listener);
+      };
     },
 
     async load() {
@@ -170,6 +198,19 @@ export function createStore(options: CreateStoreOptions = {}): KernelStore {
         timer = undefined;
       }
       await persistNow();
+    },
+
+    replaceDocument(next) {
+      if (!isDocumentShaped(next)) throw new Error('That is not an Adnotia document.');
+      replace(clone(next));
+      if (
+        document.space === 'adult' ||
+        (profileId !== undefined && !document.family.children[profileId])
+      ) {
+        profileId = undefined;
+      }
+      for (const sliceId of listeners.keys()) notify(sliceId);
+      schedulePersist();
     },
 
     space() {

@@ -76,12 +76,30 @@ body {
   max-width: 44ch;
 }
 
+.save-status {
+  margin-bottom: 12px;
+  padding: 8px 0;
+}
+
+.save-status[data-state='error'] {
+  padding: 12px;
+  background: var(--flag-soft);
+}
+
+.save-status[data-state='error'] .hint {
+  color: var(--flag);
+}
+
+.save-status .btn {
+  margin-top: 8px;
+}
+
 /* ---------- tabs ---------- */
 
 .tabs {
   display: flex;
   gap: 2px;
-  background: #e4dacA;
+  background: #e4daca;
   padding: 3px;
   border-radius: var(--r);
   margin-bottom: 16px;

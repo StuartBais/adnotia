@@ -64,7 +64,7 @@ describe('every stylesheet', () => {
 
 describe('base', () => {
   it('sets inputs at 16px, which stops iOS zooming on focus', () => {
-    const inputRule = base.match(/input\[type='text'\][\s\S]*?\}/)?.[0] ?? '';
+    const inputRule = base.match(/input\[type=['"]text['"]\][\s\S]*?\}/)?.[0] ?? '';
     expect(inputRule).toContain('font-size: 16px');
   });
 
@@ -73,7 +73,7 @@ describe('base', () => {
   });
 
   it('marks toggles by aria-pressed rather than by a class', () => {
-    expect(base).toContain("[aria-pressed='true']");
+    expect(base).toMatch(/\[aria-pressed=['"]true['"]\]/);
   });
 
   it('never sets screen text below 12.5px', () => {

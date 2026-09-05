@@ -53,15 +53,12 @@ async function boot(root: HTMLElement): Promise<void> {
     }
   }
 
-  mountShell({ store, container: root, modules: MODULES });
-
-  if (!usable) {
-    const warning = document.createElement('p');
-    warning.className = 'hint';
-    warning.textContent =
-      'This browser is not letting Adnotia save anything, so nothing will be here next time.';
-    root.prepend(warning);
-  }
+  mountShell({
+    store,
+    container: root,
+    modules: MODULES,
+    storageAvailable: usable,
+  });
 }
 
 if (app) void boot(app);

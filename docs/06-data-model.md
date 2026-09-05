@@ -19,9 +19,13 @@ Everything a person has is one JSON document. It is persisted whole on every deb
     "lastAppointment": "2026-08-14",
     "overall": "mi",
     "baseline": { "focus": 2, "mood": 2, "sleep": "6", "note": "" },
-    "questions": [ { "id": "q1", "text": "…", "added": "2026-09-01" } ],
+    "questions": [{ "id": "q1", "text": "…", "added": "2026-09-01" }],
     "days": {
-      "2026-09-04": { "win": "…", "miss": "…", "createdAt": "2026-09-04T21:30:00.000Z" }
+      "2026-09-04": {
+        "win": "…",
+        "miss": "…",
+        "createdAt": "2026-09-04T21:30:00.000Z"
+      }
     },
     "settings": { "passcodeEnabled": false }
   },
@@ -30,18 +34,38 @@ Everything a person has is one JSON document. It is persisted whole on every deb
     "medication": {
       "version": 3,
       "days": {
-        "2026-09-04": { "med": "Elvanse", "dose": "50", "unit": "mg", "times": ["08:00"],
-                        "adherence": "ontime", "focus": 4, "mood": 3, "onset": "09:30",
-                        "woreOff": "16:30", "rebound": "mild", "reboundTime": "17:00",
-                        "appetite": "reduced", "heart": "fine", "side": ["dry"],
-                        "detail": { "dry": { "sev": "mild", "time": "11:00", "note": "", "bpm": "" } } }
+        "2026-09-04": {
+          "med": "Elvanse",
+          "dose": "50",
+          "unit": "mg",
+          "times": ["08:00"],
+          "adherence": "ontime",
+          "focus": 4,
+          "mood": 3,
+          "onset": "09:30",
+          "woreOff": "16:30",
+          "rebound": "mild",
+          "reboundTime": "17:00",
+          "appetite": "reduced",
+          "heart": "fine",
+          "side": ["dry"],
+          "detail": {
+            "dry": { "sev": "mild", "time": "11:00", "note": "", "bpm": "" }
+          }
+        }
       }
     },
     "sleep": {
       "version": 1,
       "days": {
-        "2026-09-04": { "bed": "23:40", "wake": "07:00", "hours": "7.25",
-                        "quality": ["latency"], "latency": "45", "note": "" }
+        "2026-09-04": {
+          "bed": "23:40",
+          "wake": "07:00",
+          "hours": "7.25",
+          "quality": ["latency"],
+          "latency": "45",
+          "note": ""
+        }
       }
     }
   },
@@ -53,8 +77,8 @@ Everything a person has is one JSON document. It is persisted whole on every deb
         "ageBand": "6-11",
         "createdAt": "2026-09-05T20:40:00.000Z",
         "modules": {
-          "family-observations": { "version": 1, "entries": [ ] },
-          "family-routines":     { "version": 1, "schedules": { }, "chart": { } }
+          "family-observations": { "version": 1, "entries": [] },
+          "family-routines": { "version": 1, "schedules": {}, "chart": {} }
         }
       }
     }
@@ -73,6 +97,12 @@ Everything a person has is one JSON document. It is persisted whole on every deb
 
 ## Reserved field ids
 
+The Today assembler reserves `_derived` within a module day record for a map of
+field ids to their last automatically calculated values. This distinguishes
+editable calculations from manual answers across reloads and backups. Records
+without it retain their existing values without guessing their origin. It is
+not report content. See `decisions/ADR-014-derived-value-provenance.md`.
+
 Outside `audience: "adult"` modules the kernel rejects these `today` field ids at registration: `dose`, `med`, `times`, `onset`, `woreOff`, `rebound`. This is the mechanical form of "no medication in the Family space".
 
 ## Encryption envelope
@@ -80,8 +110,15 @@ Outside `audience: "adult"` modules the kernel rejects these `today` field ids a
 When a passcode is set, `localStorage["adnotia-v1"]` holds this instead of the document:
 
 ```json
-{ "enc": 1, "v": 1, "kdf": "PBKDF2-SHA256", "iter": 500000,
-  "salt": "<base64 16 bytes>", "iv": "<base64 12 bytes>", "ct": "<base64>" }
+{
+  "enc": 1,
+  "v": 1,
+  "kdf": "PBKDF2-SHA256",
+  "iter": 500000,
+  "salt": "<base64 16 bytes>",
+  "iv": "<base64 12 bytes>",
+  "ct": "<base64>"
+}
 ```
 
 - Key: PBKDF2-SHA256 over the UTF-8 passcode with the stored salt and iteration count, output an AES-GCM-256 key, non-extractable.
@@ -113,12 +150,12 @@ Merging rather than replacing is what makes "restore onto a second device" and "
 
 The reference implementation stores everything under one key, `adhd-titration-log-v1`, in a flatter shape. The kernel's `schemaVersion` 0 → 1 migration imports it:
 
-| v0 | v1 |
-|---|---|
-| `entries[d].{med,dose,unit,times,adherence,focus,mood,onset,woreOff,rebound,reboundTime,appetite,heart,side,detail}` | `modules.medication.days[d]` |
-| `entries[d].{bed,wake,sleep,sleepq,sleepLatency,sleepNote}` | `modules.sleep.days[d]` as `{bed,wake,hours,quality,latency,note}` |
-| `entries[d].{win,miss,createdAt}` | `kernel.days[d]` |
-| `questions`, `baseline`, `overall`, `lastAppt`, `lastBackup` | `kernel.*` |
-| `last` (carry-forward cache) | dropped; `carry: "nearestPrior"` recomputes it |
+| v0                                                                                                                   | v1                                                                 |
+| -------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| `entries[d].{med,dose,unit,times,adherence,focus,mood,onset,woreOff,rebound,reboundTime,appetite,heart,side,detail}` | `modules.medication.days[d]`                                       |
+| `entries[d].{bed,wake,sleep,sleepq,sleepLatency,sleepNote}`                                                          | `modules.sleep.days[d]` as `{bed,wake,hours,quality,latency,note}` |
+| `entries[d].{win,miss,createdAt}`                                                                                    | `kernel.days[d]`                                                   |
+| `questions`, `baseline`, `overall`, `lastAppt`, `lastBackup`                                                         | `kernel.*`                                                         |
+| `last` (carry-forward cache)                                                                                         | dropped; `carry: "nearestPrior"` recomputes it                     |
 
 The migration enables `medication` and `sleep` when it finds v0 data, sets `space: "adult"`, and keeps the old key untouched until the person confirms the import worked, then removes it. If the old key holds an encryption envelope, it is decrypted with the passcode first; the envelope format is unchanged between v0 and v1.

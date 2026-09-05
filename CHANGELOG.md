@@ -8,10 +8,21 @@ with its version pair and a one-line description.
 
 Milestone 0 is in progress; nothing has been released yet.
 
+### Fixed
+
+- Restore now applies and persists the complete merged document before confirming
+  success, and keeps the confirmation visible after the shell refreshes.
+- Failed writes remain visible across navigation, with a retry action that saves
+  the current in-memory data. Storage-unavailable warnings survive first run.
+- Automatic sleep duration updates onscreen and in storage when times change,
+  including after reload. Explicit answers and legacy durations remain untouched.
+  Additive `_derived` metadata records automatic values; no existing records are
+  rewritten. See ADR-014.
+
 ### Migrations
 
-| Versions | Description |
-|---|---|
+| Versions     | Description                                                                                                                                                                                                                    |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | schema 0 → 1 | Imports a v0 monolith document from `adhd-titration-log-v1`: splits each day into `modules.medication`, `modules.sleep` and `kernel.days`, renames the sleep fields and `lastAppt`, and enables the modules it finds data for. |
 
 ### Added

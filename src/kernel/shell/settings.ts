@@ -25,6 +25,7 @@ export interface SettingsOptions {
 
 /** The backup page: export, and restore by merging. */
 function backupPage(options: SettingsOptions): OffTabPage {
+  let restoreMessage = '';
   return {
     id: 'backup',
     title: 'Backups',
@@ -48,7 +49,9 @@ function backupPage(options: SettingsOptions): OffTabPage {
           return;
         }
         status.textContent = 'Preparing the file.';
-        void exportBackup(options.store.document() as AdnotiaDocument, { passphrase: secret })
+        void exportBackup(options.store.document() as AdnotiaDocument, {
+          passphrase: secret,
+        })
           .then((file) => {
             options.offerDownload(file.filename, file.content);
             status.textContent = `Saved as ${file.filename}.`;
@@ -59,19 +62,33 @@ function backupPage(options: SettingsOptions): OffTabPage {
           });
       });
 
-      const restoreStatus = el('p', { class: 'sub', role: 'status' });
-      const file = el('input', { type: 'file', accept: '.json,application/json' });
+      const restoreStatus = el('p', {
+        class: 'sub',
+        role: 'status',
+        text: restoreMessage,
+      });
+      const file = el('input', {
+        type: 'file',
+        accept: '.json,application/json',
+      });
       const restorePassphrase = textInput({
         label: 'The passphrase that backup was made with',
       });
 
-      const restore = el('button', { type: 'button', class: 'btn wide', text: 'Restore' });
+      const restore = el('button', {
+        type: 'button',
+        class: 'btn wide',
+        text: 'Restore',
+      });
       restore.addEventListener('click', () => {
+        if (restore.disabled) return;
         const chosen = (file as HTMLInputElement).files?.[0];
         if (!chosen) {
           restoreStatus.textContent = 'Choose a backup file first.';
           return;
         }
+        let applied = false;
+        restore.disabled = true;
         restoreStatus.textContent = 'Reading the file.';
         void chosen
           .text()
@@ -80,17 +97,26 @@ function backupPage(options: SettingsOptions): OffTabPage {
               passphrase: restorePassphrase.value(),
             }),
           )
-          .then(({ counts }) => {
-            // Restoring merges. Nothing already here is lost by restoring.
-            restoreStatus.textContent =
+          .then(async ({ document: restored, counts }) => {
+            options.store.replaceDocument(restored);
+            applied = true;
+            await options.store.flush();
+            restoreMessage =
               `${counts.entriesAdded} added, ${counts.entriesUpdated} updated` +
               (counts.profilesAdded > 0 ? `, ${counts.profilesAdded} profiles added` : '') +
               '.';
+            restoreStatus.textContent = restoreMessage;
+            restorePassphrase.set('');
             options.onRestored?.();
           })
           .catch(() => {
-            restoreStatus.textContent =
-              'That file could not be opened. Nothing has changed. Check the passphrase.';
+            restoreMessage = applied
+              ? 'The backup was merged, but could not be saved. Keep this page open and try saving again.'
+              : 'That file could not be opened. Nothing has changed. Check the passphrase.';
+            restoreStatus.textContent = restoreMessage;
+          })
+          .finally(() => {
+            restore.disabled = false;
           });
       });
 
