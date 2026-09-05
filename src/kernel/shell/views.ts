@@ -6,6 +6,7 @@
 
 import { renderLibrary } from '../library/index';
 import { ABOUT_STRINGS, aboutPage } from './about';
+import { SCREENER_STRINGS, isUsable, screenerPage } from '../screeners/index';
 import { parseIsoDate, type IsoDate } from '../dates/index';
 import { backupNag, loggedDates, mountReport } from '../reports/index';
 import type { KernelStore } from '../store/store';
@@ -63,7 +64,14 @@ export function renderTab(tab: TabId, context: ViewContext): HTMLElement {
     // came looking for is absent. See docs/02-evidence-rubric.md.
     section.append(renderLibrary({ modules: context.known, space: context.space }));
     if (context.onOpenPage !== undefined) {
+      // docs/03-scope.md: the screener lives in the Library, never in the daily
+      // check-in and never on the home screen. This is the only route to it.
       section.append(
+        linkRow({
+          label: SCREENER_STRINGS.title,
+          value: isUsable() ? 'Open' : 'Not yet',
+          onSelect: () => context.onOpenPage?.(screenerPage()),
+        }),
         linkRow({
           label: ABOUT_STRINGS.title,
           value: 'Open',

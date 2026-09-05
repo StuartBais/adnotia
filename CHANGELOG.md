@@ -11,6 +11,12 @@ yet. See the implementation checkpoint in `docs/08-roadmap.md` for current limit
 
 ### Added
 
+- The adult screener, built and deliberately not offered. Every presentation rule
+  `docs/03-scope.md` fixes is implemented and tested — Library-only, one bit of outcome,
+  the score never shown, routing to assessment, adults only, and the result not stored,
+  which is enforced by handing the page no store at all. The instrument itself is gated
+  behind a verification date that is not set. See
+  `docs/decisions/ADR-021-the-adult-screener-is-not-yet-verified.md`.
 - "If things are bad right now", one tap from every screen. It says plainly that the app
   cannot help, leads with the local emergency number, then lists a few free lines that a
   phone can dial in one tap. It asks nothing, records nothing and never reads the document.
