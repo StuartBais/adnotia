@@ -11,6 +11,14 @@ yet. See the implementation checkpoint in `docs/08-roadmap.md` for current limit
 
 ### Added
 
+- A "Preparing for an assessment" module: a dated log of specific examples — what happened,
+  where, what was going on beforehand, what it cost — and a place to gather what can be found
+  out about childhood, which is the question adult assessments most often turn on and the one
+  a person can least answer in the room. It prints as a page to take to a first appointment.
+  Nothing is scored, counted toward anything, or interpreted. See
+  `docs/decisions/ADR-024-preparing-for-an-assessment.md`.
+- Tool contributions are rendered, so the Tools tab is no longer a placeholder, and a fourth
+  named report, `preparation`, with the Adult audience.
 - Neither screening instrument is free to reproduce, and `docs/03-scope.md` no longer says
   they are. ASRS v1.1 is © WHO 2003 with permission requests addressed to Professor Kessler,
   naming noncommercial distribution explicitly; the ASRS-5's scoring rules are licensed by

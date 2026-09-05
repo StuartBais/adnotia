@@ -461,7 +461,7 @@ describe('how the registry handles a bad manifest', () => {
 
 describe('the registry', () => {
   it('ships the modules in this build, and every one of them validates', () => {
-    expect(MODULES.map((manifest) => manifest.id)).toEqual(['medication', 'sleep']);
+    expect(MODULES.map((manifest) => manifest.id)).toEqual(['medication', 'sleep', 'preparation']);
     // createRegistry throws in strict mode, so this failing means a shipped
     // module would not have registered.
     expect(createRegistry().all()).toHaveLength(MODULES.length);

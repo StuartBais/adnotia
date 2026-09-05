@@ -7,8 +7,8 @@
 import { renderLibrary } from '../library/index';
 import { ABOUT_STRINGS, aboutPage } from './about';
 import { SCREENER_STRINGS, isUsable, screenerPage } from '../screeners/index';
-import { parseIsoDate, type IsoDate } from '../dates/index';
-import { backupNag, loggedDates, mountReport } from '../reports/index';
+import { loggingDay, parseIsoDate, type IsoDate } from '../dates/index';
+import { REPORTS, backupNag, loggedDates, mountReport } from '../reports/index';
 import type { KernelStore } from '../store/store';
 import { KERNEL_RECORDS_TITLE, mountToday, renderKernelRecords } from '../today/index';
 import { calendar, card, el, linkRow, nag } from '../ui/index';
@@ -28,6 +28,8 @@ export interface ViewContext {
   onBackup?: () => void;
   /** Opens an off-tab page, for the About link at the foot of the Library. */
   onOpenPage?: (page: OffTabPage) => void;
+  /** Redraw the current tab, after a tool changes what belongs on it. */
+  onRefresh?: () => void;
   onDismissBackupNag?: () => void;
 }
 
@@ -171,7 +173,12 @@ export function renderTab(tab: TabId, context: ViewContext): HTMLElement {
       if (contribution === undefined) continue;
 
       const body = el('div', {});
-      contribution.render(body, { dates, days: daysOf(store, manifest.id) });
+      contribution.render(body, {
+        dates,
+        days: daysOf(store, manifest.id),
+        // Some modules keep a list rather than one record per day.
+        slice: store.get(manifest.id),
+      });
       if (body.childElementCount === 0) continue;
 
       anything = true;
@@ -194,6 +201,60 @@ export function renderTab(tab: TabId, context: ViewContext): HTMLElement {
     if (context.space === 'adult') {
       section.append(mountReport({ store, modules: context.enabled }).element);
     }
+    return section;
+  }
+
+  if (tab === 'tools' && store !== undefined) {
+    let anything = false;
+    for (const manifest of context.enabled) {
+      for (const tool of manifest.contributes.tools ?? []) {
+        anything = true;
+        const body = el('div', {});
+        // A tool reads and writes its own slice and has no route to another's.
+        // `slice` is a live read, not a value captured at mount: a tool that
+        // saves twice without being redrawn must see its own first save, or the
+        // second write is built on a stale copy and silently discards it.
+        tool.mount(body, {
+          get slice() {
+            return store.get(manifest.id);
+          },
+          save: (next: unknown) => store.set(manifest.id, next),
+          today: loggingDay(),
+          refresh: () => context.onRefresh?.(),
+        });
+        section.append(card({ title: tool.title, children: [body] }));
+      }
+    }
+    // A named report other than the clinical one lives on its own page rather
+    // than under the sheet on Records: print.css shows every .sheet, so two on
+    // one screen would print as one document.
+    for (const [name, definition] of Object.entries(REPORTS)) {
+      if (name === 'clinical' || definition.audience !== context.space) continue;
+      const contributes = context.enabled.some((manifest) =>
+        (manifest.contributes.reports ?? []).some((entry) => entry.report === name),
+      );
+      if (!contributes || context.onOpenPage === undefined) continue;
+
+      anything = true;
+      section.append(
+        linkRow({
+          label: definition.title,
+          value: 'Open',
+          onSelect: () =>
+            context.onOpenPage?.({
+              id: `report-${name}`,
+              title: definition.title,
+              render: (host) => {
+                host.replaceChildren(
+                  mountReport({ store, modules: context.enabled, report: name }).element,
+                );
+              },
+            }),
+        }),
+      );
+    }
+
+    if (!anything) section.append(card(EMPTY.tools));
     return section;
   }
 

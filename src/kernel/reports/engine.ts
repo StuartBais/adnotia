@@ -244,6 +244,7 @@ export function buildReport(options: BuildReportOptions): Report {
     coverage: coverageOf(range),
     days: {},
     moduleDays: {},
+    slice: undefined,
     kernelDays: document.kernel.days,
     questions: document.kernel.questions,
     generatedOn: today(now),
@@ -264,7 +265,12 @@ export function buildReport(options: BuildReportOptions): Report {
     for (const dependency of manifest.dependencies ?? []) {
       if (enabled.has(dependency)) moduleDays[dependency] = daysOf(document, dependency);
     }
-    return { ...base, days: daysOf(document, manifest.id), moduleDays };
+    return {
+      ...base,
+      days: daysOf(document, manifest.id),
+      moduleDays,
+      slice: document.modules[manifest.id],
+    };
   }
 
   const bound: { section: ReportSection; context: ReportContext }[] = [];
