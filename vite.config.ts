@@ -1,6 +1,23 @@
-import { defineConfig } from 'vite';
+import { copyFile } from 'node:fs/promises';
+import { resolve } from 'node:path';
+import { defineConfig, type Plugin } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 import { viteSingleFile } from 'vite-plugin-singlefile';
+
+// Copies deploy/_headers into the build output. Cloudflare Pages and Netlify
+// read it from the output root and turn it into real response headers, which is
+// the only way frame-ancestors can be enforced: a <meta> CSP cannot do it.
+// The single-file build gets none of this, having no host.
+function deployHeaders(): Plugin {
+  return {
+    name: 'adnotia:deploy-headers',
+    apply: 'build',
+    async writeBundle(options) {
+      const outDir = options.dir ?? resolve('dist');
+      await copyFile(resolve('deploy/_headers'), resolve(outDir, '_headers'));
+    },
+  };
+}
 
 // Two build outputs from one source. See docs/decisions/ADR-003-pwa-plus-single-file.md.
 //
@@ -35,6 +52,7 @@ export default defineConfig(({ mode }) => {
     plugins: single
       ? [viteSingleFile()]
       : [
+          deployHeaders(),
           VitePWA({
             registerType: 'autoUpdate',
             // 'script-defer' emits registerSW.js as a real file. An inline
