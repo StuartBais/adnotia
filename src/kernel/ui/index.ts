@@ -4,18 +4,24 @@
 //
 // See docs/07-design-system.md "Components".
 
-export { el, field, fieldLabel, type Attributes, type Control } from './dom';
-export { chips, chipsMulti, type ChipsMultiOptions, type ChipsOptions } from './chips';
-export { scale5, type Scale5Options } from './scale';
+export { el, field, fieldLabel, type Attributes, type Control } from "./dom";
+export {
+  chips,
+  chipsMulti,
+  type ChipsMultiOptions,
+  type ChipsOptions,
+} from "./chips";
+export { scale5, type Scale5Options } from "./scale";
 export {
   numberInput,
+  passwordInput,
   textInput,
   timeInput,
   type NumberInputOptions,
   type TextInputOptions,
   type TimeInputOptions,
-} from './inputs';
-export { detailRow, toggleDetail, type DetailRowOptions } from './detail';
+} from "./inputs";
+export { detailRow, toggleDetail, type DetailRowOptions } from "./detail";
 export {
   card,
   linkRow,
@@ -25,15 +31,15 @@ export {
   type LinkRowOptions,
   type MirrorObservation,
   type NagOptions,
-} from './panels';
-export { calendar, firstWeekday, type CalendarOptions } from './calendar';
-export { timeList, tidy, type TimeListOptions } from './timeList';
+} from "./panels";
+export { calendar, firstWeekday, type CalendarOptions } from "./calendar";
+export { timeList, tidy, type TimeListOptions } from "./timeList";
 export {
   parentGate,
   rewardChart,
   type ParentGateOptions,
   type RewardChartOptions,
-} from './family';
+} from "./family";
 export {
   chartNote,
   dayTimeline,
@@ -44,4 +50,4 @@ export {
   type GridOptions,
   type StepChartOptions,
   type StepColumn,
-} from './charts';
+} from "./charts";

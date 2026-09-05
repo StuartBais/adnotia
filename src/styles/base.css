@@ -9,6 +9,39 @@
  * low friction over completeness, tap over type, optional detail hidden.
  */
 
+.wrap > h1 {
+  font-family: var(--serif);
+  font-size: 30px;
+  font-weight: normal;
+  margin: 22px 0 14px;
+}
+
+.day-picker {
+  margin-bottom: 12px;
+}
+
+fieldset {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+input {
+  box-sizing: border-box;
+}
+
+input[type="password"] {
+  width: 100%;
+  font-family: inherit;
+  font-size: 16px;
+  padding: 10px 12px;
+  background: var(--paper);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: var(--r-control);
+}
+
 html,
 body {
   margin: 0;
@@ -81,12 +114,12 @@ body {
   padding: 8px 0;
 }
 
-.save-status[data-state='error'] {
+.save-status[data-state="error"] {
   padding: 12px;
   background: var(--flag-soft);
 }
 
-.save-status[data-state='error'] .hint {
+.save-status[data-state="error"] .hint {
   color: var(--flag);
 }
 
@@ -117,7 +150,7 @@ body {
   cursor: pointer;
 }
 
-.tabs button[aria-selected='true'] {
+.tabs button[aria-selected="true"] {
   background: var(--paper);
   color: var(--ink);
   box-shadow: 0 1px 2px rgb(34 31 26 / 10%);
@@ -191,10 +224,10 @@ label.minor {
 
 /* ---------- inputs ---------- */
 
-input[type='text'],
-input[type='number'],
-input[type='date'],
-input[type='time'],
+input[type="text"],
+input[type="number"],
+input[type="date"],
+input[type="time"],
 select,
 textarea {
   font-family: inherit;
@@ -253,13 +286,13 @@ button:focus-visible,
   line-height: 1.2;
 }
 
-.chip[aria-pressed='true'] {
+.chip[aria-pressed="true"] {
   background: var(--mark);
   border-color: var(--mark);
   color: #fff;
 }
 
-.chip.flagchip[aria-pressed='true'] {
+.chip.flagchip[aria-pressed="true"] {
   background: var(--flag);
   border-color: var(--flag);
 }
@@ -530,7 +563,7 @@ button:focus-visible,
   flex: none;
 }
 
-.datebtn[aria-expanded='true'] {
+.datebtn[aria-expanded="true"] {
   border-color: var(--mark);
 }
 

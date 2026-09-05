@@ -2,7 +2,7 @@
 // already has: a native time input gets the platform's own picker, which is
 // better than anything worth building.
 
-import { el, field, fieldLabel, type Control } from './dom';
+import { el, field, fieldLabel, type Control } from "./dom";
 
 interface BaseOptions {
   label?: string;
@@ -12,16 +12,18 @@ interface BaseOptions {
 }
 
 function makeInput(
-  type: 'time' | 'number' | 'text',
+  type: "time" | "number" | "text" | "password",
   options: BaseOptions & { value?: string; onChange?: (value: string) => void },
   extra: Record<string, string> = {},
 ): Control<string> {
-  const input = el('input', { type, ...extra });
-  input.value = options.value ?? '';
-  if (options.placeholder !== undefined) input.placeholder = options.placeholder;
-  if (options.label !== undefined) input.setAttribute('aria-label', options.label);
+  const input = el("input", { type, ...extra });
+  input.value = options.value ?? "";
+  if (options.placeholder !== undefined)
+    input.placeholder = options.placeholder;
+  if (options.label !== undefined)
+    input.setAttribute("aria-label", options.label);
 
-  input.addEventListener('input', () => options.onChange?.(input.value));
+  input.addEventListener("input", () => options.onChange?.(input.value));
 
   const element =
     options.label === undefined
@@ -37,6 +39,18 @@ function makeInput(
   };
 }
 
+export function passwordInput(
+  options: BaseOptions & {
+    numeric?: boolean;
+    autocomplete?: "current-password" | "new-password";
+  } = {},
+): Control<string> {
+  return makeInput("password", options, {
+    autocomplete: options.autocomplete ?? "current-password",
+    ...(options.numeric ? { inputmode: "numeric", pattern: "[0-9]*" } : {}),
+  });
+}
+
 export interface TimeInputOptions extends BaseOptions {
   value?: string;
   onChange?: (value: string) => void;
@@ -44,7 +58,7 @@ export interface TimeInputOptions extends BaseOptions {
 
 /** `HH:MM`, 24-hour. The kernel's date service does the arithmetic. */
 export function timeInput(options: TimeInputOptions = {}): Control<string> {
-  return makeInput('time', options);
+  return makeInput("time", options);
 }
 
 export interface NumberInputOptions extends BaseOptions {
@@ -57,12 +71,12 @@ export interface NumberInputOptions extends BaseOptions {
 
 export function numberInput(options: NumberInputOptions = {}): Control<string> {
   const extra: Record<string, string> = {};
-  if (options.min !== undefined) extra['min'] = String(options.min);
-  if (options.max !== undefined) extra['max'] = String(options.max);
-  if (options.step !== undefined) extra['step'] = String(options.step);
+  if (options.min !== undefined) extra["min"] = String(options.min);
+  if (options.max !== undefined) extra["max"] = String(options.max);
+  if (options.step !== undefined) extra["step"] = String(options.step);
   // A numeric keypad on a phone, without the spinner arrows of type=number.
-  extra['inputmode'] = 'decimal';
-  return makeInput('number', options, extra);
+  extra["inputmode"] = "decimal";
+  return makeInput("number", options, extra);
 }
 
 export interface TextInputOptions extends BaseOptions {
@@ -73,13 +87,14 @@ export interface TextInputOptions extends BaseOptions {
 }
 
 export function textInput(options: TextInputOptions = {}): Control<string> {
-  if (options.multiline !== true) return makeInput('text', options);
+  if (options.multiline !== true) return makeInput("text", options);
 
-  const area = el('textarea', {});
-  area.value = options.value ?? '';
+  const area = el("textarea", {});
+  area.value = options.value ?? "";
   if (options.placeholder !== undefined) area.placeholder = options.placeholder;
-  if (options.label !== undefined) area.setAttribute('aria-label', options.label);
-  area.addEventListener('input', () => options.onChange?.(area.value));
+  if (options.label !== undefined)
+    area.setAttribute("aria-label", options.label);
+  area.addEventListener("input", () => options.onChange?.(area.value));
 
   const element =
     options.label === undefined
