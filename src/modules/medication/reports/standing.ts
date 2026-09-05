@@ -14,6 +14,7 @@ import {
   formatDuration,
   fromMinutes,
   escapeHtml,
+  overallLabel,
   spanMinutes,
   type FrameContribution,
   type IsoDate,
@@ -122,7 +123,9 @@ export function summarise(context: StandingContext): Standing | undefined {
   if (cover !== null) standing.cover = formatDuration(Math.round(cover));
   if (waking !== null) standing.waking = formatDuration(Math.round(waking));
   if (woreOff !== null) standing.woreOffAround = formatClockTime(fromMinutes(woreOff));
-  if (context.overall !== undefined && context.overall !== '') standing.overall = context.overall;
+  // The document stores a code; a prescriber must not be shown one.
+  const overall = overallLabel(context.overall);
+  if (overall !== undefined) standing.overall = overall;
 
   return standing;
 }

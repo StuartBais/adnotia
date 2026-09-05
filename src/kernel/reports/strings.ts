@@ -21,6 +21,15 @@ export const OVERALL: readonly ChipOption[] = [
   { v: 'vmw', l: 'Very much worse' },
 ];
 
+/**
+ * The words for an `overall` code, for anything that prints it. The document
+ * stores the code, so without this a report prints `mi` at a prescriber.
+ */
+export function overallLabel(code: string | undefined): string | undefined {
+  if (code === undefined || code === '') return undefined;
+  return OVERALL.find((option) => option.v === code)?.l.toLowerCase();
+}
+
 export const RANGE_OPTIONS: readonly { v: string; l: string }[] = [
   { v: 'since', l: 'since your last appointment' },
   { v: '14', l: 'the last 14 days' },

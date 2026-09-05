@@ -22,6 +22,7 @@
   },
   "devDependencies": {
     "@cloudflare/vite-plugin": "^1.54.4",
+    "@types/jsdom": "^30.0.0",
     "@types/node": "^24.13.3",
     "jsdom": "^30.0.1",
     "prettier": "^3.9.6",

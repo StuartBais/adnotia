@@ -39,4 +39,4 @@ export {
   type Report,
 } from './engine';
 export { mountReport, type ReportView, type ReportViewOptions } from './view';
-export { EXPORT_STRINGS, OVERALL, QUESTION_STRINGS, RANGE_OPTIONS } from './strings';
+export { EXPORT_STRINGS, OVERALL, QUESTION_STRINGS, RANGE_OPTIONS, overallLabel } from './strings';

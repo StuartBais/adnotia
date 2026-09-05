@@ -3,7 +3,15 @@
 // One line per day, in the person's own words. Read-only: nothing here computes
 // anything they have not already seen on the day they wrote it.
 
-import { el, formatClockTime, formatDuration, spanMinutes, type IsoDate } from '../../kernel/index';
+import {
+  el,
+  formatClockTime,
+  formatDuration,
+  formatShortDate,
+  formatWeekday,
+  spanMinutes,
+  type IsoDate,
+} from '../../kernel/index';
 import { LABELS } from './strings';
 
 export interface SideDetail {
@@ -74,8 +82,22 @@ export function renderRecords(
     if (prescription !== '') lines.push(prescription);
     if ((day.adherence ?? '') !== '') lines.push(LABELS.get(day.adherence as string) ?? '');
 
+    // What the day was actually like, which is the part a person scans for.
+    if (typeof day.focus === 'number') lines.push(`focus ${day.focus}`);
+    if (typeof day.mood === 'number') lines.push(`mood ${day.mood}`);
+
     const cover = describeCover(day);
     if (cover !== '') lines.push(cover);
+
+    if ((day.rebound ?? '') !== '' && day.rebound !== 'none') {
+      lines.push(`${(LABELS.get(day.rebound as string) ?? '').toLowerCase()} crash`);
+    }
+    if ((day.appetite ?? '') !== '' && day.appetite !== 'normal') {
+      lines.push(LABELS.get(day.appetite as string) ?? '');
+    }
+    if ((day.heart ?? '') !== '' && day.heart !== 'fine') {
+      lines.push(LABELS.get(day.heart as string) ?? '');
+    }
 
     for (const key of day.side ?? []) {
       const severity = day.detail?.[key]?.sev;
@@ -90,7 +112,7 @@ export function renderRecords(
     if (lines.length === 0) continue;
     container.append(
       el('div', { class: 'entry' }, [
-        el('b', { text: date }),
+        el('b', { text: `${formatShortDate(date)}, ${formatWeekday(date)}` }),
         document.createTextNode(' '),
         el('span', { text: lines.join(' · ') }),
       ]),

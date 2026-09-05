@@ -11,6 +11,16 @@ yet. See the implementation checkpoint in `docs/08-roadmap.md` for current limit
 
 ### Fixed
 
+- The report printed the stored code for "overall, compared with before you started" — a
+  prescriber would have read `mi` where the monolith reads "much better".
+- The thirty-day sleep fixture contained `24:50`, which is not a time. This build rejected
+  it and the monolith did not, so every figure drawn from it differed between the two. Bed
+  times now wrap past midnight.
+- A dose block with no prescription recorded was labelled `medication ?mg` in lower case at
+  the head of its own block.
+- History showed neither focus, mood, rebound nor appetite, and dated each line `2026-09-30`
+  rather than `30 Sept, Wed`.
+
 - Startup now unlocks encrypted documents before rendering the shell, imports
   encrypted legacy records without removing their original key, and leaves
   unreadable data in place with a retry screen.
@@ -94,6 +104,11 @@ yet. See the implementation checkpoint in `docs/08-roadmap.md` for current limit
 - The remaining clinical sections: dose over time with a rolling average of focus, how each
   dose performed against the person's own before-medication baseline, and the side-effect
   severity grid above the table it already had.
+- Report parity against the v0 monolith: the same thirty-day dataset is read by the monolith
+  running in jsdom and by this build through the v0 import, and their reports, history lines
+  and text exports are compared. Every deliberate difference is named in a register in the
+  test with its reason, and the register says how many are still open rather than implying
+  parity that does not exist yet.
 - Prettier, pinned to the house style, with `npm run check` failing on unformatted code.
   Formatting was drifting between contributors because nothing checked it.
 - CI running `npm run check`, the test suites and both builds on every push.

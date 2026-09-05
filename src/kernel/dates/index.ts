@@ -261,3 +261,8 @@ export function formatLongDate(date: IsoDate): string {
 export function formatShortDate(date: IsoDate): string {
   return parseIsoDate(date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
+
+/** `Wed`. Beside a short date in a dense list, so a person can place the day. */
+export function formatWeekday(date: IsoDate): string {
+  return parseIsoDate(date).toLocaleDateString(undefined, { weekday: 'short' });
+}
