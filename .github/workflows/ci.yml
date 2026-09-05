@@ -1,0 +1,45 @@
+# CI for Milestone 0 in docs/08-roadmap.md: "CI running `npm run check` and
+# `npm test`". Both build outputs run on every push, because ADR-003 requires
+# them both to work from a fresh clone.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+
+      - name: Typecheck and audit for network access
+        run: npm run check
+
+      - name: Test
+        run: npm test
+
+      - name: Build the PWA
+        run: npm run build
+
+      - name: Build the single file
+        run: npm run build:single
+
+      - name: Upload the single file
+        uses: actions/upload-artifact@v4
+        with:
+          name: adnotia.html
+          path: dist-single/adnotia.html
+          if-no-files-found: error

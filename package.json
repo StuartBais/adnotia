@@ -4,6 +4,9 @@
   "private": true,
   "type": "module",
   "license": "AGPL-3.0-only",
+  "engines": {
+    "node": ">=24"
+  },
   "description": "Free, open-source, evidence-based tools for adults with ADHD and for parents of children who may have it. Everything runs in the browser.",
   "scripts": {
     "dev": "vite",
