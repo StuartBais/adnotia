@@ -144,6 +144,19 @@ export function mountToday(options: TodayOptions): TodayView {
       version: manifest.version,
     }) as Record<string, unknown>;
     const days = { ...((slice['days'] as Days) ?? {}) };
+
+    // Values that follow from what was just entered. A derived value is a
+    // starting point, never a correction: anything the person typed wins.
+    // See docs/decisions/ADR-010-derived-fields.md.
+    let derived: DayRecord = {};
+    if (typeof manifest.derive === 'function') {
+      derived = manifest.derive({ ...(days[date] ?? {}), ...values });
+      for (const key of Object.keys(derived)) {
+        if (values[key] !== undefined && values[key] !== '') delete derived[key];
+      }
+      Object.assign(values, derived);
+    }
+
     days[date] = { ...(days[date] ?? {}), ...values };
     store.set(manifest.id, { ...slice, version: manifest.version, days });
 

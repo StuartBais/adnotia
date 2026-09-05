@@ -270,6 +270,31 @@ export function validateManifest(
     }
   }
 
+  // ---------- derived values ----------
+  if (manifest.derive !== undefined) {
+    if (typeof manifest.derive !== 'function') {
+      fail('derive', 'derive must be a function.');
+    } else {
+      // Run it against the module's own fixtures so a broken one fails at
+      // registration rather than on someone's Tuesday.
+      const sample = manifest.fixtures?.threeDays as
+        | { days?: Record<string, Record<string, unknown>> }
+        | undefined;
+      const day = Object.values(sample?.days ?? {})[0] ?? {};
+      try {
+        const produced = manifest.derive(day);
+        if (typeof produced !== 'object' || produced === null) {
+          fail('derive', 'derive did not return a partial day record.');
+        }
+      } catch (error) {
+        fail(
+          'derive',
+          `derive threw on the module's own fixture: ${error instanceof Error ? error.message : String(error)}`,
+        );
+      }
+    }
+  }
+
   // ---------- fixtures ----------
   const fixtures = manifest.fixtures;
   if (fixtures === undefined) {
