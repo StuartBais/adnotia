@@ -596,6 +596,20 @@ button:focus-visible,
   margin-top: 9px;
 }
 
+/* ---------- off-tab pages ---------- */
+
+/* A page that covers the tabs, reached by a link row and left by Back. */
+.page-title {
+  font-family: var(--serif);
+  font-weight: normal;
+  font-size: 22px;
+  margin: 12px 0 14px;
+}
+
+.first-run .linkrow {
+  font-size: 16px;
+}
+
 /* ---------- the parent gate ---------- */
 
 .pin {
