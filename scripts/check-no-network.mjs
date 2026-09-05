@@ -6,9 +6,9 @@
 // Scope is deliberately narrow — index.html and src/ — because tests/ and
 // reference/ mention these APIs legitimately.
 //
-// Part of `npm run check`. Two further checks belong there and are not wired up
-// yet: the contrast check needs src/styles/tokens.css (Milestone 0, design
-// system), and linting needs a linter, which is a dependency decision for a human.
+// Part of `npm run check`, alongside the contrast check. Linting is the one
+// piece of `check` still missing; it needs a linter, which is a dependency
+// decision for a human.
 
 import { readFileSync } from 'node:fs';
 import { readdir } from 'node:fs/promises';

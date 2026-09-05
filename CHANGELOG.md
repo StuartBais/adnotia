@@ -27,4 +27,7 @@ Milestone 0 is in progress; nothing has been released yet.
 - The module registry, validating every manifest at registration: tier and Library entry,
   the forty-second check-in budget, reserved medication field ids outside the Adult space,
   and what a child module may contribute.
+- The design system's stylesheets — tokens, base and print — ported from the reference
+  implementation, with a contrast check that fails the build if a text-on-surface pair
+  drops below 4.5:1.
 - CI running `npm run check`, the test suites and both builds on every push.
