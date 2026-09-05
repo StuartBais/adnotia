@@ -1,0 +1,28 @@
+export {
+  CryptoUnavailableError,
+  deriveKey,
+  envelopeOf,
+  fromBase64,
+  isCryptoAvailable,
+  isValidBackupPassphrase,
+  isValidPasscode,
+  open,
+  randomBytes,
+  randomSalt,
+  seal,
+  toBase64,
+  unseal,
+  WrongKeyError,
+  IV_BYTES,
+  MIN_BACKUP_PASSPHRASE_LENGTH,
+  MIN_PASSCODE_DIGITS,
+  PBKDF2_ITERATIONS,
+  SALT_BYTES,
+  type Envelope,
+} from './envelope';
+export {
+  createPasscodeCodec,
+  sealParameters,
+  type CreatePasscodeCodecOptions,
+  type PasscodeCodec,
+} from './codec';
