@@ -1190,3 +1190,62 @@ svg .cellblank {
 .budget p {
   margin: 0 0 8px;
 }
+
+/* ---------- the planning tools ---------- */
+/* Rows of one line and one control. Nothing here shows progress: no bar, no
+   fraction, no count of what is done, because docs/03-scope.md bans anything
+   that turns a gap into a failure and a progress bar is exactly that. */
+
+.plan-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--line2);
+}
+
+.plan-row:last-child {
+  border-bottom: 0;
+}
+
+.plan-body {
+  flex: 1;
+  font-size: 14.5px;
+  line-height: 1.45;
+}
+
+.plan-acts {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.plan-task {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.plan-task:last-child {
+  border-bottom: 0;
+}
+
+.plan-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.plan-at {
+  display: inline-block;
+  min-width: 62px;
+  color: var(--mark);
+  font-variant-numeric: tabular-nums;
+}
+
+.plan-actual {
+  display: block;
+  color: var(--ink2);
+  font-size: 13px;
+}

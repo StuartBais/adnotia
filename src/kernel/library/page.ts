@@ -9,7 +9,7 @@
 // Tier A tool they do not use, so modules appear in the order the build lists
 // them and no tier sorts above another.
 
-import type { Citation, LibraryEntry, ModuleManifest } from '../registry/types';
+import type { Citation, LibraryEntry, ModuleManifest, Tier } from '../registry/types';
 import type { Space } from '../store/document';
 import { card, el } from '../ui/index';
 import { EXCLUSIONS, type Exclusion } from './exclusions';
@@ -33,6 +33,7 @@ export const LIBRARY_STRINGS = {
     'Things people ask about that this app does not include, and why. Each was considered.',
   whatWouldChangeIt: 'What would change this',
   noCitations: 'No reference is claimed for this. It is a scope decision, not an evidence one.',
+  toolsCarryLess: 'Tools here that carry less than the module does',
 } as const;
 
 function part(heading: string, body: string): HTMLElement {
@@ -71,6 +72,29 @@ function citations(sources: readonly Citation[], verified: string | undefined): 
   return el('div', { class: 'lib-part' }, children);
 }
 
+/**
+ * Where a tool carries a lower tier than its module, the entry lists it. The
+ * tool says so at the point of use; this is the same fact in the one place a
+ * person goes to compare what is claimed for what. See ADR-025.
+ */
+function toolTiers(manifest: ModuleManifest, space: Space): HTMLElement[] {
+  const tiered = (manifest.contributes.tools ?? []).filter((tool) => tool.tier !== undefined);
+  if (tiered.length === 0) return [];
+
+  const list = el('ul', { class: 'plain' });
+  for (const tool of tiered) {
+    list.append(
+      el('li', {}, [
+        el('b', { text: tool.title }),
+        document.createTextNode(` — ${tierWording(tool.tier as Tier, space)}`),
+      ]),
+    );
+  }
+  return [
+    el('div', { class: 'lib-part' }, [el('h3', { text: LIBRARY_STRINGS.toolsCarryLess }), list]),
+  ];
+}
+
 export function moduleEntry(manifest: ModuleManifest, space: Space): HTMLElement {
   const entry: LibraryEntry = manifest.contributes.library;
 
@@ -82,6 +106,7 @@ export function moduleEntry(manifest: ModuleManifest, space: Space): HTMLElement
       part(LIBRARY_STRINGS.evidence, entry.whatTheEvidenceSays),
       // Never optional. docs/01-module-contract.md: an entry without it fails review.
       part(LIBRARY_STRINGS.wontDo, entry.whatItWontDo),
+      ...toolTiers(manifest, space),
       citations(entry.citations, entry.citationsVerified),
       el('p', {
         class: 'hint',

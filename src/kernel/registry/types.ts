@@ -94,6 +94,17 @@ export interface ToolContext {
 export interface Tool {
   title: string;
   icon: string;
+  /**
+   * This tool's own evidence tier, where it differs from its module's.
+   *
+   * A module carries one tier, and a toolkit derived from an evidenced protocol
+   * can contain a tool that protocol never tested. docs/02-evidence-rubric.md
+   * lists task-breaking templates and implementation-intention prompts as Tier C
+   * examples while rating planning and organisation as a whole Tier A, so one
+   * number cannot say both. Absent means the module's tier applies unchanged.
+   * See docs/decisions/ADR-025-a-tool-can-carry-its-own-tier.md.
+   */
+  tier?: Tier;
   mount(container: HTMLElement, kernel: unknown): void;
 }
 
