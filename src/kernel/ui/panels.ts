@@ -1,6 +1,7 @@
 // Cards, link rows, the nag and the mirror.
 
 import { el } from './dom';
+import type { MirrorObservation } from '../registry/types';
 
 export interface CardOptions {
   title?: string;
@@ -69,12 +70,6 @@ export function nag(options: NagOptions): HTMLElement {
   }
   panel.append(row);
   return panel;
-}
-
-export interface MirrorObservation {
-  /** A short word for what this is about. */
-  tag: string;
-  text: string;
 }
 
 /**

@@ -5,10 +5,10 @@
 // fact to show, never a failure to punish.
 
 import { parseIsoDate, type IsoDate } from '../dates/index';
-import { loggedDates, mountReport } from '../reports/index';
+import { backupNag, loggedDates, mountReport } from '../reports/index';
 import type { KernelStore } from '../store/store';
 import { KERNEL_RECORDS_TITLE, mountToday, renderKernelRecords } from '../today/index';
-import { calendar, card, el } from '../ui/index';
+import { calendar, card, el, nag } from '../ui/index';
 import type { ModuleManifest, Space } from '../index';
 import { TAB_LABELS, type TabId } from './router';
 
@@ -21,6 +21,9 @@ export interface ViewContext {
   store?: KernelStore;
   date?: IsoDate;
   onDateChange?: (date: IsoDate) => void;
+  /** Opens the backup page. Absent in tests that render a tab in isolation. */
+  onBackup?: () => void;
+  onDismissBackupNag?: () => void;
 }
 
 const EMPTY: Readonly<Record<TabId, { title: string; sub: string }>> = {
@@ -82,6 +85,31 @@ export function renderTab(tab: TabId, context: ViewContext): HTMLElement {
   const { store } = context;
 
   if (tab === 'today' && store !== undefined) {
+    // Everything lives in this browser. At most once a fortnight, on this screen
+    // only, with a way to say not now. See docs/decisions/ADR-019-the-mirror-and-
+    // the-nag.md and src/kernel/reports/nag.ts.
+    const document_ = store.document();
+    const reminder = backupNag({
+      entries: loggedDates(document_, context.enabled).length,
+      ...(document_.kernel.lastBackup === undefined
+        ? {}
+        : { lastBackup: document_.kernel.lastBackup }),
+      ...(document_.kernel.lastBackupNagDismissed === undefined
+        ? {}
+        : { lastDismissed: document_.kernel.lastBackupNagDismissed }),
+    });
+    if (reminder !== undefined && context.onBackup !== undefined) {
+      section.append(
+        nag({
+          message: reminder.message,
+          actionLabel: reminder.actionLabel,
+          onAction: () => context.onBackup?.(),
+          dismissLabel: 'Not now',
+          onDismiss: () => context.onDismissBackupNag?.(),
+        }),
+      );
+    }
+
     const todayView = mountToday({
       store,
       modules: context.enabled,

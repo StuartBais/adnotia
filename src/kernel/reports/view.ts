@@ -11,8 +11,9 @@ import { formatShortDate, today, type IsoDate } from '../dates/index';
 import type { ModuleManifest } from '../registry/types';
 import type { KernelStore } from '../store/store';
 import type { Question } from '../store/document';
-import { card, chips, el } from '../ui/index';
+import { card, chips, el, mirror } from '../ui/index';
 import { buildReport } from './engine';
+import { MIRROR_SUB, MIRROR_TITLE } from './mirror';
 import { EXPORT_STRINGS, OVERALL, QUESTION_STRINGS, RANGE_OPTIONS } from './strings';
 import type { RangeChoice } from './types';
 
@@ -76,8 +77,11 @@ export function mountReport(options: ReportViewOptions): ReportView {
 
   const root = el('div', { class: 'report' });
   const controls = el('div', { class: 'noprint' });
+  // Above the controls, as the monolith had it: the person reads what their own
+  // record looks like before they decide what to do with it.
+  const reflection = el('div', {});
   const sheet = el('div', { class: 'sheet' });
-  root.append(controls, sheet);
+  root.append(reflection, controls, sheet);
 
   let currentText = '';
 
@@ -97,6 +101,12 @@ export function mountReport(options: ReportViewOptions): ReportView {
     });
     sheet.innerHTML = report.html;
     currentText = report.text;
+
+    // Screen only. print.css hides `.mirror`, and a test asserts it.
+    reflection.replaceChildren();
+    if (report.mirror.length > 0) {
+      reflection.append(mirror(MIRROR_TITLE, MIRROR_SUB, report.mirror));
+    }
   }
 
   // ---------- export controls ----------

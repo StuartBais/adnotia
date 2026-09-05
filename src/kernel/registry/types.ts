@@ -138,6 +138,27 @@ export interface DayColumn {
   legend?: string;
 }
 
+/**
+ * One line of the screen-only reflection. It is shown to the person and to nobody
+ * else: never printed, never exported, never part of a report.
+ *
+ * This is the honest half of the trade docs/03-scope.md makes. The app refuses to
+ * assess a person for a clinician, and in exchange it tells the person plainly
+ * what their own record looks like. See ADR-005 and ADR-019.
+ */
+export interface MirrorObservation {
+  /** A short word for what this is about. */
+  tag: string;
+  text: string;
+}
+
+export interface MirrorContribution {
+  /** Lower is shown first. The kernel shows at most four. */
+  weight: number;
+  /** Given the same context a report section gets, over the same range. */
+  observations: (context: unknown) => MirrorObservation[];
+}
+
 export interface RecordsContribution {
   render(container: HTMLElement, context: unknown): void;
 }
@@ -203,6 +224,8 @@ export interface Contributions {
   timeline?: TimelineContribution;
   /** This module's columns in the kernel's shared day-by-day table. */
   columns?: DayColumn[];
+  /** What this module notices about the person's own record, for their eyes only. */
+  mirror?: MirrorContribution;
   /** Required for every module, including Tier C. */
   library: LibraryEntry;
   settings?: SettingsItem[];

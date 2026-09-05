@@ -17,6 +17,7 @@ import {
   DAY_METADATA_KEYS,
   type DayColumn,
   type FrameContribution,
+  type MirrorObservation,
   type ModuleManifest,
   type ReportSection,
   type TimelineRow,
@@ -32,6 +33,7 @@ import {
   questionsText,
 } from './footer';
 import { coverageOf, resolveRange } from './range';
+import { buildMirror } from './mirror';
 import { KERNEL_SECTIONS } from './sections/index';
 import {
   REPORTS,
@@ -65,6 +67,8 @@ export interface Report {
   empty: boolean;
   /** The sections that survived their own `when`, in print order. */
   included: readonly ReportSection[];
+  /** The screen-only reflection. Never printed and never exported. */
+  mirror: readonly MirrorObservation[];
   html: string;
   text: string;
 }
@@ -298,6 +302,7 @@ export function buildReport(options: BuildReportOptions): Report {
       context: base,
       empty: true,
       included: [],
+      mirror: [],
       html: `<h2>${escapeHtml(definition.emptyTitle)}</h2><p class="meta">${escapeHtml(definition.emptyBody)}</p>`,
       text: [
         definition.emptyTitle,
@@ -334,6 +339,7 @@ export function buildReport(options: BuildReportOptions): Report {
     context: base,
     empty: false,
     included: included.map((entry) => entry.section),
+    mirror: buildMirror(base, modules, contextFor),
     html,
     text,
   };

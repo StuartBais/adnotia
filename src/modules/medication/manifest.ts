@@ -9,6 +9,7 @@ import { fixtures } from './fixtures/index';
 import { library } from './library';
 import { renderRecords } from './records';
 import { columns } from './reports/columns';
+import { medicationMirror } from './reports/mirror';
 import { doseOverTimeSection, medicationTimeline } from './reports/doses';
 import { levelsSection } from './reports/levels';
 import { sideEffectsSection } from './reports/sideEffects';
@@ -42,6 +43,7 @@ const manifest: ModuleManifest = {
     reports: [standingSection, doseOverTimeSection, levelsSection, sideEffectsSection],
     timeline: medicationTimeline,
     columns,
+    mirror: medicationMirror,
     library,
   },
 

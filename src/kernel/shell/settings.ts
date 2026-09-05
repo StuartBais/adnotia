@@ -9,6 +9,7 @@ import {
   isCryptoAvailable,
   isValidBackupPassphrase,
   restoreBackup,
+  toIsoDate,
   type AdnotiaDocument,
   type KernelStore,
   type ModuleManifest,
@@ -32,7 +33,7 @@ export interface SettingsOptions {
 }
 
 /** The backup page: export, and restore by merging. */
-function backupPage(options: SettingsOptions): OffTabPage {
+export function backupPage(options: SettingsOptions): OffTabPage {
   let restoreMessage = '';
   return {
     id: 'backup',
@@ -65,8 +66,17 @@ function backupPage(options: SettingsOptions): OffTabPage {
         )
           .then((file) => {
             options.offerDownload(file.filename, file.content);
+            // Recorded so the fortnightly reminder knows a backup was taken, and
+            // so this page can say when. A browser will not tell us whether the
+            // file reached the disk; that it was made and handed over is the
+            // strongest signal there is. See ADR-015 for the same limit.
+            options.store.updateKernel((kernel) => ({
+              ...kernel,
+              lastBackup: toIsoDate(new Date()),
+            }));
             status.textContent = `Saved as ${file.filename}.`;
             passphrase.set('');
+            options.onChanged?.();
           })
           .catch(() => {
             status.textContent = 'That backup could not be made. Nothing has changed.';

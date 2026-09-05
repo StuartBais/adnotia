@@ -11,6 +11,15 @@ yet. See the implementation checkpoint in `docs/08-roadmap.md` for current limit
 
 ### Added
 
+- The screen-only reflection: at most four things worth knowing about your own record,
+  shown before the report and never printed, exported or shared. Modules contribute what
+  they notice; the kernel decides what is shown and holds the limits. This is the second
+  half of the trade `docs/03-scope.md` makes in place of covert assessment — the first
+  half, the record-quality footer, shipped with the report engine. See
+  `docs/decisions/ADR-019-the-mirror-and-the-nag.md`.
+- The fortnightly backup reminder, on Today only: after five logged days, not within a
+  fortnight of a backup, and not within a fortnight of being dismissed. Dismissing does not
+  switch it off.
 - "Day by day": every day in the range with the values the person entered, assembled from
   every module's declared columns in weight order. Medication takes weights 10 to 60 and 80,
   sleep takes 70 and lands between them, and neither knows the other exists. See
@@ -31,6 +40,9 @@ yet. See the implementation checkpoint in `docs/08-roadmap.md` for current limit
   times now wrap past midnight.
 - A dose block with no prescription recorded was labelled `medication ?mg` in lower case at
   the head of its own block.
+- Downloading a backup from Settings never recorded that one had been taken, so the page
+  said "None yet" however many were made, and the fortnightly reminder would have fired
+  every time.
 - History showed neither focus, mood, rebound nor appetite, and dated each line `2026-09-30`
   rather than `30 Sept, Wed`.
 
