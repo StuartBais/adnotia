@@ -14,6 +14,7 @@ The single-file build makes this sharper. Its CSP carries a build-time SHA-256 h
 ## Decision
 - Adnotia is served from `adnotia.com` as a dedicated origin. Nothing else is hosted there. The About page states the origin-scoping caveat, and a person moving between origins is told to move their data by backup and restore.
 - Every Cloudflare feature that injects or rewrites page content stays off: Web Analytics, Rocket Loader, Email Obfuscation, Bot Fight Mode, Zaraz, and any HTML minification or optimisation. Always Use HTTPS stays on, because `crypto.subtle` requires a secure context (ADR-007).
+- Worker observability stays off in `wrangler.jsonc`. Unlike the features above it injects nothing into the page, so it does not breach hard rule 1; it is off because `03-scope.md` promises no analytics, and switching on request logging while describing the app as collecting nothing is a claim the deployment would not support. Whatever access logs a host keeps by default it keeps; this project does not opt into more.
 - `deploy/_headers` is the source of the deployed response headers and is copied into `dist/` by the build. It repeats the `<meta>` CSP verbatim and adds `frame-ancestors 'none'`, which browsers honour only in a header.
 - `tests/kernel/headers.test.ts` fails if the header policy and the meta policy ever diverge.
 

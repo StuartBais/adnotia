@@ -94,4 +94,6 @@ yet. See the implementation checkpoint in `docs/08-roadmap.md` for current limit
 - The remaining clinical sections: dose over time with a rolling average of focus, how each
   dose performed against the person's own before-medication baseline, and the side-effect
   severity grid above the table it already had.
+- Prettier, pinned to the house style, with `npm run check` failing on unformatted code.
+  Formatting was drifting between contributors because nothing checked it.
 - CI running `npm run check`, the test suites and both builds on every push.
