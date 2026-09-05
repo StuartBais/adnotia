@@ -76,6 +76,21 @@ export interface LibraryEntry {
   nextReview: string;
 }
 
+/**
+ * What a tool is handed when it mounts. Deliberately small: a tool reads and
+ * writes its own slice and nothing else, and has no route to another module's.
+ */
+export interface ToolContext {
+  /** This module's slice, or undefined if it has never been written. */
+  slice: unknown;
+  /** Replace this module's slice. The kernel routes it to the right place. */
+  save: (next: unknown) => void;
+  /** Today, under the after-midnight rule. */
+  today: string;
+  /** Redraw, after a change that alters what else is on the page. */
+  refresh: () => void;
+}
+
 export interface Tool {
   title: string;
   icon: string;

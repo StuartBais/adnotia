@@ -30,6 +30,7 @@ function context(over: Partial<ReportContext> = {}): ReportContext {
     coverage: { logged: 30, ofDays: 30, percent: 100 },
     days: {},
     moduleDays: {},
+    slice: undefined,
     kernelDays: {},
     questions: [],
     generatedOn: '2026-10-01',

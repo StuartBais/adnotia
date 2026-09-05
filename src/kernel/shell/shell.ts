@@ -215,6 +215,7 @@ export function mountShell(options: ShellOptions): Shell {
         // Dismissing does not switch the reminder off; it waits a fortnight
         // again, the same as taking a backup does.
         onOpenPage: (page) => router.openPage(page),
+        onRefresh: () => refresh(),
         onDismissBackupNag: () => {
           store.updateKernel((kernel) => ({
             ...kernel,

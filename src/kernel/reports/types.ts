@@ -55,6 +55,12 @@ export interface ReportContext {
   coverage: Coverage;
   days: Readonly<Record<IsoDate, ReportDay>>;
   moduleDays: Readonly<Record<string, Readonly<Record<IsoDate, ReportDay>>>>;
+  /**
+   * The contributing module's whole slice. Most sections want `days`; a module
+   * that keeps something outside the day records — a standing note, a list —
+   * reads it here rather than being told to fold it into a day it did not happen on.
+   */
+  slice: unknown;
   /** Wins, misses and notes belong to the kernel and any section may read them. */
   kernelDays: Readonly<Record<IsoDate, KernelDay>>;
   questions: readonly Question[];
@@ -114,6 +120,17 @@ export interface ReportDefinition {
 }
 
 export const REPORTS: Readonly<Record<string, ReportDefinition>> = {
+  preparation: {
+    name: 'preparation',
+    title: 'What I have written down',
+    audience: 'adult',
+    blurb: 'Specific examples to take to a first appointment, in your own words.',
+    emptyTitle: 'Nothing written down yet',
+    emptyBody:
+      'Write down the next thing that happens, while it is fresh. A handful of specific ' +
+      'examples is worth more in the room than a long account of how things generally are.',
+  },
+
   clinical: {
     name: 'clinical',
     title: 'Daily record',
