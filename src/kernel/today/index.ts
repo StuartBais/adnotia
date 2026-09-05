@@ -25,10 +25,10 @@ import {
   toggleDetail,
   type Control,
 } from '../ui/index';
-import { carriedValue } from './carry';
+import { carriedValue, writePath } from './carry';
 import { measure, type Budget } from './budget';
 
-export { carriedValue, type CarriedValue } from './carry';
+export { carriedValue, readPath, writePath, type CarriedValue } from './carry';
 export { measure, type Budget } from './budget';
 
 type DayRecord = Record<string, unknown>;
@@ -166,7 +166,11 @@ export function mountToday(options: TodayOptions): TodayView {
       Object.assign(values, derived);
     }
 
-    days[date] = { ...(days[date] ?? {}), ...values };
+    // A dotted field id is a path: docs/06-data-model.md nests side-effect
+    // detail rather than flattening it.
+    const record: DayRecord = structuredClone(days[date] ?? {});
+    for (const [fieldId, value] of Object.entries(values)) writePath(record, fieldId, value);
+    days[date] = record;
     store.set(manifest.id, { ...slice, version: manifest.version, days });
 
     store.updateKernel((kernel) => {
@@ -244,7 +248,11 @@ export function mountToday(options: TodayOptions): TodayView {
       if (fields.length === 0) continue;
 
       const body = el('div', {});
-      const values: DayRecord = { ...(daysOf(store, manifest.id)[date] ?? {}) };
+      // A deep copy: the store hands back frozen objects, and a shallow spread
+      // would leave the nested ones frozen for writePath to fail on.
+      const values: DayRecord = structuredClone(
+        daysOf(store, manifest.id)[date] ?? {},
+      ) as DayRecord;
       for (const field of fields) renderField(manifest, field, values, body);
 
       root.append(card({ title: manifest.name, children: [body] }));

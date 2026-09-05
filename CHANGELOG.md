@@ -40,4 +40,7 @@ Milestone 0 is in progress; nothing has been released yet.
 - The sleep module, Tier B: bed and wake times, hours filled in from them, night-quality
   chips with a follow-up on how long it took to drop off, its own history and its section
   of the clinical report.
+- The medication log, Tier A supporting: the prescription carried forward, adherence,
+  focus and mood, cover, side effects with severity asked only once one is ticked, its own
+  history, and the "where things stand" and side-effect sections of the clinical report.
 - CI running `npm run check`, the test suites and both builds on every push.

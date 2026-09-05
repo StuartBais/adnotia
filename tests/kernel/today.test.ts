@@ -303,3 +303,69 @@ describe('the Today assembler', () => {
     expect(view.element.textContent).not.toMatch(/you forgot|you missed|streak/i);
   });
 });
+
+describe('dotted field ids', () => {
+  let store: KernelStore;
+
+  beforeEach(async () => {
+    store = createStore({ adapter: memoryStorageAdapter(), debounceMs: 0 });
+    await store.load();
+  });
+
+  const severity: TodayField = {
+    id: 'detail.dry.sev',
+    label: 'Dry mouth: how bad',
+    type: 'chips',
+    options: [
+      { v: 'mild', l: 'Mild' },
+      { v: 'severe', l: 'Severe' },
+    ],
+    cost: 2,
+  };
+
+  it('write nested, as the data model stores side-effect detail', () => {
+    const view = mountToday({ store, modules: [manifest([severity])], date: '2026-09-04' });
+    click(view.element.querySelectorAll('.chip')[0]);
+
+    const slice = store.get<{ days: Record<string, Record<string, unknown>> }>('medication');
+    const day = slice?.days['2026-09-04'] as { detail?: { dry?: { sev?: string } } };
+    expect(day.detail?.dry?.sev).toBe('mild');
+    // And not as a flat key with a dot in its name.
+    expect(Object.keys(day)).not.toContain('detail.dry.sev');
+  });
+
+  it('read back what they wrote', () => {
+    store.set('medication', {
+      version: 1,
+      days: { '2026-09-04': { detail: { dry: { sev: 'severe' } } } },
+    });
+    const view = mountToday({ store, modules: [manifest([severity])], date: '2026-09-04' });
+    const pressed = [...view.element.querySelectorAll('[aria-pressed]')].map((n) =>
+      n.getAttribute('aria-pressed'),
+    );
+    expect(pressed).toEqual(['false', 'true']);
+  });
+
+  it('carry by path like any other field', () => {
+    store.set('medication', {
+      version: 1,
+      days: { '2026-09-01': { detail: { dry: { sev: 'mild' } } } },
+    });
+    const carrying: TodayField = { ...severity, carry: 'nearestPrior' };
+    const view = mountToday({ store, modules: [manifest([carrying])], date: '2026-09-04' });
+    expect(view.element.textContent).toContain('Carried from 2026-09-01');
+  });
+
+  it('keep a sibling under the same parent', () => {
+    store.set('medication', {
+      version: 1,
+      days: { '2026-09-04': { detail: { dry: { time: '11:00' } } } },
+    });
+    const view = mountToday({ store, modules: [manifest([severity])], date: '2026-09-04' });
+    click(view.element.querySelectorAll('.chip')[0]);
+
+    const slice = store.get<{ days: Record<string, Record<string, unknown>> }>('medication');
+    const day = slice?.days['2026-09-04'] as { detail?: { dry?: { sev?: string; time?: string } } };
+    expect(day.detail?.dry).toEqual({ time: '11:00', sev: 'mild' });
+  });
+});
