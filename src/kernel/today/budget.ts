@@ -31,10 +31,7 @@ export interface MeasureOptions {
   includeKernel?: boolean;
 }
 
-export function measure(
-  modules: readonly ModuleManifest[],
-  options: MeasureOptions = {},
-): Budget {
+export function measure(modules: readonly ModuleManifest[], options: MeasureOptions = {}): Budget {
   let total = 0;
   let required = 0;
   const count = (field: TodayField): void => {

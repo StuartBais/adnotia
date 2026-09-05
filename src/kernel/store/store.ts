@@ -16,9 +16,9 @@ import {
   type KernelState,
   type ModuleSlice,
   type Space,
-} from "./document";
-import { plainJsonCodec, type DocumentCodec } from "./codec";
-import { memoryStorageAdapter, type StorageAdapter } from "./adapters";
+} from './document';
+import { plainJsonCodec, type DocumentCodec } from './codec';
+import { memoryStorageAdapter, type StorageAdapter } from './adapters';
 
 /** What a module is handed. Anything not here is not available to a module. */
 export interface Store {
@@ -36,7 +36,7 @@ export interface KernelStore extends Store {
   flush(): Promise<void>;
   setCodec(next: DocumentCodec, passcodeEnabled: boolean): Promise<void>;
   replaceDocument(next: AdnotiaDocument): void;
-  persistence(): "saved" | "pending" | "error";
+  persistence(): 'saved' | 'pending' | 'error';
   subscribePersistence(listener: () => void): () => void;
   persistenceError(): unknown;
   space(): Space;
@@ -68,10 +68,8 @@ export interface CreateStoreOptions {
 
 /** Recursively freeze, so a caller cannot mutate the document by holding a slice. */
 function deepFreeze<T>(value: T): T {
-  if (typeof value !== "object" || value === null || Object.isFrozen(value))
-    return value;
-  for (const held of Object.values(value as Record<string, unknown>))
-    deepFreeze(held);
+  if (typeof value !== 'object' || value === null || Object.isFrozen(value)) return value;
+  for (const held of Object.values(value as Record<string, unknown>)) deepFreeze(held);
   return Object.freeze(value);
 }
 
@@ -97,7 +95,7 @@ export function createStore(options: CreateStoreOptions = {}): KernelStore {
 
   const listeners = new Map<string, Set<() => void>>();
   const persistenceListeners = new Set<() => void>();
-  let persistence: "saved" | "pending" | "error" = "saved";
+  let persistence: 'saved' | 'pending' | 'error' = 'saved';
   let timer: ReturnType<typeof setTimeout> | undefined;
   let writing: Promise<void> = Promise.resolve();
 
@@ -112,14 +110,14 @@ export function createStore(options: CreateStoreOptions = {}): KernelStore {
   }
 
   function enqueueWrite(operation: () => Promise<void>): Promise<void> {
-    setPersistence("pending");
+    setPersistence('pending');
     // Chained so two writes cannot interleave and leave a torn document.
     const pending = writing.then(async () => {
       try {
         await operation();
       } catch (error) {
         persistenceError = error;
-        setPersistence("error");
+        setPersistence('error');
         onPersistError?.(error);
         throw error;
       }
@@ -132,12 +130,12 @@ export function createStore(options: CreateStoreOptions = {}): KernelStore {
     return enqueueWrite(async () => {
       const snapshot = document;
       await adapter.write(key, await codec.encode(snapshot));
-      if (document === snapshot) setPersistence("saved");
+      if (document === snapshot) setPersistence('saved');
     });
   }
 
   function schedulePersist(): void {
-    setPersistence("pending");
+    setPersistence('pending');
     if (timer !== undefined) clearTimeout(timer);
     timer = setTimeout(() => {
       timer = undefined;
@@ -147,12 +145,12 @@ export function createStore(options: CreateStoreOptions = {}): KernelStore {
 
   /** The container a slice id resolves against in the current space and profile. */
   function slices(): Record<string, ModuleSlice> {
-    if (document.space === "adult") return document.modules;
+    if (document.space === 'adult') return document.modules;
 
     if (profileId === undefined) {
       throw new Error(
-        "No child profile is selected, so there is no Family slice to read or write. " +
-          "Call useProfile() first.",
+        'No child profile is selected, so there is no Family slice to read or write. ' +
+          'Call useProfile() first.',
       );
     }
     const child = document.family.children[profileId];
@@ -204,9 +202,7 @@ export function createStore(options: CreateStoreOptions = {}): KernelStore {
       // Anything unrecognisable is left alone rather than overwritten: a
       // document this build cannot read may still be readable by another.
       if (!isDocumentShaped(decoded)) {
-        throw new Error(
-          `What is stored under ${key} is not an Adnotia document.`,
-        );
+        throw new Error(`What is stored under ${key} is not an Adnotia document.`);
       }
       replace(decoded);
     },
@@ -232,23 +228,22 @@ export function createStore(options: CreateStoreOptions = {}): KernelStore {
         codec = next;
         if (document === snapshot) {
           replace(secured);
-          setPersistence("saved");
+          setPersistence('saved');
         } else {
           const latest = clone(document);
           latest.kernel.settings.passcodeEnabled = passcodeEnabled;
           replace(latest);
           schedulePersist();
         }
-        notify("kernel");
+        notify('kernel');
       });
     },
 
     replaceDocument(next) {
-      if (!isDocumentShaped(next))
-        throw new Error("That is not an Adnotia document.");
+      if (!isDocumentShaped(next)) throw new Error('That is not an Adnotia document.');
       replace(clone(next));
       if (
-        document.space === "adult" ||
+        document.space === 'adult' ||
         (profileId !== undefined && !document.family.children[profileId])
       ) {
         profileId = undefined;
@@ -265,7 +260,7 @@ export function createStore(options: CreateStoreOptions = {}): KernelStore {
       if (document.space === space) return;
       replace({ ...clone(document), space });
       // A space change invalidates the profile, which belongs to the Family space.
-      if (space === "adult") profileId = undefined;
+      if (space === 'adult') profileId = undefined;
       schedulePersist();
     },
 
@@ -285,18 +280,17 @@ export function createStore(options: CreateStoreOptions = {}): KernelStore {
       const copy = deepFreeze(clone(next)) as unknown as ModuleSlice;
       const doc = clone(document);
 
-      if (doc.space === "adult") {
+      if (doc.space === 'adult') {
         doc.modules[sliceId] = copy;
       } else {
         if (profileId === undefined) {
           throw new Error(
-            "No child profile is selected, so there is no Family slice to write. " +
-              "Call useProfile() first.",
+            'No child profile is selected, so there is no Family slice to write. ' +
+              'Call useProfile() first.',
           );
         }
         const child = doc.family.children[profileId];
-        if (child === undefined)
-          throw new Error(`No child profile ${profileId}.`);
+        if (child === undefined) throw new Error(`No child profile ${profileId}.`);
         child.modules[sliceId] = copy;
       }
 
@@ -307,14 +301,12 @@ export function createStore(options: CreateStoreOptions = {}): KernelStore {
 
     deleteSlice(sliceId) {
       const doc = clone(document);
-      if (doc.space === "adult") {
+      if (doc.space === 'adult') {
         delete doc.modules[sliceId];
       } else {
-        if (profileId === undefined)
-          throw new Error("No child profile is selected.");
+        if (profileId === undefined) throw new Error('No child profile is selected.');
         const child = doc.family.children[profileId];
-        if (child === undefined)
-          throw new Error(`No child profile ${profileId}.`);
+        if (child === undefined) throw new Error(`No child profile ${profileId}.`);
         delete child.modules[sliceId];
       }
       replace(doc);
@@ -326,7 +318,7 @@ export function createStore(options: CreateStoreOptions = {}): KernelStore {
       const doc = clone(document);
       doc.kernel = update(doc.kernel);
       replace(doc);
-      notify("kernel");
+      notify('kernel');
       schedulePersist();
     },
 

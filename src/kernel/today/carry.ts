@@ -23,10 +23,7 @@ type Days = Readonly<Record<IsoDate, Record<string, unknown>>>;
  * docs/06-data-model.md nests side-effect detail as
  * `detail: { dry: { sev, time, note } }` rather than flattening it.
  */
-export function readPath(
-  record: Record<string, unknown> | undefined,
-  fieldId: string,
-): unknown {
+export function readPath(record: Record<string, unknown> | undefined, fieldId: string): unknown {
   if (record === undefined) return undefined;
   if (!fieldId.includes('.')) return record[fieldId];
 
@@ -39,11 +36,7 @@ export function readPath(
 }
 
 /** Write a field into a day record, creating the path as it goes. */
-export function writePath(
-  record: Record<string, unknown>,
-  fieldId: string,
-  value: unknown,
-): void {
+export function writePath(record: Record<string, unknown>, fieldId: string, value: unknown): void {
   if (!fieldId.includes('.')) {
     record[fieldId] = value;
     return;

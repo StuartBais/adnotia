@@ -77,7 +77,6 @@ export function summarise(context: SideEffectsContext): SideEffectsSummary {
   };
 }
 
-
 // ------------------------------------------------------------ the grid
 //
 // The same data as the table, as a shape. A prescriber reads the clustering off
@@ -112,7 +111,8 @@ function reportedOn(day: MedicationDay | undefined): string[] {
 export function grid(context: SideEffectsContext): SideEffectGrid | undefined {
   const first = context.dates[0];
   const last = context.dates[context.dates.length - 1];
-  if (first === undefined || last === undefined || context.dates.length < MIN_DAYS) return undefined;
+  if (first === undefined || last === undefined || context.dates.length < MIN_DAYS)
+    return undefined;
 
   const counts = new Map<string, number>();
   for (const date of context.dates) {

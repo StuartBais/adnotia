@@ -23,10 +23,7 @@ import {
 // person's browser. That covers the format exactly; it cannot cover whatever a
 // real stored document might have accumulated.
 
-const monolith = readFileSync(
-  resolve(process.cwd(), 'reference/adnotia-v0-monolith.html'),
-  'utf8',
-);
+const monolith = readFileSync(resolve(process.cwd(), 'reference/adnotia-v0-monolith.html'), 'utf8');
 
 function extract(name: string): string {
   const start = monolith.indexOf(`function ${name}(`);
@@ -57,11 +54,10 @@ const NAMES = ['toB64', 'fromB64', 'randBytes', 'deriveKey', 'sealWith', 'openWi
 /** The monolith's crypto, with its `window` and `ITER` supplied. */
 function monolithCrypto(iterations: number): MonolithCrypto {
   const source = NAMES.map(extract).join('\n');
-  const build = new Function(
-    'window',
-    'ITER',
-    `${source}\nreturn { ${NAMES.join(', ')} };`,
-  ) as (w: unknown, iter: number) => MonolithCrypto;
+  const build = new Function('window', 'ITER', `${source}\nreturn { ${NAMES.join(', ')} };`) as (
+    w: unknown,
+    iter: number,
+  ) => MonolithCrypto;
   return build(globalThis, iterations);
 }
 
@@ -152,7 +148,10 @@ describe('envelope interop with the monolith', () => {
 
     expect(imported.schemaVersion).toBe(1);
     expect(imported.kernel.enabledModules).toEqual(['medication', 'sleep']);
-    const days = imported.modules['medication']?.['days'] as Record<string, Record<string, unknown>>;
+    const days = imported.modules['medication']?.['days'] as Record<
+      string,
+      Record<string, unknown>
+    >;
     expect(days['2026-09-04']?.['med']).toBe('Elvanse');
     expect(imported.kernel.days['2026-09-04']?.win).toBe('Got out on time');
 

@@ -162,7 +162,10 @@ describe('merging rather than replacing', () => {
     ] = { dose: '70', med: 'Elvanse' };
 
     const { document, counts } = mergeDocuments(live, backup);
-    const days = document.modules['medication']?.['days'] as Record<string, Record<string, unknown>>;
+    const days = document.modules['medication']?.['days'] as Record<
+      string,
+      Record<string, unknown>
+    >;
     expect(days['2026-09-04']?.['dose']).toBe('70');
     // Two records for the one date: the medication day and the kernel day.
     expect(counts.entriesUpdated).toBe(2);

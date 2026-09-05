@@ -127,9 +127,7 @@ export function toMinutes(time: ClockTime | '' | undefined | null): number | nul
 export function fromMinutes(minutes: number): ClockTime {
   const wrapped = ((Math.round(minutes) % DAY_MINUTES) + DAY_MINUTES) % DAY_MINUTES;
   return (
-    String(Math.floor(wrapped / 60)).padStart(2, '0') +
-    ':' +
-    String(wrapped % 60).padStart(2, '0')
+    String(Math.floor(wrapped / 60)).padStart(2, '0') + ':' + String(wrapped % 60).padStart(2, '0')
   );
 }
 

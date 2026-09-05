@@ -91,7 +91,9 @@ function statsFor(
   const gap = mean(
     dates
       .map((date, index) => {
-        const first = [...((days[index] as MedicationDay).times ?? [])].filter((t) => t !== '').sort()[0];
+        const first = [...((days[index] as MedicationDay).times ?? [])]
+          .filter((t) => t !== '')
+          .sort()[0];
         return spanMinutes(nights[date]?.wake ?? '', first ?? '');
       })
       .filter((value): value is number => value !== null && value < 720),
@@ -118,7 +120,8 @@ function statsFor(
 
   for (const day of days) {
     for (const key of day.side ?? []) tally(key, day);
-    if ((day.appetite ?? '') !== '' && day.appetite !== 'normal') tally(day.appetite as string, day);
+    if ((day.appetite ?? '') !== '' && day.appetite !== 'normal')
+      tally(day.appetite as string, day);
     if ((day.heart ?? '') !== '' && day.heart !== 'fine') tally(day.heart as string, day);
   }
 

@@ -49,7 +49,10 @@ function section(overrides: Partial<ReportSection> = {}): ReportSection {
   };
 }
 
-function manifest(sections: ReportSection[], overrides: Partial<ModuleManifest> = {}): ModuleManifest {
+function manifest(
+  sections: ReportSection[],
+  overrides: Partial<ModuleManifest> = {},
+): ModuleManifest {
   return {
     id: 'demo',
     name: 'Demo',
@@ -63,7 +66,10 @@ function manifest(sections: ReportSection[], overrides: Partial<ModuleManifest> 
 }
 
 /** A document with `count` consecutive logged days ending on `last`. */
-function documentWith(days: Record<string, Record<string, unknown>>, kernelDays: Record<string, Record<string, unknown>> = {}): AdnotiaDocument {
+function documentWith(
+  days: Record<string, Record<string, unknown>>,
+  kernelDays: Record<string, Record<string, unknown>> = {},
+): AdnotiaDocument {
   const doc = createDocument({ now: new Date('2026-09-01T00:00:00Z') });
   doc.modules['demo'] = { version: 1, days };
   doc.kernel.days = kernelDays as AdnotiaDocument['kernel']['days'];
@@ -169,7 +175,11 @@ describe('the report engine', () => {
   );
 
   it('says there is nothing to summarise rather than printing an empty sheet', () => {
-    const report = buildReport({ document: documentWith({}), modules: [manifest([section()])], choice: 'all' });
+    const report = buildReport({
+      document: documentWith({}),
+      modules: [manifest([section()])],
+      choice: 'all',
+    });
     expect(report.empty).toBe(true);
     expect(report.html).toContain('Nothing to summarise yet');
     expect(report.included).toEqual([]);
@@ -183,7 +193,10 @@ describe('the report engine', () => {
       modules: [manifest([last, first])],
       choice: 'all',
     });
-    expect(report.included.map((entry) => entry.id).slice(0, 2)).toEqual(['demo.first', 'demo.last']);
+    expect(report.included.map((entry) => entry.id).slice(0, 2)).toEqual([
+      'demo.first',
+      'demo.last',
+    ]);
     expect(report.html.indexOf('First')).toBeLessThan(report.html.indexOf('Last'));
   });
 
@@ -223,7 +236,14 @@ describe('the report engine', () => {
     const sleep = manifest([], { id: 'sleep', name: 'Sleep' });
     const capture: Record<string, unknown>[] = [];
     const dependent = manifest(
-      [section({ render: (context) => { capture.push(context as Record<string, unknown>); return ''; } })],
+      [
+        section({
+          render: (context) => {
+            capture.push(context as Record<string, unknown>);
+            return '';
+          },
+        }),
+      ],
       { dependencies: ['sleep'] },
     );
 
@@ -241,7 +261,12 @@ describe('the report engine', () => {
 
     const capture: Record<string, unknown>[] = [];
     const nosy = manifest([
-      section({ render: (context) => { capture.push(context as Record<string, unknown>); return ''; } }),
+      section({
+        render: (context) => {
+          capture.push(context as Record<string, unknown>);
+          return '';
+        },
+      }),
     ]);
     buildReport({
       document: doc,
@@ -279,7 +304,9 @@ describe('the report engine', () => {
     it('asks a section for its subject even when `when` left the section out', () => {
       const report = buildReport({
         document: documentWith(days),
-        modules: [manifest([section({ when: () => false, frame: () => ({ subject: 'Elvanse' }) })])],
+        modules: [
+          manifest([section({ when: () => false, frame: () => ({ subject: 'Elvanse' }) })]),
+        ],
         choice: 'all',
       });
       expect(report.included).toEqual([]);
@@ -291,7 +318,12 @@ describe('the report engine', () => {
         document: documentWith(days),
         modules: [
           manifest([
-            section({ frame: () => ({ header: '2 with a missed or skipped dose', quality: 'Focus was rated between 3 and 4.' }) }),
+            section({
+              frame: () => ({
+                header: '2 with a missed or skipped dose',
+                quality: 'Focus was rated between 3 and 4.',
+              }),
+            }),
           ]),
         ],
         choice: 'all',
@@ -333,7 +365,9 @@ describe('the report engine', () => {
 
   it('prints the questions last, in the person’s own words', () => {
     const doc = documentWith(days);
-    doc.kernel.questions = [{ id: 'q1', text: 'Could we try splitting the dose?', added: '2026-09-01' }];
+    doc.kernel.questions = [
+      { id: 'q1', text: 'Could we try splitting the dose?', added: '2026-09-01' },
+    ];
     const report = buildReport({ document: doc, modules: [manifest([section()])], choice: 'all' });
 
     expect(report.html.indexOf('Questions for this appointment')).toBeGreaterThan(
@@ -354,7 +388,9 @@ describe('the report engine', () => {
     const doc = documentWith(days, {
       '2026-09-02': { createdAt: '2026-09-02T21:00:00.000Z', win: 'Started the tax forms' },
     });
-    doc.kernel.questions = [{ id: 'q1', text: 'Could we try splitting the dose?', added: '2026-09-01' }];
+    doc.kernel.questions = [
+      { id: 'q1', text: 'Could we try splitting the dose?', added: '2026-09-01' },
+    ];
     const report = buildReport({ document: doc, modules: [manifest([section()])], choice: 'all' });
 
     expect(report.text).toContain('Daily record\n============');
@@ -379,7 +415,11 @@ describe('the report engine', () => {
 
 describe('the kernel’s own sections', () => {
   const kernelDays = {
-    '2026-09-01': { createdAt: 'x', win: 'Started the tax forms', notes: 'Good morning, bad afternoon' },
+    '2026-09-01': {
+      createdAt: 'x',
+      win: 'Started the tax forms',
+      notes: 'Good morning, bad afternoon',
+    },
     '2026-09-02': { createdAt: 'x', miss: 'Snapped at my partner' },
     '2026-09-03': { createdAt: 'x' },
   };
@@ -399,7 +439,10 @@ describe('the kernel’s own sections', () => {
   });
 
   it('says nothing was noted rather than leaving a column blank', () => {
-    const doc = documentWith({ '2026-09-01': { focus: 3 } }, { '2026-09-01': { createdAt: 'x', win: 'only a win' } });
+    const doc = documentWith(
+      { '2026-09-01': { focus: 3 } },
+      { '2026-09-01': { createdAt: 'x', win: 'only a win' } },
+    );
     expect(buildReport({ document: doc, modules: [manifest([])], choice: 'all' }).html).toContain(
       'Nothing noted.',
     );
@@ -441,16 +484,21 @@ describe('the report view', () => {
   });
 
   function mount(overrides: Partial<Parameters<typeof mountReport>[0]> = {}) {
-    return mountReport({ store, modules: [manifest([section()])], choice: 'all', ...overrides } as Parameters<typeof mountReport>[0]);
+    return mountReport({
+      store,
+      modules: [manifest([section()])],
+      choice: 'all',
+      ...overrides,
+    } as Parameters<typeof mountReport>[0]);
   }
 
   it('puts the controls outside what prints, and the sheet inside it', () => {
     const view = mount();
     expect(view.element.querySelector('.noprint')).not.toBeNull();
     expect(view.element.querySelector('.sheet')?.innerHTML).toContain('Daily record');
-    expect(view.element.querySelector('.noprint')?.contains(view.element.querySelector('.sheet'))).toBe(
-      false,
-    );
+    expect(
+      view.element.querySelector('.noprint')?.contains(view.element.querySelector('.sheet')),
+    ).toBe(false);
   });
 
   it('rebuilds the sheet when the range changes', () => {
@@ -469,9 +517,9 @@ describe('the report view', () => {
 
     store.updateKernel((kernel) => ({ ...kernel, lastAppointment: '2026-09-02' }));
     view.refresh();
-    expect((view.element.querySelector('option[value="since"]') as HTMLOptionElement).disabled).toBe(
-      false,
-    );
+    expect(
+      (view.element.querySelector('option[value="since"]') as HTMLOptionElement).disabled,
+    ).toBe(false);
   });
 
   it('adds a question and prints it on the sheet', () => {

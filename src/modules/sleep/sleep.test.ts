@@ -52,9 +52,9 @@ describe('sleep: the clinical section', () => {
     const summary = summarise(context);
     expect(summary.nights).toBe(27);
     expect(summary.ofNights).toBe(27);
-    expect(manifest.contributes.reports?.find((entry) => entry.id === 'sleep.nights')?.render(context)).toContain(
-      '27 of 27 nights recorded',
-    );
+    expect(
+      manifest.contributes.reports?.find((entry) => entry.id === 'sleep.nights')?.render(context),
+    ).toContain('27 of 27 nights recorded');
   });
 
   it('averages bed times across midnight rather than around noon', () => {
@@ -76,7 +76,11 @@ describe('sleep: the clinical section', () => {
   });
 
   it('is not shown when nothing was recorded', () => {
-    expect(manifest.contributes.reports?.find((entry) => entry.id === 'sleep.nights')?.when?.({ dates: [], days: {} })).toBe(false);
+    expect(
+      manifest.contributes.reports
+        ?.find((entry) => entry.id === 'sleep.nights')
+        ?.when?.({ dates: [], days: {} }),
+    ).toBe(false);
   });
 
   it('says the same thing in print and in text', () => {

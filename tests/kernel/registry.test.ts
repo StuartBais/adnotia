@@ -133,9 +133,9 @@ describe('the Library entry', () => {
   });
 
   it('needs whatItIs and whatTheEvidenceSays', () => {
-    expect(
-      rules(valid({ contributes: { library: { ...library(), whatItIs: '' } } })),
-    ).toContain('library');
+    expect(rules(valid({ contributes: { library: { ...library(), whatItIs: '' } } }))).toContain(
+      'library',
+    );
     expect(
       rules(valid({ contributes: { library: { ...library(), whatTheEvidenceSays: '' } } })),
     ).toContain('library');
@@ -152,9 +152,9 @@ describe('the Library entry', () => {
     expect(
       rules(valid({ contributes: { library: { ...library(), reviewed: '2026' } } })),
     ).toContain('library');
-    expect(
-      rules(valid({ contributes: { library: { ...library(), nextReview: '' } } })),
-    ).toContain('library');
+    expect(rules(valid({ contributes: { library: { ...library(), nextReview: '' } } }))).toContain(
+      'library',
+    );
   });
 });
 
@@ -181,10 +181,14 @@ describe('today fields', () => {
 
   it('require options on chips and anchors on a scale', () => {
     const chips = { id: 'side', label: 'Side effects', type: 'chips' as const, cost: 2 };
-    expect(rules(valid({ contributes: { today: [chips], library: library() } }))).toContain('today');
+    expect(rules(valid({ contributes: { today: [chips], library: library() } }))).toContain(
+      'today',
+    );
 
     const scale = { id: 'mood', label: 'Mood', type: 'scale5' as const, cost: 2 };
-    expect(rules(valid({ contributes: { today: [scale], library: library() } }))).toContain('today');
+    expect(rules(valid({ contributes: { today: [scale], library: library() } }))).toContain(
+      'today',
+    );
   });
 
   it('must fit the forty-second budget', () => {
@@ -194,11 +198,11 @@ describe('today fields', () => {
       type: 'number' as const,
       cost: 5,
     }));
-    const issues = validateManifest(
-      valid({ contributes: { today: heavy, library: library() } }),
-    );
+    const issues = validateManifest(valid({ contributes: { today: heavy, library: library() } }));
     expect(issues.some((issue) => issue.rule === 'today-budget')).toBe(true);
-    expect(issues.some((issue) => issue.message.includes(`${TODAY_COST_BUDGET}s budget`))).toBe(true);
+    expect(issues.some((issue) => issue.message.includes(`${TODAY_COST_BUDGET}s budget`))).toBe(
+      true,
+    );
   });
 
   it('accept a module exactly at the budget', () => {
@@ -328,7 +332,9 @@ describe('report sections', () => {
       rules(valid({ contributes: { reports: [section({ report: '' })], library: library() } })),
     ).toContain('reports');
     expect(
-      rules(valid({ contributes: { reports: [section({ weight: 'first' })], library: library() } })),
+      rules(
+        valid({ contributes: { reports: [section({ weight: 'first' })], library: library() } }),
+      ),
     ).toContain('reports');
   });
 
@@ -439,7 +445,10 @@ describe('how the registry handles a bad manifest', () => {
   });
 
   it('never half-mounts: a rejected module is absent, not partial', () => {
-    const registry = createRegistry([valid({ id: 'broken', version: 5 })], { strict: false, onError: () => undefined });
+    const registry = createRegistry([valid({ id: 'broken', version: 5 })], {
+      strict: false,
+      onError: () => undefined,
+    });
     expect(registry.get('broken')).toBeUndefined();
     expect(registry.all()).toEqual([]);
   });

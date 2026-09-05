@@ -59,7 +59,11 @@ export function nag(options: NagOptions): HTMLElement {
   row.firstElementChild?.addEventListener('click', options.onAction);
 
   if (options.dismissLabel !== undefined && options.onDismiss) {
-    const dismiss = el('button', { type: 'button', class: 'btn small', text: options.dismissLabel });
+    const dismiss = el('button', {
+      type: 'button',
+      class: 'btn small',
+      text: options.dismissLabel,
+    });
     dismiss.addEventListener('click', options.onDismiss);
     row.append(dismiss);
   }
@@ -77,7 +81,11 @@ export interface MirrorObservation {
  * The mirror: what the record looks like, shown to the person and to nobody
  * else. Screen only — print.css hides it, and a test asserts that.
  */
-export function mirror(title: string, sub: string, observations: readonly MirrorObservation[]): HTMLElement {
+export function mirror(
+  title: string,
+  sub: string,
+  observations: readonly MirrorObservation[],
+): HTMLElement {
   const list = el('ul', {});
   for (const observation of observations) {
     list.append(

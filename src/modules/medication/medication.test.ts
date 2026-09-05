@@ -63,9 +63,7 @@ describe('medication: records', () => {
 
   it('describes cover the way the docs do', () => {
     // docs/07-design-system.md "Voice": "Cover 9:30am to 4:30pm, about 7h".
-    expect(describeCover(threeDays.days['2026-09-04'])).toBe(
-      'Cover 9:30am to 4:30pm, about 7h',
-    );
+    expect(describeCover(threeDays.days['2026-09-04'])).toBe('Cover 9:30am to 4:30pm, about 7h');
   });
 
   it('says nothing about a day with nothing recorded', () => {
@@ -132,7 +130,9 @@ describe('medication: where things stand', () => {
 
   it('reaches no conclusion for the clinician', () => {
     const rendered = section('medication.standing').render(context);
-    expect(rendered).not.toMatch(/\b(should|increase|decrease|recommend|optimal|too low|too high)\b/i);
+    expect(rendered).not.toMatch(
+      /\b(should|increase|decrease|recommend|optimal|too low|too high)\b/i,
+    );
   });
 
   it('says the same thing in print and in text', () => {
@@ -170,7 +170,9 @@ describe('medication: the Library entry', () => {
   it('is clear the evidence is for the treatment, not for the log', () => {
     const entry = manifest.contributes.library;
     expect(entry.whatTheEvidenceSays).toContain('That evidence is for the treatment, not for this');
-    expect(entry.whatTheEvidenceSays).toContain('supporting an established treatment rather than being one');
+    expect(entry.whatTheEvidenceSays).toContain(
+      'supporting an established treatment rather than being one',
+    );
   });
 
   it('says plainly what it will not do', () => {
@@ -208,7 +210,11 @@ describe('medication: dose over time', () => {
       '2026-09-03': { dose: '30', unit: 'mg', focus: 5 },
     };
     const series = doseSeries({ dates, days });
-    expect(series?.columns.map((column) => column.trend)).toEqual([undefined, undefined, undefined]);
+    expect(series?.columns.map((column) => column.trend)).toEqual([
+      undefined,
+      undefined,
+      undefined,
+    ]);
     expect(series?.hasTrend).toBe(false);
   });
 
@@ -290,7 +296,10 @@ describe('medication: how each dose performed', () => {
   });
 
   it('shows the person’s own baseline above the blocks, never a computed one', () => {
-    const withBaseline = { ...context, baseline: { focus: 2, mood: 2, sleep: '6', note: 'Rough.' } };
+    const withBaseline = {
+      ...context,
+      baseline: { focus: 2, mood: 2, sleep: '6', note: 'Rough.' },
+    };
     const rendered = section('medication.levels').render(withBaseline);
     expect(rendered).toContain('Before medication');
     expect(rendered).toContain('self-rated baseline');

@@ -31,7 +31,13 @@ import {
 } from './footer';
 import { coverageOf, resolveRange } from './range';
 import { KERNEL_SECTIONS } from './sections/index';
-import { REPORTS, type RangeChoice, type ReportContext, type ReportDay, type ReportDefinition } from './types';
+import {
+  REPORTS,
+  type RangeChoice,
+  type ReportContext,
+  type ReportDay,
+  type ReportDefinition,
+} from './types';
 
 type Days = Record<IsoDate, ReportDay>;
 
@@ -214,7 +220,9 @@ export function buildReport(options: BuildReportOptions): Report {
     if (typeof entry.section.frame !== 'function') continue;
     frames.push(entry.section.frame(entry.context));
   }
-  const subject = frames.map((frame) => frame.subject).find((value) => value !== undefined && value !== '');
+  const subject = frames
+    .map((frame) => frame.subject)
+    .find((value) => value !== undefined && value !== '');
   const headerExtras = frames
     .map((frame) => frame.header)
     .filter((value): value is string => value !== undefined && value !== '');
@@ -229,7 +237,11 @@ export function buildReport(options: BuildReportOptions): Report {
       empty: true,
       included: [],
       html: `<h2>${escapeHtml(definition.emptyTitle)}</h2><p class="meta">${escapeHtml(definition.emptyBody)}</p>`,
-      text: [definition.emptyTitle, '='.repeat(definition.emptyTitle.length), definition.emptyBody].join('\n'),
+      text: [
+        definition.emptyTitle,
+        '='.repeat(definition.emptyTitle.length),
+        definition.emptyBody,
+      ].join('\n'),
     };
   }
 

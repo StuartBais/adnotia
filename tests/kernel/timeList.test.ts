@@ -44,14 +44,18 @@ describe('the time list control', () => {
 
   it('adds a row when asked', () => {
     const control = timeList({ value: ['08:00'] });
-    click([...control.element.querySelectorAll('button')].find((b) => b.textContent?.includes('Add')));
+    click(
+      [...control.element.querySelectorAll('button')].find((b) => b.textContent?.includes('Add')),
+    );
     expect(control.element.querySelectorAll('input[type="time"]')).toHaveLength(2);
   });
 
   it('reports a tidied list as it is typed', () => {
     const onChange = vi.fn();
     const control = timeList({ value: ['13:00'], onChange });
-    click([...control.element.querySelectorAll('button')].find((b) => b.textContent?.includes('Add')));
+    click(
+      [...control.element.querySelectorAll('button')].find((b) => b.textContent?.includes('Add')),
+    );
     type(control.element.querySelectorAll('input[type="time"]')[1] as Element, '08:00');
     // Reported in clock order, not the order they were typed.
     expect(onChange).toHaveBeenLastCalledWith(['08:00', '13:00']);
@@ -59,7 +63,9 @@ describe('the time list control', () => {
 
   it('keeps a half-typed row rather than dropping it under the person', () => {
     const control = timeList({ value: ['08:00'] });
-    click([...control.element.querySelectorAll('button')].find((b) => b.textContent?.includes('Add')));
+    click(
+      [...control.element.querySelectorAll('button')].find((b) => b.textContent?.includes('Add')),
+    );
     // The blank row stays on screen even though it is not in the value.
     expect(control.element.querySelectorAll('input[type="time"]')).toHaveLength(2);
     expect(control.value()).toEqual(['08:00']);

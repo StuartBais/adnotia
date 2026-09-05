@@ -74,9 +74,7 @@ export async function createPasscodeCodec(
 }
 
 /** Read the salt and iteration count out of stored ciphertext, for unlocking. */
-export function sealParameters(
-  raw: string,
-): { salt: Uint8Array; iterations: number } | undefined {
+export function sealParameters(raw: string): { salt: Uint8Array; iterations: number } | undefined {
   const envelope = envelopeOf(raw);
   if (envelope === null) return undefined;
   return { salt: fromBase64(envelope.salt), iterations: envelope.iter };

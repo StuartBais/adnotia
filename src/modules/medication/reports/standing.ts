@@ -177,7 +177,6 @@ export function lines(standing: Standing): { label: string; body: string }[] {
   return rows;
 }
 
-
 /**
  * What the kernel's frame cannot work out for itself: the name on the
  * prescription, how often a dose was missed, and how much the focus rating
@@ -223,7 +222,9 @@ export const standingSection: ReportSection = {
 
   title: (context) => {
     const standing = summarise(context as StandingContext);
-    return standing === undefined ? 'Where things stand' : `Where things stand on ${standing.label}`;
+    return standing === undefined
+      ? 'Where things stand'
+      : `Where things stand on ${standing.label}`;
   },
 
   // Three days is the least that says anything about a dose.
