@@ -39,10 +39,16 @@ export interface ScreenerSource {
   transcribedFrom: string;
   /**
    * `YYYY-MM` when a person checked every item, every response option and the
-   * threshold against the paper. Absent means nobody has, and the screener is
-   * not offered to anyone.
+   * threshold against the paper. Absent means nobody has.
    */
   verified?: string;
+  /** Who holds the rights, and what would have to be obtained from them. */
+  rights: string;
+  /**
+   * `YYYY-MM` when written permission to reproduce was obtained. Absent means it
+   * has not been, and no amount of checking against the paper substitutes.
+   */
+  licensed?: string;
 }
 
 export const ASRS_RESPONSES: readonly ScreenerResponse[] = [
@@ -53,34 +59,36 @@ export const ASRS_RESPONSES: readonly ScreenerResponse[] = [
   { label: 'Very often', value: 4 },
 ];
 
-export const ASRS_ITEMS: readonly ScreenerItem[] = [
-  {
-    id: 'concentrating',
-    text:
-      'How often do you have difficulty concentrating on what people say to you, even when ' +
-      'they are speaking to you directly?',
-  },
-  {
-    id: 'seat',
-    text:
-      'How often do you leave your seat in meetings or other situations in which you are ' +
-      'expected to remain seated?',
-  },
-  {
-    id: 'unwinding',
-    text: 'How often do you have difficulty unwinding and relaxing when you have time to yourself?',
-  },
-  {
-    id: 'finishing',
-    text:
-      "When you're in a conversation, how often do you find yourself finishing the sentences " +
-      'of the people you are talking to before they can finish them themselves?',
-  },
-  { id: 'lastMinute', text: 'How often do you put things off until the last minute?' },
-  {
-    id: 'others',
-    text: 'How often do you depend on others to keep your life in order and attend to details?',
-  },
+/**
+ * Empty, on purpose.
+ *
+ * Both candidate instruments are copyrighted and neither is ours to reproduce.
+ * The ASRS v1.1 form carries "© World Health Organization 2003 All rights
+ * reserved … Requests for permission to reproduce or translate — whether for sale
+ * or for noncommercial distribution — should be addressed to Professor Ronald
+ * Kessler". The ASRS-5's scoring rules are licensed by New York University and
+ * are not published at all. Adnotia is distributed publicly under AGPL-3.0,
+ * which means anything here is republished by everyone who forks it.
+ *
+ * So the items live outside this repository until someone holds permission in
+ * writing. Everything around them — the scoring, the threshold, the rules the
+ * screener is presented under — is here and tested against a stand-in.
+ * See docs/decisions/ADR-023-the-screeners-are-not-ours-to-reproduce.md.
+ */
+export const ASRS_ITEMS: readonly ScreenerItem[] = [];
+
+/**
+ * The order the items go in when there are items, so a licensed build can drop
+ * them into place without inventing an order. These are our own labels for the
+ * six, not the instrument's wording.
+ */
+export const ASRS_ITEM_ORDER: readonly string[] = [
+  'concentrating',
+  'seat',
+  'unwinding',
+  'finishing',
+  'lastMinute',
+  'others',
 ];
 
 /** The window the instrument asks about. Changing it changes the instrument. */
@@ -90,13 +98,22 @@ export const ASRS_PERIOD = 'the past 6 months';
 export const ASRS_THRESHOLD = 14;
 
 /**
- * What the transcription we were given states as the maximum. Six items with a
- * top response of 4 sum to 24, so this cannot be right as a plain sum — which is
- * the concrete reason the source is treated as unverified rather than merely
- * unchecked. A test asserts the disagreement so it cannot be quietly forgotten.
- * See ADR-021.
+ * The maximum the published instrument actually reaches: 0–25.
+ *
+ * It is 25 because the response categories are weighted differently per item —
+ * never is 0 throughout, and the top response is worth 6 on question 3, 5 on
+ * questions 1 and 2, 4 on question 5, 3 on question 6 and 2 on question 4. Six
+ * items scored 0–4 uniformly reach 24, which is how a flattened copy gives
+ * itself away, and the transcription we were handed did exactly that: the right
+ * maximum printed over the wrong grid.
+ *
+ * The threshold of 14 belongs to the weighted score. Applied to a plain sum it
+ * is a different test wearing the same number. See ADR-021.
  */
 export const ASRS_DOCUMENTED_MAX = 25;
+
+/** A plain 0–4 sum over six items. Not the instrument, and not what 14 means. */
+export const UNWEIGHTED_MAX = 24;
 
 export const ASRS_SOURCE: ScreenerSource = {
   instrument: 'ASRS-5, the Adult ADHD Self-Report Screening Scale for DSM-5',
@@ -105,23 +122,33 @@ export const ASRS_SOURCE: ScreenerSource = {
     'The World Health Organization Adult Attention-Deficit/Hyperactivity Disorder ' +
     'Self-Report Screening Scale for DSM-5. JAMA Psychiatry, 2017. PMC5470397',
   transcribedFrom: 'A third-party reproduction, not the paper and not a WHO form.',
+  rights:
+    'New York University licenses the adult ADHD scales; the ASRS-5 scoring rules are ' +
+    'proprietary and are not published. NYU offers them free of charge for non-commercial ' +
+    'academic and research use, under an agreement requiring an institutional signatory.',
 };
 
-/** The largest score these items can actually produce. */
-export function maxScore(): number {
+/** The largest score a set of items can actually produce under a plain sum. */
+export function maxScore(items: readonly ScreenerItem[] = ASRS_ITEMS): number {
   const top = Math.max(...ASRS_RESPONSES.map((response) => response.value));
-  return ASRS_ITEMS.length * top;
+  return items.length * top;
 }
 
 /** A plain sum, which is what the transcription describes. */
-export function score(answers: Readonly<Record<string, number>>): number {
+export function score(
+  answers: Readonly<Record<string, number>>,
+  items: readonly ScreenerItem[] = ASRS_ITEMS,
+): number {
   let total = 0;
-  for (const item of ASRS_ITEMS) total += answers[item.id] ?? 0;
+  for (const item of items) total += answers[item.id] ?? 0;
   return total;
 }
 
-export function isComplete(answers: Readonly<Record<string, number>>): boolean {
-  return ASRS_ITEMS.every((item) => answers[item.id] !== undefined);
+export function isComplete(
+  answers: Readonly<Record<string, number>>,
+  items: readonly ScreenerItem[] = ASRS_ITEMS,
+): boolean {
+  return items.length > 0 && items.every((item) => answers[item.id] !== undefined);
 }
 
 /**
@@ -131,11 +158,21 @@ export function isComplete(answers: Readonly<Record<string, number>>): boolean {
  */
 export type ScreenerOutcome = 'worth-seeking' | 'below-threshold';
 
-export function outcome(answers: Readonly<Record<string, number>>): ScreenerOutcome {
-  return score(answers) >= ASRS_THRESHOLD ? 'worth-seeking' : 'below-threshold';
+export function outcome(
+  answers: Readonly<Record<string, number>>,
+  items: readonly ScreenerItem[] = ASRS_ITEMS,
+): ScreenerOutcome {
+  return score(answers, items) >= ASRS_THRESHOLD ? 'worth-seeking' : 'below-threshold';
 }
 
-/** Whether the screener may be shown to anyone at all. */
-export function isUsable(source: ScreenerSource = ASRS_SOURCE): boolean {
-  return source.verified !== undefined;
+/**
+ * Whether the screener may be shown to anyone at all. Two conditions, and the
+ * second is the one that cannot be satisfied by checking a paper: there have to
+ * be items, and someone has to have confirmed them against the source.
+ */
+export function isUsable(
+  source: ScreenerSource = ASRS_SOURCE,
+  items: readonly ScreenerItem[] = ASRS_ITEMS,
+): boolean {
+  return items.length > 0 && source.verified !== undefined;
 }

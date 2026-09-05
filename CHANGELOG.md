@@ -11,6 +11,12 @@ yet. See the implementation checkpoint in `docs/08-roadmap.md` for current limit
 
 ### Added
 
+- Neither screening instrument is free to reproduce, and `docs/03-scope.md` no longer says
+  they are. ASRS v1.1 is © WHO 2003 with permission requests addressed to Professor Kessler,
+  naming noncommercial distribution explicitly; the ASRS-5's scoring rules are licensed by
+  New York University and are not published. The screener ships with no items at all until
+  permission is held in writing. See
+  `docs/decisions/ADR-023-the-screeners-are-not-ours-to-reproduce.md`.
 - The adult screener is the ASRS-5 rather than ASRS v1.1 Part A. The design documents named
   v1.1, which is written against DSM-IV; the ASRS-5 was built against DSM-5 by the same
   group with screening performance as the design goal. See

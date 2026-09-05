@@ -2,39 +2,69 @@ import { describe, expect, it } from 'vitest';
 import {
   ASRS_DOCUMENTED_MAX,
   ASRS_ITEMS,
+  ASRS_ITEM_ORDER,
   ASRS_RESPONSES,
   ASRS_SOURCE,
   ASRS_THRESHOLD,
   SCREENER_STRINGS,
+  UNWEIGHTED_MAX,
   isComplete,
   isUsable,
   maxScore,
   outcome,
   score,
   screenerPage,
+  type ScreenerItem,
   type ScreenerSource,
 } from '../../src/kernel/index';
 
 // docs/03-scope.md "Screening" fixes every rule asserted here, and
 // docs/decisions/ADR-021 records why the instrument is not yet offered.
 
-const VERIFIED: ScreenerSource = { ...ASRS_SOURCE, verified: '2026-10' };
+const VERIFIED: ScreenerSource = { ...ASRS_SOURCE, verified: '2026-10', licensed: '2026-10' };
 
-function render(source?: ScreenerSource): HTMLElement {
+/**
+ * A stand-in instrument. The real items are copyrighted and are not in this
+ * repository (ADR-023), so the machinery is exercised against six questions of
+ * our own that have the same shape and none of the wording.
+ */
+const STAND_IN: readonly ScreenerItem[] = ASRS_ITEM_ORDER.map((id, index) => ({
+  id,
+  text: `Stand-in question ${index + 1}?`,
+}));
+
+function render(source?: ScreenerSource, items: readonly ScreenerItem[] = STAND_IN): HTMLElement {
   const host = document.createElement('div');
-  screenerPage(source === undefined ? {} : { source }).render(host);
+  screenerPage(source === undefined ? { items: ASRS_ITEMS } : { source, items }).render(host);
   return host;
 }
 
 const flat = (node: HTMLElement): string => (node.textContent ?? '').replace(/\s+/g, ' ');
 
 const answerAll = (value: number): Record<string, number> =>
-  Object.fromEntries(ASRS_ITEMS.map((item) => [item.id, value]));
+  Object.fromEntries(STAND_IN.map((item) => [item.id, value]));
 
 describe('the source, before anything else', () => {
-  it('has not been checked, so the screener is not usable', () => {
+  it('carries no items, and is not usable', () => {
+    // ADR-023: both candidate instruments are copyrighted, so the items are not
+    // in this repository at all. Two independent reasons the gate is shut.
+    expect(ASRS_ITEMS).toEqual([]);
     expect(ASRS_SOURCE.verified).toBeUndefined();
+    expect(ASRS_SOURCE.licensed).toBeUndefined();
     expect(isUsable()).toBe(false);
+  });
+
+  it('stays shut on permission even once someone has checked the wording', () => {
+    const checked: ScreenerSource = { ...ASRS_SOURCE, verified: '2026-10' };
+    expect(isUsable(checked, STAND_IN)).toBe(true);
+    // Items alone are not enough: with none, nothing is offered whatever the
+    // source record says.
+    expect(isUsable(checked, [])).toBe(false);
+  });
+
+  it('records who holds the rights', () => {
+    expect(ASRS_SOURCE.rights).toContain('New York University');
+    expect(ASRS_SOURCE.rights).toContain('proprietary');
   });
 
   it('records what it is, what paper it is from, and where the text came from', () => {
@@ -43,18 +73,15 @@ describe('the source, before anything else', () => {
     expect(ASRS_SOURCE.transcribedFrom).toContain('not the paper');
   });
 
-  it('does not add up, which is why it is unverified rather than merely unchecked', () => {
-    // Six items with a top response of 4 sum to 24. The transcription says 25.
-    // ADR-021: a one-point gap is the signature of flattened per-item weights,
-    // and a plain sum against a cutoff of 14 would then mean nothing.
-    expect(maxScore()).toBe(24);
+  it('knows the published scale is weighted, and a plain sum is a different test', () => {
+    // Confirmed against Ustün et al. 2017: never is 0 throughout and the top
+    // response is worth 6, 5, 5, 4, 3 and 2 across the six items, so the scale
+    // runs 0–25. Six items scored 0–4 reach 24, which is how a flattened copy
+    // gives itself away. The cutoff of 14 belongs to the weighted score.
     expect(ASRS_DOCUMENTED_MAX).toBe(25);
-    expect(
-      maxScore(),
-      'The transcription now agrees with the items. If that is because the ' +
-        'instrument was replaced from its primary source, delete this test and set ' +
-        'ASRS_SOURCE.verified.',
-    ).not.toBe(ASRS_DOCUMENTED_MAX);
+    expect(UNWEIGHTED_MAX).toBe(24);
+    expect(maxScore(STAND_IN)).toBe(UNWEIGHTED_MAX);
+    expect(maxScore(STAND_IN)).not.toBe(ASRS_DOCUMENTED_MAX);
   });
 });
 
@@ -67,34 +94,34 @@ describe('while it is unverified', () => {
 
   it('says why, without pretending the instrument is unsound', () => {
     const text = flat(render());
-    expect(text).toContain('has not been checked against the paper');
+    expect(text).toContain('written permission');
     expect(text).not.toMatch(/\b(invalid|useless|wrong|broken)\b/i);
   });
 });
 
 describe('the scoring', () => {
   it('sums the six items', () => {
-    expect(score(answerAll(0))).toBe(0);
-    expect(score(answerAll(4))).toBe(24);
-    expect(score({ ...answerAll(0), concentrating: 3 })).toBe(3);
+    expect(score(answerAll(0), STAND_IN)).toBe(0);
+    expect(score(answerAll(4), STAND_IN)).toBe(24);
+    expect(score({ ...answerAll(0), concentrating: 3 }, STAND_IN)).toBe(3);
   });
 
   it('treats an unanswered item as nothing, and knows it is unanswered', () => {
     const partial = { ...answerAll(4) };
     delete partial['others'];
-    expect(isComplete(partial)).toBe(false);
-    expect(score(partial)).toBe(20);
-    expect(isComplete(answerAll(1))).toBe(true);
+    expect(isComplete(partial, STAND_IN)).toBe(false);
+    expect(score(partial, STAND_IN)).toBe(20);
+    expect(isComplete(answerAll(1), STAND_IN)).toBe(true);
   });
 
   it('reports one bit either side of the threshold, and nothing else', () => {
     const at = { ...answerAll(2), concentrating: 4 }; // 2*5 + 4 = 14
-    expect(score(at)).toBe(ASRS_THRESHOLD);
-    expect(outcome(at)).toBe('worth-seeking');
+    expect(score(at, STAND_IN)).toBe(ASRS_THRESHOLD);
+    expect(outcome(at, STAND_IN)).toBe('worth-seeking');
 
     const below = { ...answerAll(2), concentrating: 3 }; // 13
-    expect(score(below)).toBe(ASRS_THRESHOLD - 1);
-    expect(outcome(below)).toBe('below-threshold');
+    expect(score(below, STAND_IN)).toBe(ASRS_THRESHOLD - 1);
+    expect(outcome(below, STAND_IN)).toBe('below-threshold');
   });
 });
 
@@ -112,11 +139,12 @@ describe('what it is allowed to say', () => {
     return page;
   };
 
-  it('asks all six items, for the period the instrument asks about', () => {
+  it('asks every item it is given, for the period the instrument asks about', () => {
     const page = render(VERIFIED);
-    for (const item of ASRS_ITEMS) expect(flat(page)).toContain(item.text);
+    for (const item of STAND_IN) expect(flat(page)).toContain(item.text);
     expect(flat(page)).toContain('the past 6 months');
-    expect(page.querySelectorAll('.chips')).toHaveLength(ASRS_ITEMS.length);
+    expect(page.querySelectorAll('.chips')).toHaveLength(STAND_IN.length);
+    expect(STAND_IN).toHaveLength(6);
   });
 
   it('offers the instrument’s own response options', () => {
@@ -193,7 +221,7 @@ describe('the result goes nowhere', () => {
     // docs/03-scope.md: not stored as a diagnosis, not in any clinical report,
     // not read by another module. Enforced by the shape of the function.
     expect(screenerPage.length).toBeLessThanOrEqual(1);
-    const page = screenerPage({ source: VERIFIED });
+    const page = screenerPage({ source: VERIFIED, items: STAND_IN });
     expect(Object.keys(page)).toEqual(['id', 'title', 'render']);
   });
 
@@ -215,14 +243,14 @@ describe('the result goes nowhere', () => {
     // the page does. Re-rendering the same open page keeps them, which is what
     // makes the form usable; opening it again does not.
     const first = document.createElement('div');
-    screenerPage({ source: VERIFIED }).render(first);
+    screenerPage({ source: VERIFIED, items: STAND_IN }).render(first);
     (first.querySelectorAll('.chip')[4] as HTMLElement).dispatchEvent(
       new MouseEvent('click', { bubbles: true }),
     );
     expect(first.querySelectorAll('[aria-pressed="true"]')).toHaveLength(1);
 
     const second = document.createElement('div');
-    screenerPage({ source: VERIFIED }).render(second);
+    screenerPage({ source: VERIFIED, items: STAND_IN }).render(second);
     expect(second.querySelectorAll('[aria-pressed="true"]')).toHaveLength(0);
   });
 });
