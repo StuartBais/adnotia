@@ -4,6 +4,10 @@
 // each says so plainly rather than showing an encouraging blank page: a gap is a
 // fact to show, never a failure to punish.
 
+import type { IsoDate } from '../dates/index';
+import { loggedDates, mountReport } from '../reports/index';
+import type { KernelStore } from '../store/store';
+import { mountToday } from '../today/index';
 import { card, el } from '../ui/index';
 import type { ModuleManifest, Space } from '../index';
 import { TAB_LABELS, type TabId } from './router';
@@ -13,6 +17,8 @@ export interface ViewContext {
   enabled: readonly ModuleManifest[];
   /** Every module in the build, enabled or not. The Library shows them all. */
   known: readonly ModuleManifest[];
+  /** Absent only in tests that render a tab in isolation. */
+  store?: KernelStore;
 }
 
 const EMPTY: Readonly<Record<TabId, { title: string; sub: string }>> = {
@@ -35,7 +41,12 @@ const EMPTY: Readonly<Record<TabId, { title: string; sub: string }>> = {
 };
 
 export function renderTab(tab: TabId, context: ViewContext): HTMLElement {
-  const section = el('div', { class: 'view', 'aria-label': TAB_LABELS[tab] });
+  const section = el('div', {
+    class: 'view',
+    'aria-label': TAB_LABELS[tab],
+    // Only the report sheet prints. Everything else on every tab is screen-only.
+    ...(tab === 'records' ? {} : { 'data-print': 'never' }),
+  });
 
   if (tab === 'library') {
     // The Library shows every module, enabled or not, so a person can read why a
@@ -63,8 +74,51 @@ export function renderTab(tab: TabId, context: ViewContext): HTMLElement {
     return section;
   }
 
+  const { store } = context;
+
+  if (tab === 'today' && store !== undefined) {
+    section.append(mountToday({ store, modules: context.enabled }).element);
+    return section;
+  }
+
+  if (tab === 'records' && store !== undefined) {
+    // History first, then the sheet: a person comes here to look back before
+    // they come here to print.
+    const dates = [...loggedDates(store.document(), context.enabled)].sort();
+    let anything = false;
+
+    for (const manifest of context.enabled) {
+      const contribution = manifest.contributes.records;
+      if (contribution === undefined) continue;
+
+      const body = el('div', {});
+      contribution.render(body, { dates, days: daysOf(store, manifest.id) });
+      if (body.childElementCount === 0) continue;
+
+      anything = true;
+      section.append(card({ title: manifest.name, children: [body] }));
+    }
+
+    if (!anything) section.append(card(EMPTY.records));
+
+    // Adult-only for now: the clinical report is the only named report that
+    // exists. docs/04-family-space.md gives the Family space its own two.
+    if (context.space === 'adult') {
+      section.append(mountReport({ store, modules: context.enabled }).element);
+    }
+    return section;
+  }
+
   for (const manifest of context.enabled) {
     section.append(card({ title: manifest.name, sub: manifest.summary }));
   }
   return section;
+}
+
+function daysOf(
+  store: KernelStore,
+  moduleId: string,
+): Readonly<Record<IsoDate, Record<string, unknown>>> {
+  const slice = store.get<{ days?: Record<IsoDate, Record<string, unknown>> }>(moduleId);
+  return slice?.days ?? {};
 }

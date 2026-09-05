@@ -75,6 +75,24 @@ export interface RecordsContribution {
   render(container: HTMLElement, context: unknown): void;
 }
 
+/**
+ * Short phrases the kernel-owned report frame cannot compute for itself.
+ *
+ * The header, the footer and the record-quality note belong to the kernel, but
+ * some of what they say is only knowable inside a module: the kernel must not
+ * learn that a prescription has a name. A section may offer these; the frame
+ * decides whether and where to use them, and works without any of them.
+ * See docs/decisions/ADR-012-report-frame-contributions.md.
+ */
+export interface FrameContribution {
+  /** What the record is about, for the header. The first one offered wins. */
+  subject?: string;
+  /** A clause appended to the header's coverage line. */
+  header?: string;
+  /** A sentence for "About this record" in the footer. */
+  quality?: string;
+}
+
 export interface ReportSection {
   /** The named report this belongs to: `clinical`, `screening`, `observations`. */
   report: string;
@@ -90,6 +108,11 @@ export interface ReportSection {
   when?: (context: unknown) => boolean;
   render: (context: unknown) => string;
   renderText: (context: unknown) => string;
+  /**
+   * Called whether or not `when` includes the section: the frame still has to
+   * name the record on a range too thin to draw sections from.
+   */
+  frame?: (context: unknown) => FrameContribution;
 }
 
 export interface SettingsItem {

@@ -116,12 +116,20 @@ The first named report is `clinical`: one page for a prescriber. Its header (ide
 }
 ```
 
+A section may also offer the kernel's frame short phrases it cannot compute for
+itself — what the record is about, a clause for the coverage line, a sentence for
+"About this record" — through an optional `frame(ctx)`. The frame decides whether
+and where to use them, and works without any of them. See
+`decisions/ADR-012-report-frame-contributions.md`.
+
 Rules for `clinical` sections:
 
 - Every number shown must be reproducible from the day-level data. No hidden scoring.
 - Sections describe. They never contain the words *should*, *increase*, *decrease*, *recommend*, or any equivalent addressed to the clinician.
 - Anything shown to the clinician is shown to the person first, in the same words.
 - Sections state their own coverage when it matters ("7 of 14 nights recorded").
+- All of the above applies to anything returned from `frame`, which reaches a
+  clinician without passing through `render`.
 
 ### `library` — the evidence entry
 

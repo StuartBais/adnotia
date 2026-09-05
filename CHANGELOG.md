@@ -43,4 +43,14 @@ Milestone 0 is in progress; nothing has been released yet.
 - The medication log, Tier A supporting: the prescription carried forward, adherence,
   focus and mood, cover, side effects with severity asked only once one is ticked, its own
   history, and the "where things stand" and side-effect sections of the clinical report.
+- Wins, misses and the day's note as kernel fields, filled in at the end of the check-in
+  and readable by any report, so a person who logs only sleep still records them.
+- The reports engine: the kernel owns the header (what the record is about, the dates, the
+  coverage), the footer ("about this record", the questions for the appointment), the
+  ordering of sections by weight, the print stylesheet and the plain-text export. Modules
+  supply only the sections in between, and may offer the frame short phrases it cannot work
+  out for itself. See `docs/decisions/ADR-012-report-frame-contributions.md`.
+- The clinical report itself, reachable from Records: the range to cover, the person's own
+  overall word, a list of questions that prints at the end, "I have had the appointment",
+  Print, and Copy as text.
 - CI running `npm run check`, the test suites and both builds on every push.

@@ -13,6 +13,7 @@ import {
   fromMinutes,
   spanMinutes,
   type IsoDate,
+  escapeHtml,
   type ReportSection,
 } from '../../../kernel/index';
 import { NIGHT_QUALITY } from '../strings';
@@ -102,14 +103,6 @@ export function summarise(context: SleepContext): SleepSummary {
   return summary;
 }
 
-function escape(value: string): string {
-  return value.replace(
-    /[&<>"]/g,
-    (character) =>
-      ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[character] ?? character,
-  );
-}
-
 export const clinicalSection: ReportSection = {
   report: 'clinical',
   id: 'sleep.nights',
@@ -123,15 +116,15 @@ export const clinicalSection: ReportSection = {
     const rows = summary.reported
       .map(
         (entry) =>
-          `<tr><td>${escape(entry.label)}</td><td class="num">${entry.count} of ${summary.nights}</td></tr>`,
+          `<tr><td>${escapeHtml(entry.label)}</td><td class="num">${entry.count} of ${summary.nights}</td></tr>`,
       )
       .join('');
 
     const window_ =
       summary.typicalBed !== undefined && summary.typicalWake !== undefined
-        ? `<p class="meta">Typically ${escape(summary.typicalBed)} to ${escape(summary.typicalWake)}` +
+        ? `<p class="meta">Typically ${escapeHtml(summary.typicalBed)} to ${escapeHtml(summary.typicalWake)}` +
           (summary.typicalHours !== undefined
-            ? `, with <b>${escape(summary.typicalHours)}h</b> recorded as time asleep`
+            ? `, with <b>${escapeHtml(summary.typicalHours)}h</b> recorded as time asleep`
             : '') +
           '.</p>'
         : '';
@@ -152,7 +145,7 @@ export const clinicalSection: ReportSection = {
       summary.notes
         .slice(-8)
         .reverse()
-        .map((note) => `<p class="noteline"><b>${escape(note.date)}</b> ${escape(note.text)}</p>`)
+        .map((note) => `<p class="noteline"><b>${escapeHtml(note.date)}</b> ${escapeHtml(note.text)}</p>`)
         .join('')
     );
   },
