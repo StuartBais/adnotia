@@ -7,7 +7,14 @@ import {
   type MonolithRun,
   type V0State,
 } from '../harness/monolith';
-import { buildReport, importV0, MODULES, type Report } from '../../src/kernel/index';
+import {
+  buildReport,
+  formatShortDate,
+  formatWeekday,
+  importV0,
+  MODULES,
+  type Report,
+} from '../../src/kernel/index';
 import { thirtyDays as medicationDays } from '../../src/modules/medication/fixtures/index';
 import { thirtyDays as sleepDays } from '../../src/modules/sleep/fixtures/index';
 
@@ -355,9 +362,16 @@ describe('the history, against the monolith', () => {
   });
 
   it('dates a history line the way the monolith does', () => {
-    // "30 Sept, Wed", not an ISO date. A person scanning a list reads the day.
-    expect(mine).toContain('30 Sept, Wed');
-    expect(mine).not.toMatch(/2026-09-\d\d/);
+    // A date with a weekday beside it, not an ISO date: a person scanning a list
+    // reads the day. The exact wording is the reader's locale's business — the
+    // app follows it deliberately, and this test runs in more than one — so the
+    // expected string is taken from the monolith rather than written down here.
+    const newest = Object.keys(medicationDays.days).sort().at(-1) as string;
+    const dated = `${formatShortDate(newest)}, ${formatWeekday(newest)}`;
+
+    expect(monolith.historyText, 'the monolith dates its lines differently').toContain(dated);
+    expect(mine).toContain(dated);
+    expect(mine).not.toMatch(/\d{4}-\d{2}-\d{2}/);
   });
 });
 
