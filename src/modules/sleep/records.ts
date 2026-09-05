@@ -3,7 +3,15 @@
 // The module renders its own rows. Read-only views onto what Today collected;
 // nothing here computes anything the person has not seen.
 
-import { el, formatClockTime, formatDuration, spanMinutes, type IsoDate } from '../../kernel/index';
+import {
+  el,
+  formatClockTime,
+  formatDuration,
+  spanMinutes,
+  type IsoDate,
+  formatShortDate,
+  formatWeekday,
+} from '../../kernel/index';
 import { NIGHT_QUALITY } from './strings';
 
 const LABELS = new Map<string, string>(NIGHT_QUALITY.map((option) => [option.v, option.l]));
@@ -48,7 +56,7 @@ export function renderRecords(
     if (line === '') continue;
 
     const row = el('div', { class: 'entry' }, [
-      el('b', { text: date }),
+      el('b', { text: `${formatShortDate(date)}, ${formatWeekday(date)}` }),
       document.createTextNode(' '),
       el('span', { text: line }),
     ]);

@@ -42,7 +42,11 @@ export const thirtyDays = slice(
       const day = String(index + 1).padStart(2, '0');
       // Days 7, 8 and 19 are missing entirely.
       if ([7, 8, 19].includes(index + 1)) return null;
-      const bedHour = 22 + (index % 3);
+      // Wraps past midnight rather than running off the end of the clock:
+      // 22, 23, 00. An earlier version produced "24:50", which is not a time —
+      // this build rejected it and the monolith did not, and the report parity
+      // test is what noticed.
+      const bedHour = (22 + (index % 3)) % 24;
       const record: SleepDay = {
         bed: `${String(bedHour).padStart(2, '0')}:${index % 2 === 0 ? '30' : '50'}`,
         wake: `0${6 + (index % 2)}:${index % 3 === 0 ? '15' : '45'}`,

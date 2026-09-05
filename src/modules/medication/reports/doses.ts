@@ -25,9 +25,13 @@ export interface DoseGroup {
   days: MedicationDay[];
 }
 
-/** A label a person would recognise: "Elvanse 50mg". */
+/**
+ * A label a person would recognise: "Elvanse 50mg". A v0 day that recorded no
+ * prescription still carries a unit, so the fallback has to read as a name;
+ * it is capitalised because it heads a block.
+ */
 export function doseLabel(group: Pick<DoseGroup, 'med' | 'dose' | 'unit'>): string {
-  return `${group.med || 'medication'} ${group.dose || '?'}${group.unit}`;
+  return `${group.med || 'Medication'} ${group.dose || '?'}${group.unit}`;
 }
 
 /** Consecutive runs of the same prescription, in the order they happened. */
