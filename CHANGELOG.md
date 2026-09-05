@@ -11,6 +11,10 @@ yet. See the implementation checkpoint in `docs/08-roadmap.md` for current limit
 
 ### Added
 
+- The adult screener is the ASRS-5 rather than ASRS v1.1 Part A. The design documents named
+  v1.1, which is written against DSM-IV; the ASRS-5 was built against DSM-5 by the same
+  group with screening performance as the design goal. See
+  `docs/decisions/ADR-022-asrs-5-replaces-asrs-v1-1.md`.
 - The adult screener, built and deliberately not offered. Every presentation rule
   `docs/03-scope.md` fixes is implemented and tested — Library-only, one bit of outcome,
   the score never shown, routing to assessment, adults only, and the result not stored,

@@ -72,7 +72,7 @@ Adding anything to this list requires a change to this document. Removing anythi
 
 ## Screening
 
-Adnotia includes two screening instruments, one per space, both free and validated, both presented under the rules below. The Adult space uses the WHO Adult ADHD Self-Report Scale, ASRS v1.1, Part A only. The Family space uses the NICHQ Vanderbilt parent form, described in `04-family-space.md`. This section describes the adult instrument; the rules apply to both. It is validated, free, and its stated purpose is to indicate whether a formal assessment is worth seeking. Refusing to include any screener would push people toward the unvalidated quizzes that fill the space.
+Adnotia includes two screening instruments, one per space, both free and validated, both presented under the rules below. The Adult space uses the ASRS-5, the WHO Adult ADHD Self-Report Screening Scale for DSM-5 (Ustün et al., 2017). It replaced ASRS v1.1 Part A, which was named here first and is written against DSM-IV; see `decisions/ADR-022-asrs-5-replaces-asrs-v1-1.md`. The Family space uses the NICHQ Vanderbilt parent form, described in `04-family-space.md`. This section describes the adult instrument; the rules apply to both. It is validated, free, and its stated purpose is to indicate whether a formal assessment is worth seeking. Refusing to include any screener would push people toward the unvalidated quizzes that fill the space.
 
 Presentation rules, all of which are mandatory:
 

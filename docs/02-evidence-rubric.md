@@ -103,7 +103,8 @@ These are the sources this rubric currently rests on. Each must be checked again
 - Safren SA, et al. Cognitive behavioral therapy vs relaxation with educational support for medication-treated adults with ADHD and persistent symptoms. *JAMA*, 2010.
 - Solanto MV, et al. Efficacy of meta-cognitive therapy for adult ADHD. *American Journal of Psychiatry*, 2010.
 - Cortese S, et al. Comparative efficacy and tolerability of medications for ADHD in children, adolescents, and adults: a systematic review and network meta-analysis. *Lancet Psychiatry*, 2018.
-- Kessler RC, et al. The World Health Organization Adult ADHD Self-Report Scale (ASRS). *Psychological Medicine*, 2005.
+- Ustün B, Adler LA, Rudin C, Faraone SV, Lane MJ, Kessler RC, et al. The World Health Organization Adult Attention-Deficit/Hyperactivity Disorder Self-Report Screening Scale for DSM-5. *JAMA Psychiatry*, 2017. PMC5470397. (The instrument the Adult space uses; the scoring table is what `decisions/ADR-021` is waiting on.)
+- Kessler RC, et al. The World Health Organization Adult ADHD Self-Report Scale (ASRS). *Psychological Medicine*, 2005. (The origin of the ASRS family, and the reference behind the exclusion entry for "type" quizzes.)
 - NICE guideline NG87: Attention deficit hyperactivity disorder: diagnosis and management. 2018, updated 2019.
 
 Anything not on this list that appears in a Library entry needs its own citation. "Studies show" without a reference fails review.

@@ -1,6 +1,9 @@
 # ADR-021: The adult screener is built, and not yet offered
 
 Status: accepted · September 2026 · Implements `03-scope.md` "Screening"
+Amended by `ADR-022-asrs-5-replaces-asrs-v1-1.md`: the first of the three problems
+below is resolved — the ASRS-5 is now the instrument the Adult space is meant to
+use. The other two still hold the gate closed.
 
 ## Context
 
@@ -19,12 +22,14 @@ small error in it; it is one of the quizzes, with better branding.
 A transcription was supplied to build from. Three things are wrong with it as a
 source, in increasing order of seriousness.
 
-**It is a different instrument.** It is the ASRS-5, the DSM-5 screening scale
-published by Ustün, Adler, Kessler and others in *JAMA Psychiatry* in 2017, not
-ASRS v1.1 Part A. Both are six items and both trace back to Kessler's group, so
-they are easy to confuse. They have different item wording and, more importantly,
-different scoring: v1.1 Part A counts shaded responses and asks for four or more,
-while the ASRS-5 sums responses against a cutoff.
+**It is a different instrument.** *(Resolved by ADR-022, which chose the ASRS-5
+deliberately. Kept here because it is why the discrepancy below was looked for at
+all.)* It is the ASRS-5, the DSM-5 screening scale published by Ustün, Adler,
+Kessler and others in *JAMA Psychiatry* in 2017, not ASRS v1.1 Part A. Both are
+six items and both trace back to Kessler's group, so they are easy to confuse.
+They have different item wording and, more importantly, different scoring: v1.1
+Part A counts shaded responses and asks for four or more, while the ASRS-5 sums
+responses against a cutoff.
 
 **It is not a primary source.** It came from a third-party quiz site, not from
 the paper and not from a WHO form. The scope document asks for the instrument's
@@ -61,20 +66,21 @@ The screener is built and is not offered to anyone.
 
 ## What unblocks it
 
-One of two things, and a person to do it.
+The instrument is settled (ADR-022). What remains is the scoring table from
+Ustün et al. (2017), and one question answered from it:
 
-1. **ASRS v1.1 Part A**, which is what `03-scope.md` names: its six items, its
-   response options, and the shaded-response rule, taken from the WHO form or
-   from Kessler et al. (2005), with `verified` set to the month it was checked.
-2. **The ASRS-5**, if it is preferred — it is newer and DSM-5-aligned, and there
-   is a real argument for it — taken from Ustün et al. (2017), *including the
-   per-item response weights*, and confirming whether the total runs to 24 or 25
-   and why. Choosing it means amending `03-scope.md`, because that document names
-   v1.1 explicitly, and amending the citation list in `02-evidence-rubric.md`,
-   which currently cites the 2005 paper.
+**Does the ASRS-5 score as a plain 0–4 sum across six items, or does it weight
+response categories differently per item?**
 
-Either way the item text in `asrs.ts` is replaced from the primary source rather
-than corrected against it.
+- **Plain sum.** The achievable maximum is 24, the transcription's "25" is simply
+  an error, and what is left is checking the six items and the five response
+  labels against the paper.
+- **Weighted.** The items alone are not enough. The weights *are* the instrument,
+  a plain sum is a different test wearing its name, and the cutoff of 14 belongs
+  to the weighted score rather than to the sum.
+
+Either way the item text in `asrs.ts` is replaced from the paper rather than
+corrected against it, and `verified` is set to the month a person did that.
 
 ## Consequences
 
