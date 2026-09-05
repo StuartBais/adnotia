@@ -9,6 +9,13 @@ with its version pair and a one-line description.
 Foundations and medication-log parity are in progress; nothing has been released
 yet. See the implementation checkpoint in `docs/08-roadmap.md` for current limits.
 
+### Added
+
+- "Side effects over time": each reported effect in the first half of the range against the
+  second, with the days and the severity in each. It carries no verdict about the direction
+  and no advice about what to raise. See
+  `docs/decisions/ADR-017-what-the-report-will-not-say.md`.
+
 ### Fixed
 
 - The report printed the stored code for "overall, compared with before you started" — a

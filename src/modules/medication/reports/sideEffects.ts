@@ -145,10 +145,123 @@ const GRID_LEGEND =
   'One column per day. Darker means more severe; the palest shade is a day it was ' +
   'reported without a severity rating.';
 
+// ------------------------------------------------- first half against second
+//
+// Whether something settled or stayed is the question a titration conversation
+// turns on, and it is the one thing a total for the whole range cannot answer.
+//
+// The monolith labelled each effect new, gone, easing, worsening or steady, from
+// a composite of frequency and severity it never showed. That label is not ported:
+// a number the app computes, hides, and turns into a word a clinician reads is
+// the hidden scoring hard rule 4 forbids, and its thresholds were arbitrary. The
+// counts are shown instead, and the direction is left to the person reading them.
+// See docs/decisions/ADR-017-what-the-report-will-not-say.md.
+
+/** Fewer days than this and the halves are too short to say anything. */
+const MIN_FOR_HALVES = 6;
+
+export interface HalfReport {
+  /** Days it was reported in this half. */
+  days: number;
+  /**
+   * Days in the half with any medication record at all. Not calendar days: a
+   * half that was only half filled in would otherwise read as an effect that
+   * went away, when what went away was the logging.
+   */
+  ofDays: number;
+  /** The severity actually rated, in the person's own vocabulary. */
+  severity: string;
+}
+
+export interface TrajectoryRow {
+  label: string;
+  early: HalfReport;
+  late: HalfReport;
+}
+
+export interface Trajectory {
+  rows: TrajectoryRow[];
+  earlyFrom: IsoDate;
+  earlyTo: IsoDate;
+  lateFrom: IsoDate;
+  lateTo: IsoDate;
+}
+
+/** The mean of the severities actually rated, as a word. Never shown as a number. */
+function severityWord(ranks: number[]): string {
+  if (ranks.length === 0) return 'unrated';
+  const mean = ranks.reduce((a, b) => a + b, 0) / ranks.length;
+  return mean < 1.5 ? 'mild' : mean < 2.5 ? 'moderate' : 'severe';
+}
+
+export function trajectory(context: SideEffectsContext): Trajectory | undefined {
+  const dates = context.dates;
+  if (dates.length < MIN_FOR_HALVES) return undefined;
+
+  // Split so that every day lands in one half or the other. Taking the same
+  // count from each end, as the monolith does, drops the middle day of an
+  // odd-length range from the comparison without saying so.
+  const half = Math.floor(dates.length / 2);
+  const early = dates.slice(0, half);
+  const late = dates.slice(half);
+
+  const keys: string[] = [];
+  const seen = new Set<string>();
+  for (const date of dates) {
+    for (const key of reportedOn(context.days[date])) {
+      if (seen.has(key)) continue;
+      seen.add(key);
+      keys.push(key);
+    }
+  }
+  if (keys.length === 0) return undefined;
+
+  const summarise = (key: string, span: readonly IsoDate[]): HalfReport => {
+    const ranks: number[] = [];
+    let days = 0;
+    let recorded = 0;
+    for (const date of span) {
+      const day = context.days[date];
+      if (day === undefined) continue;
+      recorded++;
+      if (!reportedOn(day).includes(key)) continue;
+      days++;
+      const rank = SEVERITY_RANK[day.detail?.[key]?.sev ?? ''];
+      if (rank !== undefined) ranks.push(rank);
+    }
+    return { days, ofDays: recorded, severity: severityWord(ranks) };
+  };
+
+  const rows = keys
+    .map((key) => ({
+      label: LABELS.get(key) ?? key,
+      early: summarise(key, early),
+      late: summarise(key, late),
+    }))
+    .sort((a, b) => b.early.days + b.late.days - (a.early.days + a.late.days));
+
+  return {
+    rows,
+    earlyFrom: early[0] as IsoDate,
+    earlyTo: early[early.length - 1] as IsoDate,
+    lateFrom: late[0] as IsoDate,
+    lateTo: late[late.length - 1] as IsoDate,
+  };
+}
+
+/** "3 of 15 days, mild", or "none". */
+export function halfText(half: HalfReport): string {
+  return half.days === 0 ? 'none' : `${half.days} of ${half.ofDays} days, ${half.severity}`;
+}
+
+const TRAJECTORY_LEGEND =
+  'The range split in two. Severity is the average of the days it was rated, in the ' +
+  'words the person chose.';
+
 export const sideEffectsSection: ReportSection = {
   report: 'clinical',
   id: 'medication.side',
-  title: () => 'Side effects',
+  title: () => 'Side effects over time',
   weight: 60,
 
   when: (context) => summarise(context as SideEffectsContext).rows.length > 0,
@@ -179,20 +292,21 @@ export const sideEffectsSection: ReportSection = {
           });
 
     return (
-      '<h3>Side effects</h3>' +
+      '<h3>Side effects over time</h3>' +
       `<p class="meta">${summary.daysRecorded} of ${summary.ofDays} days recorded.</p>` +
       picture +
       '<div class="scroll"><table><thead><tr>' +
       '<th>Reported</th><th>Days</th><th>Worst rated</th><th>Moderate or worse</th>' +
-      `</tr></thead><tbody>${rows}</tbody></table></div>`
+      `</tr></thead><tbody>${rows}</tbody></table></div>` +
+      halvesHtml(context as SideEffectsContext)
     );
   },
 
   renderText: (context) => {
     const summary = summarise(context as SideEffectsContext);
     return [
-      'Side effects',
-      '------------',
+      'Side effects over time',
+      '----------------------',
       `${summary.daysRecorded} of ${summary.ofDays} days recorded.`,
       ...(grid(context as SideEffectsContext) === undefined
         ? []
@@ -202,6 +316,42 @@ export const sideEffectsSection: ReportSection = {
         (row) =>
           `${row.label} | ${row.days} of ${summary.daysRecorded} | ${row.worst} | ${row.moderateOrWorse}`,
       ),
+      ...halvesText(context as SideEffectsContext),
     ].join('\n');
   },
 };
+
+function halvesHtml(context: SideEffectsContext): string {
+  const halves = trajectory(context);
+  if (halves === undefined) return '';
+
+  const rows = halves.rows
+    .map(
+      (row) =>
+        `<tr><td>${escapeHtml(row.label)}</td>` +
+        `<td>${escapeHtml(halfText(row.early))}</td>` +
+        `<td>${escapeHtml(halfText(row.late))}</td></tr>`,
+    )
+    .join('');
+
+  return (
+    '<div class="scroll"><table><thead><tr><th>Effect</th>' +
+    `<th>First half (${escapeHtml(formatShortDate(halves.earlyFrom))}–${escapeHtml(formatShortDate(halves.earlyTo))})</th>` +
+    `<th>Second half (${escapeHtml(formatShortDate(halves.lateFrom))}–${escapeHtml(formatShortDate(halves.lateTo))})</th>` +
+    `</tr></thead><tbody>${rows}</tbody></table></div>` +
+    `<p class="legend">${escapeHtml(TRAJECTORY_LEGEND)}</p>`
+  );
+}
+
+function halvesText(context: SideEffectsContext): string[] {
+  const halves = trajectory(context);
+  if (halves === undefined) return [];
+
+  return [
+    '',
+    `Effect | First half (${formatShortDate(halves.earlyFrom)}–${formatShortDate(halves.earlyTo)})` +
+      ` | Second half (${formatShortDate(halves.lateFrom)}–${formatShortDate(halves.lateTo)})`,
+    ...halves.rows.map((row) => `${row.label} | ${halfText(row.early)} | ${halfText(row.late)}`),
+    TRAJECTORY_LEGEND,
+  ];
+}

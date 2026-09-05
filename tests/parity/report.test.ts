@@ -124,28 +124,20 @@ const DIFFERENCES: readonly Difference[] = [
     why:
       'The kernel owns the header and does not know that a prescription has a name: ' +
       'the same report is produced for someone logging only sleep. ' +
-      'See ADR-012. The title is clinician-facing wording awaiting review.',
-    status: 'open',
+      'See ADR-012, and ADR-017 for why "Daily record" was chosen over naming the ' +
+      'medication: the subject line beneath carries the specificity.',
+    status: 'decided',
   },
   {
     what: 'The verdict block drops one sentence about what an optimal dose is.',
     why:
       'It tells a prescriber how to weigh the dose, which is the line docs/03-scope.md ' +
-      'draws. Deliberately not ported; awaiting a decision to restore it or not.',
-    status: 'open',
+      'draws, and it is an unreferenced clinical generalisation. Decided in ADR-017: ' +
+      'the block presents the four things a prescriber weighs and stops.',
+    status: 'decided',
     omits:
       'Optimal dose is usually described as the lowest one giving meaningful functional ' +
       'improvement with tolerable side effects.',
-  },
-  {
-    what: 'There is no "Side effects over time" section.',
-    why:
-      'The monolith computes a Trend column — new, gone, easing, worsening, steady — from ' +
-      'a composite of frequency and severity that it never shows, which is the hidden ' +
-      'scoring hard rule 4 forbids, and its legend tells the reader which effects are ' +
-      '"worth raising". The early-versus-late comparison underneath is descriptive and ' +
-      'worth having. Porting it needs a decision on the Trend column and the legend.',
-    status: 'open',
   },
   {
     what: 'There is no "Day by day" table.',
@@ -168,8 +160,9 @@ const DIFFERENCES: readonly Difference[] = [
       'It is an interpretive clinical claim with no citation behind it, in a Tier B ' +
       'module. docs/02-evidence-rubric.md fails an unreferenced claim at review, and ' +
       'the sentence tells a clinician how to read a number rather than reporting one. ' +
-      'Restoring it needs a citation and a person to approve the wording.',
-    status: 'open',
+      'Decided in ADR-017: the latency is reported and the interpretation is not. It ' +
+      'may return when the Milestone 8 citation pass can attach a verified source.',
+    status: 'decided',
     reshapes: 'Sleep',
   },
   {
@@ -179,6 +172,20 @@ const DIFFERENCES: readonly Difference[] = [
       "when it matters, and the monolith's did not. The times are what the module has.",
     status: 'decided',
     reshapes: 'Sleep',
+  },
+  {
+    what:
+      '"Side effects over time" carries no Trend column and a different legend, states ' +
+      'its coverage, keeps the summary table above the comparison, and splits the range ' +
+      'by calendar half rather than by entry count.',
+    why:
+      'The Trend word came from a composite of frequency and severity the monolith never ' +
+      'showed, which is the hidden scoring hard rule 4 forbids, and its legend told the ' +
+      'reader which effects were "worth raising". The monolith also takes an equal count ' +
+      'from each end, so the middle day of an odd-length range falls into neither half. ' +
+      'See ADR-017.',
+    status: 'decided',
+    reshapes: 'Side effects over time',
   },
   {
     what: 'History is one card per module per day, not one card per day.',
@@ -230,8 +237,12 @@ describe('the difference register', () => {
   it('still has gaps, and says so rather than implying parity', () => {
     // This is not an aspiration. Milestone 1 is not done while it is above zero,
     // and this assertion is what stops the file quietly claiming otherwise.
+    //
+    // What is left is unbuilt work, not undecided wording: the day-by-day table,
+    // and the kernel's own fields in History. Every wording question was settled
+    // in docs/decisions/ADR-017-what-the-report-will-not-say.md.
     const open = DIFFERENCES.filter((entry) => entry.status === 'open');
-    expect(open.length).toBe(6);
+    expect(open.length).toBe(2);
   });
 });
 
