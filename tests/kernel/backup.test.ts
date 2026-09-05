@@ -303,7 +303,7 @@ describe('merging the Family space', () => {
     const live = documentWith(['2026-09-01'], { profile: 'c_8f2a' });
     const backup = documentWith(['2026-09-01'], { profile: 'c_8f2a' });
     const slice = backup.family.children['c_8f2a']?.modules['family-observations'];
-    (slice as { entries: unknown[] }).entries = [
+    (slice as unknown as { entries: unknown[] }).entries = [
       { id: 'e1', what: 'first' },
       { id: 'e2', what: 'second' },
     ];
