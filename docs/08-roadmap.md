@@ -88,7 +88,7 @@ Done when: parity tests pass, a real v0 export imports cleanly, and a person who
 
 - Library page rendering every module's entry with tier wording, enabled or not.
 - Exclusion-list entries (cognitive training, neurofeedback, diets and supplements, "type" quizzes, cure claims), each short, each cited.
-- ASRS v1.1 Part A exactly as specified in `03-scope.md`: WHO wording, threshold only, route to assessment, adults, Library-only, never stored as a diagnosis.
+- The ASRS-5 exactly as specified in `03-scope.md`: the instrument's own wording, threshold only, route to assessment, adults, Library-only, never stored as a diagnosis.
 - "About Adnotia" page: what it is, what it is not, the privacy commitments, the single-file download, licence, source link.
 - The "if things are bad right now" page reachable in two taps from anywhere.
 
