@@ -2,9 +2,23 @@
   "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "adnotia",
   "compatibility_date": "2026-09-03",
-  "observability": { "enabled": true },
+
+  // Deliberately absent: "observability".
+  //
+  // It is Cloudflare's request logging, and it is off because 03-scope.md
+  // promises no analytics. It injects nothing into the page, so it would not
+  // breach hard rule 1 — but "we collect nothing about you" and "we retain a log
+  // of every request you make" are not the same sentence, and the first one is
+  // the promise. A host keeps whatever access logs it keeps; this project does
+  // not switch on more than that and then describe itself as collecting nothing.
+  //
+  // See decisions/ADR-009-hosting-and-edge-integrity.md for the dashboard
+  // settings that must match this, none of which live in this file.
+
   "assets": {
     "directory": "./dist",
+
+    // The app is one page and routes in memory; there is nothing else to serve.
     "not_found_handling": "single-page-application",
   },
 }
