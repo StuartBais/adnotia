@@ -1,0 +1,35 @@
+# Response headers for the deployed PWA.
+#
+# Cloudflare Pages and Netlify both read this file from the root of the build
+# output. vite.config.ts copies it into dist/ on the PWA build only: the
+# single-file build has no host and no headers, and relies on the <meta> CSP in
+# the document instead. Both policies must stay in step, and
+# tests/kernel/headers.test.ts asserts they do.
+#
+# Comments sit at column 0 because indented ones are not reliably parsed.
+
+/*
+# Identical to the <meta> CSP in index.html, plus frame-ancestors, which a meta
+# tag cannot enforce. See docs/05-architecture.md "Security posture".
+  Content-Security-Policy: default-src 'self'; connect-src 'none'; img-src 'self' data:; font-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'
+# crypto.subtle needs a secure context. See ADR-007.
+  Strict-Transport-Security: max-age=31536000
+  X-Content-Type-Options: nosniff
+# The app makes no requests, and a crisis-page link should carry nothing with it.
+  Referrer-Policy: no-referrer
+  Cross-Origin-Opener-Policy: same-origin
+  Cross-Origin-Resource-Policy: same-origin
+# Nothing here needs a sensor, a camera or a location, now or later.
+  Permissions-Policy: accelerometer=(), ambient-light-sensor=(), autoplay=(), browsing-topics=(), camera=(), display-capture=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), midi=(), payment=(), usb=(), xr-spatial-tracking=()
+
+# A stale service worker leaves people on an old build with no way back, so the
+# files that decide which version runs are never cached at the edge.
+
+/index.html
+  Cache-Control: no-cache
+
+/sw.js
+  Cache-Control: no-cache
+
+/manifest.webmanifest
+  Cache-Control: no-cache
