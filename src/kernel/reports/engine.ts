@@ -13,11 +13,12 @@
 
 import { formatShortDate, today, type IsoDate } from '../dates/index';
 import type { AdnotiaDocument } from '../store/document';
-import type {
-  FrameContribution,
-  ModuleManifest,
-  ReportSection,
-  TimelineRow,
+import {
+  DAY_METADATA_KEYS,
+  type FrameContribution,
+  type ModuleManifest,
+  type ReportSection,
+  type TimelineRow,
 } from '../registry/types';
 import { escapeHtml } from './html';
 import { headerHtml, headerParts, headerText } from './header';
@@ -67,7 +68,13 @@ export interface Report {
 /** A day record counts as logged only if something is actually in it. */
 function hasContent(record: ReportDay | undefined): boolean {
   if (record === undefined) return false;
-  for (const value of Object.values(record)) {
+  for (const [key, value] of Object.entries(record)) {
+    // Metadata describes the record; it is not something the person put in it.
+    // A day holding only a timestamp, or only the note of what was calculated
+    // for it, is an empty day — counting it would widen the range and inflate
+    // the coverage figure with a day that says nothing.
+    // See docs/decisions/ADR-014-derived-value-provenance.md.
+    if (DAY_METADATA_KEYS.includes(key)) continue;
     if (value === undefined || value === null || value === '') continue;
     if (Array.isArray(value)) {
       if (value.length > 0) return true;
@@ -102,9 +109,7 @@ export function loggedDates(
     }
   }
   for (const [date, record] of Object.entries(document.kernel.days)) {
-    // `createdAt` alone is a timestamp on an empty day, not a record of one.
-    const { createdAt: _ignored, ...rest } = record;
-    if (hasContent(rest)) dates.add(date);
+    if (hasContent(record)) dates.add(date);
   }
   return [...dates];
 }

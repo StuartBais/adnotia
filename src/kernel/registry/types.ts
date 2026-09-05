@@ -214,6 +214,23 @@ export interface ModuleManifest {
 }
 
 /**
+ * Where the Today assembler records which values it calculated itself, so an
+ * automatic answer can be told from one the person typed. Reserved: no module
+ * may declare a field at this path.
+ *
+ * It is metadata about the record, never part of it. Nothing that reads a day
+ * for its content — the report engine included — may count it.
+ * See docs/decisions/ADR-014-derived-value-provenance.md.
+ */
+export const DERIVED_METADATA_KEY = '_derived';
+
+/**
+ * Keys inside a day record that describe the record rather than belong to it.
+ * A day carrying only these is an empty day.
+ */
+export const DAY_METADATA_KEYS: readonly string[] = [DERIVED_METADATA_KEY, 'createdAt'];
+
+/**
  * The mechanical form of "no medication in the Family space". The kernel rejects
  * these `today` field ids outside `audience: "adult"`. See
  * docs/06-data-model.md "Reserved field ids".
