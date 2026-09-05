@@ -48,7 +48,13 @@ function sampleModule(overrides: Partial<ModuleManifest> = {}): ModuleManifest {
         whatTheEvidenceSays: 'Sleep problems in ADHD are well documented.',
         whatItWontDo: 'It will not diagnose a sleep disorder.',
         citations: [
-          { title: 'x', authors: 'y', year: 2020, venue: 'z', doi_or_url: 'https://example' },
+          {
+            title: 'x',
+            authors: 'y',
+            year: 2020,
+            venue: 'z',
+            doi_or_url: 'https://example',
+          },
         ],
         reviewed: '2026-09',
         nextReview: '2027-03',
@@ -76,7 +82,11 @@ describe('routing', () => {
   it('opens an off-tab page over the tab it came from', () => {
     const router = createRouter();
     router.goTab('library');
-    router.openPage({ id: 'settings', title: 'Settings', render: () => undefined });
+    router.openPage({
+      id: 'settings',
+      title: 'Settings',
+      render: () => undefined,
+    });
     expect(router.page()?.id).toBe('settings');
     expect(router.tab()).toBe('library');
   });
@@ -84,7 +94,11 @@ describe('routing', () => {
   it('returns to the originating tab on Back', () => {
     const router = createRouter();
     router.goTab('tools');
-    router.openPage({ id: 'backup', title: 'Backups', render: () => undefined });
+    router.openPage({
+      id: 'backup',
+      title: 'Backups',
+      render: () => undefined,
+    });
     router.back();
     expect(router.page()).toBeUndefined();
     expect(router.tab()).toBe('tools');
@@ -92,7 +106,11 @@ describe('routing', () => {
 
   it('closes an off-tab page when a tab is chosen', () => {
     const router = createRouter();
-    router.openPage({ id: 'settings', title: 'Settings', render: () => undefined });
+    router.openPage({
+      id: 'settings',
+      title: 'Settings',
+      render: () => undefined,
+    });
     router.goTab('records');
     expect(router.page()).toBeUndefined();
   });
@@ -298,10 +316,104 @@ describe('settings', () => {
     expect(container.textContent).toContain('nothing is ever sent anywhere');
   });
 
+  it('shows a failed save across navigation and lets the person retry', async () => {
+    const adapter = memoryStorageAdapter();
+    store.dispose();
+    store = createStore({ adapter });
+    await store.load();
+    store.updateKernel((kernel) => ({
+      ...kernel,
+      settings: { ...kernel.settings, firstRunComplete: true },
+    }));
+    await store.flush();
+    vi.spyOn(adapter, 'write').mockRejectedValueOnce(new Error('QuotaExceededError'));
+    const shell = mountShell({ store, container });
+    store.set('sleep', { version: 1, days: { '2026-09-01': { hours: '8' } } });
+
+    try {
+      expect(container.textContent).toContain('Saving changes.');
+      await expect(store.flush()).rejects.toThrow('QuotaExceededError');
+      expect(container.textContent).toContain('Changes could not be saved.');
+      shell.router.goTab('library');
+      expect(container.textContent).toContain('Changes could not be saved.');
+      click(byText(container, 'Retry save'));
+      await vi.waitFor(() => {
+        expect(container.textContent).toContain('Changes saved in this browser.');
+      });
+      const reopened = createStore({ adapter });
+      await reopened.load();
+      expect(reopened.get('sleep')).toEqual(store.get('sleep'));
+      reopened.dispose();
+    } finally {
+      shell.destroy();
+      store.dispose();
+    }
+  });
+
+  it('keeps the unavailable-storage warning after first run and navigation', () => {
+    store.updateKernel((kernel) => ({
+      ...kernel,
+      settings: { passcodeEnabled: false },
+    }));
+    const shell = mountShell({ store, container, storageAvailable: false });
+    click(byText(container, 'This is for me'));
+    click(byText(container, 'Continue'));
+    shell.router.goTab('library');
+    expect(container.textContent).toContain('not letting Adnotia save anything');
+    expect(container.textContent).not.toContain('Changes saved in this browser.');
+    shell.destroy();
+  });
+
+  it('does not claim a restore was saved when storage rejects it', async () => {
+    const adapter = memoryStorageAdapter();
+    store.dispose();
+    store = createStore({ adapter, onPersistError: vi.fn() });
+    await store.load();
+    store.updateKernel((kernel) => ({
+      ...kernel,
+      settings: { ...kernel.settings, firstRunComplete: true },
+    }));
+    await store.flush();
+    const backup = structuredClone(store.document());
+    backup.modules['sleep'] = {
+      version: 1,
+      days: { '2026-09-01': { hours: '8' } },
+    };
+    vi.spyOn(adapter, 'write').mockRejectedValueOnce(new Error('QuotaExceededError'));
+    const shell = mountShell({ store, container });
+    click(byText(container, 'Settings'));
+    click(
+      [...container.querySelectorAll('.linkrow')].find((row) =>
+        row.textContent?.includes('Backups'),
+      ),
+    );
+    Object.defineProperty(container.querySelector('input[type="file"]'), 'files', {
+      value: [{ text: async () => JSON.stringify(backup) }],
+    });
+    click(byText(container, 'Restore'));
+
+    try {
+      await vi.waitFor(() => {
+        expect(container.textContent).toContain('The backup was merged, but could not be saved.');
+      });
+      expect(container.textContent).not.toContain('1 added, 0 updated.');
+      expect(store.get('sleep')).toEqual(backup.modules['sleep']);
+      const reopened = createStore({ adapter });
+      await reopened.load();
+      expect(reopened.get('sleep')).toBeUndefined();
+      reopened.dispose();
+    } finally {
+      shell.destroy();
+      store.dispose();
+    }
+  });
+
   it('leads to backups', () => {
     const shell = mountShell({ store, container });
     click(byText(container, 'Settings'));
-    click([...container.querySelectorAll('.linkrow')].find((r) => r.textContent?.includes('Backups')));
+    click(
+      [...container.querySelectorAll('.linkrow')].find((r) => r.textContent?.includes('Backups')),
+    );
     expect(shell.router.page()?.id).toBe('backup');
     expect(container.textContent).toContain('Restoring adds to what is here');
   });
@@ -309,7 +421,9 @@ describe('settings', () => {
   it('refuses a backup passphrase that is too short', () => {
     mountShell({ store, container });
     click(byText(container, 'Settings'));
-    click([...container.querySelectorAll('.linkrow')].find((r) => r.textContent?.includes('Backups')));
+    click(
+      [...container.querySelectorAll('.linkrow')].find((r) => r.textContent?.includes('Backups')),
+    );
 
     const input = container.querySelector('input[type="text"]') as HTMLInputElement;
     input.value = 'short';
@@ -319,5 +433,50 @@ describe('settings', () => {
     );
     click(button);
     expect(container.textContent).toContain('too short');
+  });
+
+  it('persists a restored document and keeps the confirmation visible', async () => {
+    const adapter = memoryStorageAdapter();
+    store.dispose();
+    store = createStore({ adapter });
+    await store.load();
+    store.updateKernel((kernel) => ({
+      ...kernel,
+      settings: { ...kernel.settings, firstRunComplete: true },
+    }));
+    const backup = structuredClone(store.document());
+    backup.kernel.enabledModules = ['sleep'];
+    backup.modules['sleep'] = {
+      version: 1,
+      days: { '2026-09-01': { bed: '23:00', wake: '07:00', hours: '8' } },
+    };
+
+    const shell = mountShell({ store, container, modules: [sampleModule()] });
+    click(byText(container, 'Settings'));
+    click(
+      [...container.querySelectorAll('.linkrow')].find((row) =>
+        row.textContent?.includes('Backups'),
+      ),
+    );
+    const file = container.querySelector('input[type="file"]') as HTMLInputElement;
+    Object.defineProperty(file, 'files', {
+      value: [{ text: async () => JSON.stringify(backup) }],
+    });
+    click(byText(container, 'Restore'));
+
+    try {
+      await vi.waitFor(() => {
+        expect(container.textContent).toContain('1 added, 0 updated.');
+      });
+      expect(store.document().modules['sleep']).toEqual(backup.modules['sleep']);
+      const reopened = createStore({ adapter });
+      await reopened.load();
+      expect(reopened.document().modules['sleep']).toEqual(backup.modules['sleep']);
+      expect(reopened.document().kernel.enabledModules).toEqual(['sleep']);
+      reopened.dispose();
+    } finally {
+      shell.destroy();
+      store.dispose();
+    }
   });
 });

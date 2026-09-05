@@ -26,7 +26,7 @@ import {
   toggleDetail,
   type Control,
 } from '../ui/index';
-import { carriedValue, writePath } from './carry';
+import { carriedValue, readPath, writePath } from './carry';
 import { measure, type Budget } from './budget';
 import { KERNEL_TODAY } from './kernelFields';
 
@@ -73,7 +73,8 @@ interface Group {
   fields: readonly TodayField[];
   /** Every day this group has, so carry can look backwards. */
   read: () => Days;
-  write: (date: IsoDate, values: DayRecord) => void;
+  write: (date: IsoDate, values: DayRecord, changedFieldId: string) => DayRecord;
+  controls: Map<string, Control<unknown>>;
 }
 
 /** Build the control for one field, seeded from the day or from carry. */
@@ -178,51 +179,82 @@ export function mountToday(options: TodayOptions): TodayView {
         ...kernel,
         days: {
           ...kernel.days,
-          ...{ [date]: { ...(existing ?? {}), createdAt: now().toISOString() } },
+          ...{
+            [date]: { ...(existing ?? {}), createdAt: now().toISOString() },
+          },
         },
       };
     });
   }
 
   /** Write one module's working values, and stamp the day as begun. */
-  function persist(manifest: ModuleManifest, values: DayRecord): void {
+  function persist(manifest: ModuleManifest, values: DayRecord, changedFieldId: string): DayRecord {
     const slice = (store.get<Record<string, unknown>>(manifest.id) ?? {
       version: manifest.version,
     }) as Record<string, unknown>;
     const days = { ...((slice['days'] as Days) ?? {}) };
 
-    // Values that follow from what was just entered. A derived value is a
-    // starting point, never a correction: anything the person typed wins.
-    // See docs/decisions/ADR-010-derived-fields.md.
-    let derived: DayRecord = {};
-    if (typeof manifest.derive === 'function') {
-      derived = manifest.derive({ ...(days[date] ?? {}), ...values });
-      for (const key of Object.keys(derived)) {
-        if (values[key] !== undefined && values[key] !== '') delete derived[key];
-      }
-      Object.assign(values, derived);
-    }
-
     // A dotted field id is a path: docs/06-data-model.md nests side-effect
     // detail rather than flattening it.
     const record: DayRecord = structuredClone(days[date] ?? {});
     for (const [fieldId, value] of Object.entries(values)) writePath(record, fieldId, value);
+    const updates: DayRecord = {};
+    if (typeof manifest.derive === 'function') {
+      const stored = record['_derived'];
+      const automatic: DayRecord =
+        typeof stored === 'object' && stored !== null && !Array.isArray(stored)
+          ? { ...(stored as DayRecord) }
+          : {};
+      delete automatic[changedFieldId];
+      const derived = manifest.derive(record);
+      for (const fieldId of new Set([...Object.keys(automatic), ...Object.keys(derived)])) {
+        if (fieldId === '_derived') continue;
+        const current = readPath(record, fieldId);
+        const wasAutomatic =
+          Object.hasOwn(automatic, fieldId) &&
+          JSON.stringify(automatic[fieldId]) === JSON.stringify(current);
+        if (current !== undefined && current !== '' && current !== null && !wasAutomatic) {
+          delete automatic[fieldId];
+          continue;
+        }
+        const computed = derived[fieldId];
+        if (computed === undefined && !wasAutomatic) continue;
+        const next = computed ?? '';
+        writePath(record, fieldId, next);
+        values[fieldId] = next;
+        updates[fieldId] = next;
+        if (computed === undefined) delete automatic[fieldId];
+        else automatic[fieldId] = computed;
+      }
+      if (Object.keys(automatic).length > 0) {
+        record['_derived'] = automatic;
+        values['_derived'] = automatic;
+      } else {
+        delete record['_derived'];
+        delete values['_derived'];
+      }
+    }
     days[date] = record;
     store.set(manifest.id, { ...slice, version: manifest.version, days });
 
     stampCreatedAt();
     options.onSaved?.();
+    return updates;
   }
 
   /** The kernel's own fields go to kernel.days, not to any module slice. */
-  function persistKernel(values: DayRecord): void {
+  function persistKernel(values: DayRecord): DayRecord {
     store.updateKernel((kernel) => {
       const record: DayRecord = structuredClone(kernel.days[date] ?? {});
       for (const [fieldId, value] of Object.entries(values)) writePath(record, fieldId, value);
       if (record['createdAt'] === undefined) record['createdAt'] = now().toISOString();
-      return { ...kernel, days: { ...kernel.days, [date]: record as KernelDay } };
+      return {
+        ...kernel,
+        days: { ...kernel.days, [date]: record as KernelDay },
+      };
     });
     options.onSaved?.();
+    return {};
   }
 
   function groups(): Group[] {
@@ -233,9 +265,8 @@ export function mountToday(options: TodayOptions): TodayView {
         name: manifest.name,
         fields: manifest.contributes.today ?? [],
         read: () => daysOf(store, manifest.id),
-        write: (_date, values) => {
-          persist(manifest, values);
-        },
+        write: (_date, values, changedFieldId) => persist(manifest, values, changedFieldId),
+        controls: new Map(),
       }));
 
     // Last: a person reflects on the day after recording it, and these are the
@@ -248,9 +279,8 @@ export function mountToday(options: TodayOptions): TodayView {
           sub: group.sub,
           fields: group.fields,
           read: () => store.document().kernel.days as Days,
-          write: (_date, values) => {
-            persistKernel(values);
-          },
+          write: (_date, values) => persistKernel(values),
+          controls: new Map(),
         });
       }
     }
@@ -276,9 +306,13 @@ export function mountToday(options: TodayOptions): TodayView {
 
     const control = controlFor(field, carried?.value, (value) => {
       values[field.id] = value;
-      group.write(date, values);
+      const updates = group.write(date, values, field.id);
+      for (const [fieldId, computed] of Object.entries(updates)) {
+        group.controls.get(fieldId)?.set(computed);
+      }
       paintFollowUp(value);
     });
+    group.controls.set(field.id, control);
 
     function paintFollowUp(value: unknown): void {
       if (typeof field.followUp !== 'function') return;
@@ -300,9 +334,10 @@ export function mountToday(options: TodayOptions): TodayView {
     if (carried?.from !== undefined && carried.from !== date) {
       const note = el('p', {
         class: 'hint',
-        text: carried.backwards === true
-          ? `Carried back from ${carried.from}, because there is nothing earlier.`
-          : `Carried from ${carried.from}.`,
+        text:
+          carried.backwards === true
+            ? `Carried back from ${carried.from}, because there is nothing earlier.`
+            : `Carried from ${carried.from}.`,
       });
       into.append(note);
     }

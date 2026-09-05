@@ -24,7 +24,10 @@ function store(options: Parameters<typeof createStore>[0] = {}): KernelStore {
 }
 
 /** Storage that records what it was asked to write. */
-function recordingAdapter(): StorageAdapter & { writes: string[]; held: Map<string, string> } {
+function recordingAdapter(): StorageAdapter & {
+  writes: string[];
+  held: Map<string, string>;
+} {
   const held = new Map<string, string>();
   const writes: string[] = [];
   return {
@@ -72,7 +75,10 @@ describe('slices in the Adult space', () => {
   it('round-trips what a module writes', () => {
     const s = store();
     s.set('medication', { version: 3, days: { '2026-09-04': { dose: '50' } } });
-    expect(s.get('medication')).toEqual({ version: 3, days: { '2026-09-04': { dose: '50' } } });
+    expect(s.get('medication')).toEqual({
+      version: 3,
+      days: { '2026-09-04': { dose: '50' } },
+    });
   });
 
   it('writes to modules.<id>, which the module never sees', () => {
@@ -85,7 +91,10 @@ describe('slices in the Adult space', () => {
     const s = store();
     s.set('medication', { version: 3, days: { '2026-09-04': {} } });
     s.set('sleep', { version: 1, days: {} });
-    expect(s.get('medication')).toEqual({ version: 3, days: { '2026-09-04': {} } });
+    expect(s.get('medication')).toEqual({
+      version: 3,
+      days: { '2026-09-04': {} },
+    });
   });
 
   it('deletes a slice entirely, which is separate from disabling it', () => {
@@ -142,7 +151,9 @@ describe('slices in the Family space', () => {
       createdAt: '2026-09-05T20:41:00.000Z',
       modules: {},
     };
-    return store({ adapter: memoryStorageAdapter({ [DOCUMENT_KEY]: JSON.stringify(doc) }) });
+    return store({
+      adapter: memoryStorageAdapter({ [DOCUMENT_KEY]: JSON.stringify(doc) }),
+    });
   }
 
   it('routes a slice to the chosen child', async () => {
@@ -205,7 +216,12 @@ describe('the kernel slice', () => {
     const s = store();
     s.updateKernel((kernel) => ({
       ...kernel,
-      days: { '2026-09-04': { createdAt: '2026-09-04T21:30:00.000Z', win: 'Got out on time' } },
+      days: {
+        '2026-09-04': {
+          createdAt: '2026-09-04T21:30:00.000Z',
+          win: 'Got out on time',
+        },
+      },
     }));
     expect(s.document().kernel.days['2026-09-04']?.win).toBe('Got out on time');
   });
@@ -303,12 +319,18 @@ describe('persistence', () => {
   it('reads back what it wrote', async () => {
     const adapter = memoryStorageAdapter();
     const first = store({ adapter });
-    first.set('medication', { version: 3, days: { '2026-09-04': { dose: '50' } } });
+    first.set('medication', {
+      version: 3,
+      days: { '2026-09-04': { dose: '50' } },
+    });
     await first.flush();
 
     const second = store({ adapter });
     await second.load();
-    expect(second.get('medication')).toEqual({ version: 3, days: { '2026-09-04': { dose: '50' } } });
+    expect(second.get('medication')).toEqual({
+      version: 3,
+      days: { '2026-09-04': { dose: '50' } },
+    });
   });
 
   it('starts a fresh document when nothing is stored', async () => {
@@ -333,13 +355,33 @@ describe('persistence', () => {
       onPersistError,
     });
     s.set('medication', { version: 3 });
-    await s.flush();
+    await expect(s.flush()).rejects.toThrow('QuotaExceededError');
     expect(onPersistError).toHaveBeenCalledTimes(1);
     expect((onPersistError.mock.calls[0]?.[0] as Error).message).toBe('QuotaExceededError');
   });
 
+  it('retries after a failed write without losing the in-memory document', async () => {
+    const adapter = recordingAdapter();
+    const write = vi.spyOn(adapter, 'write').mockRejectedValueOnce(new Error('QuotaExceededError'));
+    const current = store({ adapter });
+    current.set('sleep', {
+      version: 1,
+      days: { '2026-09-01': { hours: '8' } },
+    });
+
+    await expect(current.flush()).rejects.toThrow('QuotaExceededError');
+    await current.flush();
+
+    expect(write).toHaveBeenCalledTimes(2);
+    const reopened = store({ adapter });
+    await reopened.load();
+    expect(reopened.get('sleep')).toEqual(current.get('sleep'));
+  });
+
   it('refuses to treat something that is not a document as one', async () => {
-    const s = store({ adapter: memoryStorageAdapter({ [DOCUMENT_KEY]: '{"hello":"world"}' }) });
+    const s = store({
+      adapter: memoryStorageAdapter({ [DOCUMENT_KEY]: '{"hello":"world"}' }),
+    });
     await expect(s.load()).rejects.toThrow(/not an Adnotia document/);
   });
 });
@@ -352,7 +394,9 @@ describe('unknown keys', () => {
       somethingNew: { kept: true },
       modules: { future: { version: 9, unrecognised: ['a', 'b'] } },
     };
-    const adapter = memoryStorageAdapter({ [DOCUMENT_KEY]: JSON.stringify(fromNewerBuild) });
+    const adapter = memoryStorageAdapter({
+      [DOCUMENT_KEY]: JSON.stringify(fromNewerBuild),
+    });
 
     const s = store({ adapter });
     await s.load();

@@ -15,6 +15,7 @@ export interface ShellOptions {
   store: KernelStore;
   container: HTMLElement;
   modules?: readonly ModuleManifest[];
+  storageAvailable?: boolean;
   /** Hands a file to the person. Defaults to a download in a real browser. */
   offerDownload?: (filename: string, content: string) => void;
 }
@@ -43,6 +44,39 @@ export function mountShell(options: ShellOptions): Shell {
   const tabStrip = el('nav', { class: 'tabs', role: 'tablist' });
   const view = el('main', { id: 'view' });
   const root = el('div', { class: 'wrap' }, [masthead, tabStrip, view]);
+  const saveMessage = el('p', {
+    class: 'hint',
+    role: 'status',
+    'aria-live': 'polite',
+    'aria-atomic': 'true',
+  });
+  const retrySave = el('button', {
+    type: 'button',
+    class: 'btn small',
+    text: 'Retry save',
+  });
+  const saveStatus = el('div', { class: 'save-status', 'data-print': 'never' }, [
+    saveMessage,
+    retrySave,
+  ]);
+
+  retrySave.addEventListener('click', () => {
+    void store.flush().catch(() => undefined);
+  });
+
+  function paintPersistence(): void {
+    const state = store.persistence();
+    const unavailable = options.storageAvailable === false;
+    saveStatus.dataset['state'] = unavailable ? 'error' : state;
+    saveMessage.textContent = unavailable
+      ? 'This browser is not letting Adnotia save anything, so nothing will be here next time.'
+      : state === 'error'
+        ? 'Changes could not be saved. Keep this page open. Your changes are still here.'
+        : state === 'pending'
+          ? 'Saving changes.'
+          : 'Changes saved in this browser.';
+    retrySave.hidden = unavailable || state !== 'error';
+  }
 
   const tabButtons = new Map<TabId, HTMLButtonElement>();
 
@@ -112,7 +146,11 @@ export function mountShell(options: ShellOptions): Shell {
 
     if (page !== undefined) {
       // The off-tab pattern: a Back button that returns to the originating tab.
-      const back = el('button', { type: 'button', class: 'btn small', text: 'Back' });
+      const back = el('button', {
+        type: 'button',
+        class: 'btn small',
+        text: 'Back',
+      });
       back.addEventListener('click', () => router.back());
       const heading = el('h2', { text: page.title, class: 'page-title' });
       const body = el('div', {});
@@ -137,9 +175,9 @@ export function mountShell(options: ShellOptions): Shell {
       container.replaceChildren(
         el('div', { class: 'wrap' }, [
           el('header', { class: 'mast' }, [el('h1', { text: 'Adnotia' })]),
+          saveStatus,
           firstRun({
-            available: (chosen) =>
-              registry.forAudience(chosen === 'family' ? 'parent' : 'adult'),
+            available: (chosen) => registry.forAudience(chosen === 'family' ? 'parent' : 'adult'),
             onDone: ({ space: chosen, enabled }) => {
               store.useSpace(chosen);
               store.updateKernel((kernel) => ({
@@ -159,10 +197,13 @@ export function mountShell(options: ShellOptions): Shell {
     paintMasthead();
     paintTabs();
     paint();
+    root.insertBefore(saveStatus, tabStrip);
     container.replaceChildren(root);
   }
 
   const unsubscribe = router.subscribe(paint);
+  const unsubscribePersistence = store.subscribePersistence(paintPersistence);
+  paintPersistence();
   refresh();
 
   return {
@@ -170,6 +211,7 @@ export function mountShell(options: ShellOptions): Shell {
     refresh,
     destroy() {
       unsubscribe();
+      unsubscribePersistence();
       container.replaceChildren();
     },
   };

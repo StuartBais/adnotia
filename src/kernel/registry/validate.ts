@@ -170,7 +170,10 @@ export function validateManifest(
           cost += field.cost;
         }
 
-        if ((field.type === 'chips' || field.type === 'chipsMulti') && !Array.isArray(field.options)) {
+        if (
+          (field.type === 'chips' || field.type === 'chipsMulti') &&
+          !Array.isArray(field.options)
+        ) {
           fail('today', `Field "${field.id}" is chips and needs options.`);
         }
         if (field.type === 'scale5' && !Array.isArray(field.anchors)) {
@@ -189,6 +192,14 @@ export function validateManifest(
       }
 
       // Reserved ids, at every level including follow-ups.
+      for (const field of allFields(today)) {
+        if (
+          isNonEmptyString(field?.id) &&
+          (field.id === '_derived' || field.id.startsWith('_derived.'))
+        ) {
+          fail('reserved-field', 'The _derived path is reserved for automatic-value metadata.');
+        }
+      }
       if (manifest.audience !== 'adult') {
         for (const field of allFields(today)) {
           if (isNonEmptyString(field?.id) && RESERVED_FIELD_IDS.includes(field.id)) {
