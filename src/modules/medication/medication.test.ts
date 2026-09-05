@@ -5,7 +5,12 @@ import { describeCover, describePrescription } from './records';
 import { doseLabel, doseSeries, groupByDose, medicationTimeline } from './reports/doses';
 import { lines as levelLines, summarise as summariseLevels } from './reports/levels';
 import { lines, summarise as summariseStanding } from './reports/standing';
-import { grid as sideEffectGrid, summarise as summariseSide } from './reports/sideEffects';
+import {
+  grid as sideEffectGrid,
+  halfText,
+  summarise as summariseSide,
+  trajectory,
+} from './reports/sideEffects';
 import { threeDays, thirtyDays } from './fixtures/index';
 import { today } from './today';
 
@@ -348,5 +353,110 @@ describe('medication: the severity grid', () => {
     expect(section('medication.side').renderText(context)).toContain(
       '[severity grid — see the printed or PDF version]',
     );
+  });
+});
+
+describe('medication: the first half against the second', () => {
+  const dates = Array.from({ length: 10 }, (_, i) => `2026-09-${String(i + 1).padStart(2, '0')}`);
+
+  function context(days: Record<string, Record<string, unknown>>) {
+    return { dates, days };
+  }
+
+  it('puts every day in one half or the other, dropping none', () => {
+    const halves = trajectory(
+      context(Object.fromEntries(dates.map((d) => [d, { side: ['dry'] }]))),
+    )!;
+    expect(halves.earlyFrom).toBe(dates[0]);
+    expect(halves.lateTo).toBe(dates[dates.length - 1]);
+    const row = halves.rows[0]!;
+    expect(row.early.days + row.late.days).toBe(10);
+  });
+
+  it('keeps the middle day of an odd range, which the monolith drops', () => {
+    const odd = dates.slice(0, 9);
+    const halves = trajectory({
+      dates: odd,
+      days: Object.fromEntries(odd.map((d) => [d, { side: ['dry'] }])),
+    })!;
+    const row = halves.rows[0]!;
+    expect(row.early.days + row.late.days).toBe(9);
+  });
+
+  it('counts recorded days, not calendar days, so a gap is not an improvement', () => {
+    // Reported on every day it was logged, but the second half is half missing.
+    const days: Record<string, Record<string, unknown>> = {};
+    for (const [index, date] of dates.entries()) {
+      if (index >= 5 && index % 2 === 0) continue;
+      days[date] = { side: ['dry'] };
+    }
+    const row = trajectory(context(days))!.rows[0]!;
+    expect(row.early).toEqual({ days: 5, ofDays: 5, severity: 'unrated' });
+    expect(row.late).toEqual({ days: 3, ofDays: 3, severity: 'unrated' });
+    // Not "3 of 5": two of those five days have no entry at all, and counting
+    // them would read as an effect that eased when what stopped was the logging.
+    expect(halfText(row.late)).toBe('3 of 3 days, unrated');
+  });
+
+  it('says "none" for a half it was never reported in', () => {
+    const days = Object.fromEntries(
+      dates.map((d, i) => [d, i < 5 ? { side: ['dry'] } : { focus: 3 }]),
+    );
+    const row = trajectory(context(days))!.rows[0]!;
+    expect(halfText(row.early)).toBe('5 of 5 days, unrated');
+    expect(halfText(row.late)).toBe('none');
+  });
+
+  it('reports severity as the person’s own word, never as a number', () => {
+    const days = Object.fromEntries(
+      dates.map((d, i) => [
+        d,
+        { side: ['dry'], detail: { dry: { sev: i < 5 ? 'mild' : 'severe' } } },
+      ]),
+    );
+    const row = trajectory(context(days))!.rows[0]!;
+    expect(row.early.severity).toBe('mild');
+    expect(row.late.severity).toBe('severe');
+    expect(JSON.stringify(row)).not.toMatch(/"score"|"rank"/);
+  });
+
+  it('reaches no conclusion about the direction', () => {
+    const days = Object.fromEntries(
+      dates.map((d, i) => [d, i < 5 ? { side: ['dry'] } : { focus: 3 }]),
+    );
+    const rendered = section('medication.side').render(context(days));
+    // docs/decisions/ADR-017: the counts are shown and the word is not.
+    expect(rendered).not.toMatch(/\b(easing|worsening|steady|gone|new)\b/i);
+    expect(rendered).not.toContain('worth raising');
+  });
+
+  it('averages severity across the days it was rated, at the boundaries', () => {
+    // A mild day and a severe one average to moderate, and are not rounded to
+    // either end. The two thresholds are what decide the word, so they are what
+    // this exercises.
+    const word = (severities: (string | undefined)[]): string => {
+      const days = Object.fromEntries(
+        dates.map((date, index) => [
+          date,
+          { side: ['dry'], detail: { dry: { sev: severities[index % severities.length] ?? '' } } },
+        ]),
+      );
+      return trajectory(context(days))!.rows[0]!.early.severity;
+    };
+
+    // The early half is five days, so each pattern repeats 3–2 across it.
+    expect(word(['mild'])).toBe('mild'); // 1.0
+    expect(word(['mild', 'moderate'])).toBe('mild'); // 1.4, under the 1.5 line
+    expect(word(['mild', 'severe'])).toBe('moderate'); // 1.8, over it
+    expect(word(['moderate', 'severe'])).toBe('moderate'); // 2.4, under the 2.5 line
+    expect(word(['severe', 'moderate'])).toBe('severe'); // 2.6, over it
+    expect(word([undefined])).toBe('unrated');
+  });
+
+  it('holds off until the halves are long enough to say anything', () => {
+    const few = dates.slice(0, 5);
+    expect(
+      trajectory({ dates: few, days: Object.fromEntries(few.map((d) => [d, { side: ['dry'] }])) }),
+    ).toBeUndefined();
   });
 });
