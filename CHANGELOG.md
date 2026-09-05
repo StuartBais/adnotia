@@ -22,4 +22,6 @@ Milestone 0 is in progress; nothing has been released yet.
 - The kernel store: document, slices, debounced persist, `localStorage` and host adapters.
 - The kernel migration framework and the v0 import.
 - Optional passcode encryption at rest and the backup-passphrase primitives, in the envelope format the monolith already used, so a v0 document opens unchanged.
+- Backup export and merge-restore: a backup carries every slice, is encrypted with a
+  passphrase chosen per export, and restores by merging rather than replacing.
 - CI running `npm run check`, the test suites and both builds on every push.
