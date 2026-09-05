@@ -59,6 +59,8 @@ export interface KernelState {
 
 export interface KernelSettings {
   passcodeEnabled: boolean;
+  /** Carried in from the monolith, where the baseline card could be hidden. */
+  baseHidden?: boolean;
 }
 
 /**
