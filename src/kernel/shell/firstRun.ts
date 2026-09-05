@@ -9,23 +9,11 @@
 // sleep never sees a dose field. See docs/03-scope.md "The home screen is not
 // the medication log".
 
+import { tierWording } from '../library/tiers';
 import { card, chips, el } from '../ui/index';
 import type { ModuleManifest, Space } from '../index';
 
 /** The in-app wording for a tier, fixed by docs/02-evidence-rubric.md. */
-export function tierWording(tier: 'A' | 'B' | 'C', space: Space): string {
-  const population =
-    space === 'family' ? 'children with ADHD and their parents' : 'adults with ADHD';
-  switch (tier) {
-    case 'A':
-      return `Established. This is based on treatments with repeated trial evidence in ${population}.`;
-    case 'B':
-      return `Promising. There is trial evidence for this in ${population}, but the studies are small or have methodological weaknesses. Treat it as worth trying, not as proven.`;
-    case 'C':
-      return 'Plausible. This tool comes from techniques used in evidence-based treatment, but this specific tool has not itself been tested in trials. Some people find it useful.';
-  }
-}
-
 export function moduleChoice(options: {
   manifest: ModuleManifest;
   space: Space;

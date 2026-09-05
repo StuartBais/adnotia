@@ -1049,3 +1049,55 @@ svg .sev0 {
 svg .cellblank {
   fill: #f6f1e6;
 }
+
+/* ---------- the Library ---------- */
+/* docs/02-evidence-rubric.md fixes what an entry says; this is only how it sits
+   on the page. Nothing here styles one tier differently from another: the tiers
+   are not a ranking and must not look like one. */
+
+.library .card + .card {
+  margin-top: 12px;
+}
+
+.tier {
+  font-size: 13.5px;
+  color: var(--ink2);
+  background: var(--ground);
+  border-left: 2px solid var(--sage-deep);
+  border-radius: 0 6px 6px 0;
+  padding: 9px 11px;
+  margin: 0 0 14px;
+}
+
+.lib-part {
+  margin-bottom: 14px;
+}
+
+.lib-part:last-child {
+  margin-bottom: 0;
+}
+
+.lib-part > h3 {
+  font-family: var(--serif);
+  font-weight: normal;
+  font-size: 15px;
+  margin: 0 0 4px;
+}
+
+.lib-part > p {
+  margin: 0;
+  font-size: 14.5px;
+  line-height: 1.5;
+}
+
+.refs {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--ink2);
+}
+
+.refs li {
+  margin-bottom: 6px;
+}
