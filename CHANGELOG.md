@@ -35,4 +35,6 @@ Milestone 0 is in progress; nothing has been released yet.
   positive-only reward chart and parent gate.
 - The shell: first run, the choice between the Adult and Family spaces, the four tabs,
   the off-tab page pattern, and settings with backup and restore.
+- The Today assembler: one check-in built from whatever is turned on, with carry rules,
+  follow-ups that stay hidden until wanted, and the ninety-second budget.
 - CI running `npm run check`, the test suites and both builds on every push.

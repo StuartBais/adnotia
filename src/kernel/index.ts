@@ -6,5 +6,6 @@ export * from './store/index';
 export * from './crypto/index';
 export * from './backup/index';
 export * from './registry/index';
+export * from './today/index';
 export * from './ui/index';
 export * from './shell/index';
