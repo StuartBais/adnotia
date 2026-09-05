@@ -6,10 +6,24 @@ with its version pair and a one-line description.
 
 ## Unreleased
 
-Milestone 0 is in progress; nothing has been released yet.
+Foundations and medication-log parity are in progress; nothing has been released
+yet. See the implementation checkpoint in `docs/08-roadmap.md` for current limits.
 
 ### Fixed
 
+- Startup now unlocks encrypted documents before rendering the shell, imports
+  encrypted legacy records without removing their original key, and leaves
+  unreadable data in place with a retry screen.
+- Medication eligibility is checked both during first run and when enabling a
+  tool in Settings. Disabled tools retain their data.
+- Today now exposes the existing calendar, prevents future-day selection, and
+  keeps the selected logging date across tab changes.
+- Stale-tab writes are rejected when another tab has changed the stored
+  document, including encryption changes. Web Locks serialize writes where
+  available; without them the conflict check is best-effort. Local unsaved
+  changes remain available for backup.
+- Tapping the selected space keeps its selection active; switching spaces
+  preserves Adult records. Lock-screen headings follow the existing typography.
 - Restore now applies and persists the complete merged document before confirming
   success, and keeps the confirmation visible after the shell refreshes.
 - Failed writes remain visible across navigation, with a retry action that saves
@@ -27,6 +41,13 @@ Milestone 0 is in progress; nothing has been released yet.
 
 ### Added
 
+- Passcode settings with an encrypted-backup prerequisite, masked inputs,
+  set/change/remove actions, and Lock now. Encryption changes publish only after
+  storage accepts the new document; failed changes retain the previous codec.
+- Manage tools in Settings: enable/disable, ordering, and separate confirmed
+  data deletion. Space selection is available after first run.
+- Masked backup passphrases and an explicitly labelled unencrypted backup option
+  when browser encryption is unavailable.
 - Vite, TypeScript strict and Vitest scaffold, with the PWA and single-file build targets.
 - The content security policy, served both as a `<meta>` tag and as real response headers from `deploy/_headers`.
 - The kernel date and clock service: logging day, midnight-crossing arithmetic, `nearestPrior` carry.

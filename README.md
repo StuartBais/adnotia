@@ -6,7 +6,51 @@ Everything runs in your browser. Nothing is sent anywhere. There are no accounts
 
 ## Status
 
-Pre-code. The design documents in `docs/` are complete drafts; the code is being built against them milestone by milestone. See `docs/08-roadmap.md`.
+Unreleased development build. The Adult space has working medication and sleep
+logs, history and descriptive reports. Foundations and medication-log parity are
+still in progress; passing tests do not mean the launch-readiness reviews are
+complete. See [the roadmap checkpoint](docs/08-roadmap.md#implementation-checkpoint).
+
+## Available now
+
+- Opt-in medication and sleep logs. Medication eligibility is asked before
+  enabling the log. Today supports past-day editing and automatic sleep duration
+  that preserves manual answers.
+- Records, report range selection, appointment questions, print and text export.
+- Settings for module enable/disable, ordering, separately confirmed data
+  deletion, and switching between spaces. Disabling a module keeps its records.
+- Optional passcode encryption, set/change/remove controls, and Lock now. An
+  encrypted backup must be generated before changing passcode settings.
+- Backup export and merge-restore, visible save failures and retry, encrypted
+  legacy import, and stale-tab conflict detection.
+- PWA and self-contained HTML builds from the same source.
+
+The Family space is currently an empty shell, not a working set of parent or
+child tools. Planning tools, screeners, the complete Library, and launch reviews
+remain unfinished. The medication log is not yet certified against the
+roadmap's full report/history/text-export parity requirement.
+
+## Data and passcodes
+
+Data belongs to this browser and origin. Opening another host or the single-file
+build starts a separate store; move records using backup and restore. Clearing
+browser data deletes the local records.
+
+A passcode encrypts stored data, not an unlocked page. Reloading an encrypted
+copy requires the passcode; Lock now saves pending changes before locking.
+There is no passcode recovery. Keep an encrypted backup and its separate
+passphrase. Encryption does not protect against a compromised host or code
+running in an unlocked page.
+
+When browser encryption is unavailable, passcode controls are unavailable and
+the backup action explicitly offers an unencrypted file. Readable backup files
+need private storage. A download being offered does not prove the file was kept
+or can be restored; verify backups before relying on them.
+
+If another tab changes the stored document, saving from a stale tab is refused
+and its local changes remain available for backup. Cross-tab writes use Web
+Locks where supported; without Web Locks, conflict detection is best-effort.
+Do not edit the same records in multiple tabs at once.
 
 ## What it will do
 
@@ -19,12 +63,26 @@ Recommend a dose. Diagnose. Score your credibility. Send your data anywhere. Sho
 
 ## Running it
 
-```
+Requires Node.js 24 or newer.
+
+```sh
 npm install
 npm run dev
 ```
 
 `npm run build` produces the installable web app. `npm run build:single` produces one self-contained HTML file you can keep, email or host yourself.
+
+```sh
+npm run check
+npm test
+npm run build
+npm run build:single
+```
+
+The checks cover types, the no-network audit and token contrast. Tests cover
+kernel and module behavior, including passcode flows, restore, eligibility,
+module management, date selection, and space switching. They do not replace
+real-device accessibility, printed-layout, citation, or clinical review.
 
 ## Contributing
 

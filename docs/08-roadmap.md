@@ -2,6 +2,58 @@
 
 Status: draft 0.1 · September 2026 · Milestones are sequential. Each has a definition of done. Do not start the next until the current one's tests pass.
 
+## Implementation checkpoint
+
+Development snapshot: 2026-09-05. This records current implementation, not a
+change to milestone order or completion criteria. No milestone is newly marked
+complete by this checkpoint.
+
+### Connected workflows
+
+- Adult medication and sleep logs, descriptive reports, print and text export.
+- Merge-restore persists the complete document before confirming success;
+  failed writes remain visible and can be retried.
+- Automatic sleep duration updates after time edits and reloads, with manual
+  values preserved using ADR-014 metadata.
+- Encrypted startup, wrong-passcode handling, encrypted v0 import, and Settings
+  for setting, changing, removing and locking a passcode. Passcode changes are
+  gated on generating an encrypted backup; the old legacy key is retained.
+- Medication eligibility during onboarding and module management; enable,
+  disable, ordering and separately confirmed data deletion in Settings.
+- Calendar selection for earlier days, selected-day retention across tabs, and
+  space switching after onboarding without removing Adult records.
+- Stale-tab conflict detection, with serialized cross-tab writes where Web
+  Locks are available. The fallback check is best-effort, not atomic.
+
+### Still incomplete
+
+- Full thirty-day report, history and text-export parity against the monolith.
+- Baseline editing, the connected screen-only reflection, backup reminders,
+  and the check-in budget's user-facing optional-field controls.
+- Enabled-module migration orchestration on load and restore, and confirmation
+  before removing the retained legacy key.
+- Complete Library evidence rendering, verified citations, About and safety
+  pages, and both screeners.
+- Family profiles, parent/child workflows, planning and other later modules.
+- Live hosting review, real-device installation/offline-update tests,
+  accessibility and print-layout audits, and clinical/regulatory review.
+
+Cleanup verification on 2026-09-05: `npm run check` passed (TypeScript,
+no-network audit and nine contrast pairs); `npm test` passed with 586 tests in
+31 files; `npm run build` and `npm run build:single` both succeeded. These
+results cover the current implementation, including the space-selection fix.
+
+Browser checks have covered adult eligibility, earlier-day editing, restore,
+save retry, encryption at rest, reload locking and wrong-passcode rejection.
+The integrated browser did not expose a download event during the latest
+passcode check, so actual backup-file delivery remains a manual verification
+item even though encrypted file generation is tested. The last space-selection
+correction has focused regression coverage; the final module-management visual
+check was not completed. These are verification limits, not completed gates.
+
+Work is paused at this checkpoint for cleanup and documentation. Follow the
+existing milestone definitions below when development resumes.
+
 ## Milestone 0 — foundations
 
 Goal: an empty, correct shell that proves the architecture.
