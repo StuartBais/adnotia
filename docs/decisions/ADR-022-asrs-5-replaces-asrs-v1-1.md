@@ -1,6 +1,13 @@
 # ADR-022: The adult screener is the ASRS-5
 
-Status: accepted · September 2026 · Amends `03-scope.md`, follows ADR-021
+Status: superseded on the practical point by
+`ADR-023-the-screeners-are-not-ours-to-reproduce.md` · September 2026
+
+The clinical argument below still stands: the ASRS-5 is the current instrument
+and v1.1 is written against DSM-IV. What it did not check is whether either can
+be reproduced here. Neither can, without permission, and the ASRS-5 is the harder
+of the two to obtain — its scoring rules are the part New York University
+licenses, which is why they are not published. ADR-023 has the detail.
 
 ## Context
 

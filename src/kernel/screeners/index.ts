@@ -5,10 +5,12 @@
 export {
   ASRS_DOCUMENTED_MAX,
   ASRS_ITEMS,
+  ASRS_ITEM_ORDER,
   ASRS_PERIOD,
   ASRS_RESPONSES,
   ASRS_SOURCE,
   ASRS_THRESHOLD,
+  UNWEIGHTED_MAX,
   isComplete,
   isUsable,
   maxScore,

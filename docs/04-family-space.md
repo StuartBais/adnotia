@@ -23,7 +23,7 @@ This is the reason the space exists and the thing it must do well. A parent wond
 
 ### The instrument
 
-The NICHQ Vanderbilt ADHD Diagnostic Parent Rating Scale. Free to reproduce, validated for ages 6 to 12, and the form many paediatricians and GPs use themselves. It is presented under exactly the rules `03-scope.md` sets for the adult screener, with three additions.
+The NICHQ Vanderbilt ADHD Diagnostic Parent Rating Scale. Validated for ages 6 to 12, and the form many paediatricians and GPs use themselves. It is described here as free to reproduce; that has not been verified, and the equivalent claim about the adult instruments turned out to be wrong. It must be checked before Milestone 6 builds on it. See `decisions/ADR-023-the-screeners-are-not-ours-to-reproduce.md`. It is presented under exactly the rules `03-scope.md` sets for the adult screener, with three additions.
 
 - Items and scoring use the NICHQ wording unmodified.
 - The only outcome reported to the parent is whether the responses are or are not consistent with seeking an assessment. The form's symptom-count structure is never turned into "meets criteria", a percentage, a severity label, or a probability.

@@ -26,6 +26,7 @@ import {
   isComplete,
   isUsable,
   outcome,
+  type ScreenerItem,
   type ScreenerOutcome,
   type ScreenerSource,
 } from './asrs';
@@ -71,10 +72,11 @@ export const SCREENER_STRINGS = {
 
   unavailableTitle: 'The screening questions are being checked',
   unavailable:
-    'This app will only show a screening instrument in its own published wording, with its ' +
-    'own threshold. The version to hand has not been checked against the paper it comes ' +
-    'from, so it is not being offered yet. Nothing that has not been checked is better than ' +
-    'something that looks official and is not.',
+    'A screening instrument is only worth anything in its own published wording, with its ' +
+    'own scoring. Both of the ones this app could use are copyrighted, and reproducing ' +
+    'either needs written permission from the people who hold the rights. That has not been ' +
+    'obtained, so there is nothing here yet. Something that looks official and is not would ' +
+    'be worse than this page.',
 } as const;
 
 function outcomeText(result: ScreenerOutcome): string {
@@ -91,6 +93,8 @@ function bullets(items: readonly string[]): HTMLElement {
 
 export interface ScreenerPageOptions {
   source?: ScreenerSource;
+  /** The instrument's items. Empty in this build; see ADR-023. */
+  items?: readonly ScreenerItem[];
 }
 
 /**
@@ -99,13 +103,14 @@ export interface ScreenerPageOptions {
  */
 export function screenerPage(options: ScreenerPageOptions = {}): OffTabPage {
   const source = options.source ?? ASRS_SOURCE;
+  const items = options.items ?? ASRS_ITEMS;
   const answers: Record<string, number> = {};
 
   return {
     id: 'screener',
     title: SCREENER_STRINGS.title,
     render(container) {
-      if (!isUsable(source)) {
+      if (!isUsable(source, items)) {
         container.replaceChildren(
           card({
             title: SCREENER_STRINGS.unavailableTitle,
@@ -119,7 +124,7 @@ export function screenerPage(options: ScreenerPageOptions = {}): OffTabPage {
       const result = el('div', {});
 
       const questions = el('div', {});
-      for (const [index, item] of ASRS_ITEMS.entries()) {
+      for (const [index, item] of items.entries()) {
         const control = chips({
           label: `${index + 1}. ${item.text}`,
           options: ASRS_RESPONSES.map((response) => ({
@@ -143,7 +148,7 @@ export function screenerPage(options: ScreenerPageOptions = {}): OffTabPage {
         text: SCREENER_STRINGS.submit,
       });
       submit.addEventListener('click', () => {
-        if (!isComplete(answers)) {
+        if (!isComplete(answers, items)) {
           status.textContent = SCREENER_STRINGS.incomplete;
           result.replaceChildren();
           return;
@@ -152,7 +157,7 @@ export function screenerPage(options: ScreenerPageOptions = {}): OffTabPage {
         result.replaceChildren(
           card({
             // The outcome, and nothing that could be read as a degree of it.
-            sub: outcomeText(outcome(answers)),
+            sub: outcomeText(outcome(answers, items)),
             children: [
               el('h3', { text: SCREENER_STRINGS.nextTitle }),
               bullets(SCREENER_STRINGS.next),
