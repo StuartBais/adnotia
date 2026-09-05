@@ -13,6 +13,7 @@ import {
   formatWeekday,
   importV0,
   MODULES,
+  renderKernelRecords,
   type Report,
 } from '../../src/kernel/index';
 import { thirtyDays as medicationDays } from '../../src/modules/medication/fixtures/index';
@@ -140,13 +141,6 @@ const DIFFERENCES: readonly Difference[] = [
       'improvement with tolerable side effects.',
   },
   {
-    what: 'There is no "Day by day" table.',
-    why:
-      "It spans medication, sleep and the kernel's own fields, so like the cover chart it " +
-      'belongs to no module and needs a contribution seam of its own. Not yet built.',
-    status: 'open',
-  },
-  {
     what: 'A dose block with no sleep hours prints "Sleep —", not "Sleep —h".',
     why: 'A dash followed by a unit reads as a measurement that came out as nothing.',
     status: 'decided',
@@ -188,19 +182,24 @@ const DIFFERENCES: readonly Difference[] = [
     reshapes: 'Side effects over time',
   },
   {
+    what:
+      'A day-by-day row with neither an onset nor a wearing-off time prints "—", where ' +
+      'the monolith prints "—–?".',
+    why:
+      'The monolith builds that cell unconditionally, so a day on which neither was ' +
+      'recorded reads as a range with a missing end rather than as nothing recorded. The ' +
+      'question mark is kept where an onset was given and a wearing-off time was not, ' +
+      'which is the case it is actually for.',
+    status: 'decided',
+    rewrites: { from: '—–?', to: '—' },
+  },
+  {
     what: 'History is one card per module per day, not one card per day.',
     why:
       'docs/01-module-contract.md gives each module a `records` contribution over its own ' +
       "slice, and a module cannot draw another's data. A person who used the monolith " +
       'sees the same facts about a day, grouped by tool rather than merged into one line.',
     status: 'decided',
-  },
-  {
-    what: "History does not show the day's win, miss or note.",
-    why:
-      'Those are kernel fields now, and the kernel has no `records` contribution of its ' +
-      'own, only report sections. The seam exists for reports and not yet for history.',
-    status: 'open',
   },
   {
     what: 'The text export separates table cells with " | ", not "  |  ".',
@@ -238,11 +237,11 @@ describe('the difference register', () => {
     // This is not an aspiration. Milestone 1 is not done while it is above zero,
     // and this assertion is what stops the file quietly claiming otherwise.
     //
-    // What is left is unbuilt work, not undecided wording: the day-by-day table,
-    // and the kernel's own fields in History. Every wording question was settled
-    // in docs/decisions/ADR-017-what-the-report-will-not-say.md.
+    // Nothing is open. Every difference that remains is a decision with an
+    // argument behind it, here or in an ADR it names. If this ever rises above
+    // zero again, Milestone 1 has reopened.
     const open = DIFFERENCES.filter((entry) => entry.status === 'open');
-    expect(open.length).toBe(2);
+    expect(open.length).toBe(0);
   });
 });
 
@@ -268,7 +267,7 @@ describe('the report, against the monolith', () => {
   });
 
   it('carries every section the monolith has, but for the ones in the register', () => {
-    const known = new Set(['Side effects over time', 'Day by day']);
+    const known = new Set<string>();
     const theirs = headingsOf(monolith.sheetHtml)
       .filter((heading) => heading.startsWith('h3 '))
       .map((heading) => heading.slice(3))
@@ -345,6 +344,16 @@ describe('the history, against the monolith', () => {
       contribution.render(host, { dates: Object.keys(days).sort(), days });
       lines.push((host.textContent ?? '').replace(/\s+/g, ' '));
     }
+
+    // The kernel's own card, as the Records tab renders it: wins, misses and
+    // notes belong to no module, so no module's contribution can show them.
+    const kernelHost = document.createElement('div');
+    renderKernelRecords(kernelHost, {
+      dates: Object.keys(imported.document.kernel.days).sort(),
+      days: imported.document.kernel.days,
+    });
+    lines.push((kernelHost.textContent ?? '').replace(/\s+/g, ' '));
+
     return lines.join(' ');
   }
 
@@ -370,6 +379,14 @@ describe('the history, against the monolith', () => {
       }
     }
     expect(missing).toEqual([]);
+  });
+
+  it('shows the day’s win, miss and note, which belong to no module', () => {
+    const withWins = Object.entries(kernelDays).filter(([, day]) => day['win'] !== undefined);
+    expect(withWins.length).toBeGreaterThan(2);
+    for (const [, day] of withWins) expect(mine).toContain(day['win']);
+    expect(mine).toContain('Better: ');
+    expect(mine).toContain('Fell apart: ');
   });
 
   it('dates a history line the way the monolith does', () => {

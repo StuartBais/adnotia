@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  buildDayTable,
   buildTimeline,
   chartNote,
   createDocument,
@@ -271,6 +272,115 @@ describe('assembling the shared timeline', () => {
 
   it('is empty when no module contributes to it', () => {
     expect(buildTimeline(doc, [moduleWith('plain', undefined)], ['2026-09-01'])).toEqual({
+      rows: [],
+      legend: '',
+    });
+  });
+});
+
+describe('assembling the shared day table', () => {
+  function moduleWith(
+    id: string,
+    columns: ModuleManifest['contributes']['columns'],
+  ): ModuleManifest {
+    return {
+      id,
+      name: id,
+      version: 1,
+      tier: 'A',
+      audience: 'adult',
+      summary: 's',
+      contributes: {
+        library: {
+          tier: 'A',
+          whatItIs: 'x',
+          whatTheEvidenceSays: 'y',
+          whatItWontDo: 'z',
+          citations: [{ title: 't', authors: 'a', year: 2020, venue: 'v', doi_or_url: 'u' }],
+          reviewed: '2026-09',
+          nextReview: '2027-09',
+        },
+        ...(columns === undefined ? {} : { columns }),
+      },
+    };
+  }
+
+  function documentWith(slices: Record<string, Record<string, unknown>>): AdnotiaDocument {
+    const doc = createDocument({ now: new Date('2026-09-01T00:00:00Z') });
+    for (const [id, days] of Object.entries(slices)) doc.modules[id] = { version: 1, days };
+    return doc;
+  }
+
+  const dose = moduleWith('med', [
+    { label: 'Dose', weight: 10, numeric: true, cell: (day) => String(day['dose'] ?? '') },
+    { label: 'Side effects', weight: 80, cell: (day) => String(day['side'] ?? ''), legend: 'B.' },
+  ]);
+  const sleep = moduleWith('sleep', [
+    {
+      label: 'Sleep',
+      weight: 70,
+      cell: (day) => String(day['hours'] ?? ''),
+      note: (day) => String(day['window'] ?? ''),
+      legend: 'A.',
+    },
+  ]);
+
+  const dates = ['2026-09-01', '2026-09-02', '2026-09-03'];
+  const doc = documentWith({
+    med: { '2026-09-01': { dose: '50', side: 'Dry mouth' }, '2026-09-03': { dose: '70' } },
+    sleep: { '2026-09-01': { hours: '7', window: '23:00–06:00' } },
+  });
+
+  it('interleaves two modules’ columns by weight, not by module', () => {
+    const table = buildDayTable(doc, [dose, sleep], dates);
+    expect(table.columns.map((column) => column.label)).toEqual(['Dose', 'Sleep', 'Side effects']);
+  });
+
+  it('puts the newest day first', () => {
+    const table = buildDayTable(doc, [dose, sleep], dates);
+    expect(table.rows.map((row) => row.date)).toEqual(['2026-09-03', '2026-09-01']);
+  });
+
+  it('drops a day with nothing in any column rather than printing a row of dashes', () => {
+    const table = buildDayTable(doc, [dose, sleep], dates);
+    expect(table.rows.map((row) => row.date)).not.toContain('2026-09-02');
+  });
+
+  it('leaves a cell empty for a module that has nothing that day', () => {
+    const table = buildDayTable(doc, [dose, sleep], dates);
+    const newest = table.rows[0]!;
+    expect(newest.cells.map((cell) => cell.text)).toEqual(['70', '', '']);
+  });
+
+  it('carries a column’s second line', () => {
+    const table = buildDayTable(doc, [dose, sleep], dates);
+    const oldest = table.rows[table.rows.length - 1]!;
+    expect(oldest.cells[1]).toEqual({ text: '7', note: '23:00–06:00' });
+  });
+
+  it('joins the legends in the columns’ order, not the modules’', () => {
+    expect(buildDayTable(doc, [dose, sleep], dates).legend).toBe('A. B.');
+  });
+
+  it('shows a module only its own day record', () => {
+    const seen: unknown[] = [];
+    const nosy = moduleWith('nosy', [
+      {
+        label: 'N',
+        weight: 5,
+        cell: (day) => {
+          seen.push(day);
+          return '';
+        },
+      },
+    ]);
+    buildDayTable(documentWith({ nosy: { '2026-09-01': { own: 1 } } }), [nosy], dates);
+    expect(seen).toEqual([{ own: 1 }]);
+  });
+
+  it('is empty when no module contributes a column', () => {
+    expect(buildDayTable(doc, [moduleWith('plain', undefined)], dates)).toEqual({
+      columns: [],
       rows: [],
       legend: '',
     });

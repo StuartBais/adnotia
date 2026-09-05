@@ -148,6 +148,27 @@ module, so modules contribute marks and the kernel draws it.
 `parts` sees only this module's own day record. No dependency on another module is
 declared or needed. See `decisions/ADR-013-shared-day-timeline.md`.
 
+### `columns` — columns in the kernel's shared day-by-day table
+
+The `clinical` report ends with every day in the range, one row each. Like the
+cover chart it reads from every module at once, so modules declare columns and the
+kernel builds the table.
+
+```js
+{
+  label: "Dose",
+  weight: 10,                       // lower prints further left
+  numeric: true,                    // right-aligned, tabular numerals
+  cell: (day) => "50mg",            // this module's own day record
+  note: (day) => "23:30–07:00",     // optional smaller second line
+  legend: "Focus and mood are self-rated 1 to 5, where 5 is best."
+}
+```
+
+A cell returns a value the person entered, never a computed one: the table is what
+the figures above it are checked against. Return an empty string for nothing; the
+kernel owns how emptiness is printed. See `decisions/ADR-018-shared-day-table.md`.
+
 ### `library` — the evidence entry
 
 Required for every module, including Tier C. The shell renders these in one place so a person can read why a tool exists before turning it on.

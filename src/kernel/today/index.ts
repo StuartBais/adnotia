@@ -33,6 +33,11 @@ import { KERNEL_TODAY } from './kernelFields';
 export { carriedValue, readPath, writePath, type CarriedValue } from './carry';
 export { measure, type Budget, type MeasureOptions } from './budget';
 export { KERNEL_TODAY, kernelTodayCost, type KernelTodayGroup } from './kernelFields';
+export {
+  KERNEL_RECORDS_TITLE,
+  renderKernelRecords,
+  type KernelRecordsContext,
+} from './kernelRecords';
 
 type DayRecord = Record<string, unknown>;
 type Days = Record<IsoDate, DayRecord>;

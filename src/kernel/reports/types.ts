@@ -6,7 +6,7 @@
 // "Reports engine".
 
 import type { IsoDate } from '../dates/index';
-import type { TimelineRow } from '../registry/types';
+import type { DayColumn, TimelineRow } from '../registry/types';
 import type { Baseline, KernelDay, Question, Space } from '../store/document';
 
 /**
@@ -71,6 +71,30 @@ export interface ReportContext {
   timeline: readonly TimelineRow[];
   /** The sentence under that chart, in the contributors' weight order. */
   timelineLegend: string;
+  /**
+   * The shared day-by-day table, assembled the same way as the timeline: every
+   * enabled module's columns, in weight order, over the days in range.
+   * See docs/decisions/ADR-018-shared-day-table.md.
+   */
+  table: DayTable;
+}
+
+export interface DayTableCell {
+  text: string;
+  note: string;
+}
+
+export interface DayTableRow {
+  date: IsoDate;
+  label: string;
+  cells: readonly DayTableCell[];
+}
+
+export interface DayTable {
+  columns: readonly DayColumn[];
+  /** Newest first: the days nearest the appointment are the ones discussed. */
+  rows: readonly DayTableRow[];
+  legend: string;
 }
 
 export interface ReportDefinition {

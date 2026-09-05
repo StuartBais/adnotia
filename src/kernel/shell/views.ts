@@ -7,7 +7,7 @@
 import { parseIsoDate, type IsoDate } from '../dates/index';
 import { loggedDates, mountReport } from '../reports/index';
 import type { KernelStore } from '../store/store';
-import { mountToday } from '../today/index';
+import { KERNEL_RECORDS_TITLE, mountToday, renderKernelRecords } from '../today/index';
 import { calendar, card, el } from '../ui/index';
 import type { ModuleManifest, Space } from '../index';
 import { TAB_LABELS, type TabId } from './router';
@@ -143,6 +143,15 @@ export function renderTab(tab: TabId, context: ViewContext): HTMLElement {
 
       anything = true;
       section.append(card({ title: manifest.name, children: [body] }));
+    }
+
+    // The kernel's own fields last, after the modules that have their own cards.
+    // No module can show them: they belong to no module.
+    const kernelBody = el('div', {});
+    renderKernelRecords(kernelBody, { dates, days: store.document().kernel.days });
+    if (kernelBody.childElementCount > 0) {
+      anything = true;
+      section.append(card({ title: KERNEL_RECORDS_TITLE, children: [kernelBody] }));
     }
 
     if (!anything) section.append(card(EMPTY.records));

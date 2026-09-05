@@ -15,6 +15,7 @@ import { formatShortDate, today, type IsoDate } from '../dates/index';
 import type { AdnotiaDocument } from '../store/document';
 import {
   DAY_METADATA_KEYS,
+  type DayColumn,
   type FrameContribution,
   type ModuleManifest,
   type ReportSection,
@@ -34,6 +35,9 @@ import { coverageOf, resolveRange } from './range';
 import { KERNEL_SECTIONS } from './sections/index';
 import {
   REPORTS,
+  type DayTable,
+  type DayTableCell,
+  type DayTableRow,
   type RangeChoice,
   type ReportContext,
   type ReportDay,
@@ -154,6 +158,57 @@ export function buildTimeline(
   };
 }
 
+/**
+ * One row per day, one column per contributing module's declaration. A day with
+ * nothing in any column is left out: an all-dash row says only that the person
+ * did not log, which the coverage line above has already said once.
+ */
+export function buildDayTable(
+  document: AdnotiaDocument,
+  modules: readonly ModuleManifest[],
+  dates: readonly IsoDate[],
+): DayTable {
+  const columns: { column: DayColumn; moduleId: string }[] = [];
+  for (const manifest of modules) {
+    for (const column of manifest.contributes.columns ?? []) {
+      columns.push({ column, moduleId: manifest.id });
+    }
+  }
+  if (columns.length === 0) return { columns: [], rows: [], legend: '' };
+  columns.sort((a, b) => a.column.weight - b.column.weight);
+
+  const rows: DayTableRow[] = [];
+  // Newest first.
+  for (const date of [...dates].reverse()) {
+    const cells: DayTableCell[] = [];
+    let anything = false;
+
+    for (const { column, moduleId } of columns) {
+      const day = daysOf(document, moduleId)[date];
+      if (day === undefined) {
+        cells.push({ text: '', note: '' });
+        continue;
+      }
+      const text = column.cell(day);
+      const note = column.note?.(day) ?? '';
+      if (text !== '' || note !== '') anything = true;
+      cells.push({ text, note });
+    }
+
+    if (!anything) continue;
+    rows.push({ date, label: formatShortDate(date), cells });
+  }
+
+  return {
+    columns: columns.map((entry) => entry.column),
+    rows,
+    legend: columns
+      .map((entry) => entry.column.legend)
+      .filter((clause): clause is string => clause !== undefined && clause !== '')
+      .join(' '),
+  };
+}
+
 export function buildReport(options: BuildReportOptions): Report {
   const name = options.report ?? 'clinical';
   const definition = REPORTS[name];
@@ -176,6 +231,7 @@ export function buildReport(options: BuildReportOptions): Report {
   });
 
   const timeline = buildTimeline(document, modules, range.dates);
+  const table = buildDayTable(document, modules, range.dates);
 
   const base: ReportContext = {
     report: name,
@@ -189,6 +245,7 @@ export function buildReport(options: BuildReportOptions): Report {
     generatedOn: today(now),
     timeline: timeline.rows,
     timelineLegend: timeline.legend,
+    table,
     ...(document.kernel.baseline !== undefined ? { baseline: document.kernel.baseline } : {}),
     ...(document.kernel.overall !== undefined && document.kernel.overall !== ''
       ? { overall: document.kernel.overall }

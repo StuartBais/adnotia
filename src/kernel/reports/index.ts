@@ -6,6 +6,9 @@ export {
   type ReportContext,
   type ReportDay,
   type ReportDefinition,
+  type DayTable,
+  type DayTableCell,
+  type DayTableRow,
 } from './types';
 export { coverageOf, resolveRange, type RangeOptions } from './range';
 export { escapeHtml } from './html';
@@ -28,10 +31,12 @@ export {
   lifeSection,
   noteLines,
   notesSection,
+  dayTableSection,
   timelineSection,
   type LifeLine,
 } from './sections/index';
 export {
+  buildDayTable,
   buildReport,
   buildTimeline,
   loggedDates,

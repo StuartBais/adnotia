@@ -9,7 +9,7 @@ import type { ModuleManifest } from '../../kernel/index';
 import { fixtures } from './fixtures/index';
 import { library } from './library';
 import { renderRecords } from './records';
-import { clinicalSection, sleepTimeline } from './reports/clinical';
+import { clinicalSection, sleepColumn, sleepTimeline } from './reports/clinical';
 import { strings } from './strings';
 import { derive, today } from './today';
 
@@ -34,6 +34,7 @@ const manifest: ModuleManifest = {
     records: { render: renderRecords as (container: HTMLElement, context: unknown) => void },
     reports: [clinicalSection],
     timeline: sleepTimeline,
+    columns: [sleepColumn],
     library,
   },
 

@@ -115,6 +115,29 @@ export interface TimelineContribution {
   weight: number;
 }
 
+/**
+ * One column of the shared day-by-day table. Like the timeline, the table reads
+ * from every module at once, so no module owns it and none declares a dependency
+ * to appear in it. See docs/decisions/ADR-018-shared-day-table.md.
+ */
+export interface DayColumn {
+  /** The column heading. */
+  label: string;
+  /** Lower prints further left. */
+  weight: number;
+  /** Right-aligned with tabular numerals. */
+  numeric?: boolean;
+  /**
+   * The cell for one day, from this module's own day record. An empty string
+   * becomes an em dash: the table owns how it says "nothing here".
+   */
+  cell: (day: Readonly<Record<string, unknown>>) => string;
+  /** A smaller second line under the cell, for a detail that qualifies it. */
+  note?: (day: Readonly<Record<string, unknown>>) => string;
+  /** This column's clause in the sentence under the table. */
+  legend?: string;
+}
+
 export interface RecordsContribution {
   render(container: HTMLElement, context: unknown): void;
 }
@@ -178,6 +201,8 @@ export interface Contributions {
   reports?: ReportSection[];
   /** This module's marks on the kernel's shared day timeline. */
   timeline?: TimelineContribution;
+  /** This module's columns in the kernel's shared day-by-day table. */
+  columns?: DayColumn[];
   /** Required for every module, including Tier C. */
   library: LibraryEntry;
   settings?: SettingsItem[];

@@ -67,6 +67,50 @@ export function describeCover(day: MedicationDay | undefined): string {
   );
 }
 
+/**
+ * One reported effect with whatever detail was given about it: "Dry mouth (mild)
+ * at 11am, 96 bpm — worse after coffee". Ported from the monolith's withDetail.
+ */
+export function describeEffect(label: string, detail: SideDetail | undefined): string {
+  if (detail === undefined) return label;
+  let out = label;
+  if ((detail.sev ?? '') !== '')
+    out += ` (${(LABELS.get(detail.sev as string) ?? detail.sev)!.toLowerCase()})`;
+  if ((detail.time ?? '') !== '') out += ` at ${formatClockTime(detail.time as string)}`;
+  if ((detail.bpm ?? '') !== '') out += `, ${detail.bpm} bpm`;
+  if ((detail.note ?? '') !== '') out += ` — ${detail.note}`;
+  return out;
+}
+
+/**
+ * Everything the person reported about their body that day, in the order the
+ * monolith used: heart first, then appetite, then the side-effect chips. Shared
+ * by History and by the day-by-day table so the two cannot word it differently.
+ */
+export function bodyLines(day: MedicationDay | undefined): string[] {
+  if (day === undefined) return [];
+  const out: string[] = [];
+  const detail = day.detail ?? {};
+
+  if ((day.heart ?? '') !== '' && day.heart !== 'fine') {
+    out.push(
+      describeEffect(LABELS.get(day.heart as string) ?? (day.heart as string), detail['heart']),
+    );
+  }
+  if ((day.appetite ?? '') !== '' && day.appetite !== 'normal') {
+    out.push(
+      describeEffect(
+        LABELS.get(day.appetite as string) ?? (day.appetite as string),
+        detail['appetite'],
+      ),
+    );
+  }
+  for (const key of day.side ?? []) {
+    out.push(describeEffect(LABELS.get(key) ?? key, detail[key]));
+  }
+  return out;
+}
+
 export function renderRecords(
   container: HTMLElement,
   context: { dates: readonly IsoDate[]; days: Readonly<Record<IsoDate, MedicationDay>> },
@@ -92,22 +136,9 @@ export function renderRecords(
     if ((day.rebound ?? '') !== '' && day.rebound !== 'none') {
       lines.push(`${(LABELS.get(day.rebound as string) ?? '').toLowerCase()} crash`);
     }
-    if ((day.appetite ?? '') !== '' && day.appetite !== 'normal') {
-      lines.push(LABELS.get(day.appetite as string) ?? '');
-    }
-    if ((day.heart ?? '') !== '' && day.heart !== 'fine') {
-      lines.push(LABELS.get(day.heart as string) ?? '');
-    }
-
-    for (const key of day.side ?? []) {
-      const severity = day.detail?.[key]?.sev;
-      lines.push(
-        (LABELS.get(key) ?? key) +
-          (severity !== undefined && severity !== ''
-            ? ` (${(LABELS.get(severity) ?? severity).toLowerCase()})`
-            : ''),
-      );
-    }
+    // The same builder the day-by-day table uses, so History and the report
+    // cannot describe the same effect in two different ways.
+    lines.push(...bodyLines(day));
 
     if (lines.length === 0) continue;
     container.append(
