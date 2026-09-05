@@ -11,6 +11,12 @@ yet. See the implementation checkpoint in `docs/08-roadmap.md` for current limit
 
 ### Added
 
+- "If things are bad right now", one tap from every screen. It says plainly that the app
+  cannot help, leads with the local emergency number, then lists a few free lines that a
+  phone can dial in one tap. It asks nothing, records nothing and never reads the document.
+- "About Adnotia": what it is, what it is not, what happens to what you write, the licence
+  and the source, and the caveat `docs/03-scope.md` asks be stated plainly — that entries
+  belong to the address the app was served from, so opening it at another one starts empty.
 - The Library: every module's evidence entry, enabled or not, with the tier in the words
   `docs/02-evidence-rubric.md` fixes and never as a bare letter, the four parts an entry must
   have, its references with years, and its review dates. Modules appear in build order —

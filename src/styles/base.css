@@ -1101,3 +1101,75 @@ svg .cellblank {
 .refs li {
   margin-bottom: 6px;
 }
+
+/* ---------- the crisis page ---------- */
+/* Always reachable, never alarmed. Nothing here is red: docs/07-design-system.md
+   keeps destructive and urgent things in the ordinary palette, and a page a
+   person opens on a bad night is the last place to start shouting. */
+
+.crisis-link {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  font-size: 13px;
+  color: var(--ink2);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.crisis-link:hover {
+  color: var(--mark);
+}
+
+.crisis-first {
+  font-size: 17px;
+  line-height: 1.45;
+  margin: 0 0 6px;
+}
+
+.crisis-line {
+  padding: 11px 0;
+  border-bottom: 1px solid var(--line2);
+  font-size: 15px;
+}
+
+.crisis-line:last-child {
+  border-bottom: 0;
+}
+
+.crisis-where {
+  font-size: 12.5px;
+  color: var(--ink2);
+  margin-bottom: 3px;
+}
+
+.crisis-dial {
+  color: var(--mark);
+  text-decoration: none;
+  /* A phone number is a tap target on the device most likely to be in a hand. */
+  display: inline-block;
+  padding: 4px 0;
+  min-height: 24px;
+}
+
+.crisis-dial:hover {
+  text-decoration: underline;
+}
+
+/* A list that is prose rather than a table of contents. */
+.plain {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 14.5px;
+  line-height: 1.5;
+}
+
+.plain li {
+  margin-bottom: 8px;
+}
+
+.plain li:last-child {
+  margin-bottom: 0;
+}

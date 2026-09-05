@@ -9,6 +9,7 @@ import { el } from '../ui/index';
 import { createRouter, TABS, TAB_LABELS, type Router, type TabId } from './router';
 import { firstRun } from './firstRun';
 import { backupPage, settingsPage } from './settings';
+import { CRISIS_STRINGS, crisisPage } from './crisis';
 import { renderTab } from './views';
 
 import type { PasscodeActions } from './passcode';
@@ -128,9 +129,19 @@ export function mountShell(options: ShellOptions): Shell {
       );
     });
 
+    // One tap from every screen, which docs/03-scope.md asks be at most two.
+    // Quiet on purpose: always there, never alarming, and it never reacts to
+    // anything in the document.
+    const help = el('button', {
+      type: 'button',
+      class: 'crisis-link',
+      text: CRISIS_STRINGS.title,
+    });
+    help.addEventListener('click', () => router.openPage(crisisPage()));
+
     masthead.replaceChildren(
       el('div', { class: 'brand' }, [title]),
-      el('div', { class: 'btnrow', style: 'margin-top:10px' }, [settings]),
+      el('div', { class: 'btnrow', style: 'margin-top:10px' }, [settings, help]),
     );
   }
 
@@ -203,6 +214,7 @@ export function mountShell(options: ShellOptions): Shell {
         },
         // Dismissing does not switch the reminder off; it waits a fortnight
         // again, the same as taking a backup does.
+        onOpenPage: (page) => router.openPage(page),
         onDismissBackupNag: () => {
           store.updateKernel((kernel) => ({
             ...kernel,
