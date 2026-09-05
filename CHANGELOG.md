@@ -11,6 +11,12 @@ yet. See the implementation checkpoint in `docs/08-roadmap.md` for current limit
 
 ### Added
 
+- Somewhere to enter the before-medication baseline. The clinical report has always read it
+  — "focus 2.9/5, against a self-rated 2/5 before medication" — and nothing wrote it, so that
+  comparison never appeared for anyone.
+- The check-in budget is shown. Above about ninety seconds the person is offered the option
+  of hiding the optional questions, which the assembler could already do and nothing asked
+  for. It describes the form, never the person.
 - A "Preparing for an assessment" module: a dated log of specific examples — what happened,
   where, what was going on beforehand, what it cost — and a place to gather what can be found
   out about childhood, which is the question adult assessments most often turn on and the one

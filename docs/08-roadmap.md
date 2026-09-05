@@ -28,8 +28,9 @@ complete by this checkpoint.
 ### Still incomplete
 
 - Full thirty-day report, history and text-export parity against the monolith.
-- Baseline editing, the connected screen-only reflection, backup reminders,
-  and the check-in budget's user-facing optional-field controls.
+- ~~Baseline editing, the connected screen-only reflection, backup reminders,
+  and the check-in budget's user-facing optional-field controls.~~ All four
+  built; see the changelog.
 - Enabled-module migration orchestration on load and restore, and confirmation
   before removing the retained legacy key.
 - Complete Library evidence rendering, verified citations, About and safety
