@@ -21,6 +21,7 @@ import {
   scale5,
   textInput,
   timeInput,
+  timeList,
   toggleDetail,
   type Control,
 } from '../ui/index';
@@ -86,6 +87,14 @@ function controlFor(
       return chipsMulti({
         label: field.label,
         options: field.options ?? [],
+        value: Array.isArray(seed) ? (seed as string[]) : [],
+        optional: field.optional ?? false,
+        onChange,
+      }) as unknown as Control<unknown>;
+
+    case 'timeList':
+      return timeList({
+        label: field.label,
         value: Array.isArray(seed) ? (seed as string[]) : [],
         optional: field.optional ?? false,
         onChange,

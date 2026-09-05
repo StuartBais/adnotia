@@ -275,6 +275,38 @@ button:focus-visible,
   min-height: 19px;
 }
 
+/* ---------- a list of times ---------- */
+
+.timelist {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin-bottom: 8px;
+}
+
+.timerow {
+  display: flex;
+  gap: 7px;
+  align-items: center;
+}
+
+.timerow input {
+  flex: 1;
+}
+
+.xbtn {
+  border: 1px solid var(--line);
+  background: var(--paper);
+  border-radius: var(--r-control);
+  width: 38px;
+  height: 38px;
+  flex: none;
+  cursor: pointer;
+  color: var(--ink2);
+  font-size: 17px;
+  line-height: 1;
+}
+
 /* ---------- follow-up detail ---------- */
 
 /* Revealed by a chip, never shown unconditionally. */
