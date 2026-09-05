@@ -14,6 +14,7 @@ import {
   spanMinutes,
   type IsoDate,
   escapeHtml,
+  type DayColumn,
   type ReportSection,
   type TimelineContribution,
 } from '../../../kernel/index';
@@ -200,5 +201,31 @@ export const sleepTimeline: TimelineContribution = {
     const wake = night.wake ?? '';
     if (bed === '' || wake === '') return {};
     return { bands: [{ from: bed, to: wake, className: 'sleepband' }] };
+  },
+};
+
+/**
+ * The sleep module's column in the shared day-by-day table. Weight 70 puts it
+ * between the medication columns and the side-effect one, which is where the
+ * monolith had it — arrived at by declaring a number, not by either module
+ * knowing about the other.
+ * See docs/decisions/ADR-018-shared-day-table.md.
+ */
+export const sleepColumn: DayColumn = {
+  label: 'Sleep',
+  weight: 70,
+  numeric: true,
+  cell: (day) => {
+    const hours = (day as SleepDay).hours ?? '';
+    return hours === '' ? '' : `${hours}h`;
+  },
+  // The window underneath the total, because "7h" and "7h, 2am to 9am" are
+  // different nights and only one of them is worth raising.
+  note: (day) => {
+    const night = day as SleepDay;
+    const bed = night.bed ?? '';
+    const wake = night.wake ?? '';
+    if (bed === '' && wake === '') return '';
+    return `${bed === '' ? '?' : formatClockTime(bed)}–${wake === '' ? '?' : formatClockTime(wake)}`;
   },
 };

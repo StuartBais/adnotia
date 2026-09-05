@@ -8,6 +8,7 @@ import type { ModuleManifest } from '../../kernel/index';
 import { fixtures } from './fixtures/index';
 import { library } from './library';
 import { renderRecords } from './records';
+import { columns } from './reports/columns';
 import { doseOverTimeSection, medicationTimeline } from './reports/doses';
 import { levelsSection } from './reports/levels';
 import { sideEffectsSection } from './reports/sideEffects';
@@ -40,6 +41,7 @@ const manifest: ModuleManifest = {
     records: { render: renderRecords as (container: HTMLElement, context: unknown) => void },
     reports: [standingSection, doseOverTimeSection, levelsSection, sideEffectsSection],
     timeline: medicationTimeline,
+    columns,
     library,
   },
 

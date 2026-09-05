@@ -11,6 +11,12 @@ yet. See the implementation checkpoint in `docs/08-roadmap.md` for current limit
 
 ### Added
 
+- "Day by day": every day in the range with the values the person entered, assembled from
+  every module's declared columns in weight order. Medication takes weights 10 to 60 and 80,
+  sleep takes 70 and lands between them, and neither knows the other exists. See
+  `docs/decisions/ADR-018-shared-day-table.md`.
+- Wins, misses and the day's note now appear in History. They are kernel fields, so no
+  module's history could show them and they had been silently absent.
 - "Side effects over time": each reported effect in the first half of the range against the
   second, with the days and the severity in each. It carries no verdict about the direction
   and no advice about what to raise. See
