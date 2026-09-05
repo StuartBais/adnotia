@@ -33,4 +33,6 @@ Milestone 0 is in progress; nothing has been released yet.
 - Every shared UI primitive in `src/kernel/ui/`: scales, chips, follow-up detail rows,
   inputs, the calendar, cards, link rows, the nag, the mirror, and the Family space's
   positive-only reward chart and parent gate.
+- The shell: first run, the choice between the Adult and Family spaces, the four tabs,
+  the off-tab page pattern, and settings with backup and restore.
 - CI running `npm run check`, the test suites and both builds on every push.

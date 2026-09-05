@@ -1,29 +1,67 @@
-// Milestone 0. The shell is a scaffold: no kernel wiring and no modules yet.
-// Those land in the remaining Milestone 0 steps; see docs/08-roadmap.md.
+// Boot.
+//
+// Milestone 0: the shell opens to first run with no modules registered. The
+// medication log arrives in Milestone 1; see docs/08-roadmap.md.
 
 import './styles/tokens.css';
 import './styles/base.css';
 import './styles/print.css';
 
+import {
+  createStore,
+  isLocalStorageAvailable,
+  localStorageAdapter,
+  memoryStorageAdapter,
+  migrateDocument,
+  mountShell,
+  MODULES,
+  V0_KEY,
+} from './kernel/index';
+
 const app = document.querySelector<HTMLElement>('#app');
 
-if (app) {
-  app.className = 'wrap';
+async function boot(root: HTMLElement): Promise<void> {
+  // A browser with storage blocked still runs; it just forgets on close, and
+  // the app says so rather than failing at the first write.
+  const usable = isLocalStorageAvailable();
+  const store = createStore({
+    adapter: usable ? localStorageAdapter() : memoryStorageAdapter(),
+    onPersistError: () => {
+      // Losing a write silently is the one thing this app must not do.
+      console.error('Adnotia could not save. Download a backup so you do not lose today.');
+    },
+  });
 
-  const masthead = document.createElement('header');
-  masthead.className = 'mast';
-  const heading = document.createElement('h1');
-  heading.textContent = 'Adnotia';
-  masthead.append(heading);
+  await store.load();
 
-  const card = document.createElement('section');
-  card.className = 'card';
-  const title = document.createElement('h2');
-  title.textContent = 'Not finished yet';
-  const note = document.createElement('p');
-  note.className = 'sub';
-  note.textContent = 'The shell is still being built. There is nothing to record here so far.';
-  card.append(title, note);
+  // A document from the v0 monolith, still under its own key. The old key is
+  // left untouched until the person confirms the import worked.
+  if (usable && store.document().kernel.settings.firstRunComplete !== true) {
+    const v0 = globalThis.localStorage.getItem(V0_KEY);
+    if (v0 !== null && v0 !== '') {
+      try {
+        const imported = migrateDocument(JSON.parse(v0));
+        store.updateKernel(() => ({
+          ...imported.kernel,
+          settings: { ...imported.kernel.settings, firstRunComplete: true },
+        }));
+        for (const [id, slice] of Object.entries(imported.modules)) store.set(id, slice);
+      } catch {
+        // An encrypted v0 document needs the passcode first. Left for the
+        // unlock flow rather than guessed at here.
+      }
+    }
+  }
 
-  app.replaceChildren(masthead, card);
+  mountShell({ store, container: root, modules: MODULES });
+
+  if (!usable) {
+    const warning = document.createElement('p');
+    warning.className = 'hint';
+    warning.textContent =
+      'This browser is not letting Adnotia save anything, so nothing will be here next time.';
+    root.prepend(warning);
+  }
 }
+
+if (app) void boot(app);

@@ -59,6 +59,12 @@ export interface KernelState {
 
 export interface KernelSettings {
   passcodeEnabled: boolean;
+  /**
+   * Whether the person has been through first run. Kept explicitly rather than
+   * inferred from "no modules enabled", because choosing nothing is a valid
+   * answer and must not put someone back at the first question.
+   */
+  firstRunComplete?: boolean;
   /** Carried in from the monolith, where the baseline card could be hidden. */
   baseHidden?: boolean;
 }
