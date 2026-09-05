@@ -5,13 +5,14 @@
 // fact to show, never a failure to punish.
 
 import { renderLibrary } from '../library/index';
+import { ABOUT_STRINGS, aboutPage } from './about';
 import { parseIsoDate, type IsoDate } from '../dates/index';
 import { backupNag, loggedDates, mountReport } from '../reports/index';
 import type { KernelStore } from '../store/store';
 import { KERNEL_RECORDS_TITLE, mountToday, renderKernelRecords } from '../today/index';
-import { calendar, card, el, nag } from '../ui/index';
+import { calendar, card, el, linkRow, nag } from '../ui/index';
 import type { ModuleManifest, Space } from '../index';
-import { TAB_LABELS, type TabId } from './router';
+import { TAB_LABELS, type OffTabPage, type TabId } from './router';
 
 export interface ViewContext {
   space: Space;
@@ -24,6 +25,8 @@ export interface ViewContext {
   onDateChange?: (date: IsoDate) => void;
   /** Opens the backup page. Absent in tests that render a tab in isolation. */
   onBackup?: () => void;
+  /** Opens an off-tab page, for the About link at the foot of the Library. */
+  onOpenPage?: (page: OffTabPage) => void;
   onDismissBackupNag?: () => void;
 }
 
@@ -59,6 +62,15 @@ export function renderTab(tab: TabId, context: ViewContext): HTMLElement {
     // turning it on — and every exclusion, so they can read why the thing they
     // came looking for is absent. See docs/02-evidence-rubric.md.
     section.append(renderLibrary({ modules: context.known, space: context.space }));
+    if (context.onOpenPage !== undefined) {
+      section.append(
+        linkRow({
+          label: ABOUT_STRINGS.title,
+          value: 'Open',
+          onSelect: () => context.onOpenPage?.(aboutPage()),
+        }),
+      );
+    }
     return section;
   }
 
