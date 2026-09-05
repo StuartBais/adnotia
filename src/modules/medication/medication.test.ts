@@ -4,6 +4,7 @@ import manifest from './manifest';
 import { describeCover, describePrescription } from './records';
 import { doseLabel, doseSeries, groupByDose, medicationTimeline } from './reports/doses';
 import { lines as levelLines, summarise as summariseLevels } from './reports/levels';
+import { observations as mirrorObservations } from './reports/mirror';
 import { lines, summarise as summariseStanding } from './reports/standing';
 import {
   grid as sideEffectGrid,
@@ -458,5 +459,74 @@ describe('medication: the first half against the second', () => {
     expect(
       trajectory({ dates: few, days: Object.fromEntries(few.map((d) => [d, { side: ['dry'] }])) }),
     ).toBeUndefined();
+  });
+});
+
+describe('medication: what it notices about the person’s own record', () => {
+  const dates = Array.from({ length: 12 }, (_, i) => `2026-09-${String(i + 1).padStart(2, '0')}`);
+  const base = { med: 'Elvanse', dose: '50', unit: 'mg' };
+
+  const withFocus = (values: number[]) =>
+    Object.fromEntries(
+      dates.map((d, i) => [d, { ...base, focus: values[i % values.length] ?? null }]),
+    );
+
+  it('notices a focus rating that has not moved', () => {
+    const out = mirrorObservations({ dates, days: withFocus([3]) });
+    const flat = out.find((o) => o.tag === 'Your focus rating has been flat');
+    expect(flat?.text).toContain('Elvanse 50mg');
+    expect(flat?.text).toContain('3.0');
+  });
+
+  it('says nothing about flatness when it did move', () => {
+    const days = Object.fromEntries(dates.map((d, i) => [d, { ...base, focus: i < 6 ? 1 : 5 }]));
+    expect(mirrorObservations({ dates, days }).map((o) => o.tag)).not.toContain(
+      'Your focus rating has been flat',
+    );
+  });
+
+  it('notices side effects already sitting high, without telling them what to do', () => {
+    const days = Object.fromEntries(
+      dates.map((d, i) => [
+        d,
+        i < 8
+          ? { ...base, side: ['dry'], detail: { dry: { sev: 'severe' } } }
+          : { ...base, side: [] },
+      ]),
+    );
+    const out = mirrorObservations({ dates, days });
+    const heavy = out.find((o) => o.tag === 'Side effects are already sitting high')!;
+    expect(heavy.text).toContain('8 of 12 days');
+    expect(heavy.text).not.toMatch(/\b(should|reduce|lower|stop)\b/i);
+  });
+
+  it('notices when the notes are brighter than the ratings', () => {
+    const kernelDays = Object.fromEntries(dates.map((d) => [d, { win: 'Got the thing done' }]));
+    const out = mirrorObservations({ dates, days: withFocus([2]), kernelDays });
+    const clash = out.find((o) => o.tag === 'Your ratings and your notes disagree')!;
+    expect(clash.text).toContain('12 of 12 days');
+    expect(clash.text).toContain('2.0');
+  });
+
+  it('notices when the ratings are brighter than the notes', () => {
+    const out = mirrorObservations({ dates, days: withFocus([5]), kernelDays: {} });
+    const clash = out.find((o) => o.tag === 'Your ratings and your notes disagree')!;
+    expect(clash.text).toContain('only 0 of 12 days');
+    expect(clash.text).toContain('Concrete examples');
+  });
+
+  it('treats neither the ratings nor the notes as the true one', () => {
+    const kernelDays = Object.fromEntries(dates.map((d) => [d, { win: 'x' }]));
+    for (const out of [
+      mirrorObservations({ dates, days: withFocus([2]), kernelDays }),
+      mirrorObservations({ dates, days: withFocus([5]), kernelDays: {} }),
+    ]) {
+      const clash = out.find((o) => o.tag === 'Your ratings and your notes disagree')!;
+      expect(clash.text).not.toMatch(/\b(wrong|inaccurate|exaggerat|honest)/i);
+    }
+  });
+
+  it('says nothing at all when there is no prescription recorded', () => {
+    expect(mirrorObservations({ dates: [], days: {} })).toEqual([]);
   });
 });

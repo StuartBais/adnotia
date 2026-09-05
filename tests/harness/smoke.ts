@@ -168,6 +168,32 @@ export function smokeTest(manifest: ModuleManifest): void {
       }
     });
 
+    it('never shames the person in the screen-only reflection', () => {
+      // The mirror is not printed, so the clinical-section rules do not reach it.
+      // The voice rules in docs/07-design-system.md do, and hard exclusion 9 bans
+      // shaming outright. See docs/decisions/ADR-019-the-mirror-and-the-nag.md.
+      const contribution = manifest.contributes.mirror;
+      if (contribution === undefined) return;
+
+      const shaming = /\b(you (forgot|failed|missed)|streak|badge|well done|great job)\b/i;
+
+      for (const [, fixture] of fixtureEntries(manifest)) {
+        const dates = Object.keys(fixture.days ?? {}).sort();
+        const context = {
+          dates,
+          days: fixture.days ?? {},
+          kernelDays: Object.fromEntries(dates.map((date) => [date, { win: 'something' }])),
+        };
+        for (const observation of contribution.observations(context)) {
+          expect(observation.tag, 'a mirror tag').not.toMatch(shaming);
+          expect(observation.text, observation.tag).not.toMatch(shaming);
+          expect(observation.text, observation.tag).not.toContain('!');
+          // It reflects; it does not instruct.
+          expect(observation.text, observation.tag).not.toMatch(/\byou (must|need to|should)\b/i);
+        }
+      }
+    });
+
     it('makes no network request while rendering', () => {
       // The guard in tests/setup.ts throws on any networking primitive, so
       // reaching for one here fails rather than passing against a stub.

@@ -8,12 +8,12 @@ import { createRegistry, type ModuleManifest, type KernelStore, type Space } fro
 import { el } from '../ui/index';
 import { createRouter, TABS, TAB_LABELS, type Router, type TabId } from './router';
 import { firstRun } from './firstRun';
-import { settingsPage } from './settings';
+import { backupPage, settingsPage } from './settings';
 import { renderTab } from './views';
 
 import type { PasscodeActions } from './passcode';
 
-import { loggingDay } from '../dates/index';
+import { loggingDay, today } from '../dates/index';
 
 import { StorageChangedError } from '../store/adapters';
 
@@ -187,6 +187,28 @@ export function mountShell(options: ShellOptions): Shell {
         date: selectedDate,
         onDateChange: (date) => {
           selectedDate = date;
+        },
+        onBackup: () => {
+          router.openPage(
+            backupPage({
+              store,
+              router,
+              offerDownload: options.offerDownload ?? defaultDownload,
+              onRestored: () => refresh(),
+              onChanged: () => refresh(),
+              modules: registry.all(),
+              ...(options.security ? { security: options.security } : {}),
+            }),
+          );
+        },
+        // Dismissing does not switch the reminder off; it waits a fortnight
+        // again, the same as taking a backup does.
+        onDismissBackupNag: () => {
+          store.updateKernel((kernel) => ({
+            ...kernel,
+            lastBackupNagDismissed: today(),
+          }));
+          refresh();
         },
       }),
     );

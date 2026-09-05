@@ -24,7 +24,6 @@ export {
   nag,
   type CardOptions,
   type LinkRowOptions,
-  type MirrorObservation,
   type NagOptions,
 } from './panels';
 export { calendar, firstWeekday, type CalendarOptions } from './calendar';

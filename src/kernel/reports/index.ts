@@ -12,6 +12,14 @@ export {
 } from './types';
 export { coverageOf, resolveRange, type RangeOptions } from './range';
 export { escapeHtml } from './html';
+export { NAG_INTERVAL_DAYS, backupNag, type BackupNag, type BackupNagInput } from './nag';
+export {
+  MAX_OBSERVATIONS,
+  MIRROR_SUB,
+  MIRROR_TITLE,
+  buildMirror,
+  kernelObservations,
+} from './mirror';
 export { qualityLines, recordQuality, type RecordQuality } from './quality';
 export { headerHtml, headerParts, headerText, type HeaderParts } from './header';
 export {

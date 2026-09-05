@@ -54,6 +54,8 @@ export interface KernelState {
   baseline?: Baseline;
   overall?: string;
   lastBackup?: IsoDate;
+  /** When the backup reminder was last dismissed. It waits a fortnight again. */
+  lastBackupNagDismissed?: IsoDate;
   lastAppointment?: IsoDate;
 }
 
