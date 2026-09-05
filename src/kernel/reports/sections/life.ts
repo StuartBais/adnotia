@@ -137,5 +137,4 @@ export const notesSection: ReportSection = {
     ].join('\n'),
 };
 
-/** The kernel's own contributions to the clinical report. */
-export const KERNEL_SECTIONS: readonly ReportSection[] = [lifeSection, notesSection];
+

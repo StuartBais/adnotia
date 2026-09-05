@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { dayTimeline, severityGrid, stepChart } from '../../src/kernel/index';
 
 // The design system is specified in docs/07-design-system.md, which is the
 // authority; these assert the stylesheets still say what it says.
@@ -76,13 +77,41 @@ describe('base', () => {
   });
 
   it('never sets screen text below 12.5px', () => {
-    const sizes = [...base.matchAll(/font-size:\s*([\d.]+)px/g)].map((m) => Number(m[1]));
+    // SVG rules are excluded: a chart label is sized in user units inside a
+    // viewBox, not in CSS pixels, so the same number means something different.
+    // See the chart-label test below for what governs those instead.
+    const withoutCharts = base.replace(/svg [^{]*\{[^}]*\}/g, '');
+    const sizes = [...withoutCharts.matchAll(/font-size:\s*([\d.]+)px/g)].map((m) => Number(m[1]));
     expect(sizes.length).toBeGreaterThan(10);
     expect(Math.min(...sizes)).toBeGreaterThanOrEqual(11);
     // 11.5px is used only for the "optional" marker and the mirror's tag, which
     // are labels rather than reading text. Nothing else goes near it.
     const belowFloor = sizes.filter((size) => size < 12.5);
     expect(belowFloor.every((size) => size === 11.5 || size === 11 || size === 12)).toBe(true);
+  });
+
+  it('never puts anything only in a chart label', () => {
+    // Chart labels are 9 user units in a 640-wide viewBox, so on a narrow phone
+    // they render well under the 12.5px floor. That is accepted only because
+    // nothing is available solely from them: every chart carries an aria-label
+    // describing it and a legend in body text, and every figure it plots is also
+    // stated in words by a section of the same report. Recorded for the
+    // accessibility audit in docs/08-roadmap.md Milestone 8.
+    expect(base).toMatch(/svg \.tick \{[^}]*font-size: 9px/);
+
+    for (const chart of [stepChart, dayTimeline, severityGrid]) {
+      expect(typeof chart).toBe('function');
+    }
+    const drawn = stepChart({
+      columns: [{ step: 30 }, { step: 50 }],
+      pointScale: { min: 1, max: 5, label: 'focus 5' },
+      startLabel: '1 Sep',
+      endLabel: '2 Sep',
+      title: 'Dose over time with daily focus ratings',
+      legend: 'Solid line: daily dose.',
+    });
+    expect(drawn).toContain('aria-label="Dose over time with daily focus ratings"');
+    expect(drawn).toContain('<p class="legend">Solid line: daily dose.</p>');
   });
 
   it('respects prefers-reduced-motion', () => {

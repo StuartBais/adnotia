@@ -1,15 +1,15 @@
 // The sleep module.
 //
 // Split out from the medication log by the contract exercise: people who do not
-// take medication have every reason to track sleep, and the medication log reads
-// it as an optional dependency for the cover-across-the-day chart rather than
-// owning it. See docs/01-module-contract.md "Worked example".
+// take medication have every reason to track sleep. It draws its own band on the
+// kernel's shared day timeline and does not know what else is on the row.
+// See docs/01-module-contract.md "Worked example".
 
 import type { ModuleManifest } from '../../kernel/index';
 import { fixtures } from './fixtures/index';
 import { library } from './library';
 import { renderRecords } from './records';
-import { clinicalSection } from './reports/clinical';
+import { clinicalSection, sleepTimeline } from './reports/clinical';
 import { strings } from './strings';
 import { derive, today } from './today';
 
@@ -33,6 +33,7 @@ const manifest: ModuleManifest = {
     today,
     records: { render: renderRecords as (container: HTMLElement, context: unknown) => void },
     reports: [clinicalSection],
+    timeline: sleepTimeline,
     library,
   },
 

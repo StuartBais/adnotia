@@ -8,7 +8,14 @@
 // engine, which owns shared visuals; this is the same data as a table, which is
 // what the text export needs anyway.
 
-import { escapeHtml, type IsoDate, type ReportSection } from '../../../kernel/index';
+import {
+  chartNote,
+  escapeHtml,
+  formatShortDate,
+  severityGrid,
+  type IsoDate,
+  type ReportSection,
+} from '../../../kernel/index';
 import { LABELS, SEVERITY_RANK } from '../strings';
 import type { MedicationDay } from '../records';
 
@@ -70,11 +77,79 @@ export function summarise(context: SideEffectsContext): SideEffectsSummary {
   };
 }
 
+
+// ------------------------------------------------------------ the grid
+//
+// The same data as the table, as a shape. A prescriber reads the clustering off
+// this in a second: whether something ran all the way through or arrived when the
+// dose went up. The kernel draws it; this only says what goes in each cell.
+//
+// The severity ramp shades the grid and is never shown to anyone as a score.
+
+/** Below this the grid is a handful of squares and the table says more. */
+const MIN_DAYS = 4;
+/** More rows than this and the labels stop being readable. */
+const MAX_ROWS = 8;
+
+const SEVERITY_CLASS = ['sev0', 'sev1', 'sev2', 'sev3'];
+
+export interface SideEffectGrid {
+  rowLabels: string[];
+  cells: string[][];
+  first: IsoDate;
+  last: IsoDate;
+}
+
+/** Everything reported on a day, including appetite and heart when not normal. */
+function reportedOn(day: MedicationDay | undefined): string[] {
+  if (day === undefined) return [];
+  const items = [...(day.side ?? [])];
+  if ((day.appetite ?? '') !== '' && day.appetite !== 'normal') items.push(day.appetite as string);
+  if ((day.heart ?? '') !== '' && day.heart !== 'fine') items.push(day.heart as string);
+  return items;
+}
+
+export function grid(context: SideEffectsContext): SideEffectGrid | undefined {
+  const first = context.dates[0];
+  const last = context.dates[context.dates.length - 1];
+  if (first === undefined || last === undefined || context.dates.length < MIN_DAYS) return undefined;
+
+  const counts = new Map<string, number>();
+  for (const date of context.dates) {
+    for (const key of reportedOn(context.days[date])) {
+      counts.set(key, (counts.get(key) ?? 0) + 1);
+    }
+  }
+  if (counts.size === 0) return undefined;
+
+  const keys = [...counts.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, MAX_ROWS)
+    .map(([key]) => key);
+
+  return {
+    rowLabels: keys.map((key) => LABELS.get(key) ?? key),
+    cells: keys.map((key) =>
+      context.dates.map((date) => {
+        const day = context.days[date];
+        if (!reportedOn(day).includes(key)) return 'cellblank';
+        return SEVERITY_CLASS[SEVERITY_RANK[day?.detail?.[key]?.sev ?? ''] ?? 0] ?? 'sev0';
+      }),
+    ),
+    first,
+    last,
+  };
+}
+
+const GRID_LEGEND =
+  'One column per day. Darker means more severe; the palest shade is a day it was ' +
+  'reported without a severity rating.';
+
 export const sideEffectsSection: ReportSection = {
   report: 'clinical',
   id: 'medication.side',
   title: () => 'Side effects',
-  weight: 50,
+  weight: 60,
 
   when: (context) => summarise(context as SideEffectsContext).rows.length > 0,
 
@@ -90,9 +165,23 @@ export const sideEffectsSection: ReportSection = {
       )
       .join('');
 
+    const shape = grid(context as SideEffectsContext);
+    const picture =
+      shape === undefined
+        ? ''
+        : severityGrid({
+            rowLabels: shape.rowLabels,
+            cells: shape.cells,
+            startLabel: formatShortDate(shape.first),
+            endLabel: formatShortDate(shape.last),
+            title: 'Grid of side effects by day, shaded by severity',
+            legend: GRID_LEGEND,
+          });
+
     return (
       '<h3>Side effects</h3>' +
       `<p class="meta">${summary.daysRecorded} of ${summary.ofDays} days recorded.</p>` +
+      picture +
       '<div class="scroll"><table><thead><tr>' +
       '<th>Reported</th><th>Days</th><th>Worst rated</th><th>Moderate or worse</th>' +
       `</tr></thead><tbody>${rows}</tbody></table></div>`
@@ -105,6 +194,9 @@ export const sideEffectsSection: ReportSection = {
       'Side effects',
       '------------',
       `${summary.daysRecorded} of ${summary.ofDays} days recorded.`,
+      ...(grid(context as SideEffectsContext) === undefined
+        ? []
+        : [chartNote('severity grid'), GRID_LEGEND]),
       'Reported | Days | Worst rated | Moderate or worse',
       ...summary.rows.map(
         (row) =>

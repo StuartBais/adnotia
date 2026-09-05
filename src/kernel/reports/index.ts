@@ -28,9 +28,16 @@ export {
   lifeSection,
   noteLines,
   notesSection,
+  timelineSection,
   type LifeLine,
-} from './sections/life';
-export { buildReport, loggedDates, type BuildReportOptions, type Report } from './engine';
+} from './sections/index';
+export {
+  buildReport,
+  buildTimeline,
+  loggedDates,
+  type BuildReportOptions,
+  type Report,
+} from './engine';
 export { mountReport, type ReportView, type ReportViewOptions } from './view';
 export {
   EXPORT_STRINGS,
