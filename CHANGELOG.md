@@ -30,4 +30,7 @@ Milestone 0 is in progress; nothing has been released yet.
 - The design system's stylesheets — tokens, base and print — ported from the reference
   implementation, with a contrast check that fails the build if a text-on-surface pair
   drops below 4.5:1.
+- Every shared UI primitive in `src/kernel/ui/`: scales, chips, follow-up detail rows,
+  inputs, the calendar, cards, link rows, the nag, the mirror, and the Family space's
+  positive-only reward chart and parent gate.
 - CI running `npm run check`, the test suites and both builds on every push.

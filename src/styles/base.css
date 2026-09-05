@@ -596,6 +596,33 @@ button:focus-visible,
   margin-top: 9px;
 }
 
+/* ---------- the parent gate ---------- */
+
+.pin {
+  font-family: var(--sans);
+  font-size: 26px;
+  letter-spacing: 0.35em;
+  text-align: center;
+  padding: 14px 10px;
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: var(--r-control);
+  background: var(--paper);
+  margin-bottom: 12px;
+}
+
+/* ---------- the reward chart ---------- */
+
+/* The one place in Adnotia that shows points. Positive-only and
+   parent-initiated: see docs/02-evidence-rubric.md "A note on reward charts". */
+.reward-stars {
+  font-size: 26px;
+  line-height: 1.3;
+  color: var(--mark);
+  margin: 4px 0 8px;
+  word-break: break-word;
+}
+
 /* ---------- the child surface ---------- */
 
 /* Large targets and nothing below 16px. See docs/05-architecture.md. */
