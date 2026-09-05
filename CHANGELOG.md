@@ -21,4 +21,5 @@ Milestone 0 is in progress; nothing has been released yet.
 - The kernel date and clock service: logging day, midnight-crossing arithmetic, `nearestPrior` carry.
 - The kernel store: document, slices, debounced persist, `localStorage` and host adapters.
 - The kernel migration framework and the v0 import.
+- Optional passcode encryption at rest and the backup-passphrase primitives, in the envelope format the monolith already used, so a v0 document opens unchanged.
 - CI running `npm run check`, the test suites and both builds on every push.
