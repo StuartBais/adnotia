@@ -72,7 +72,7 @@ Each field declares:
 {
   id: "focus",
   label: "Focus and follow-through",
-  type: "scale5" | "chips" | "chipsMulti" | "time" | "number" | "text" | "toggle",
+  type: "scale5" | "chips" | "chipsMulti" | "time" | "timeList" | "number" | "text" | "toggle",
   options: [...],                // chips only: { v, l } pairs
   anchors: [...],                // scale5 only: six strings, index 1–5 used
   optional: true,

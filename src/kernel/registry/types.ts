@@ -15,6 +15,8 @@ export type FieldType =
   | 'chips'
   | 'chipsMulti'
   | 'time'
+  /** An ordered list of times. See docs/decisions/ADR-011-time-list-field.md. */
+  | 'timeList'
   | 'number'
   | 'text'
   | 'toggle';

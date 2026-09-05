@@ -27,6 +27,7 @@ export {
   type NagOptions,
 } from './panels';
 export { calendar, firstWeekday, type CalendarOptions } from './calendar';
+export { timeList, tidy, type TimeListOptions } from './timeList';
 export {
   parentGate,
   rewardChart,

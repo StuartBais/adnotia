@@ -30,6 +30,7 @@ const FIELD_TYPES = new Set([
   'chips',
   'chipsMulti',
   'time',
+  'timeList',
   'number',
   'text',
   'toggle',
