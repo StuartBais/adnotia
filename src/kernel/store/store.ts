@@ -1,0 +1,265 @@
+// The store.
+//
+// Modules see one namespaced slice and never the path to it. In the Adult space
+// that is `modules.<id>`; in the Family space it is
+// `family.children[<profileId>].modules.<id>`, one slice per child, so two
+// children's data never mix and a profile deletes cleanly.
+//
+// Every write persists the whole document, debounced. See
+// docs/05-architecture.md "Store" and docs/01-module-contract.md "State".
+
+import {
+  createDocument,
+  isDocumentShaped,
+  DOCUMENT_KEY,
+  type AdnotiaDocument,
+  type KernelState,
+  type ModuleSlice,
+  type Space,
+} from './document';
+import { plainJsonCodec, type DocumentCodec } from './codec';
+import { memoryStorageAdapter, type StorageAdapter } from './adapters';
+
+/** What a module is handed. Anything not here is not available to a module. */
+export interface Store {
+  get<T>(sliceId: string): Readonly<T> | undefined;
+  set<T>(sliceId: string, next: T): void;
+  subscribe(sliceId: string, listener: () => void): () => void;
+}
+
+export interface KernelStore extends Store {
+  /** The whole document, frozen. For the kernel, backups and reports. */
+  document(): Readonly<AdnotiaDocument>;
+  /** Read from storage. Creates a document when there is nothing stored. */
+  load(): Promise<void>;
+  /** Persist now rather than on the debounce. */
+  flush(): Promise<void>;
+  space(): Space;
+  useSpace(space: Space): void;
+  profile(): string | undefined;
+  /** Choose the child profile that Family-space slices resolve against. */
+  useProfile(profileId: string | undefined): void;
+  /** Kernel-only writes. Modules never write outside their slice. */
+  updateKernel(update: (kernel: Readonly<KernelState>) => KernelState): void;
+  /** Remove a slice entirely. Explicit and separate from disabling a module. */
+  deleteSlice(sliceId: string): void;
+  /** Stop the debounce timer. No timer outlives the page. */
+  dispose(): void;
+}
+
+export interface CreateStoreOptions {
+  adapter?: StorageAdapter;
+  codec?: DocumentCodec;
+  key?: string;
+  /** docs/05-architecture.md: persistence is debounced 500 ms. */
+  debounceMs?: number;
+  now?: () => Date;
+  /**
+   * Storage can fail: a full quota, a private window, a host that refuses.
+   * Losing a write silently is the one thing this app must not do.
+   */
+  onPersistError?: (error: unknown) => void;
+}
+
+/** Recursively freeze, so a caller cannot mutate the document by holding a slice. */
+function deepFreeze<T>(value: T): T {
+  if (typeof value !== 'object' || value === null || Object.isFrozen(value)) return value;
+  for (const held of Object.values(value as Record<string, unknown>)) deepFreeze(held);
+  return Object.freeze(value);
+}
+
+/** A defensive copy, so what a caller keeps is never what the document holds. */
+function clone<T>(value: T): T {
+  return structuredClone(value);
+}
+
+export function createStore(options: CreateStoreOptions = {}): KernelStore {
+  const {
+    adapter = memoryStorageAdapter(),
+    codec = plainJsonCodec,
+    key = DOCUMENT_KEY,
+    debounceMs = 500,
+    now = () => new Date(),
+    onPersistError,
+  } = options;
+
+  let document = createDocument({ now: now() });
+  let profileId: string | undefined;
+
+  const listeners = new Map<string, Set<() => void>>();
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  let writing: Promise<void> = Promise.resolve();
+
+  function notify(sliceId: string): void {
+    for (const listener of listeners.get(sliceId) ?? []) listener();
+  }
+
+  function persistNow(): Promise<void> {
+    // Chained so two writes cannot interleave and leave a torn document.
+    writing = writing.then(async () => {
+      try {
+        await adapter.write(key, await codec.encode(document));
+      } catch (error) {
+        if (onPersistError) onPersistError(error);
+        else throw error;
+      }
+    });
+    return writing;
+  }
+
+  function schedulePersist(): void {
+    if (timer !== undefined) clearTimeout(timer);
+    timer = setTimeout(() => {
+      timer = undefined;
+      void persistNow();
+    }, debounceMs);
+  }
+
+  /** The container a slice id resolves against in the current space and profile. */
+  function slices(): Record<string, ModuleSlice> {
+    if (document.space === 'adult') return document.modules;
+
+    if (profileId === undefined) {
+      throw new Error(
+        'No child profile is selected, so there is no Family slice to read or write. ' +
+          'Call useProfile() first.',
+      );
+    }
+    const child = document.family.children[profileId];
+    if (child === undefined) {
+      throw new Error(`No child profile ${profileId}.`);
+    }
+    return child.modules;
+  }
+
+  function replace(next: AdnotiaDocument): void {
+    document = deepFreeze(next);
+  }
+
+  return {
+    document() {
+      return document;
+    },
+
+    async load() {
+      let raw: string | null = null;
+      try {
+        raw = await adapter.read(key);
+      } catch (error) {
+        if (onPersistError) onPersistError(error);
+        else throw error;
+      }
+
+      if (raw === null) {
+        replace(createDocument({ now: now() }));
+        return;
+      }
+
+      const decoded = await codec.decode(raw);
+      // Anything unrecognisable is left alone rather than overwritten: a
+      // document this build cannot read may still be readable by another.
+      if (!isDocumentShaped(decoded)) {
+        throw new Error(`What is stored under ${key} is not an Adnotia document.`);
+      }
+      replace(decoded);
+    },
+
+    async flush() {
+      if (timer !== undefined) {
+        clearTimeout(timer);
+        timer = undefined;
+      }
+      await persistNow();
+    },
+
+    space() {
+      return document.space;
+    },
+
+    useSpace(space) {
+      if (document.space === space) return;
+      replace({ ...clone(document), space });
+      // A space change invalidates the profile, which belongs to the Family space.
+      if (space === 'adult') profileId = undefined;
+      schedulePersist();
+    },
+
+    profile() {
+      return profileId;
+    },
+
+    useProfile(next) {
+      profileId = next;
+    },
+
+    get<T>(sliceId: string) {
+      return slices()[sliceId] as Readonly<T> | undefined;
+    },
+
+    set<T>(sliceId: string, next: T) {
+      const copy = deepFreeze(clone(next)) as unknown as ModuleSlice;
+      const doc = clone(document);
+
+      if (doc.space === 'adult') {
+        doc.modules[sliceId] = copy;
+      } else {
+        if (profileId === undefined) {
+          throw new Error(
+            'No child profile is selected, so there is no Family slice to write. ' +
+              'Call useProfile() first.',
+          );
+        }
+        const child = doc.family.children[profileId];
+        if (child === undefined) throw new Error(`No child profile ${profileId}.`);
+        child.modules[sliceId] = copy;
+      }
+
+      replace(doc);
+      notify(sliceId);
+      schedulePersist();
+    },
+
+    deleteSlice(sliceId) {
+      const doc = clone(document);
+      if (doc.space === 'adult') {
+        delete doc.modules[sliceId];
+      } else {
+        if (profileId === undefined) throw new Error('No child profile is selected.');
+        const child = doc.family.children[profileId];
+        if (child === undefined) throw new Error(`No child profile ${profileId}.`);
+        delete child.modules[sliceId];
+      }
+      replace(doc);
+      notify(sliceId);
+      schedulePersist();
+    },
+
+    updateKernel(update) {
+      const doc = clone(document);
+      doc.kernel = update(doc.kernel);
+      replace(doc);
+      notify('kernel');
+      schedulePersist();
+    },
+
+    subscribe(sliceId, listener) {
+      let set = listeners.get(sliceId);
+      if (set === undefined) {
+        set = new Set();
+        listeners.set(sliceId, set);
+      }
+      set.add(listener);
+      return () => {
+        set.delete(listener);
+        if (set.size === 0) listeners.delete(sliceId);
+      };
+    },
+
+    dispose() {
+      if (timer !== undefined) {
+        clearTimeout(timer);
+        timer = undefined;
+      }
+    },
+  };
+}
