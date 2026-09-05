@@ -126,6 +126,24 @@ describe('which days count as logged', () => {
     expect(loggedDates(doc, [manifest([])])).toEqual(['2026-09-04']);
   });
 
+  it('does not count a day carrying only the note of what was calculated for it', () => {
+    // ADR-014: `_derived` is metadata about the record, not part of it. Counting
+    // it would widen the range back to a day the person left empty and drop the
+    // coverage figure with it.
+    const doc = documentWith({
+      '2026-09-01': { bed: '', wake: '', hours: '', _derived: { hours: '7.5' } },
+      '2026-09-05': { bed: '23:00', wake: '07:00', hours: '8' },
+    });
+    expect(loggedDates(doc, [manifest([])])).toEqual(['2026-09-05']);
+  });
+
+  it('still counts a day that has both a value and the note of calculating it', () => {
+    const doc = documentWith({
+      '2026-09-01': { bed: '23:00', wake: '07:00', hours: '8', _derived: { hours: '8' } },
+    });
+    expect(loggedDates(doc, [manifest([])])).toEqual(['2026-09-01']);
+  });
+
   it('does not count a day carrying only a timestamp', () => {
     const doc = documentWith({}, { '2026-09-04': { createdAt: '2026-09-04T21:00:00.000Z' } });
     expect(loggedDates(doc, [manifest([])])).toEqual([]);

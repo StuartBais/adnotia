@@ -9,6 +9,7 @@
 
 import {
   CHILD_ALLOWED_CONTRIBUTIONS,
+  DERIVED_METADATA_KEY,
   RESERVED_FIELD_IDS,
   TODAY_COST_BUDGET,
   type ModuleManifest,
@@ -195,7 +196,7 @@ export function validateManifest(
       for (const field of allFields(today)) {
         if (
           isNonEmptyString(field?.id) &&
-          (field.id === '_derived' || field.id.startsWith('_derived.'))
+          (field.id === DERIVED_METADATA_KEY || field.id.startsWith(`${DERIVED_METADATA_KEY}.`))
         ) {
           fail('reserved-field', 'The _derived path is reserved for automatic-value metadata.');
         }
