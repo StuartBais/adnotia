@@ -4,3 +4,4 @@
 export * from './dates/index';
 export * from './store/index';
 export * from './crypto/index';
+export * from './backup/index';
