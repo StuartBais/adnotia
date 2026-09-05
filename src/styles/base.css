@@ -1,0 +1,625 @@
+/*
+ * Base styles and shared components. See docs/07-design-system.md.
+ *
+ * Ported from reference/adnotia-v0-monolith.html rather than reinvented; the
+ * design document says so explicitly. Report-specific styles (charts, tables,
+ * the clinical sheet) arrive with the report engine in Milestone 1.
+ *
+ * Written for someone tired, distracted, or reading at one in the morning:
+ * low friction over completeness, tap over type, optional detail hidden.
+ */
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 16px;
+  line-height: 1.45;
+  -webkit-text-size-adjust: 100%;
+}
+
+.wrap {
+  max-width: var(--measure);
+  margin: 0 auto;
+  padding: 0 var(--pad-side) 64px;
+}
+
+/* ---------- masthead ---------- */
+
+.mast {
+  padding: 22px 0 14px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+
+.brand .logo {
+  width: 34px;
+  height: 31px;
+  flex: none;
+  display: block;
+}
+
+.brand.big {
+  justify-content: center;
+  gap: 13px;
+  margin-bottom: 6px;
+}
+
+.brand.big .logo {
+  width: 44px;
+  height: 40px;
+}
+
+.mast h1 {
+  font-family: var(--serif);
+  font-size: 30px;
+  line-height: 1.05;
+  font-weight: normal;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.mast p {
+  margin: 6px 0 0;
+  color: var(--ink2);
+  font-size: 14px;
+  max-width: 44ch;
+}
+
+/* ---------- tabs ---------- */
+
+.tabs {
+  display: flex;
+  gap: 2px;
+  background: #e4dacA;
+  padding: 3px;
+  border-radius: var(--r);
+  margin-bottom: 16px;
+}
+
+.tabs button {
+  flex: 1;
+  border: 0;
+  background: transparent;
+  color: var(--ink2);
+  font-family: inherit;
+  font-size: 14px;
+  padding: 9px 4px;
+  border-radius: var(--r-control);
+  cursor: pointer;
+}
+
+.tabs button[aria-selected='true'] {
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: 0 1px 2px rgb(34 31 26 / 10%);
+}
+
+/* ---------- cards ---------- */
+
+.card {
+  background: var(--paper);
+  border: 1px solid var(--line2);
+  border-radius: var(--r);
+  padding: var(--pad-card);
+  margin-bottom: var(--gap-card);
+}
+
+.card > h2 {
+  font-family: var(--serif);
+  font-weight: normal;
+  font-size: 19px;
+  margin: 0 0 3px;
+}
+
+.card > h2 + .sub {
+  margin: 0 0 14px;
+}
+
+.sub {
+  color: var(--ink2);
+  font-size: 13px;
+}
+
+.sub.warn {
+  color: var(--flag);
+}
+
+/* ---------- fields ---------- */
+
+.field {
+  margin-bottom: 16px;
+}
+
+.field:last-child {
+  margin-bottom: 0;
+}
+
+.field > label,
+.flabel {
+  display: block;
+  font-size: 14px;
+  margin-bottom: 7px;
+}
+
+.hint {
+  color: var(--ink2);
+  font-size: 12.5px;
+  margin: 5px 0 0;
+}
+
+label.minor {
+  font-size: 12.5px;
+  color: var(--ink2);
+  margin-bottom: 4px;
+}
+
+/* "Optional" never shouts. */
+.opt {
+  font-size: 11.5px;
+  color: var(--ink2);
+  font-weight: normal;
+}
+
+/* ---------- inputs ---------- */
+
+input[type='text'],
+input[type='number'],
+input[type='date'],
+input[type='time'],
+select,
+textarea {
+  font-family: inherit;
+  /* 16px stops iOS zooming the page on focus. */
+  font-size: 16px;
+  color: var(--ink);
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--r-control);
+  padding: 9px 10px;
+  width: 100%;
+}
+
+textarea {
+  resize: vertical;
+  min-height: 74px;
+  line-height: 1.45;
+}
+
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+button:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--mark);
+  outline-offset: 1px;
+}
+
+.row {
+  display: flex;
+  gap: 8px;
+}
+
+.row > * {
+  flex: 1;
+  min-width: 0;
+}
+
+/* ---------- chips and scales ---------- */
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.chip {
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--ink);
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 8px 13px;
+  cursor: pointer;
+  line-height: 1.2;
+}
+
+.chip[aria-pressed='true'] {
+  background: var(--mark);
+  border-color: var(--mark);
+  color: #fff;
+}
+
+.chip.flagchip[aria-pressed='true'] {
+  background: var(--flag);
+  border-color: var(--flag);
+}
+
+.scale {
+  display: flex;
+  gap: 5px;
+}
+
+.scale .chip {
+  flex: 1;
+  text-align: center;
+  padding: 9px 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.ends {
+  display: flex;
+  justify-content: space-between;
+  color: var(--ink2);
+  font-size: 12px;
+  margin-top: 5px;
+}
+
+/* The chosen anchor, in the person's own words. Reserves its line so the
+   layout does not jump when a value is picked. */
+.anchor {
+  font-size: 13px;
+  color: var(--mark);
+  margin: 7px 0 0;
+  min-height: 19px;
+}
+
+/* ---------- follow-up detail ---------- */
+
+/* Revealed by a chip, never shown unconditionally. */
+.detail {
+  margin-top: 9px;
+  padding: 10px 12px;
+  border-left: 2px solid var(--mark);
+  background: #f7f1e5;
+  border-radius: 0 var(--r-control) var(--r-control) 0;
+}
+
+.detail.flag {
+  border-left-color: var(--flag);
+}
+
+.detail .dl {
+  font-size: 13.5px;
+  margin-bottom: 7px;
+}
+
+.detail .row {
+  margin-bottom: 7px;
+}
+
+.detail input {
+  font-size: 15px;
+  padding: 8px 9px;
+}
+
+.detail .chips {
+  margin-bottom: 7px;
+}
+
+.detail .chips .chip {
+  padding: 6px 11px;
+  font-size: 13px;
+}
+
+/* ---------- buttons ---------- */
+
+.btn {
+  font-family: inherit;
+  font-size: 15px;
+  border-radius: var(--r-control);
+  padding: 11px 16px;
+  cursor: pointer;
+  border: 1px solid var(--line);
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.btn.primary {
+  background: var(--mark);
+  border-color: var(--mark);
+  color: #fff;
+}
+
+.btn.wide {
+  width: 100%;
+}
+
+.btn.small {
+  font-size: 13px;
+  padding: 7px 11px;
+}
+
+/* Destructive actions are secondary buttons with a confirm step, never red. */
+
+.btnrow {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.saved {
+  font-size: 13px;
+  color: var(--ink2);
+  height: 18px;
+  margin-top: 10px;
+}
+
+.saved.on {
+  color: var(--mark);
+  transition: color 200ms ease;
+}
+
+/* ---------- link rows ---------- */
+
+.linkrow {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  background: var(--paper);
+  border: 1px solid var(--line2);
+  border-radius: var(--r);
+  padding: 14px;
+  margin-bottom: var(--gap-card);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 15px;
+  color: var(--ink);
+  text-align: left;
+}
+
+.linkrow-v {
+  font-size: 13px;
+  color: var(--mark);
+  flex: none;
+}
+
+/* ---------- the nag ---------- */
+
+/* Plain and unalarmed, and shown at most once a fortnight per topic. */
+.nag {
+  background: var(--flag-soft);
+  border: 1px solid #e3d2ae;
+  border-radius: var(--r);
+  padding: 12px 14px;
+  margin-bottom: var(--gap-card);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.nag b {
+  font-weight: 600;
+}
+
+.nag .btnrow {
+  margin-top: 9px;
+}
+
+/* ---------- the mirror ---------- */
+
+/* Screen only. Never printed, never shared. */
+.mirror {
+  background: var(--paper);
+  border: 1px solid var(--line2);
+  border-radius: var(--r);
+  padding: var(--pad-card);
+  margin-bottom: var(--gap-card);
+}
+
+.mirror h2 {
+  font-family: var(--serif);
+  font-weight: normal;
+  font-size: 19px;
+  margin: 0 0 3px;
+}
+
+.mirror .sub {
+  margin: 0 0 12px;
+}
+
+.mirror ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.mirror li {
+  font-size: 14px;
+  line-height: 1.5;
+  padding: 9px 0;
+  border-top: 1px solid var(--line2);
+}
+
+.mirror li:first-child {
+  border-top: 0;
+}
+
+.mirror .tag {
+  display: block;
+  font-size: 11.5px;
+  color: var(--ink2);
+  margin-bottom: 2px;
+}
+
+/* ---------- calendar ---------- */
+
+.datebtn {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--serif);
+  font-size: 17px;
+  color: var(--ink);
+  text-align: left;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--r-control);
+  padding: 10px 12px;
+  cursor: pointer;
+}
+
+.datebtn .chev {
+  font-family: var(--sans);
+  font-size: 13px;
+  color: var(--mark);
+  flex: none;
+}
+
+.datebtn[aria-expanded='true'] {
+  border-color: var(--mark);
+}
+
+.cal {
+  border: 1px solid var(--line);
+  border-radius: var(--r-control);
+  padding: 10px;
+  margin-top: 8px;
+  background: var(--paper);
+}
+
+.calhead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.calhead span {
+  font-family: var(--serif);
+  font-size: 16px;
+}
+
+.calnav {
+  width: 36px;
+  height: 36px;
+  flex: none;
+  border: 1px solid var(--line);
+  background: var(--paper);
+  border-radius: var(--r-control);
+  font-size: 19px;
+  line-height: 1;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.calnav[disabled] {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.calgrid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 3px;
+}
+
+.caldow {
+  margin-bottom: 3px;
+}
+
+.caldow span {
+  text-align: center;
+  font-size: 11px;
+  color: var(--ink2);
+  padding: 2px 0;
+}
+
+.calday {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  min-height: 38px;
+  border: 0;
+  background: transparent;
+  border-radius: var(--r-control);
+  font-family: inherit;
+  font-size: 15px;
+  color: var(--ink);
+  cursor: pointer;
+  font-variant-numeric: tabular-nums;
+}
+
+.calday:hover {
+  background: var(--mark-soft);
+}
+
+.calday[disabled] {
+  color: #c3b7a3;
+  cursor: default;
+}
+
+.calday[disabled]:hover {
+  background: transparent;
+}
+
+.calday.today {
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+
+.calday.sel {
+  background: var(--mark);
+  color: #fff;
+}
+
+/* A dot marks a day with something logged. */
+.calday .pip {
+  position: absolute;
+  left: 50%;
+  bottom: 5px;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--mark);
+}
+
+.calday.sel .pip {
+  background: #fff;
+}
+
+.caltoday {
+  width: 100%;
+  margin-top: 9px;
+}
+
+/* ---------- the child surface ---------- */
+
+/* Large targets and nothing below 16px. See docs/05-architecture.md. */
+.child-surface {
+  font-size: 18px;
+}
+
+.child-surface .btn,
+.child-surface .chip {
+  min-height: 48px;
+  min-width: 48px;
+  font-size: 18px;
+}
+
+/* ---------- motion ---------- */
+
+/* Almost none by design; what there is stops here. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

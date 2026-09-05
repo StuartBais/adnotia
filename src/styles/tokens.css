@@ -1,0 +1,60 @@
+/*
+ * Design tokens. See docs/07-design-system.md.
+ *
+ * Derived from the logo: sage and terracotta on cream. The logo colours are used
+ * only for the mark and for chart fills; text and controls use deepened variants
+ * that meet contrast. scripts/check-contrast.mjs reads this file and fails the
+ * build if any documented text-on-surface pair drops below 4.5:1.
+ *
+ * Dark mode is not in the first milestones. When it comes it is a second token
+ * set here, not per-component overrides.
+ */
+
+:root {
+  /* surfaces and text */
+  --ground: #F3EDE2;      /* page */
+  --paper: #FDF9EE;       /* cards, inputs; the logo's cream */
+  --ink: #221F1A;         /* primary text */
+  --ink2: #6E6455;        /* secondary text */
+  --line: #DED3C1;        /* input borders */
+  --line2: #EBE3D5;       /* card borders, dividers */
+
+  /* logo colours: the mark and chart fills only, never text */
+  --sage: #728871;
+  --terra: #CA7F58;
+
+  /* deepened variants, safe for text and controls */
+  --sage-deep: #4F6A52;
+  --mark: #A85A31;        /* primary accent: selected chips, buttons, links */
+  --mark-soft: #F6E5D8;   /* hover, selected backgrounds */
+  --flag: #856019;        /* warnings, cautions */
+  --flag-soft: #F7EBD6;
+
+  /* chart fills */
+  --chart-cover: var(--mark);
+  --chart-sleep: #BCCBBB;
+  --chart-gap: #EFE8DA;
+  --chart-dose: var(--ink);
+  --chart-rebound: var(--flag);
+  --chart-focus: var(--sage-deep);
+  --sev-1: #F2DECD;
+  --sev-2: #D79A6E;
+  --sev-3: var(--mark);
+  --sev-unrated: #E2DACB;
+  --sev-absent: #F6F1E6;
+
+  /* type */
+  --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial,
+    sans-serif;
+
+  /* shape */
+  --r: 10px;              /* cards */
+  --r-control: 8px;       /* buttons, inputs */
+
+  /* layout */
+  --measure: 680px;
+  --pad-side: 14px;
+  --pad-card: 16px;
+  --gap-card: 12px;
+}

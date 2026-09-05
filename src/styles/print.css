@@ -1,0 +1,148 @@
+/*
+ * Print. See docs/07-design-system.md "Print".
+ *
+ * Part of the design system, not an afterthought. Only the named reports print —
+ * clinical, screening and observations. Everything else is display:none,
+ * including the mirror, which is screen-only and never leaves the device.
+ *
+ * Ported from reference/adnotia-v0-monolith.html.
+ */
+
+@media print {
+  @page {
+    size: portrait;
+    margin: 13mm;
+  }
+
+  body {
+    background: #fff;
+    font-size: 10pt;
+  }
+
+  .wrap {
+    max-width: none;
+    padding: 0;
+  }
+
+  /* Everything that is not the report. The mirror is listed explicitly because
+     it is a reflection for the person, never for a clinician. */
+  .mast,
+  .tabs,
+  .noprint,
+  .mirror,
+  .nag,
+  .linkrow,
+  .datebtn,
+  .cal,
+  .child-surface,
+  [data-print='never'] {
+    display: none !important;
+  }
+
+  .sheet {
+    display: block !important;
+    border: 0;
+    padding: 0;
+    margin: 0;
+    border-radius: 0;
+  }
+
+  .sheet h2 {
+    font-size: 16pt;
+  }
+
+  .sheet h3 {
+    font-size: 11.5pt;
+    margin: 14pt 0 5pt;
+    border-bottom: 0.5pt solid #999;
+  }
+
+  table {
+    font-size: 7.6pt;
+  }
+
+  th,
+  td {
+    padding: 2.4pt 3pt;
+    border-bottom: 0.4pt solid #ccc;
+  }
+
+  .scroll {
+    overflow: visible;
+  }
+
+  .scroll table {
+    min-width: 0;
+  }
+
+  /* Secondary text goes black on paper: grey on grey does not photocopy. */
+  .meta,
+  .sub,
+  .legend,
+  .noteline {
+    color: #000;
+  }
+
+  /* All colour maps to greys, so a black-and-white print reads correctly. */
+  svg .stair,
+  svg .trend,
+  svg .dosetick {
+    stroke: #000;
+  }
+
+  svg .rb,
+  svg .rbmark {
+    fill: #000;
+  }
+
+  svg .sleepband {
+    fill: #c9c9c9;
+  }
+
+  svg .coverband {
+    fill: #333;
+  }
+
+  svg .gapband {
+    fill: #eee;
+  }
+
+  svg .grid {
+    stroke: #ccc;
+  }
+
+  svg .sev1 {
+    fill: #ddd;
+  }
+
+  svg .sev2 {
+    fill: #999;
+  }
+
+  svg .sev3 {
+    fill: #333;
+  }
+
+  svg .sev0 {
+    fill: #e4e4e4;
+  }
+
+  svg .cellblank {
+    fill: #f6f6f6;
+  }
+
+  .twocol {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .col h4 {
+    color: #000;
+  }
+
+  /* A row or a dose block split across pages is unreadable to a prescriber. */
+  tr,
+  .lvl,
+  .noteline {
+    break-inside: avoid;
+  }
+}

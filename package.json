@@ -16,7 +16,7 @@
     "typecheck": "tsc --noEmit",
     "build": "vite build",
     "build:single": "vite build --mode single && node scripts/finish-single.mjs",
-    "check": "npm run typecheck && node scripts/check-no-network.mjs"
+    "check": "npm run typecheck && node scripts/check-no-network.mjs && node scripts/check-contrast.mjs"
   },
   "devDependencies": {
     "@types/node": "^24.13.3",
