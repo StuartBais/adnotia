@@ -77,12 +77,17 @@ export interface ReportSection {
   /** The named report this belongs to: `clinical`, `screening`, `observations`. */
   report: string;
   id: string;
-  title: (context: never) => string;
+  /**
+   * The report engine owns the context and hands the same one to every section.
+   * It arrives as `unknown` so a section narrows it to the slice it actually
+   * reads, rather than every section depending on the whole shape.
+   */
+  title: (context: unknown) => string;
   /** Lower prints earlier. */
   weight: number;
-  when?: (context: never) => boolean;
-  render: (context: never) => string;
-  renderText: (context: never) => string;
+  when?: (context: unknown) => boolean;
+  render: (context: unknown) => string;
+  renderText: (context: unknown) => string;
 }
 
 export interface SettingsItem {
@@ -127,6 +132,13 @@ export interface ModuleManifest {
   dependencies?: string[];
   contributes: Contributions;
   migrate?: (state: unknown, fromVersion: number) => unknown;
+  /**
+   * Values that follow from what was just entered, merged into the day before
+   * it is saved. Sees only this module's own day record, runs once per save,
+   * and never overwrites what the person typed.
+   * See docs/decisions/ADR-010-derived-fields.md.
+   */
+  derive?: (day: Readonly<Record<string, unknown>>) => Record<string, unknown>;
   fixtures?: ModuleFixtures;
 }
 

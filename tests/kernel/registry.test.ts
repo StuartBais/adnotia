@@ -451,9 +451,11 @@ describe('how the registry handles a bad manifest', () => {
 });
 
 describe('the registry', () => {
-  it('starts empty; Milestone 1 adds the first module', () => {
-    expect(MODULES).toEqual([]);
-    expect(createRegistry().all()).toEqual([]);
+  it('ships the modules in this build, and every one of them validates', () => {
+    expect(MODULES.map((manifest) => manifest.id)).toEqual(['sleep']);
+    // createRegistry throws in strict mode, so this failing means a shipped
+    // module would not have registered.
+    expect(createRegistry().all()).toHaveLength(MODULES.length);
   });
 
   it('separates modules by the space they mount in', () => {

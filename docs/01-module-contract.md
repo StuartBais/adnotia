@@ -49,6 +49,13 @@ export default {
   },
 
   migrate(state, fromVersion) { /* return state at `version` */ },
+
+  // Optional. Values that follow from what was just entered, merged into the
+  // day before it is saved. Sees only this module's own day record, runs once
+  // per save, and never overwrites something the person typed.
+  // See decisions/ADR-010-derived-fields.md.
+  derive(day) { /* return a partial day record */ },
+
   fixtures: { empty: {...}, threeDays: {...}, thirtyDays: {...} }
 };
 ```

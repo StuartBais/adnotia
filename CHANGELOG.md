@@ -37,4 +37,7 @@ Milestone 0 is in progress; nothing has been released yet.
   the off-tab page pattern, and settings with backup and restore.
 - The Today assembler: one check-in built from whatever is turned on, with carry rules,
   follow-ups that stay hidden until wanted, and the ninety-second budget.
+- The sleep module, Tier B: bed and wake times, hours filled in from them, night-quality
+  chips with a follow-up on how long it took to drop off, its own history and its section
+  of the clinical report.
 - CI running `npm run check`, the test suites and both builds on every push.
