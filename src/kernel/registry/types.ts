@@ -60,6 +60,17 @@ export interface LibraryEntry {
   /** The honest limits. A Library entry without this fails review. */
   whatItWontDo: string;
   citations: Citation[];
+  /**
+   * `YYYY-MM`, set when someone checked every citation here against the original
+   * paper rather than against a summary of it. Absent means nobody has, and the
+   * Library says so on the entry.
+   *
+   * docs/02-evidence-rubric.md requires this before publication and
+   * docs/08-roadmap.md Milestone 8 records it with dates. It is per entry
+   * because that is how the checking is actually done.
+   * See docs/decisions/ADR-020-unverified-citations-are-visible.md.
+   */
+  citationsVerified?: string;
   /** `YYYY-MM`. */
   reviewed: string;
   nextReview: string;

@@ -11,6 +11,16 @@ yet. See the implementation checkpoint in `docs/08-roadmap.md` for current limit
 
 ### Added
 
+- The Library: every module's evidence entry, enabled or not, with the tier in the words
+  `docs/02-evidence-rubric.md` fixes and never as a bare letter, the four parts an entry must
+  have, its references with years, and its review dates. Modules appear in build order —
+  nothing sorts one tier above another.
+- The exclusion entries: brain training, neurofeedback, diets and supplements, "type"
+  quizzes, cure claims, and anything that works out a dose. Each says what it is, what the
+  evidence found, and what would change the decision, so an exclusion is a position rather
+  than a prejudice.
+- An entry whose references nobody has checked against the originals says so, on the entry.
+  See `docs/decisions/ADR-020-unverified-citations-are-visible.md`.
 - The screen-only reflection: at most four things worth knowing about your own record,
   shown before the report and never printed, exported or shared. Modules contribute what
   they notice; the kernel decides what is shown and holds the limits. This is the second

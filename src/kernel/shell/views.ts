@@ -4,6 +4,7 @@
 // each says so plainly rather than showing an encouraging blank page: a gap is a
 // fact to show, never a failure to punish.
 
+import { renderLibrary } from '../library/index';
 import { parseIsoDate, type IsoDate } from '../dates/index';
 import { backupNag, loggedDates, mountReport } from '../reports/index';
 import type { KernelStore } from '../store/store';
@@ -54,26 +55,10 @@ export function renderTab(tab: TabId, context: ViewContext): HTMLElement {
   });
 
   if (tab === 'library') {
-    // The Library shows every module, enabled or not, so a person can read why a
-    // tool exists before turning it on.
-    if (context.known.length === 0) {
-      section.append(card(EMPTY.library));
-      return section;
-    }
-    for (const manifest of context.known) {
-      section.append(
-        card({
-          title: manifest.name,
-          sub: manifest.contributes.library.whatItIs,
-          children: [
-            el('p', {
-              class: 'hint',
-              text: manifest.contributes.library.whatItWontDo,
-            }),
-          ],
-        }),
-      );
-    }
+    // Every module, enabled or not, so a person can read why a tool exists before
+    // turning it on — and every exclusion, so they can read why the thing they
+    // came looking for is absent. See docs/02-evidence-rubric.md.
+    section.append(renderLibrary({ modules: context.known, space: context.space }));
     return section;
   }
 
