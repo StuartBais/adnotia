@@ -12,3 +12,10 @@ export {
   type CrisisLine,
 } from './crisis';
 export { ABOUT_STRINGS, LICENCE, SOURCE_URL, aboutPage } from './about';
+export {
+  BASELINE_STRINGS,
+  baselinePage,
+  describeBaseline,
+  hasBaseline,
+  type BaselineOptions,
+} from './baseline';

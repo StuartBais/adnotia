@@ -10,7 +10,12 @@ import { SCREENER_STRINGS, isUsable, screenerPage } from '../screeners/index';
 import { loggingDay, parseIsoDate, type IsoDate } from '../dates/index';
 import { REPORTS, backupNag, loggedDates, mountReport } from '../reports/index';
 import type { KernelStore } from '../store/store';
-import { KERNEL_RECORDS_TITLE, mountToday, renderKernelRecords } from '../today/index';
+import {
+  BUDGET_STRINGS,
+  KERNEL_RECORDS_TITLE,
+  mountToday,
+  renderKernelRecords,
+} from '../today/index';
 import { calendar, card, el, linkRow, nag } from '../ui/index';
 import type { ModuleManifest, Space } from '../index';
 import { TAB_LABELS, type OffTabPage, type TabId } from './router';
@@ -158,6 +163,32 @@ export function renderTab(tab: TabId, context: ViewContext): HTMLElement {
         }).element,
       );
     });
+    // The check-in budget. docs/01-module-contract.md caps the whole check-in at
+    // about ninety seconds; above that the person is offered the option of
+    // hiding what is optional. It is an offer, never a reprimand, and it says
+    // nothing about how long they have actually taken.
+    const budget = todayView.budget();
+    if (budget.overBudget && budget.hidingWouldHelp) {
+      let hidden = false;
+      const shorten = el('button', {
+        type: 'button',
+        class: 'btn small',
+        text: BUDGET_STRINGS.hide,
+      });
+      const note = el('p', { class: 'hint', text: BUDGET_STRINGS.long(budget.total) });
+      shorten.addEventListener('click', () => {
+        hidden = !hidden;
+        todayView.setHideOptional(hidden);
+        shorten.textContent = hidden ? BUDGET_STRINGS.show : BUDGET_STRINGS.hide;
+        note.textContent = hidden
+          ? BUDGET_STRINGS.shortened(budget.required)
+          : BUDGET_STRINGS.long(budget.total);
+      });
+      section.append(
+        el('div', { class: 'budget' }, [note, el('div', { class: 'btnrow' }, [shorten])]),
+      );
+    }
+
     section.append(el('div', { class: 'day-picker' }, [choose, panel]), todayView.element);
     return section;
   }

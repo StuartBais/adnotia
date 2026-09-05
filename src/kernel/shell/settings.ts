@@ -18,6 +18,7 @@ import { card, chips, el, linkRow, passwordInput } from '../ui/index';
 import type { OffTabPage, Router } from './router';
 
 import { passcodePage, type PasscodeActions } from './passcode';
+import { BASELINE_STRINGS, baselinePage, describeBaseline } from './baseline';
 
 import { modulesPage } from './modules';
 
@@ -168,6 +169,27 @@ export function settingsPage(options: SettingsOptions): OffTabPage {
       const document_ = options.store.document();
 
       const rows = el('div', {}, [
+        // Only worth offering where a report reads it. The medication log is the
+        // only thing that compares against a before-medication baseline.
+        ...(options.modules?.some(
+          (manifest) =>
+            manifest.id === 'medication' &&
+            options.store.document().kernel.enabledModules.includes(manifest.id),
+        )
+          ? [
+              linkRow({
+                label: BASELINE_STRINGS.title,
+                value: describeBaseline(document_.kernel.baseline),
+                onSelect: () =>
+                  options.router.openPage(
+                    baselinePage({
+                      store: options.store,
+                      onChanged: () => options.onChanged?.(),
+                    }),
+                  ),
+              }),
+            ]
+          : []),
         linkRow({
           label: 'Backups',
           value: document_.kernel.lastBackup ?? 'None yet',

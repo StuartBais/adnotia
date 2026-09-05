@@ -53,3 +53,21 @@ export function measure(modules: readonly ModuleManifest[], options: MeasureOpti
     hidingWouldHelp: total > CHECK_IN_BUDGET && required <= CHECK_IN_BUDGET,
   };
 }
+
+/**
+ * What the shell says when the check-in has grown long.
+ *
+ * Rounded to the nearest half minute, because the number is an estimate the
+ * modules declared and presenting it to the second would claim a precision it
+ * does not have. It describes the form, never the person: there is nothing here
+ * about how long they took, how long they usually take, or whether that is good.
+ */
+export const BUDGET_STRINGS = {
+  long: (seconds: number) =>
+    `This check-in is about ${Math.round(seconds / 30) / 2} minutes with everything showing.`,
+  shortened: (seconds: number) =>
+    `About ${Math.round(seconds / 30) / 2} minutes now. The hidden questions are still there ` +
+    'when you want them.',
+  hide: 'Hide the optional questions',
+  show: 'Show them again',
+} as const;
