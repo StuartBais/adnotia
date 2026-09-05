@@ -6,6 +6,7 @@
 // "Reports engine".
 
 import type { IsoDate } from '../dates/index';
+import type { TimelineRow } from '../registry/types';
 import type { Baseline, KernelDay, Question, Space } from '../store/document';
 
 /**
@@ -61,6 +62,15 @@ export interface ReportContext {
   overall?: string;
   /** The day the report was produced, for the generated line. */
   generatedOn: IsoDate;
+  /**
+   * The shared day timeline, assembled by the engine from every enabled module
+   * that contributes to it. No module owns it and none has to declare a
+   * dependency to appear on it.
+   * See docs/decisions/ADR-013-shared-day-timeline.md.
+   */
+  timeline: readonly TimelineRow[];
+  /** The sentence under that chart, in the contributors' weight order. */
+  timelineLegend: string;
 }
 
 export interface ReportDefinition {

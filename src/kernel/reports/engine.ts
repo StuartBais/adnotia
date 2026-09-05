@@ -11,9 +11,14 @@
 //
 // See docs/05-architecture.md "Reports engine".
 
-import { today, type IsoDate } from '../dates/index';
+import { formatShortDate, today, type IsoDate } from '../dates/index';
 import type { AdnotiaDocument } from '../store/document';
-import type { FrameContribution, ModuleManifest, ReportSection } from '../registry/types';
+import type {
+  FrameContribution,
+  ModuleManifest,
+  ReportSection,
+  TimelineRow,
+} from '../registry/types';
 import { escapeHtml } from './html';
 import { headerHtml, headerParts, headerText } from './header';
 import {
@@ -25,7 +30,7 @@ import {
   questionsText,
 } from './footer';
 import { coverageOf, resolveRange } from './range';
-import { KERNEL_SECTIONS } from './sections/life';
+import { KERNEL_SECTIONS } from './sections/index';
 import { REPORTS, type RangeChoice, type ReportContext, type ReportDay, type ReportDefinition } from './types';
 
 type Days = Record<IsoDate, ReportDay>;
@@ -98,6 +103,46 @@ export function loggedDates(
   return [...dates];
 }
 
+/**
+ * One row per day, built from every module that puts anything on the timeline.
+ * A day with nothing on it is left out rather than drawn empty: a page of blank
+ * rows says the person failed to log, which is not what the chart is for.
+ */
+export function buildTimeline(
+  document: AdnotiaDocument,
+  modules: readonly ModuleManifest[],
+  dates: readonly IsoDate[],
+): { rows: TimelineRow[]; legend: string } {
+  const contributors = modules
+    .filter((manifest) => manifest.contributes.timeline !== undefined)
+    .sort((a, b) => a.contributes.timeline!.weight - b.contributes.timeline!.weight);
+  if (contributors.length === 0) return { rows: [], legend: '' };
+
+  const rows: TimelineRow[] = [];
+  for (const date of dates) {
+    const bands: TimelineRow['bands'][number][] = [];
+    const ticks: string[] = [];
+    const marks: TimelineRow['marks'][number][] = [];
+
+    for (const manifest of contributors) {
+      const day = daysOf(document, manifest.id)[date];
+      if (day === undefined) continue;
+      const parts = manifest.contributes.timeline!.parts(day);
+      bands.push(...(parts.bands ?? []));
+      ticks.push(...(parts.ticks ?? []));
+      marks.push(...(parts.marks ?? []));
+    }
+
+    if (bands.length === 0 && ticks.length === 0 && marks.length === 0) continue;
+    rows.push({ label: formatShortDate(date), bands, ticks, marks });
+  }
+
+  return {
+    rows,
+    legend: contributors.map((manifest) => manifest.contributes.timeline!.legend).join(' '),
+  };
+}
+
 export function buildReport(options: BuildReportOptions): Report {
   const name = options.report ?? 'clinical';
   const definition = REPORTS[name];
@@ -119,6 +164,8 @@ export function buildReport(options: BuildReportOptions): Report {
       : {}),
   });
 
+  const timeline = buildTimeline(document, modules, range.dates);
+
   const base: ReportContext = {
     report: name,
     range,
@@ -129,6 +176,8 @@ export function buildReport(options: BuildReportOptions): Report {
     kernelDays: document.kernel.days,
     questions: document.kernel.questions,
     generatedOn: today(now),
+    timeline: timeline.rows,
+    timelineLegend: timeline.legend,
     ...(document.kernel.baseline !== undefined ? { baseline: document.kernel.baseline } : {}),
     ...(document.kernel.overall !== undefined && document.kernel.overall !== ''
       ? { overall: document.kernel.overall }

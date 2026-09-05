@@ -8,6 +8,8 @@ import type { ModuleManifest } from '../../kernel/index';
 import { fixtures } from './fixtures/index';
 import { library } from './library';
 import { renderRecords } from './records';
+import { doseOverTimeSection, medicationTimeline } from './reports/doses';
+import { levelsSection } from './reports/levels';
 import { sideEffectsSection } from './reports/sideEffects';
 import { standingSection } from './reports/standing';
 import { strings } from './strings';
@@ -27,14 +29,17 @@ const manifest: ModuleManifest = {
     note: strings.eligibilityNote,
   },
 
-  // Sleep is read for the waking-day figure in "where things stand". It is
-  // optional: without it the section says less rather than guessing.
+  // Sleep is read for the waking-day figure in "where things stand" and the sleep
+  // line in "how each dose performed". It is optional: without it those say less
+  // rather than guessing. The cover chart needs no dependency at all — the kernel
+  // draws it from both modules' own contributions.
   dependencies: ['sleep'],
 
   contributes: {
     today,
     records: { render: renderRecords as (container: HTMLElement, context: unknown) => void },
-    reports: [standingSection, sideEffectsSection],
+    reports: [standingSection, doseOverTimeSection, levelsSection, sideEffectsSection],
+    timeline: medicationTimeline,
     library,
   },
 

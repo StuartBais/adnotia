@@ -71,6 +71,50 @@ export interface Tool {
   mount(container: HTMLElement, kernel: unknown): void;
 }
 
+/**
+ * One module's contribution to the shared day timeline. The kernel draws it —
+ * the chart reads from every module at once, so no single module can own it, and
+ * none of them needs to declare a dependency on another to appear on it.
+ * See docs/decisions/ADR-013-shared-day-timeline.md.
+ */
+export interface TimelineBand {
+  /** `HH:MM`. A band that would wrap past the row's origin is not drawn. */
+  from: string;
+  to: string;
+  /** A design-system chart class: `sleepband`, `coverband`. */
+  className: string;
+}
+
+export interface TimelineMark {
+  at: string;
+  className: string;
+  radius: number;
+}
+
+/** What one module puts on one day's row. Every part is optional. */
+export interface TimelineParts {
+  bands?: TimelineBand[];
+  /** Full-height vertical rules. */
+  ticks?: string[];
+  marks?: TimelineMark[];
+}
+
+export interface TimelineRow {
+  label: string;
+  bands: readonly TimelineBand[];
+  ticks: readonly string[];
+  marks: readonly TimelineMark[];
+}
+
+export interface TimelineContribution {
+  /** Sees only this module's own day record, the same as `derive` does. */
+  parts: (day: Readonly<Record<string, unknown>>) => TimelineParts;
+  /** This module's half of the sentence under the chart. */
+  legend: string;
+  /** Lower draws first, so a wide band goes underneath a narrow one. */
+  weight: number;
+}
+
 export interface RecordsContribution {
   render(container: HTMLElement, context: unknown): void;
 }
@@ -132,6 +176,8 @@ export interface Contributions {
   tools?: Tool[];
   records?: RecordsContribution;
   reports?: ReportSection[];
+  /** This module's marks on the kernel's shared day timeline. */
+  timeline?: TimelineContribution;
   /** Required for every module, including Tier C. */
   library: LibraryEntry;
   settings?: SettingsItem[];

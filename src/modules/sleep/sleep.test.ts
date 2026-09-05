@@ -52,7 +52,7 @@ describe('sleep: the clinical section', () => {
     const summary = summarise(context);
     expect(summary.nights).toBe(27);
     expect(summary.ofNights).toBe(27);
-    expect(manifest.contributes.reports?.[0]?.render(context)).toContain(
+    expect(manifest.contributes.reports?.find((entry) => entry.id === 'sleep.nights')?.render(context)).toContain(
       '27 of 27 nights recorded',
     );
   });
@@ -76,11 +76,11 @@ describe('sleep: the clinical section', () => {
   });
 
   it('is not shown when nothing was recorded', () => {
-    expect(manifest.contributes.reports?.[0]?.when?.({ dates: [], days: {} })).toBe(false);
+    expect(manifest.contributes.reports?.find((entry) => entry.id === 'sleep.nights')?.when?.({ dates: [], days: {} })).toBe(false);
   });
 
   it('says the same thing in print and in text', () => {
-    const section = manifest.contributes.reports?.[0];
+    const section = manifest.contributes.reports?.find((entry) => entry.id === 'sleep.nights');
     const summary = summarise(context);
     expect(section?.renderText(context)).toContain(
       `${summary.nights} of ${summary.ofNights} nights recorded.`,

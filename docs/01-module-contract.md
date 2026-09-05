@@ -131,6 +131,23 @@ Rules for `clinical` sections:
 - All of the above applies to anything returned from `frame`, which reaches a
   clinician without passing through `render`.
 
+### `timeline` — marks on the kernel's shared day chart
+
+The `clinical` report carries one chart that reads from every module at once:
+cover across the day, one row per day on a 6pm-to-6pm clock. It belongs to no
+module, so modules contribute marks and the kernel draws it.
+
+```js
+{
+  parts: (day) => ({ bands: [{ from: "09:30", to: "16:30", className: "coverband" }] }),
+  legend: "Solid: hours the medication was working.",
+  weight: 20                     // lower draws first, so a wide band goes underneath
+}
+```
+
+`parts` sees only this module's own day record. No dependency on another module is
+declared or needed. See `decisions/ADR-013-shared-day-timeline.md`.
+
 ### `library` — the evidence entry
 
 Required for every module, including Tier C. The shell renders these in one place so a person can read why a tool exists before turning it on.

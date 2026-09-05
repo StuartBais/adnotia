@@ -53,4 +53,13 @@ Milestone 0 is in progress; nothing has been released yet.
 - The clinical report itself, reachable from Records: the range to cover, the person's own
   overall word, a list of questions that prints at the end, "I have had the appointment",
   Print, and Copy as text.
+- The chart primitives — the stair chart, the day timeline and the severity grid — in the
+  design system alongside the palette they draw with, so no module draws its own.
+- The shared day timeline: one row per day on a 6pm-to-6pm clock, drawn by the kernel from
+  every module that puts something on it. Sleep draws its band, medication draws its cover,
+  its dose ticks and its rebound dots, and neither knows the other exists. A person logging
+  only sleep still gets the chart. See `docs/decisions/ADR-013-shared-day-timeline.md`.
+- The remaining clinical sections: dose over time with a rolling average of focus, how each
+  dose performed against the person's own before-medication baseline, and the side-effect
+  severity grid above the table it already had.
 - CI running `npm run check`, the test suites and both builds on every push.

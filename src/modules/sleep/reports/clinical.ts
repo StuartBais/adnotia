@@ -15,6 +15,7 @@ import {
   type IsoDate,
   escapeHtml,
   type ReportSection,
+  type TimelineContribution,
 } from '../../../kernel/index';
 import { NIGHT_QUALITY } from '../strings';
 import type { SleepDay } from '../records';
@@ -107,7 +108,7 @@ export const clinicalSection: ReportSection = {
   report: 'clinical',
   id: 'sleep.nights',
   title: () => 'Sleep',
-  weight: 40,
+  weight: 50,
 
   when: (context) => summarise(context as SleepContext).nights > 0,
 
@@ -178,3 +179,23 @@ export function timeInBed(day: SleepDay): string {
   const minutes = spanMinutes(day.bed ?? '', day.wake ?? '');
   return minutes === null ? '' : formatDuration(minutes);
 }
+
+/**
+ * The sleep module's marks on the kernel's shared day timeline: one band from
+ * the time they got into bed to the time they woke. It knows nothing about what
+ * else is drawn on the row. See docs/decisions/ADR-013-shared-day-timeline.md.
+ *
+ * Weight 10 so the band goes underneath: it is the widest thing on the row, and
+ * a narrower band drawn under it would disappear.
+ */
+export const sleepTimeline: TimelineContribution = {
+  weight: 10,
+  legend: 'Grey: asleep.',
+  parts: (day) => {
+    const night = day as SleepDay;
+    const bed = night.bed ?? '';
+    const wake = night.wake ?? '';
+    if (bed === '' || wake === '') return {};
+    return { bands: [{ from: bed, to: wake, className: 'sleepband' }] };
+  },
+};

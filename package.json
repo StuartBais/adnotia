@@ -19,12 +19,14 @@
     "check": "npm run typecheck && node scripts/check-no-network.mjs && node scripts/check-contrast.mjs"
   },
   "devDependencies": {
+    "@cloudflare/vite-plugin": "^1.54.4",
     "@types/node": "^24.13.3",
     "jsdom": "^30.0.1",
     "typescript": "^7.0.2",
     "vite": "^8.2.2",
     "vite-plugin-pwa": "^1.3.0",
     "vite-plugin-singlefile": "^2.3.3",
-    "vitest": "^5.0.0"
+    "vitest": "^5.0.0",
+    "wrangler": "^4.129.0"
   }
 }
