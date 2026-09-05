@@ -11,6 +11,13 @@ yet. See the implementation checkpoint in `docs/08-roadmap.md` for current limit
 
 ### Added
 
+- A planning module: a plan for the day, breaking something down so the first step is small
+  enough to start, an estimate against what it actually took, and if–then prompts. Tools
+  first, with one optional daily question at eight seconds.
+- A tool can carry its own evidence tier where it is lower than its module's, shown in the
+  rubric's own wording at the tool and listed in the Library. The registry rejects a tool
+  claiming more than the module it ships in. See
+  `docs/decisions/ADR-025-a-tool-can-carry-its-own-tier.md`.
 - Somewhere to enter the before-medication baseline. The clinical report has always read it
   — "focus 2.9/5, against a self-rated 2/5 before medication" — and nothing wrote it, so that
   comparison never appeared for anyone.

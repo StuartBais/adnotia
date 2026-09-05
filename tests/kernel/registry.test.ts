@@ -428,6 +428,53 @@ describe('fixtures', () => {
   });
 });
 
+describe('a tool that carries its own tier', () => {
+  const tool = (tier?: 'A' | 'B' | 'C') => ({
+    title: 'A tool',
+    icon: 'x',
+    ...(tier === undefined ? {} : { tier }),
+    mount: () => {},
+  });
+
+  it('may carry less than its module', () => {
+    // docs/02-evidence-rubric.md rates planning Tier A while naming
+    // task-breaking templates among its Tier C examples. ADR-025.
+    const manifest = valid({
+      tier: 'A',
+      contributes: { ...valid().contributes, tools: [tool('C')] },
+    });
+    expect(validateManifest(manifest)).toEqual([]);
+  });
+
+  it('may carry nothing, and then its module’s tier applies', () => {
+    const manifest = valid({ contributes: { ...valid().contributes, tools: [tool()] } });
+    expect(validateManifest(manifest)).toEqual([]);
+  });
+
+  it('may not claim more than its module', () => {
+    // A tool with more evidence than the module it ships in would be its own
+    // module. Letting it say so is how a Tier C module smuggles in a Tier A claim.
+    const library = { ...valid().contributes.library, tier: 'C' as const };
+    const manifest = valid({
+      tier: 'C',
+      contributes: { ...valid().contributes, library, tools: [tool('A')] },
+    });
+    const issues = validateManifest(manifest);
+    expect(issues.some((issue) => issue.rule === 'tool-tier')).toBe(true);
+    expect(issues.some((issue) => issue.message.includes('cannot claim more evidence'))).toBe(true);
+  });
+
+  it('rejects a tier that is not a tier', () => {
+    const manifest = valid({
+      contributes: {
+        ...valid().contributes,
+        tools: [{ ...tool(), tier: 'D' as unknown as 'A' }],
+      },
+    });
+    expect(validateManifest(manifest).some((issue) => issue.rule === 'tool-tier')).toBe(true);
+  });
+});
+
 describe('how the registry handles a bad manifest', () => {
   it('throws in development, so it cannot be missed', () => {
     expect(() => createRegistry([valid({ id: '' })], { strict: true })).toThrow(ManifestError);
@@ -461,7 +508,12 @@ describe('how the registry handles a bad manifest', () => {
 
 describe('the registry', () => {
   it('ships the modules in this build, and every one of them validates', () => {
-    expect(MODULES.map((manifest) => manifest.id)).toEqual(['medication', 'sleep', 'preparation']);
+    expect(MODULES.map((manifest) => manifest.id)).toEqual([
+      'medication',
+      'sleep',
+      'planning',
+      'preparation',
+    ]);
     // createRegistry throws in strict mode, so this failing means a shipped
     // module would not have registered.
     expect(createRegistry().all()).toHaveLength(MODULES.length);

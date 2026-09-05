@@ -4,7 +4,7 @@
 // each says so plainly rather than showing an encouraging blank page: a gap is a
 // fact to show, never a failure to punish.
 
-import { renderLibrary } from '../library/index';
+import { renderLibrary, tierWording } from '../library/index';
 import { ABOUT_STRINGS, aboutPage } from './about';
 import { SCREENER_STRINGS, isUsable, screenerPage } from '../screeners/index';
 import { loggingDay, parseIsoDate, type IsoDate } from '../dates/index';
@@ -253,7 +253,13 @@ export function renderTab(tab: TabId, context: ViewContext): HTMLElement {
           today: loggingDay(),
           refresh: () => context.onRefresh?.(),
         });
-        section.append(card({ title: tool.title, children: [body] }));
+        // A tool that carries a lower tier than its module says so, in the
+        // rubric's own wording, where the person is about to use it. ADR-025.
+        const children: (Node | string)[] =
+          tool.tier === undefined
+            ? [body]
+            : [el('p', { class: 'tier', text: tierWording(tool.tier, context.space) }), body];
+        section.append(card({ title: tool.title, children }));
       }
     }
     // A named report other than the clinical one lives on its own page rather

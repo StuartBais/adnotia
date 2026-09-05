@@ -103,6 +103,24 @@ export function validateManifest(
   }
 
   // ---------- the Library entry ----------
+  // A tool may carry a lower tier than its module, never a higher one: it cannot
+  // claim more evidence than the thing it ships inside. See ADR-025.
+  const TIER_ORDER: Readonly<Record<string, number>> = { A: 3, B: 2, C: 1 };
+  for (const tool of contributes.tools ?? []) {
+    if (tool?.tier === undefined) continue;
+    if (!TIERS.has(tool.tier)) {
+      fail('tool-tier', `The tool "${tool.title}" has a tier that is not A, B or C.`);
+      continue;
+    }
+    if ((TIER_ORDER[tool.tier] ?? 0) > (TIER_ORDER[manifest.tier] ?? 0)) {
+      fail(
+        'tool-tier',
+        `The tool "${tool.title}" claims tier ${tool.tier} inside a tier ${manifest.tier} ` +
+          'module. A tool cannot claim more evidence than the module it ships in.',
+      );
+    }
+  }
+
   const library = contributes.library;
   if (typeof library !== 'object' || library === null) {
     fail('library', 'Every module needs a Library entry, including Tier C.');
