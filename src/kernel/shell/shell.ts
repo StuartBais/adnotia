@@ -126,6 +126,7 @@ export function mountShell(options: ShellOptions): Shell {
         space: space(),
         enabled: enabledModules(),
         known: registry.all(),
+        store,
       }),
     );
   }

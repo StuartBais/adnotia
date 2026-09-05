@@ -13,7 +13,9 @@ import {
   formatClockTime,
   formatDuration,
   fromMinutes,
+  escapeHtml,
   spanMinutes,
+  type FrameContribution,
   type IsoDate,
   type ReportSection,
 } from '../../../kernel/index';
@@ -24,8 +26,12 @@ import { doseLabel, groupByDose } from './doses';
 export interface StandingContext {
   dates: readonly IsoDate[];
   days: Readonly<Record<IsoDate, MedicationDay>>;
-  /** Sleep days, when that module is enabled. An optional dependency. */
-  sleepDays?: Readonly<Record<IsoDate, { bed?: string; wake?: string }>>;
+  /**
+   * Days of the modules this one declares as dependencies, when they are on.
+   * Sleep is the only one, and it is optional: without it the section says less
+   * rather than guessing at how long the person was awake.
+   */
+  moduleDays?: Readonly<Record<string, Readonly<Record<IsoDate, { bed?: string; wake?: string }>>>>;
   /** The person's own before-medication baseline, from the kernel. */
   baseline?: { focus?: number | null; mood?: number | null };
   /** Their own overall word for how things compare. */
@@ -76,7 +82,7 @@ export function summarise(context: StandingContext): Standing | undefined {
   const waking = mean(
     current.dates
       .map((date) => {
-        const night = context.sleepDays?.[date];
+        const night = context.moduleDays?.['sleep']?.[date];
         return spanMinutes(night?.wake ?? '', night?.bed ?? '');
       })
       .filter((value): value is number => value !== null && value > 360),
@@ -119,14 +125,6 @@ export function summarise(context: StandingContext): Standing | undefined {
   if (context.overall !== undefined && context.overall !== '') standing.overall = context.overall;
 
   return standing;
-}
-
-function escape(value: string): string {
-  return value.replace(
-    /[&<>"]/g,
-    (character) =>
-      ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[character] ?? character,
-  );
 }
 
 /** The four lines, as plain sentences. Shared by print and by the text export. */
@@ -179,10 +177,49 @@ export function lines(standing: Standing): { label: string; body: string }[] {
   return rows;
 }
 
+
+/**
+ * What the kernel's frame cannot work out for itself: the name on the
+ * prescription, how often a dose was missed, and how much the focus rating
+ * actually moved. All three are facts about this module's data, and none of them
+ * is a conclusion. See docs/decisions/ADR-012-report-frame-contributions.md.
+ *
+ * Ported from the monolith, where these lived inline in the header and the
+ * record-quality block.
+ */
+export function frameOf(context: StandingContext): FrameContribution {
+  const days = context.dates
+    .map((date) => context.days[date])
+    .filter((day): day is MedicationDay => day !== undefined);
+  if (days.length === 0) return {};
+
+  const names = [...new Set(days.map((day) => day.med ?? '').filter((name) => name !== ''))];
+  const missed = days.filter(
+    (day) => day.adherence === 'partial' || day.adherence === 'none',
+  ).length;
+  const focus = days
+    .map((day) => day.focus)
+    .filter((value): value is number => typeof value === 'number');
+
+  const frame: FrameContribution = { subject: names.join(', ') || 'Medication' };
+  if (missed > 0) frame.header = `${missed} with a missed or skipped dose`;
+
+  if (focus.length > 0) {
+    const distinct = new Set(focus).size;
+    frame.quality =
+      `Focus was rated between ${Math.min(...focus)} and ${Math.max(...focus)}` +
+      (distinct <= 1 ? ', the same value every day' : ` across ${distinct} different values`) +
+      '.';
+  }
+  return frame;
+}
+
 export const standingSection: ReportSection = {
   report: 'clinical',
   id: 'medication.standing',
   weight: 10,
+
+  frame: (context) => frameOf(context as StandingContext),
 
   title: (context) => {
     const standing = summarise(context as StandingContext);
@@ -198,12 +235,12 @@ export const standingSection: ReportSection = {
     const rows = lines(standing)
       .map(
         (row) =>
-          `<tr><td style="white-space:nowrap;font-weight:600">${escape(row.label)}</td><td>${escape(row.body)}</td></tr>`,
+          `<tr><td style="white-space:nowrap;font-weight:600">${escapeHtml(row.label)}</td><td>${escapeHtml(row.body)}</td></tr>`,
       )
       .join('');
 
     return (
-      `<h3>Where things stand on ${escape(standing.label)}</h3>` +
+      `<h3>Where things stand on ${escapeHtml(standing.label)}</h3>` +
       `<table><tbody>${rows}</tbody></table>` +
       `<p class="legend">Day ${standing.days} at this dose.</p>`
     );

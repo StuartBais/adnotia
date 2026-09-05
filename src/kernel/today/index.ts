@@ -9,6 +9,7 @@
 // "Today assembler" and docs/01-module-contract.md.
 
 import { loggingDay, type IsoDate } from '../dates/index';
+import type { KernelDay } from '../store/document';
 import type { KernelStore } from '../store/store';
 import type { ModuleManifest, TodayField } from '../registry/types';
 import {
@@ -27,9 +28,11 @@ import {
 } from '../ui/index';
 import { carriedValue, writePath } from './carry';
 import { measure, type Budget } from './budget';
+import { KERNEL_TODAY } from './kernelFields';
 
 export { carriedValue, readPath, writePath, type CarriedValue } from './carry';
-export { measure, type Budget } from './budget';
+export { measure, type Budget, type MeasureOptions } from './budget';
+export { KERNEL_TODAY, kernelTodayCost, type KernelTodayGroup } from './kernelFields';
 
 type DayRecord = Record<string, unknown>;
 type Days = Record<IsoDate, DayRecord>;
@@ -56,6 +59,21 @@ export interface TodayView {
 function daysOf(store: KernelStore, moduleId: string): Days {
   const slice = store.get<{ days?: Days }>(moduleId);
   return (slice?.days ?? {}) as Days;
+}
+
+/**
+ * One card in the check-in. Almost always a module, but the kernel has fields of
+ * its own — wins, misses and the day's note — that no module owns, and they are
+ * filled in the same way and by the same code. See ./kernelFields.ts.
+ */
+interface Group {
+  id: string;
+  name: string;
+  sub?: string;
+  fields: readonly TodayField[];
+  /** Every day this group has, so carry can look backwards. */
+  read: () => Days;
+  write: (date: IsoDate, values: DayRecord) => void;
 }
 
 /** Build the control for one field, seeded from the day or from carry. */
@@ -147,6 +165,25 @@ export function mountToday(options: TodayOptions): TodayView {
 
   const root = el('div', { class: 'today' });
 
+  /**
+   * Set on first save and never changed. The record-quality footer uses it to
+   * tell a same-day entry from one filled in later, so a later edit must not
+   * move it.
+   */
+  function stampCreatedAt(): void {
+    store.updateKernel((kernel) => {
+      const existing = kernel.days[date];
+      if (existing?.createdAt !== undefined) return kernel;
+      return {
+        ...kernel,
+        days: {
+          ...kernel.days,
+          ...{ [date]: { ...(existing ?? {}), createdAt: now().toISOString() } },
+        },
+      };
+    });
+  }
+
   /** Write one module's working values, and stamp the day as begun. */
   function persist(manifest: ModuleManifest, values: DayRecord): void {
     const slice = (store.get<Record<string, unknown>>(manifest.id) ?? {
@@ -173,31 +210,62 @@ export function mountToday(options: TodayOptions): TodayView {
     days[date] = record;
     store.set(manifest.id, { ...slice, version: manifest.version, days });
 
+    stampCreatedAt();
+    options.onSaved?.();
+  }
+
+  /** The kernel's own fields go to kernel.days, not to any module slice. */
+  function persistKernel(values: DayRecord): void {
     store.updateKernel((kernel) => {
-      const existing = kernel.days[date];
-      if (existing?.createdAt !== undefined) return kernel;
-      return {
-        ...kernel,
-        days: {
-          ...kernel.days,
-          // Set on first save and never changed. The record-quality footer uses
-          // it to tell a same-day entry from one filled in later.
-          ...{ [date]: { ...(existing ?? {}), createdAt: now().toISOString() } },
-        },
-      };
+      const record: DayRecord = structuredClone(kernel.days[date] ?? {});
+      for (const [fieldId, value] of Object.entries(values)) writePath(record, fieldId, value);
+      if (record['createdAt'] === undefined) record['createdAt'] = now().toISOString();
+      return { ...kernel, days: { ...kernel.days, [date]: record as KernelDay } };
     });
     options.onSaved?.();
   }
 
+  function groups(): Group[] {
+    const list: Group[] = modules
+      .filter((manifest) => (manifest.contributes.today ?? []).length > 0)
+      .map((manifest) => ({
+        id: manifest.id,
+        name: manifest.name,
+        fields: manifest.contributes.today ?? [],
+        read: () => daysOf(store, manifest.id),
+        write: (_date, values) => {
+          persist(manifest, values);
+        },
+      }));
+
+    // Last: a person reflects on the day after recording it, and these are the
+    // only fields that ask them to write a sentence.
+    if (list.length > 0) {
+      for (const group of KERNEL_TODAY) {
+        list.push({
+          id: group.id,
+          name: group.name,
+          sub: group.sub,
+          fields: group.fields,
+          read: () => store.document().kernel.days as Days,
+          write: (_date, values) => {
+            persistKernel(values);
+          },
+        });
+      }
+    }
+    return list;
+  }
+
   function renderField(
-    manifest: ModuleManifest,
+    group: Group,
     field: TodayField,
     values: DayRecord,
     into: HTMLElement,
   ): void {
     if (hideOptional && field.optional === true) return;
 
-    const days = daysOf(store, manifest.id);
+    const days = group.read();
     const carried = carriedValue(field, date, days);
     if (carried !== undefined) values[field.id] = carried.value;
 
@@ -208,7 +276,7 @@ export function mountToday(options: TodayOptions): TodayView {
 
     const control = controlFor(field, carried?.value, (value) => {
       values[field.id] = value;
-      persist(manifest, values);
+      group.write(date, values);
       paintFollowUp(value);
     });
 
@@ -218,7 +286,7 @@ export function mountToday(options: TodayOptions): TodayView {
       const show = Array.isArray(more) && more.length > 0;
       detail.replaceChildren();
       if (show) {
-        for (const child of more) renderField(manifest, child, values, detail);
+        for (const child of more) renderField(group, child, values, detail);
       }
       toggleDetail(detail, show);
     }
@@ -243,19 +311,20 @@ export function mountToday(options: TodayOptions): TodayView {
   function paint(): void {
     root.replaceChildren();
 
-    for (const manifest of modules) {
-      const fields = manifest.contributes.today ?? [];
-      if (fields.length === 0) continue;
-
+    for (const group of groups()) {
       const body = el('div', {});
       // A deep copy: the store hands back frozen objects, and a shallow spread
       // would leave the nested ones frozen for writePath to fail on.
-      const values: DayRecord = structuredClone(
-        daysOf(store, manifest.id)[date] ?? {},
-      ) as DayRecord;
-      for (const field of fields) renderField(manifest, field, values, body);
+      const values: DayRecord = structuredClone(group.read()[date] ?? {}) as DayRecord;
+      for (const field of group.fields) renderField(group, field, values, body);
 
-      root.append(card({ title: manifest.name, children: [body] }));
+      root.append(
+        card({
+          title: group.name,
+          children: [body],
+          ...(group.sub === undefined ? {} : { sub: group.sub }),
+        }),
+      );
     }
 
     if (modules.length === 0) {
@@ -277,7 +346,7 @@ export function mountToday(options: TodayOptions): TodayView {
       date = next;
       paint();
     },
-    budget: () => measure(modules),
+    budget: () => measure(modules, { includeKernel: true }),
     setHideOptional(hide) {
       hideOptional = hide;
       paint();

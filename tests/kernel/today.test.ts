@@ -148,7 +148,7 @@ describe('the Today assembler', () => {
       date: '2026-09-04',
     });
     const headings = [...view.element.querySelectorAll('h2')].map((h) => h.textContent);
-    expect(headings).toEqual(['Medication log', 'Sleep']);
+    expect(headings.slice(0, 2)).toEqual(['Medication log', 'Sleep']);
   });
 
   it('keeps the person’s chosen order', () => {
@@ -157,10 +157,32 @@ describe('the Today assembler', () => {
       modules: [manifest([focus], { id: 'sleep', name: 'Sleep' }), manifest([focus])],
       date: '2026-09-04',
     });
-    expect([...view.element.querySelectorAll('h2')].map((h) => h.textContent)).toEqual([
+    expect([...view.element.querySelectorAll('h2')].map((h) => h.textContent).slice(0, 2)).toEqual([
       'Sleep',
       'Medication log',
     ]);
+  });
+
+  it('puts the kernel’s own fields last, after every module', () => {
+    const view = mountToday({ store, modules: [manifest([focus])], date: '2026-09-04' });
+    const headings = [...view.element.querySelectorAll('h2')].map((h) => h.textContent);
+    expect(headings).toEqual(['Medication log', 'What actually happened', 'Notes']);
+  });
+
+  it('writes a win to kernel.days, not to any module slice', () => {
+    const view = mountToday({ store, modules: [manifest([focus])], date: '2026-09-04' });
+    const box = [...view.element.querySelectorAll('input[type="text"]')][0] as HTMLInputElement;
+    box.value = 'Started the tax forms';
+    box.dispatchEvent(new window.Event('input', { bubbles: true }));
+
+    expect(store.document().kernel.days['2026-09-04']?.win).toBe('Started the tax forms');
+    expect(store.get<{ days: Record<string, unknown> }>('medication')?.days['2026-09-04']).toBeUndefined();
+  });
+
+  it('shows nothing of the kernel’s own when no module is enabled', () => {
+    const view = mountToday({ store, modules: [], date: '2026-09-04' });
+    const headings = [...view.element.querySelectorAll('h2')].map((h) => h.textContent);
+    expect(headings).toEqual(['Nothing to fill in']);
   });
 
   it('writes a value under modules.<id>.days[date].<fieldId>', () => {

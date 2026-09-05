@@ -101,9 +101,11 @@ describe('medication: where things stand', () => {
   it('uses sleep when it is there, as a declared optional dependency', () => {
     const withSleep = summariseStanding({
       ...context,
-      sleepDays: Object.fromEntries(
-        context.dates.map((date) => [date, { bed: '23:00', wake: '07:00' }]),
-      ),
+      moduleDays: {
+        sleep: Object.fromEntries(
+          context.dates.map((date) => [date, { bed: '23:00', wake: '07:00' }]),
+        ),
+      },
     });
     expect(withSleep?.waking).toBe('16h');
     expect(lines(withSleep!)[1]?.body).toContain('across a 16h waking day');

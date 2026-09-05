@@ -8,7 +8,7 @@
 // engine, which owns shared visuals; this is the same data as a table, which is
 // what the text export needs anyway.
 
-import type { IsoDate, ReportSection } from '../../../kernel/index';
+import { escapeHtml, type IsoDate, type ReportSection } from '../../../kernel/index';
 import { LABELS, SEVERITY_RANK } from '../strings';
 import type { MedicationDay } from '../records';
 
@@ -70,14 +70,6 @@ export function summarise(context: SideEffectsContext): SideEffectsSummary {
   };
 }
 
-function escape(value: string): string {
-  return value.replace(
-    /[&<>"]/g,
-    (character) =>
-      ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[character] ?? character,
-  );
-}
-
 export const sideEffectsSection: ReportSection = {
   report: 'clinical',
   id: 'medication.side',
@@ -91,9 +83,9 @@ export const sideEffectsSection: ReportSection = {
     const rows = summary.rows
       .map(
         (row) =>
-          `<tr><td>${escape(row.label)}</td>` +
+          `<tr><td>${escapeHtml(row.label)}</td>` +
           `<td class="num">${row.days} of ${summary.daysRecorded}</td>` +
-          `<td>${escape(row.worst)}</td>` +
+          `<td>${escapeHtml(row.worst)}</td>` +
           `<td class="num">${row.moderateOrWorse}</td></tr>`,
       )
       .join('');

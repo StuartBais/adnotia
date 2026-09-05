@@ -245,3 +245,21 @@ export function formatDuration(minutes: number | null): string {
   const rest = Math.round(minutes % 60);
   return hours + 'h' + (rest ? ' ' + rest + 'm' : '');
 }
+
+/**
+ * `Monday, 3 March`. The prescriber reads this at the top of the report, so it
+ * spells the weekday out: a date on a clinic letter is usually skimmed, and the
+ * day of the week is what a person checks it against.
+ */
+export function formatLongDate(date: IsoDate): string {
+  return parseIsoDate(date).toLocaleDateString(undefined, {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+  });
+}
+
+/** `3 Mar`. For dense places: table rows, note lines, the calendar. */
+export function formatShortDate(date: IsoDate): string {
+  return parseIsoDate(date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}

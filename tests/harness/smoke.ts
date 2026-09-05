@@ -150,6 +150,24 @@ export function smokeTest(manifest: ModuleManifest): void {
       }
     });
 
+    it('never addresses the clinician through the report frame either', () => {
+      // A `frame` contribution lands in the kernel-owned header and footer, so it
+      // reaches a clinician without passing through `render`. The same rule
+      // applies to it. See docs/decisions/ADR-012-report-frame-contributions.md.
+      const forbidden = /\b(should|increase|decrease|recommend|advise|suggest)\b/i;
+
+      for (const [, fixture] of fixtureEntries(manifest)) {
+        const context = { dates: Object.keys(fixture.days ?? {}).sort(), days: fixture.days ?? {} };
+        for (const section of manifest.contributes.reports ?? []) {
+          if (section.report !== 'clinical' || typeof section.frame !== 'function') continue;
+          for (const [slot, phrase] of Object.entries(section.frame(context))) {
+            if (typeof phrase !== 'string') continue;
+            expect(phrase, `${section.id} frame.${slot}`).not.toMatch(forbidden);
+          }
+        }
+      }
+    });
+
     it('makes no network request while rendering', () => {
       // The guard in tests/setup.ts throws on any networking primitive, so
       // reaching for one here fails rather than passing against a stub.
