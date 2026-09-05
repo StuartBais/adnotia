@@ -62,7 +62,9 @@ function mergeEntries(current: unknown, backup: unknown, counts: RestoreCounts):
   const incoming = Array.isArray(backup) ? backup : [];
 
   const identify = (entry: unknown): string =>
-    isObject(entry) && typeof entry['id'] === 'string' ? `id:${entry['id']}` : JSON.stringify(entry);
+    isObject(entry) && typeof entry['id'] === 'string'
+      ? `id:${entry['id']}`
+      : JSON.stringify(entry);
 
   const seen = new Map<string, number>();
   held.forEach((entry, index) => seen.set(identify(entry), index));
@@ -222,11 +224,7 @@ export function mergeDocuments(
     family: {
       ...live.family,
       ...incoming.family,
-      children: mergeProfiles(
-        live.family.children ?? {},
-        incoming.family.children ?? {},
-        counts,
-      ),
+      children: mergeProfiles(live.family.children ?? {}, incoming.family.children ?? {}, counts),
     },
   };
 

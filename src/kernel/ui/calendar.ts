@@ -105,10 +105,7 @@ export function calendar(options: CalendarOptions = {}): Control<IsoDate> {
 
       const button = el('button', {
         type: 'button',
-        class:
-          'calday' +
-          (date === selected ? ' sel' : '') +
-          (date === today ? ' today' : ''),
+        class: 'calday' + (date === selected ? ' sel' : '') + (date === today ? ' today' : ''),
         text: String(day),
         disabled: future,
         'aria-pressed': date === selected ? 'true' : 'false',

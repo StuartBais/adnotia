@@ -125,5 +125,7 @@ export function createDocument(options: CreateDocumentOptions = {}): AdnotiaDocu
 export function isDocumentShaped(value: unknown): value is AdnotiaDocument {
   if (typeof value !== 'object' || value === null) return false;
   const doc = value as Partial<AdnotiaDocument>;
-  return typeof doc.schemaVersion === 'number' && typeof doc.kernel === 'object' && doc.kernel !== null;
+  return (
+    typeof doc.schemaVersion === 'number' && typeof doc.kernel === 'object' && doc.kernel !== null
+  );
 }

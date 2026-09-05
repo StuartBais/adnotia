@@ -34,7 +34,8 @@ export const EXPORT_STRINGS = {
   sub: 'A single page your prescriber can read in under a minute.',
   rangeLabel: 'Cover',
   overallLabel: 'Overall, compared with before you started',
-  overallHint: 'Prescribers record this at every titration visit. Yours goes at the top of the report.',
+  overallHint:
+    'Prescribers record this at every titration visit. Yours goes at the top of the report.',
   print: 'Print or save as PDF',
   copy: 'Copy as text',
   copied: 'Copied. Paste it into an email or your patient portal.',

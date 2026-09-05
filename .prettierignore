@@ -1,0 +1,14 @@
+# Not ours to format.
+node_modules/
+dist/
+dist-single/
+dev-dist/
+
+# The v0 monolith is a historical artefact. reference/README.md: do not edit it,
+# including for style. Reformatting it would break the parity tests that lift
+# functions out of it by matching source text.
+reference/
+
+# The design documents are prose and are the source of truth. A formatter
+# rewrapping a table or a list is churn in the one place churn is expensive.
+*.md

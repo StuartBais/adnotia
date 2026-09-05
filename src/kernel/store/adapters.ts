@@ -7,10 +7,8 @@
 
 export class StorageChangedError extends Error {
   constructor() {
-    super(
-      "Data changed in another tab. Download a backup of changes here before reloading.",
-    );
-    this.name = "StorageChangedError";
+    super('Data changed in another tab. Download a backup of changes here before reloading.');
+    this.name = 'StorageChangedError';
   }
 }
 
@@ -51,7 +49,7 @@ export interface StorageAdapter {
  */
 export function isLocalStorageAvailable(): boolean {
   try {
-    const probe = "__adnotia_probe__";
+    const probe = '__adnotia_probe__';
     globalThis.localStorage.setItem(probe, probe);
     globalThis.localStorage.removeItem(probe);
     return true;
@@ -75,9 +73,7 @@ export function localStorageAdapter(): StorageAdapter {
 }
 
 /** In-memory storage, for tests and for a host that supplies nothing. */
-export function memoryStorageAdapter(
-  seed: Readonly<Record<string, string>> = {},
-): StorageAdapter {
+export function memoryStorageAdapter(seed: Readonly<Record<string, string>> = {}): StorageAdapter {
   const held = new Map<string, string>(Object.entries(seed));
   return {
     async read(key) {

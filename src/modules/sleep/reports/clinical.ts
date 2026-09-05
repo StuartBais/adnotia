@@ -146,7 +146,10 @@ export const clinicalSection: ReportSection = {
       summary.notes
         .slice(-8)
         .reverse()
-        .map((note) => `<p class="noteline"><b>${escapeHtml(note.date)}</b> ${escapeHtml(note.text)}</p>`)
+        .map(
+          (note) =>
+            `<p class="noteline"><b>${escapeHtml(note.date)}</b> ${escapeHtml(note.text)}</p>`,
+        )
         .join('')
     );
   },

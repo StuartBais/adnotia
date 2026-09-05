@@ -87,7 +87,13 @@ describe('carry', () => {
   });
 
   it('treats an empty array as no value', () => {
-    const side: TodayField = { id: 'side', label: 'Side effects', type: 'chipsMulti', cost: 3, carry: 'nearestPrior' };
+    const side: TodayField = {
+      id: 'side',
+      label: 'Side effects',
+      type: 'chipsMulti',
+      cost: 3,
+      carry: 'nearestPrior',
+    };
     const withEmpty = { '2026-09-01': { side: ['dry'] }, '2026-09-02': { side: [] } };
     expect(carriedValue(side, '2026-09-03', withEmpty)?.from).toBe('2026-09-01');
   });
@@ -103,7 +109,10 @@ describe('the check-in budget', () => {
   });
 
   it('sums declared cost across enabled modules', () => {
-    const budget = measure([manifest([field(10), field(15)]), manifest([field(20)], { id: 'sleep' })]);
+    const budget = measure([
+      manifest([field(10), field(15)]),
+      manifest([field(20)], { id: 'sleep' }),
+    ]);
     expect(budget.total).toBe(45);
     expect(budget.overBudget).toBe(false);
   });
@@ -176,7 +185,9 @@ describe('the Today assembler', () => {
     box.dispatchEvent(new window.Event('input', { bubbles: true }));
 
     expect(store.document().kernel.days['2026-09-04']?.win).toBe('Started the tax forms');
-    expect(store.get<{ days: Record<string, unknown> }>('medication')?.days['2026-09-04']).toBeUndefined();
+    expect(
+      store.get<{ days: Record<string, unknown> }>('medication')?.days['2026-09-04'],
+    ).toBeUndefined();
   });
 
   it('shows nothing of the kernel’s own when no module is enabled', () => {
@@ -203,15 +214,11 @@ describe('the Today assembler', () => {
     });
 
     click(view.element.querySelectorAll('.scale .chip')[0]);
-    expect(store.document().kernel.days['2026-09-04']?.createdAt).toBe(
-      '2026-09-04T21:00:00.000Z',
-    );
+    expect(store.document().kernel.days['2026-09-04']?.createdAt).toBe('2026-09-04T21:00:00.000Z');
 
     clock = new Date('2026-09-05T09:00:00.000Z');
     click(view.element.querySelectorAll('.scale .chip')[2]);
-    expect(store.document().kernel.days['2026-09-04']?.createdAt).toBe(
-      '2026-09-04T21:00:00.000Z',
-    );
+    expect(store.document().kernel.days['2026-09-04']?.createdAt).toBe('2026-09-04T21:00:00.000Z');
   });
 
   it('keeps one module out of another module’s slice', () => {
@@ -265,7 +272,9 @@ describe('the Today assembler', () => {
       options: [{ v: 'mild', l: 'Mild' }],
       cost: 2,
       followUp: (value) =>
-        value === 'mild' ? [{ id: 'reboundTime', label: 'When', type: 'time' as const, cost: 2 }] : [],
+        value === 'mild'
+          ? [{ id: 'reboundTime', label: 'When', type: 'time' as const, cost: 2 }]
+          : [],
     };
     const view = mountToday({ store, modules: [manifest([rebound])], date: '2026-09-04' });
     click(view.element.querySelectorAll('.chip')[0]);
@@ -291,7 +300,13 @@ describe('the Today assembler', () => {
   });
 
   it('hides optional fields when asked', () => {
-    const optional: TodayField = { id: 'note', label: 'A note', type: 'text', cost: 5, optional: true };
+    const optional: TodayField = {
+      id: 'note',
+      label: 'A note',
+      type: 'text',
+      cost: 5,
+      optional: true,
+    };
     const view = mountToday({ store, modules: [manifest([focus, optional])], date: '2026-09-04' });
     expect(view.element.textContent).toContain('A note');
 

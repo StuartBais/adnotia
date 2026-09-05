@@ -47,10 +47,7 @@ export function timeList(options: TimeListOptions = {}): Control<string[]> {
     rows.forEach((time, index) => {
       const input = el('input', { type: 'time' });
       input.value = time;
-      input.setAttribute(
-        'aria-label',
-        `${options.label ?? 'Time'} ${index + 1} of ${rows.length}`,
-      );
+      input.setAttribute('aria-label', `${options.label ?? 'Time'} ${index + 1} of ${rows.length}`);
       input.addEventListener('input', () => {
         rows[index] = input.value;
         report();

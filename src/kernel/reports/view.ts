@@ -210,7 +210,9 @@ export function mountReport(options: ReportViewOptions): ReportView {
         paintQuestions();
         paintSheet();
       });
-      questionList.append(el('li', { class: 'qitem' }, [el('span', { text: question.text }), remove]));
+      questionList.append(
+        el('li', { class: 'qitem' }, [el('span', { text: question.text }), remove]),
+      );
     }
   }
 

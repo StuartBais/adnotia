@@ -20,10 +20,7 @@ import {
 // See reference/README.md "What to port" and docs/05-architecture.md
 // "Testing strategy".
 
-const monolith = readFileSync(
-  resolve(process.cwd(), 'reference/adnotia-v0-monolith.html'),
-  'utf8',
-);
+const monolith = readFileSync(resolve(process.cwd(), 'reference/adnotia-v0-monolith.html'), 'utf8');
 
 /** Lift one function declaration out of the monolith by matching its braces. */
 function extract(name: string): string {
@@ -51,7 +48,17 @@ interface MonolithDates {
   logDate: () => string;
 }
 
-const NAMES = ['iso', 'mins', 'spanMins', 'durTxt', 'hhmm', 'avg', 'avgClock', 'isSmallHours', 'logDate'];
+const NAMES = [
+  'iso',
+  'mins',
+  'spanMins',
+  'durTxt',
+  'hhmm',
+  'avg',
+  'avgClock',
+  'isSmallHours',
+  'logDate',
+];
 const source = NAMES.map(extract).join('\n');
 
 /** The monolith's helpers, with `new Date()` frozen at `now`. */

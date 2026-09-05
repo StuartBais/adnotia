@@ -85,7 +85,10 @@ export function recordQuality(
  * The sentences, in order. Sections may add their own through `frame`, which is
  * how the focus-range sentence gets here without the kernel knowing what focus is.
  */
-export function qualityLines(quality: RecordQuality, contributed: readonly string[] = []): string[] {
+export function qualityLines(
+  quality: RecordQuality,
+  contributed: readonly string[] = [],
+): string[] {
   const lines: string[] = [];
 
   if (quality.known === 0) {

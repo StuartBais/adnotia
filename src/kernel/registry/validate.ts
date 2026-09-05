@@ -290,8 +290,7 @@ export function validateManifest(
       // Run it against the module's own fixtures so a broken one fails at
       // registration rather than on someone's Tuesday.
       const sample = manifest.fixtures?.threeDays as
-        | { days?: Record<string, Record<string, unknown>> }
-        | undefined;
+        { days?: Record<string, Record<string, unknown>> } | undefined;
       const day = Object.values(sample?.days ?? {})[0] ?? {};
       try {
         const produced = manifest.derive(day);

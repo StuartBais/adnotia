@@ -34,7 +34,7 @@ for (const match of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)) {
 const before = html;
 html = html.replace(/script-src 'self'/, `script-src 'self' ${hashes.join(' ')}`);
 if (hashes.length > 0 && html === before) {
-  throw new Error("Could not find \"script-src 'self'\" in the CSP to add script hashes to.");
+  throw new Error('Could not find "script-src \'self\'" in the CSP to add script hashes to.');
 }
 
 // Self-containment check. Anything still pointing off the device is a bug, not a

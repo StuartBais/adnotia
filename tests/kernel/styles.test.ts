@@ -15,6 +15,17 @@ function tokenValue(name: string): string | undefined {
   return tokens.match(new RegExp(`--${name}\\s*:\\s*([^;]+);`))?.[1]?.trim();
 }
 
+/**
+ * The design document writes its hex values in upper case and the formatter
+ * writes them in lower case. Only the colour is pinned to the document, not the
+ * spelling of it: `#F3EDE2` and `#f3ede2` are the same colour, and asserting the
+ * case would make the stylesheet answer to the formatter instead of to
+ * docs/07-design-system.md.
+ */
+function expectColour(name: string, documented: string): void {
+  expect(tokenValue(name)?.toLowerCase()).toBe(documented.toLowerCase());
+}
+
 describe('tokens', () => {
   it.each([
     ['ground', '#F3EDE2'],
@@ -31,16 +42,16 @@ describe('tokens', () => {
     ['flag', '#856019'],
     ['flag-soft', '#F7EBD6'],
   ])('defines --%s as %s', (name, value) => {
-    expect(tokenValue(name)).toBe(value);
+    expectColour(name, value);
   });
 
   it('carries the chart colours the design document names', () => {
-    expect(tokenValue('chart-sleep')).toBe('#BCCBBB');
-    expect(tokenValue('chart-gap')).toBe('#EFE8DA');
-    expect(tokenValue('sev-1')).toBe('#F2DECD');
-    expect(tokenValue('sev-2')).toBe('#D79A6E');
-    expect(tokenValue('sev-unrated')).toBe('#E2DACB');
-    expect(tokenValue('sev-absent')).toBe('#F6F1E6');
+    expectColour('chart-sleep', '#BCCBBB');
+    expectColour('chart-gap', '#EFE8DA');
+    expectColour('sev-1', '#F2DECD');
+    expectColour('sev-2', '#D79A6E');
+    expectColour('sev-unrated', '#E2DACB');
+    expectColour('sev-absent', '#F6F1E6');
   });
 
   it('uses system font stacks, because there are no font files', () => {

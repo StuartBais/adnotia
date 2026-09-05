@@ -6,18 +6,18 @@ import {
   sealParameters,
   unseal,
   WrongKeyError,
-} from "../crypto/index";
-import { createStore, type KernelStore } from "../store/store";
-import { plainJsonCodec, type DocumentCodec } from "../store/codec";
-import { DOCUMENT_KEY } from "../store/document";
-import type { StorageAdapter } from "../store/adapters";
-import { migrateDocument, V0_KEY } from "../store/migrations/index";
-import type { ModuleManifest } from "../registry/types";
-import { card, el, passwordInput } from "../ui/index";
-import { mountShell, type Shell } from "./shell";
-import type { PasscodeActions } from "./passcode";
+} from '../crypto/index';
+import { createStore, type KernelStore } from '../store/store';
+import { plainJsonCodec, type DocumentCodec } from '../store/codec';
+import { DOCUMENT_KEY } from '../store/document';
+import type { StorageAdapter } from '../store/adapters';
+import { migrateDocument, V0_KEY } from '../store/migrations/index';
+import type { ModuleManifest } from '../registry/types';
+import { card, el, passwordInput } from '../ui/index';
+import { mountShell, type Shell } from './shell';
+import type { PasscodeActions } from './passcode';
 
-import { guardedStorageAdapter } from "../store/adapters";
+import { guardedStorageAdapter } from '../store/adapters';
 
 export interface ApplicationOptions {
   container: HTMLElement;
@@ -28,9 +28,7 @@ export interface ApplicationOptions {
   iterations?: number;
 }
 
-export async function mountApplication(
-  options: ApplicationOptions,
-): Promise<{ destroy(): void }> {
+export async function mountApplication(options: ApplicationOptions): Promise<{ destroy(): void }> {
   const { container, adapter } = options;
   let store: KernelStore | undefined;
   let shell: Shell | undefined;
@@ -38,19 +36,19 @@ export async function mountApplication(
   let busy = false;
 
   function failure(message: string): void {
-    const retry = el("button", {
-      type: "button",
-      class: "btn",
-      text: "Try again",
+    const retry = el('button', {
+      type: 'button',
+      class: 'btn',
+      text: 'Try again',
     });
-    retry.addEventListener("click", () => {
+    retry.addEventListener('click', () => {
       void start();
     });
     container.replaceChildren(
-      el("main", { class: "wrap" }, [
-        el("h1", { text: "Adnotia" }),
+      el('main', { class: 'wrap' }, [
+        el('h1', { text: 'Adnotia' }),
         card({
-          title: "Your data could not be opened",
+          title: 'Your data could not be opened',
           sub: message,
           children: [retry],
         }),
@@ -58,35 +56,35 @@ export async function mountApplication(
     );
   }
 
-  function unlock(message = ""): void {
-    const secret = passwordInput({ label: "Passcode", numeric: true });
-    const status = el("p", { role: "status", class: "hint", text: message });
-    const submit = el("button", {
-      type: "submit",
-      class: "btn primary",
-      text: "Unlock",
+  function unlock(message = ''): void {
+    const secret = passwordInput({ label: 'Passcode', numeric: true });
+    const status = el('p', { role: 'status', class: 'hint', text: message });
+    const submit = el('button', {
+      type: 'submit',
+      class: 'btn primary',
+      text: 'Unlock',
     });
-    const form = el("form", {}, [secret.element, submit, status]);
-    form.addEventListener("submit", (event) => {
+    const form = el('form', {}, [secret.element, submit, status]);
+    form.addEventListener('submit', (event) => {
       event.preventDefault();
-      if (busy || secret.value() === "") return;
+      if (busy || secret.value() === '') return;
       submit.disabled = true;
-      status.textContent = "Opening your data.";
+      status.textContent = 'Opening your data.';
       const passcode = secret.value();
-      secret.set("");
+      secret.set('');
       void start(passcode);
     });
     container.replaceChildren(
-      el("main", { class: "wrap" }, [
-        el("h1", { text: "Adnotia" }),
+      el('main', { class: 'wrap' }, [
+        el('h1', { text: 'Adnotia' }),
         card({
-          title: "Unlock your data",
-          sub: "Your passcode cannot be recovered. Nothing is sent anywhere.",
+          title: 'Unlock your data',
+          sub: 'Your passcode cannot be recovered. Nothing is sent anywhere.',
           children: [form],
         }),
       ]),
     );
-    secret.element.querySelector("input")?.focus();
+    secret.element.querySelector('input')?.focus();
   }
 
   async function start(passcode?: string): Promise<void> {
@@ -100,7 +98,7 @@ export async function mountApplication(
       const encrypted = source !== null && envelopeOf(source) !== null;
       if (encrypted && !isCryptoAvailable()) {
         failure(
-          "This browser cannot unlock encrypted data here. Open Adnotia over HTTPS or in a browser that supports encryption. The stored data is unchanged.",
+          'This browser cannot unlock encrypted data here. Open Adnotia over HTTPS or in a browser that supports encryption. The stored data is unchanged.',
         );
         return;
       }
@@ -128,9 +126,7 @@ export async function mountApplication(
         };
         candidate.replaceDocument(imported);
         await candidate.flush();
-      } else if (
-        candidate.document().kernel.settings.passcodeEnabled !== encrypted
-      ) {
+      } else if (candidate.document().kernel.settings.passcodeEnabled !== encrypted) {
         candidate.updateKernel((kernel) => ({
           ...kernel,
           settings: { ...kernel.settings, passcodeEnabled: encrypted },
@@ -148,21 +144,16 @@ export async function mountApplication(
         const raw = await adapter.read(DOCUMENT_KEY);
         const envelope = raw === null ? null : envelopeOf(raw);
         if (envelope === null)
-          throw new Error(
-            "Stored data has changed. Reload before changing the passcode.",
-          );
+          throw new Error('Stored data has changed. Reload before changing the passcode.');
         await unseal(currentPasscode, envelope);
       }
       const security: PasscodeActions = {
         async change(currentPasscode, next) {
-          if (!isValidPasscode(next))
-            throw new Error("Use a passcode of six or more digits.");
+          if (!isValidPasscode(next)) throw new Error('Use a passcode of six or more digits.');
           await verify(currentPasscode);
           const nextCodec = await createPasscodeCodec(
             next,
-            options.iterations === undefined
-              ? {}
-              : { iterations: options.iterations },
+            options.iterations === undefined ? {} : { iterations: options.iterations },
           );
           await active.setCodec(nextCodec, true);
         },
@@ -184,19 +175,17 @@ export async function mountApplication(
         store: active,
         modules: options.modules ?? [],
         storageAvailable: options.storageAvailable ?? true,
-        ...(options.offerDownload
-          ? { offerDownload: options.offerDownload }
-          : {}),
+        ...(options.offerDownload ? { offerDownload: options.offerDownload } : {}),
         ...(options.storageAvailable === false ? {} : { security }),
       });
     } catch (error) {
       candidate?.dispose();
       if (destroyed) return;
       if (error instanceof WrongKeyError)
-        unlock("That passcode did not open this data. Nothing has changed.");
+        unlock('That passcode did not open this data. Nothing has changed.');
       else
         failure(
-          "The stored data has been left in place. Try again, or open an encrypted backup in another copy of Adnotia.",
+          'The stored data has been left in place. Try again, or open an encrypted backup in another copy of Adnotia.',
         );
     } finally {
       busy = false;

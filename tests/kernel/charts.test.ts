@@ -54,7 +54,9 @@ describe('the step chart', () => {
   });
 
   it('will not draw a trend line from a single point', () => {
-    expect(chart({ columns: columns([30, 30, 50], [{ trend: 3 }, {}, {}]) })).not.toContain('trend');
+    expect(chart({ columns: columns([30, 30, 50], [{ trend: 3 }, {}, {}]) })).not.toContain(
+      'trend',
+    );
     expect(chart({ columns: columns([30, 30, 50], [{ trend: 3 }, { trend: 4 }, {}]) })).toContain(
       'class="trend"',
     );
@@ -78,7 +80,10 @@ describe('the step chart', () => {
 });
 
 describe('the day timeline', () => {
-  const row = (label: string, over: Partial<Parameters<typeof dayTimeline>[0]['rows'][number]> = {}) => ({
+  const row = (
+    label: string,
+    over: Partial<Parameters<typeof dayTimeline>[0]['rows'][number]> = {},
+  ) => ({
     label,
     bands: [],
     ticks: [],
@@ -101,7 +106,9 @@ describe('the day timeline', () => {
 
   it('drops a band that would wrap past the origin rather than drawing it wrong', () => {
     // 17:00 to 19:00 straddles the 6pm origin: the end lands before the start.
-    const svg = timeline([row('1 Sep', { bands: [{ from: '17:00', to: '19:00', className: 'coverband' }] })]);
+    const svg = timeline([
+      row('1 Sep', { bands: [{ from: '17:00', to: '19:00', className: 'coverband' }] }),
+    ]);
     expect(svg).not.toContain('class="coverband"');
   });
 
@@ -172,7 +179,10 @@ describe('what a chart becomes in the text export', () => {
 });
 
 describe('assembling the shared timeline', () => {
-  function moduleWith(id: string, timeline: ModuleManifest['contributes']['timeline']): ModuleManifest {
+  function moduleWith(
+    id: string,
+    timeline: ModuleManifest['contributes']['timeline'],
+  ): ModuleManifest {
     return {
       id,
       name: id,
@@ -204,7 +214,9 @@ describe('assembling the shared timeline', () => {
   const sleep = moduleWith('sleep', {
     weight: 10,
     legend: 'Grey: asleep.',
-    parts: (day) => ({ bands: [{ from: day['bed'] as string, to: day['wake'] as string, className: 'sleepband' }] }),
+    parts: (day) => ({
+      bands: [{ from: day['bed'] as string, to: day['wake'] as string, className: 'sleepband' }],
+    }),
   });
   const med = moduleWith('med', {
     weight: 20,

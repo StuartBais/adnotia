@@ -12,10 +12,7 @@ import { importV0 } from '../../src/kernel/store/index';
 // monolith, or one I overlooked, fails here instead of being dropped in
 // silence — which is the failure mode docs/06-data-model.md forbids.
 
-const monolith = readFileSync(
-  resolve(process.cwd(), 'reference/adnotia-v0-monolith.html'),
-  'utf8',
-);
+const monolith = readFileSync(resolve(process.cwd(), 'reference/adnotia-v0-monolith.html'), 'utf8');
 
 function extract(name: string): string {
   const start = monolith.indexOf(`function ${name}(`);
@@ -34,10 +31,9 @@ function extract(name: string): string {
 /** The monolith's own blank entry, built by the monolith's own code. */
 function monolithBlank(date: string): Record<string, unknown> {
   const source = [extract('sortedDates'), extract('carrySource'), extract('blank')].join('\n');
-  const build = new Function(
-    'state',
-    `${source}\nreturn blank;`,
-  ) as (state: unknown) => (date: string) => Record<string, unknown>;
+  const build = new Function('state', `${source}\nreturn blank;`) as (
+    state: unknown,
+  ) => (date: string) => Record<string, unknown>;
 
   return build({
     entries: {},
@@ -103,14 +99,12 @@ describe('the v0 import against the monolith’s own entry shape', () => {
     const entry = filledEntry();
     const { document } = importV0({ entries: { [DAY]: entry } });
 
-    const medication = (document.modules['medication']?.['days'] as Record<
-      string,
-      Record<string, unknown>
-    >)[DAY];
-    const sleep = (document.modules['sleep']?.['days'] as Record<
-      string,
-      Record<string, unknown>
-    >)[DAY];
+    const medication = (
+      document.modules['medication']?.['days'] as Record<string, Record<string, unknown>>
+    )[DAY];
+    const sleep = (document.modules['sleep']?.['days'] as Record<string, Record<string, unknown>>)[
+      DAY
+    ];
     const kernelDay = document.kernel.days[DAY] as unknown as Record<string, unknown>;
 
     // Sleep fields are renamed, so compare on values rather than names.

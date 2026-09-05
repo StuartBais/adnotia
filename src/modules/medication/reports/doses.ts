@@ -59,7 +59,6 @@ export function groupByDose(
   return groups;
 }
 
-
 // ------------------------------------------------------- dose over time
 
 export interface DosesContext {
@@ -174,7 +173,11 @@ export const medicationTimeline: TimelineContribution = {
 
   parts: (record) => {
     const day = record as MedicationDay;
-    const parts: { bands?: { from: string; to: string; className: string }[]; ticks?: string[]; marks?: { at: string; className: string; radius: number }[] } = {};
+    const parts: {
+      bands?: { from: string; to: string; className: string }[];
+      ticks?: string[];
+      marks?: { at: string; className: string; radius: number }[];
+    } = {};
 
     const onset = day.onset ?? '';
     const woreOff = day.woreOff ?? '';

@@ -13,7 +13,10 @@ interface SleepDay {
   note?: string;
 }
 
-function slice(days: Record<string, SleepDay>): { version: number; days: Record<string, SleepDay> } {
+function slice(days: Record<string, SleepDay>): {
+  version: number;
+  days: Record<string, SleepDay>;
+} {
   return { version: 1, days };
 }
 

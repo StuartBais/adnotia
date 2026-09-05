@@ -4,13 +4,13 @@
 // each says so plainly rather than showing an encouraging blank page: a gap is a
 // fact to show, never a failure to punish.
 
-import { parseIsoDate, type IsoDate } from "../dates/index";
-import { loggedDates, mountReport } from "../reports/index";
-import type { KernelStore } from "../store/store";
-import { mountToday } from "../today/index";
-import { calendar, card, el } from "../ui/index";
-import type { ModuleManifest, Space } from "../index";
-import { TAB_LABELS, type TabId } from "./router";
+import { parseIsoDate, type IsoDate } from '../dates/index';
+import { loggedDates, mountReport } from '../reports/index';
+import type { KernelStore } from '../store/store';
+import { mountToday } from '../today/index';
+import { calendar, card, el } from '../ui/index';
+import type { ModuleManifest, Space } from '../index';
+import { TAB_LABELS, type TabId } from './router';
 
 export interface ViewContext {
   space: Space;
@@ -25,32 +25,32 @@ export interface ViewContext {
 
 const EMPTY: Readonly<Record<TabId, { title: string; sub: string }>> = {
   today: {
-    title: "Nothing to fill in",
-    sub: "When you turn a tool on, its questions appear here as one short check-in.",
+    title: 'Nothing to fill in',
+    sub: 'When you turn a tool on, its questions appear here as one short check-in.',
   },
   tools: {
-    title: "No tools yet",
-    sub: "Tools are things you open when you need them: a timer, a plan for the next hour.",
+    title: 'No tools yet',
+    sub: 'Tools are things you open when you need them: a timer, a plan for the next hour.',
   },
   records: {
-    title: "Nothing recorded yet",
-    sub: "What you fill in on Today shows up here, day by day.",
+    title: 'Nothing recorded yet',
+    sub: 'What you fill in on Today shows up here, day by day.',
   },
   library: {
-    title: "The Library is being written",
-    sub: "It will explain what each tool is for, what the evidence says, and what it will not do.",
+    title: 'The Library is being written',
+    sub: 'It will explain what each tool is for, what the evidence says, and what it will not do.',
   },
 };
 
 export function renderTab(tab: TabId, context: ViewContext): HTMLElement {
-  const section = el("div", {
-    class: "view",
-    "aria-label": TAB_LABELS[tab],
+  const section = el('div', {
+    class: 'view',
+    'aria-label': TAB_LABELS[tab],
     // Only the report sheet prints. Everything else on every tab is screen-only.
-    ...(tab === "records" ? {} : { "data-print": "never" }),
+    ...(tab === 'records' ? {} : { 'data-print': 'never' }),
   });
 
-  if (tab === "library") {
+  if (tab === 'library') {
     // The Library shows every module, enabled or not, so a person can read why a
     // tool exists before turning it on.
     if (context.known.length === 0) {
@@ -63,8 +63,8 @@ export function renderTab(tab: TabId, context: ViewContext): HTMLElement {
           title: manifest.name,
           sub: manifest.contributes.library.whatItIs,
           children: [
-            el("p", {
-              class: "hint",
+            el('p', {
+              class: 'hint',
               text: manifest.contributes.library.whatItWontDo,
             }),
           ],
@@ -81,7 +81,7 @@ export function renderTab(tab: TabId, context: ViewContext): HTMLElement {
 
   const { store } = context;
 
-  if (tab === "today" && store !== undefined) {
+  if (tab === 'today' && store !== undefined) {
     const todayView = mountToday({
       store,
       modules: context.enabled,
@@ -89,23 +89,23 @@ export function renderTab(tab: TabId, context: ViewContext): HTMLElement {
     });
     const label = () =>
       new Intl.DateTimeFormat(undefined, {
-        weekday: "long",
-        day: "numeric",
-        month: "long",
-        year: "numeric",
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
       }).format(parseIsoDate(todayView.date()));
-    const choose = el("button", {
-      type: "button",
-      class: "datebtn",
+    const choose = el('button', {
+      type: 'button',
+      class: 'datebtn',
       text: label(),
-      "aria-label": "Choose logging day",
-      "aria-expanded": "false",
-      "aria-controls": "logging-calendar",
+      'aria-label': 'Choose logging day',
+      'aria-expanded': 'false',
+      'aria-controls': 'logging-calendar',
     });
-    const panel = el("div", { id: "logging-calendar" });
-    choose.addEventListener("click", () => {
-      const open = choose.getAttribute("aria-expanded") !== "true";
-      choose.setAttribute("aria-expanded", String(open));
+    const panel = el('div', { id: 'logging-calendar' });
+    choose.addEventListener('click', () => {
+      const open = choose.getAttribute('aria-expanded') !== 'true';
+      choose.setAttribute('aria-expanded', String(open));
       panel.replaceChildren();
       if (!open) return;
       panel.append(
@@ -116,21 +116,18 @@ export function renderTab(tab: TabId, context: ViewContext): HTMLElement {
             todayView.setDate(date);
             context.onDateChange?.(date);
             choose.textContent = label();
-            choose.setAttribute("aria-expanded", "false");
+            choose.setAttribute('aria-expanded', 'false');
             panel.replaceChildren();
             choose.focus();
           },
         }).element,
       );
     });
-    section.append(
-      el("div", { class: "day-picker" }, [choose, panel]),
-      todayView.element,
-    );
+    section.append(el('div', { class: 'day-picker' }, [choose, panel]), todayView.element);
     return section;
   }
 
-  if (tab === "records" && store !== undefined) {
+  if (tab === 'records' && store !== undefined) {
     // History first, then the sheet: a person comes here to look back before
     // they come here to print.
     const dates = [...loggedDates(store.document(), context.enabled)].sort();
@@ -140,7 +137,7 @@ export function renderTab(tab: TabId, context: ViewContext): HTMLElement {
       const contribution = manifest.contributes.records;
       if (contribution === undefined) continue;
 
-      const body = el("div", {});
+      const body = el('div', {});
       contribution.render(body, { dates, days: daysOf(store, manifest.id) });
       if (body.childElementCount === 0) continue;
 
@@ -152,7 +149,7 @@ export function renderTab(tab: TabId, context: ViewContext): HTMLElement {
 
     // Adult-only for now: the clinical report is the only named report that
     // exists. docs/04-family-space.md gives the Family space its own two.
-    if (context.space === "adult") {
+    if (context.space === 'adult') {
       section.append(mountReport({ store, modules: context.enabled }).element);
     }
     return section;
@@ -168,8 +165,6 @@ function daysOf(
   store: KernelStore,
   moduleId: string,
 ): Readonly<Record<IsoDate, Record<string, unknown>>> {
-  const slice = store.get<{ days?: Record<IsoDate, Record<string, unknown>> }>(
-    moduleId,
-  );
+  const slice = store.get<{ days?: Record<IsoDate, Record<string, unknown>> }>(moduleId);
   return slice?.days ?? {};
 }
