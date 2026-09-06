@@ -18,8 +18,53 @@
 // than the tools need, which that document rules out. A parent picks the page
 // that applies to them, which they can do better than the app can.
 
-import { card, el } from '../ui/index';
+import { card } from '../ui/index';
+import { bullets, evidenceNote, section } from './prose';
+import { SCHOOL_EVIDENCE, SCHOOL_STRINGS, schoolPage } from './school';
+import type { Citation, Tier } from '../registry/types';
 import type { OffTabPage } from '../shell/router';
+
+/** What a page rests on. See `evidenceNote` for why prose carries one at all. */
+export interface GuidanceEvidence {
+  tier: Tier;
+  citations: readonly Citation[];
+  /** `YYYY-MM` when someone read the originals. Absent means nobody has. */
+  citationsVerified?: string;
+}
+
+/**
+ * The guideline all three of the assessment pages are derived from. Quoted here
+ * once rather than three times so that a version change is one edit.
+ */
+const NICE: Citation = {
+  title: 'Attention deficit hyperactivity disorder: diagnosis and management (NG87)',
+  authors: 'National Institute for Health and Care Excellence',
+  year: 2018,
+  venue: 'NICE guideline',
+  doi_or_url: 'https://www.nice.org.uk/guidance/ng87',
+};
+
+// Tier B, not A, for all three: these describe what guidelines recommend rather
+// than a treatment with its own trial evidence. docs/04-family-space.md proposes
+// B for the under-six page on exactly that reasoning, and the other two are the
+// same kind of writing.
+export const ASSESSMENT_EVIDENCE: GuidanceEvidence = { tier: 'B', citations: [NICE] };
+export const UNDER_SIX_EVIDENCE: GuidanceEvidence = { tier: 'B', citations: [NICE] };
+export const THIRTEEN_PLUS_EVIDENCE: GuidanceEvidence = {
+  tier: 'B',
+  citations: [
+    NICE,
+    {
+      title:
+        'Psychometric properties of the Vanderbilt ADHD Diagnostic Parent Rating Scale in a ' +
+        'referred population',
+      authors: 'Wolraich ML, Lambert W, Doffing MA, Bickman L, Simmons T, Worley K',
+      year: 2003,
+      venue: 'Journal of Pediatric Psychology',
+      doi_or_url: 'doi:10.1093/jpepsy/jsg046',
+    },
+  ],
+};
 
 export const ASSESSMENT_STRINGS = {
   title: 'What an assessment involves',
@@ -124,19 +169,6 @@ export const THIRTEEN_PLUS_STRINGS = {
     'not evidence that nothing is there.',
 } as const;
 
-function bullets(items: readonly string[]): HTMLElement {
-  const list = el('ul', { class: 'plain' });
-  for (const item of items) list.append(el('li', { text: item }));
-  return list;
-}
-
-function section(heading: string, body: string | readonly string[]): HTMLElement {
-  return el('div', { class: 'lib-part' }, [
-    el('h3', { text: heading }),
-    typeof body === 'string' ? el('p', { text: body }) : bullets(body),
-  ]);
-}
-
 /**
  * All three take no store. Guidance never reads what a parent has written: it is
  * the same page for everyone, which is the mechanical form of "the app never
@@ -155,6 +187,7 @@ export function assessmentPage(): OffTabPage {
             section(ASSESSMENT_STRINGS.routesTitle, ASSESSMENT_STRINGS.routes),
           ],
         }),
+        evidenceNote(ASSESSMENT_EVIDENCE),
       );
     },
   };
@@ -177,6 +210,7 @@ export function underSixPage(): OffTabPage {
             section(UNDER_SIX_STRINGS.whoTitle, UNDER_SIX_STRINGS.who),
           ],
         }),
+        evidenceNote(UNDER_SIX_EVIDENCE),
       );
     },
   };
@@ -198,14 +232,29 @@ export function thirteenPlusPage(): OffTabPage {
             section(THIRTEEN_PLUS_STRINGS.laterTitle, THIRTEEN_PLUS_STRINGS.later),
           ],
         }),
+        evidenceNote(THIRTEEN_PLUS_EVIDENCE),
       );
     },
   };
 }
 
-/** Every guidance page, for the Library to list. */
-export const GUIDANCE: readonly { title: string; page: () => OffTabPage }[] = [
-  { title: ASSESSMENT_STRINGS.title, page: assessmentPage },
-  { title: UNDER_SIX_STRINGS.title, page: underSixPage },
-  { title: THIRTEEN_PLUS_STRINGS.title, page: thirteenPlusPage },
+export interface GuidanceListing extends GuidanceEvidence {
+  title: string;
+  page: () => OffTabPage;
+}
+
+/**
+ * Every guidance page, for the Library to list.
+ *
+ * Order is the order a parent is likely to want them: what the thing is, then
+ * the two ages where no form applies, then the school. Not tier order — the
+ * rubric forbids ranking one tier above another in the interface, and the
+ * school page being the best-supported of the four does not make it the one to
+ * read first.
+ */
+export const GUIDANCE: readonly GuidanceListing[] = [
+  { title: ASSESSMENT_STRINGS.title, page: assessmentPage, ...ASSESSMENT_EVIDENCE },
+  { title: UNDER_SIX_STRINGS.title, page: underSixPage, ...UNDER_SIX_EVIDENCE },
+  { title: THIRTEEN_PLUS_STRINGS.title, page: thirteenPlusPage, ...THIRTEEN_PLUS_EVIDENCE },
+  { title: SCHOOL_STRINGS.title, page: schoolPage, ...SCHOOL_EVIDENCE },
 ];

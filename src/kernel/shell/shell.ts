@@ -189,7 +189,7 @@ export function mountShell(options: ShellOptions): Shell {
       class: 'crisis-link',
       text: CRISIS_STRINGS.title,
     });
-    help.addEventListener('click', () => router.openPage(crisisPage()));
+    help.addEventListener('click', () => router.openPage(crisisPage({ space: space() })));
 
     const controls: HTMLElement[] = [settings, help];
 

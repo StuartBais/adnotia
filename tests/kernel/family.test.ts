@@ -2,6 +2,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   AGE_BANDS,
   CHILD_STRINGS,
+  CRISIS_STRINGS,
+  FAMILY_CRISIS_STRINGS,
   PROFILE_STRINGS,
   REPORTS,
   addProfile,
@@ -313,6 +315,33 @@ describe('a Family space with no child chosen', () => {
     const shell = mountShell({ store, container, modules: [] });
     expect(store.profile()).toBe('c_1');
     shell.destroy();
+  });
+
+  it('opens the parent-facing crisis page from the family space', async () => {
+    // The seam is one argument in the shell, so the unit test on the page
+    // passes whether or not the shell ever passes the space. This is the test
+    // that fails when it stops.
+    store.updateKernel((kernel) => ({
+      ...kernel,
+      settings: { ...kernel.settings, firstRunComplete: true },
+    }));
+
+    const open = (space: 'adult' | 'family'): string => {
+      store.useSpace(space);
+      const container = document.createElement('div');
+      const shell = mountShell({ store, container, modules: [] });
+      const link = [...container.querySelectorAll('button')].find(
+        (button) => button.textContent === CRISIS_STRINGS.title,
+      );
+      expect(link).toBeDefined();
+      link?.click();
+      const text = (container.textContent ?? '').replace(/\s+/g, ' ');
+      shell.destroy();
+      return text;
+    };
+
+    expect(open('family')).toContain(FAMILY_CRISIS_STRINGS.worriedTitle);
+    expect(open('adult')).not.toContain(FAMILY_CRISIS_STRINGS.worriedTitle);
   });
 });
 

@@ -49,7 +49,16 @@ function citation(source: Citation): HTMLElement {
   ]);
 }
 
-function citations(sources: readonly Citation[], verified: string | undefined): HTMLElement {
+/**
+ * Exported because the guidance pages need it too. docs/02-evidence-rubric.md
+ * makes no exception for prose: "the tier of any individual Library article
+ * follows the evidence for that article's topic", and a tier without the
+ * references it rests on is a letter with nothing behind it.
+ */
+export function citationList(
+  sources: readonly Citation[],
+  verified: string | undefined,
+): HTMLElement {
   const children: (Node | string)[] = [el('h3', { text: LIBRARY_STRINGS.references })];
 
   if (sources.length === 0) {
@@ -107,7 +116,7 @@ export function moduleEntry(manifest: ModuleManifest, space: Space): HTMLElement
       // Never optional. docs/01-module-contract.md: an entry without it fails review.
       part(LIBRARY_STRINGS.wontDo, entry.whatItWontDo),
       ...toolTiers(manifest, space),
-      citations(entry.citations, entry.citationsVerified),
+      citationList(entry.citations, entry.citationsVerified),
       el('p', {
         class: 'hint',
         text: LIBRARY_STRINGS.reviewed(entry.reviewed, entry.nextReview),
@@ -123,7 +132,7 @@ export function exclusionEntry(exclusion: Exclusion): HTMLElement {
       part(LIBRARY_STRINGS.whatItIs, exclusion.whatItIs),
       part(LIBRARY_STRINGS.evidence, exclusion.why),
       part(LIBRARY_STRINGS.whatWouldChangeIt, exclusion.whatWouldChangeIt),
-      citations(exclusion.citations, undefined),
+      citationList(exclusion.citations, undefined),
     ],
   });
 }

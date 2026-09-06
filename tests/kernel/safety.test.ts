@@ -4,6 +4,9 @@ import {
   CRISIS_LINES,
   CRISIS_REVIEWED,
   CRISIS_REVIEW_MONTHS,
+  CRISIS_STRINGS,
+  FAMILY_CRISIS_LINES,
+  FAMILY_CRISIS_STRINGS,
   LICENCE,
   SOURCE_URL,
   aboutPage,
@@ -92,6 +95,89 @@ describe('if things are bad right now', () => {
 
   it('never asks how the person is, which would be a question it cannot answer', () => {
     expect(text).not.toMatch(/how (are|do) you|are you (ok|okay|safe)|rate your/i);
+  });
+
+  it('is not alarmed, and does not instruct', () => {
+    expect(text).not.toMatch(/!|urgent|emergency!|you must|you should/i);
+  });
+});
+
+describe('the parent-facing version of it', () => {
+  // docs/04-family-space.md: "A parent-facing 'if things are bad right now' page
+  // carries child- and parent-specific resources alongside the general ones,
+  // reviewed each release with the review date printed."
+  const family = render(crisisPage({ space: 'family' }));
+  const text = flat(family);
+  const adult = flat(render(crisisPage({ space: 'adult' })));
+
+  it('carries the child- and parent-specific lines', () => {
+    expect(text).toContain(FAMILY_CRISIS_STRINGS.worriedTitle);
+    expect(text).toContain(FAMILY_CRISIS_STRINGS.childTitle);
+    expect(text).toContain(FAMILY_CRISIS_STRINGS.parentTitle);
+    for (const entry of FAMILY_CRISIS_LINES) expect(text).toContain(entry.contact);
+  });
+
+  it('carries them alongside the general ones rather than instead of them', () => {
+    // "alongside". A parent who opens this because they are the one who is not
+    // all right must not have to work out that the general lines are elsewhere.
+    for (const entry of CRISIS_LINES) expect(text).toContain(entry.contact);
+    expect(text).toContain(CRISIS_STRINGS.emergency);
+    expect(text).toContain('Adnotia cannot help in a crisis');
+  });
+
+  it('puts the parent’s own line before the child protection one', () => {
+    // The commonest reason a parent opens this page is themselves.
+    expect(text.indexOf(FAMILY_CRISIS_STRINGS.parentTitle)).toBeLessThan(
+      text.indexOf(FAMILY_CRISIS_STRINGS.worriedTitle),
+    );
+  });
+
+  it('does not put any of it in front of an adult with no children in the app', () => {
+    expect(adult).not.toContain(FAMILY_CRISIS_STRINGS.worriedTitle);
+    expect(adult).not.toContain(FAMILY_CRISIS_STRINGS.childTitle);
+    for (const entry of FAMILY_CRISIS_LINES) expect(adult).not.toContain(entry.who);
+  });
+
+  it('says out loud that nothing here reads the log', () => {
+    // docs/04-family-space.md: "No module attempts to detect risk, abuse,
+    // neglect or mood disorder from anything recorded."
+    expect(text).toContain('Nothing in this app reads what you have written');
+    expect(text).toContain('No entry sets anything off');
+  });
+
+  it('does not detect anything, whatever is in the document', () => {
+    // The mechanical half of the same rule: the page cannot vary with the data
+    // because it is never given any.
+    expect(crisisPage.length).toBeLessThanOrEqual(1);
+    expect(family.querySelectorAll('input, textarea, select, form')).toHaveLength(0);
+  });
+
+  it('does not tell a parent they must be sure before they ring', () => {
+    expect(text).toContain('Being unsure is the ordinary reason people ring');
+  });
+
+  it('keeps the child lines off the screen a child is handed, and says why', () => {
+    expect(text).toContain('rather than on the screen you hand over');
+  });
+
+  it('does not treat a parent at the end of their rope as a safeguarding matter', () => {
+    expect(text).toContain('not a failure and it is not a safeguarding matter');
+  });
+
+  it('is reviewed on the same date as the rest of the page', () => {
+    // One review date for one page. A second date is a second thing to forget.
+    expect(text).toContain(`last checked in ${CRISIS_REVIEWED}`);
+    expect(text).toContain(CRISIS_STRINGS.unchecked);
+  });
+
+  it('prints that date after the family lines, not before them', () => {
+    // Built-file check: with the note under the general lines, the family ones
+    // sat below it and read as though nobody had checked how old they were.
+    const last = FAMILY_CRISIS_LINES[FAMILY_CRISIS_LINES.length - 1];
+    expect(last).toBeDefined();
+    expect(text.indexOf(`last checked in ${CRISIS_REVIEWED}`)).toBeGreaterThan(
+      text.indexOf(last?.contact ?? ''),
+    );
   });
 
   it('is not alarmed, and does not instruct', () => {

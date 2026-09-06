@@ -8,8 +8,11 @@ export {
   CRISIS_REVIEWED,
   CRISIS_REVIEW_MONTHS,
   CRISIS_STRINGS,
+  FAMILY_CRISIS_LINES,
+  FAMILY_CRISIS_STRINGS,
   crisisPage,
   type CrisisLine,
+  type FamilyCrisisLine,
 } from './crisis';
 export { ABOUT_STRINGS, LICENCE, SOURCE_URL, aboutPage } from './about';
 export {
