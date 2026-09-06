@@ -17,16 +17,17 @@ const css = readFileSync(resolve(root, 'src/styles/tokens.css'), 'utf8');
 
 /** Pairs from docs/07-design-system.md, with the ratio the document claims. */
 const PAIRS = [
-  { text: 'ink', on: 'paper', documented: 15.6 },
-  { text: 'ink2', on: 'paper', documented: 5.5 },
-  { text: 'mark', on: 'paper', documented: 4.8 },
-  { text: '#FFFFFF', on: 'mark', documented: 5.0, label: 'white' },
-  { text: 'flag', on: 'flag-soft', documented: 4.8 },
-  { text: 'sage-deep', on: 'paper', documented: 5.7 },
-  { text: '#FFFFFF', on: 'sage-deep', documented: 6.0, label: 'white' },
-  // The page ground carries body text too, and the document's table omits it.
-  { text: 'ink', on: 'ground' },
-  { text: 'ink2', on: 'ground' },
+  { text: 'ink', on: 'paper', documented: 12.9 },
+  { text: 'ink2', on: 'paper', documented: 5.8 },
+  { text: 'mark', on: 'paper', documented: 6.6 },
+  { text: '#FFFFFF', on: 'mark', documented: 7.0, label: 'white' },
+  { text: 'flag', on: 'flag-soft', documented: 5.1 },
+  { text: 'terra-deep', on: 'paper', documented: 5.1 },
+  { text: 'ink', on: 'ground', documented: 11.4 },
+  { text: 'ink2', on: 'ground', documented: 5.2 },
+  // Not in the document's table, but both are real surfaces for the accent.
+  { text: 'mark', on: 'ground' },
+  { text: 'mark', on: 'mark-soft' },
 ];
 
 const MINIMUM = 4.5;

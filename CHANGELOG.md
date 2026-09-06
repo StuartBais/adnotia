@@ -11,6 +11,12 @@ yet. See the implementation checkpoint in `docs/08-roadmap.md` for current limit
 
 ### Added
 
+- New palette. Sage leads and terracotta answers, on a cool stone ground instead of cream —
+  both colours still drawn from the logo, which is unchanged. Body text is softened from
+  15.6:1 to 12.9:1, still well past WCAG AAA, because pattern glare is driven by exactly the
+  black-on-white maximum and ADHD carries a raised rate of visual-aura migraine. See ADR-028.
+- Ten colours that had been written into the stylesheet by hand now come from the tokens.
+  Six of them duplicated a token that already existed, so changing the token did nothing.
 - Every reference in the build was resolved against Crossref and PubMed. Three were wrong,
   including a DOI that pointed at a real paper about anxiety in primary care rather than at
   the ADHD trial it was cited for. Nobody has read the papers yet, and every Library entry

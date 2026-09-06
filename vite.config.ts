@@ -98,8 +98,8 @@ export default defineConfig(({ mode }) => {
               description:
                 'Evidence-based tools for adults with ADHD and for parents of children who may have it. Everything runs in your browser.',
               lang: 'en',
-              theme_color: '#F3EDE2',
-              background_color: '#F3EDE2',
+              theme_color: '#EAECE7',
+              background_color: '#EAECE7',
               display: 'standalone',
               orientation: 'portrait',
               start_url: './',

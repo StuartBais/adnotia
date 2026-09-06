@@ -8,23 +8,25 @@ Designed for someone who may be tired, distracted, ashamed of a gap in the recor
 
 ## Colour
 
-Derived from the logo: sage and terracotta on cream. The logo colours themselves are used only for the mark and for chart fills; text and controls use deepened variants that meet contrast requirements.
+Derived from the logo: sage and terracotta on cool stone. The logo colours themselves are used only for the mark and for chart fills; text and controls use deepened variants that meet contrast requirements.
+
+Sage leads and terracotta answers. Green is what the app does — buttons, links, selected chips, the tier badge — and warm orange is what it wants you to look at: a warning, a rating, the severity of a side effect. Both come out of the mark, so nothing in the interface competes with it.
 
 ```css
 :root {
-  --ground:     #F3EDE2;   /* page */
-  --paper:      #FDF9EE;   /* cards, inputs; the logo's cream */
-  --ink:        #221F1A;   /* primary text */
-  --ink2:       #6E6455;   /* secondary text */
-  --line:       #DED3C1;   /* input borders */
-  --line2:      #EBE3D5;   /* card borders, dividers */
-  --sage:       #728871;   /* logo; chart fills only */
-  --sage-deep:  #4F6A52;   /* text/controls on sage */
-  --terra:      #CA7F58;   /* logo; chart fills only */
-  --mark:       #A85A31;   /* primary accent: selected chips, buttons, links */
-  --mark-soft:  #F6E5D8;   /* hover, selected backgrounds */
-  --flag:       #856019;   /* warnings, cautions */
-  --flag-soft:  #F7EBD6;
+  --ground:     #EAECE7;   /* page */
+  --paper:      #F8F9F6;   /* cards, inputs */
+  --ink:        #2B2F2C;   /* primary text; soft, not hard, black */
+  --ink2:       #5C6360;   /* secondary text */
+  --line:       #D2D6CF;   /* input borders */
+  --line2:      #E2E6DF;   /* card borders, dividers */
+  --sage:       #728871;   /* logo; the mark and chart fills only */
+  --terra:      #CA7F58;   /* logo; the mark and chart fills only */
+  --mark:       #3F6144;   /* primary accent: selected chips, buttons, links */
+  --mark-soft:  #DFE9E0;   /* hover, selected backgrounds */
+  --terra-deep: #A85231;   /* the second voice: ratings, severity */
+  --flag:       #8A5524;   /* warnings, cautions */
+  --flag-soft:  #F6E7DA;
 }
 ```
 
@@ -32,15 +34,26 @@ Checked contrast ratios (must stay ≥ 4.5:1; `npm run check` enforces):
 
 | Pair | Ratio |
 |---|---|
-| ink on paper | 15.6 |
-| ink2 on paper | 5.5 |
-| mark on paper | 4.8 |
-| white on mark | 5.0 |
-| flag on flag-soft | 4.8 |
-| sage-deep on paper | 5.7 |
-| white on sage-deep | 6.0 |
+| ink on paper | 12.9 |
+| ink2 on paper | 5.8 |
+| mark on paper | 6.6 |
+| white on mark | 7.0 |
+| flag on flag-soft | 5.1 |
+| terra-deep on paper | 5.1 |
+| ink on ground | 11.4 |
+| ink2 on ground | 5.2 |
 
-Chart colours: cover band `--mark`; sleep band `#BCCBBB`; gap band `#EFE8DA`; dose ticks `--ink`; rebound `--flag`; focus dots `--sage-deep`; severity ramp `#F2DECD` → `#D79A6E` → `--mark`, unrated `#E2DACB`, absent `#F6F1E6`. Print maps everything to greys (see Print).
+### Two choices made on evidence rather than taste
+
+Both are about glare, and both are the reason the ground is not white and the text is not black.
+
+**Pattern glare** — the visual discomfort that comes from high-contrast text — is driven by the combination of a hard black-on-white contrast and the stripe pattern that lines of text make. **ADHD carries a raised rate of migraine** (OR ≈ 1.8 in a cross-sectional study of over 26,000 people), and the association is strongest for *migraine with visual disturbance*. So the ground is an off-white and body text sits at about 13:1 rather than the 15.6:1 it used to: comfortably past WCAG AAA's 7:1, and deliberately short of the maximum. Nothing anywhere uses zebra striping or dense hatching.
+
+**No hue here is chosen for an effect on attention.** There is no good evidence that any particular colour helps people with ADHD. The colour-vision literature in ADHD is small and inconsistent — the study most often cited for a blue-yellow effect measured saturation discrimination in 30 adults, found a difference only in females, for both blue and red, and tested nothing on a screen. A palette built on colour psychology would fail `02-evidence-rubric.md`, so the hues are an identity choice and are described as one.
+
+What does follow from that uncertainty is the ordinary rule, kept strictly: **nothing carries meaning by hue alone.** Chips state themselves in `aria-pressed`, the severity ramp descends in lightness as well as warming in hue, and every chart is paired with the same information in words (`decisions/ADR-027`).
+
+Chart colours: cover band `--mark`; sleep band `#C9CFD4`, neutral because a sage band beside a sage cover band is one band; gap band `#E4E7E1`; dose ticks `--ink`; rebound `--flag`; focus dots `--terra-deep`; severity ramp `#F0DFD1` → `#D9A176` → `--terra-deep`, unrated `#DDE0DA`, absent `#EFF1EC`. Print maps everything to greys (see Print).
 
 Dark mode: not in the first milestones. When it comes, it is a second token set, not per-component overrides.
 
