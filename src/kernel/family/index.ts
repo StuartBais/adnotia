@@ -22,9 +22,16 @@ export {
   type ChildSurface,
   type ChildSurfaceOptions,
 } from './childSurface';
+export { SCHOOL_EVIDENCE, SCHOOL_STRINGS, schoolPage } from './school';
+export { bullets, evidenceNote, section } from './prose';
 export {
+  ASSESSMENT_EVIDENCE,
   ASSESSMENT_STRINGS,
   GUIDANCE,
+  THIRTEEN_PLUS_EVIDENCE,
+  UNDER_SIX_EVIDENCE,
+  type GuidanceEvidence,
+  type GuidanceListing,
   THIRTEEN_PLUS_STRINGS,
   UNDER_SIX_STRINGS,
   assessmentPage,

@@ -11,6 +11,14 @@ yet. See the implementation checkpoint in `docs/08-roadmap.md` for current limit
 
 ### Added
 
+- Talking to the school: what a daily report card is, what the evidence for it does and does
+  not show, and the specific things to ask for. There is nowhere to enter a teacher's
+  ratings and there will not be — the card is the school's to run.
+- The "if things are bad right now" page gains child- and parent-specific lines in the Family
+  space, alongside the general ones rather than instead of them, with the parent's own line
+  first. It still reads nothing and reacts to nothing.
+- Guidance pages now carry a tier and their references, like every other evidence claim in
+  the app. See ADR-026.
 - Parent tools for the Family space: routines you build for a part of the day, a first/then
   pair, a star chart you run yourself, and worked examples of saying what you noticed.
 - The screen you hand over, with the four things `docs/04-family-space.md` lists on it: a

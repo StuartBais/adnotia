@@ -5,6 +5,7 @@ export { RESERVED_PHRASE, tierName, tierWording } from './tiers';
 export { EXCLUSIONS, type Exclusion } from './exclusions';
 export {
   LIBRARY_STRINGS,
+  citationList,
   exclusionEntry,
   moduleEntry,
   renderLibrary,
