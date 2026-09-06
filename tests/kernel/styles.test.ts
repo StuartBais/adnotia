@@ -28,30 +28,59 @@ function expectColour(name: string, documented: string): void {
 
 describe('tokens', () => {
   it.each([
-    ['ground', '#F3EDE2'],
-    ['paper', '#FDF9EE'],
-    ['ink', '#221F1A'],
-    ['ink2', '#6E6455'],
-    ['line', '#DED3C1'],
-    ['line2', '#EBE3D5'],
+    ['ground', '#EAECE7'],
+    ['paper', '#F8F9F6'],
+    ['ink', '#2B2F2C'],
+    ['ink2', '#5C6360'],
+    ['line', '#D2D6CF'],
+    ['line2', '#E2E6DF'],
+    // The logo's own two, which the design document forbids changing.
     ['sage', '#728871'],
-    ['sage-deep', '#4F6A52'],
     ['terra', '#CA7F58'],
-    ['mark', '#A85A31'],
-    ['mark-soft', '#F6E5D8'],
-    ['flag', '#856019'],
-    ['flag-soft', '#F7EBD6'],
+    ['mark', '#3F6144'],
+    ['mark-soft', '#DFE9E0'],
+    ['terra-deep', '#A85231'],
+    ['flag', '#8A5524'],
+    ['flag-soft', '#F6E7DA'],
   ])('defines --%s as %s', (name, value) => {
     expectColour(name, value);
   });
 
   it('carries the chart colours the design document names', () => {
-    expectColour('chart-sleep', '#BCCBBB');
-    expectColour('chart-gap', '#EFE8DA');
-    expectColour('sev-1', '#F2DECD');
-    expectColour('sev-2', '#D79A6E');
-    expectColour('sev-unrated', '#E2DACB');
-    expectColour('sev-absent', '#F6F1E6');
+    expectColour('chart-sleep', '#C9CFD4');
+    expectColour('chart-gap', '#E4E7E1');
+    expectColour('sev-1', '#F0DFD1');
+    expectColour('sev-2', '#D9A176');
+    expectColour('sev-unrated', '#DDE0DA');
+    expectColour('sev-absent', '#EFF1EC');
+  });
+
+  it('keeps every colour in the token file', () => {
+    // The palette change of September 2026 found ten colours written into
+    // base.css by hand, six of which duplicated the value of a token that
+    // already existed. Changing --chart-sleep did nothing to the sleep band,
+    // which is the one thing a token is for. White is allowed: it is not a
+    // palette colour, it is the absence of one.
+    const hardcoded = [...base.matchAll(/#[0-9a-fA-F]{3,8}/g)]
+      .map((match) => match[0].toLowerCase())
+      .filter((colour) => colour !== '#fff' && colour !== '#ffffff');
+    expect(hardcoded).toEqual([]);
+  });
+
+  it('leaves print in greys, because a colour print of this is not the point', () => {
+    const colours = [...print.matchAll(/#[0-9a-fA-F]{3,6}/g)].map((match) => match[0]);
+    expect(colours.length).toBeGreaterThan(5);
+    for (const colour of colours) {
+      const full =
+        colour.length === 4 ? colour.replace(/([0-9a-f])/gi, '$1$1').slice(0, 7) : colour;
+      const [r, g, b] = [1, 3, 5].map((at) => parseInt(full.slice(at, at + 2), 16));
+      // A grey has no separation between its channels.
+      expect(
+        Math.max(r as number, g as number, b as number) -
+          Math.min(r as number, g as number, b as number),
+        colour,
+      ).toBeLessThanOrEqual(4);
+    }
   });
 
   it('uses system font stacks, because there are no font files', () => {

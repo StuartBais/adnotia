@@ -1,10 +1,26 @@
 /*
  * Design tokens. See docs/07-design-system.md.
  *
- * Derived from the logo: sage and terracotta on cream. The logo colours are used
- * only for the mark and for chart fills; text and controls use deepened variants
- * that meet contrast. scripts/check-contrast.mjs reads this file and fails the
- * build if any documented text-on-surface pair drops below 4.5:1.
+ * Derived from the logo: sage and terracotta on cool stone. The logo colours are
+ * used only for the mark and for chart fills; text and controls use deepened
+ * variants that meet contrast. scripts/check-contrast.mjs reads this file and
+ * fails the build if any documented text-on-surface pair drops below 4.5:1.
+ *
+ * Sage leads and terracotta answers. That is the whole of the palette's
+ * character: green is what the app does, warm orange is what it wants you to
+ * look at. Both come from the mark, so nothing here competes with it.
+ *
+ * Two choices here follow evidence rather than taste, and both are about glare.
+ * The ground is off-white and not white, and body text is a soft near-black at
+ * about 13:1 rather than a hard one at 15.6:1 — comfortably above WCAG AAA's
+ * 7:1, and deliberately short of the black-on-white maximum. Pattern glare is
+ * driven by exactly that maximum against the stripe pattern of text, and ADHD
+ * carries a raised rate of migraine (OR ≈ 1.8), strongest for migraine with
+ * visual disturbance. See docs/07-design-system.md.
+ *
+ * No hue here is chosen for an effect on attention. There is no good evidence
+ * that any colour helps ADHD, and a palette built on that claim would fail
+ * docs/02-evidence-rubric.md.
  *
  * Dark mode is not in the first milestones. When it comes it is a second token
  * set here, not per-component overrides.
@@ -12,36 +28,50 @@
 
 :root {
   /* surfaces and text */
-  --ground: #f3ede2; /* page */
-  --paper: #fdf9ee; /* cards, inputs; the logo's cream */
-  --ink: #221f1a; /* primary text */
-  --ink2: #6e6455; /* secondary text */
-  --line: #ded3c1; /* input borders */
-  --line2: #ebe3d5; /* card borders, dividers */
+  --ground: #eaece7; /* page */
+  --paper: #f8f9f6; /* cards, inputs */
+  --ink: #2b2f2c; /* primary text; soft, not hard, black */
+  --ink2: #5c6360; /* secondary text */
+  --line: #d2d6cf; /* input borders */
+  --line2: #e2e6df; /* card borders, dividers */
 
   /* logo colours: the mark and chart fills only, never text */
   --sage: #728871;
   --terra: #ca7f58;
 
   /* deepened variants, safe for text and controls */
-  --sage-deep: #4f6a52;
-  --mark: #a85a31; /* primary accent: selected chips, buttons, links */
-  --mark-soft: #f6e5d8; /* hover, selected backgrounds */
-  --flag: #856019; /* warnings, cautions */
-  --flag-soft: #f7ebd6;
+  --mark: #3f6144; /* primary accent: selected chips, buttons, links */
+  --mark-soft: #dfe9e0; /* hover, selected backgrounds */
+  --flag: #8a5524; /* warnings, cautions */
+  --flag-soft: #f6e7da;
+  --flag-line: #e0c9a8; /* the nag's border: warm, and quieter than --flag */
+
+  /*
+   * Deepened terracotta. Once the primary accent, now the second voice: the
+   * thing on a chart that is being measured, where --mark is the thing doing the
+   * measuring. Kept distinct from --flag so that "this is your rating" never
+   * reads as "this is a warning".
+   */
+  --terra-deep: #a85231;
 
   /* chart fills */
   --chart-cover: var(--mark);
-  --chart-sleep: #bccbbb;
-  --chart-gap: #efe8da;
+  --chart-sleep: #c9cfd4; /* neutral: a sage band beside a sage cover is one band */
+  --chart-gap: #e4e7e1;
   --chart-dose: var(--ink);
   --chart-rebound: var(--flag);
-  --chart-focus: var(--sage-deep);
-  --sev-1: #f2decd;
-  --sev-2: #d79a6e;
-  --sev-3: var(--mark);
-  --sev-unrated: #e2dacb;
-  --sev-absent: #f6f1e6;
+  --chart-focus: var(--terra-deep);
+
+  /*
+   * The severity ramp descends in lightness as well as warming in hue, so it
+   * survives being read by someone who cannot separate the hues and by a
+   * greyscale printer. Terracotta is free for this now that it does not lead.
+   */
+  --sev-1: #f0dfd1;
+  --sev-2: #d9a176;
+  --sev-3: var(--terra-deep);
+  --sev-unrated: #dde0da;
+  --sev-absent: #eff1ec;
 
   /* type */
   --serif: 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif;
