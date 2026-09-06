@@ -148,6 +148,7 @@ export async function mountApplication(options: ApplicationOptions): Promise<{ d
         await unseal(currentPasscode, envelope);
       }
       const security: PasscodeActions = {
+        verify,
         async change(currentPasscode, next) {
           if (!isValidPasscode(next)) throw new Error('Use a passcode of six or more digits.');
           await verify(currentPasscode);

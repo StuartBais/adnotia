@@ -6,6 +6,8 @@ import { card, el, passwordInput } from '../ui/index';
 import type { OffTabPage } from './router';
 
 export interface PasscodeActions {
+  /** Resolves when the code is right; rejects when it is not. */
+  verify?(current: string): Promise<void>;
   change(current: string, next: string): Promise<void>;
   remove(current: string): Promise<void>;
   lock(): Promise<void>;

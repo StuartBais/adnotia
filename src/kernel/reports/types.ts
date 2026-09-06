@@ -131,6 +131,28 @@ export const REPORTS: Readonly<Record<string, ReportDefinition>> = {
       'examples is worth more in the room than a long account of how things generally are.',
   },
 
+  screening: {
+    name: 'screening',
+    title: 'Screening form',
+    audience: 'family',
+    blurb: 'The completed form, to take to the appointment.',
+    emptyTitle: 'Nothing filled in yet',
+    emptyBody:
+      'The form is in the Library. Filling it in over a week or two, rather than in a waiting ' +
+      'room, is most of what makes it worth taking.',
+  },
+
+  observations: {
+    name: 'observations',
+    title: 'What we have noticed',
+    audience: 'family',
+    blurb: 'Dated examples, from home and from school, to take to the appointment.',
+    emptyTitle: 'Nothing noted yet',
+    emptyBody:
+      'Write down the next thing that happens, while it is fresh. Clinicians ask for ' +
+      'examples, and a dated one from a fortnight ago is worth more than an impression.',
+  },
+
   clinical: {
     name: 'clinical',
     title: 'Daily record',

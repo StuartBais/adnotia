@@ -11,6 +11,13 @@ yet. See the implementation checkpoint in `docs/08-roadmap.md` for current limit
 
 ### Added
 
+- The Family space foundations: child profiles with a nickname and an age band and nothing
+  else, switching between them, and removal behind a confirmation that says what goes with it.
+- The handed-over surface. It replaces the whole app rather than sitting in a tab, mounts only
+  `audience: "child"` modules, offers no text entry and no links, and needs the parent's
+  passcode to get back out. Handing over is refused outright when no passcode is set.
+- The `screening` and `observations` reports, both Family-audience. The clinical report stays
+  adult-only.
 - A mindfulness module, Tier B: three practices written as steps with a timer, and a session
   log. No audio — the roadmap rules it out, and there is nothing here to fetch it with. The
   evidence limit sits on the practice as well as in the Library.
@@ -93,6 +100,10 @@ yet. See the implementation checkpoint in `docs/08-roadmap.md` for current limit
   `docs/decisions/ADR-017-what-the-report-will-not-say.md`.
 
 ### Fixed
+
+- Adding a child appeared to work and was never written to disk. `updateFamily` changed the
+  document in memory without scheduling the persist that every other writer schedules, so a
+  parent could add a child, see it on the page, and find it gone on the next load.
 
 - The report printed the stored code for "overall, compared with before you started" — a
   prescriber would have read `mi` where the monolith reads "much better".

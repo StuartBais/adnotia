@@ -10,6 +10,13 @@ import { createRouter, TABS, TAB_LABELS, type Router, type TabId } from './route
 import { firstRun } from './firstRun';
 import { backupPage, settingsPage } from './settings';
 import { CRISIS_STRINGS, crisisPage } from './crisis';
+import {
+  CHILD_STRINGS,
+  PROFILE_STRINGS,
+  getProfile,
+  mountChildSurface,
+  profilesPage,
+} from '../family/index';
 import { renderTab } from './views';
 
 import type { PasscodeActions } from './passcode';
@@ -22,6 +29,8 @@ export interface ShellOptions {
   store: KernelStore;
   container: HTMLElement;
   modules?: readonly ModuleManifest[];
+  /** Asked before an irreversible step. Injected so a test can answer it. */
+  confirm?: (message: string) => boolean;
   storageAvailable?: boolean;
   security?: PasscodeActions;
   /** Hands a file to the person. Defaults to a download in a real browser. */
@@ -108,6 +117,48 @@ export function mountShell(options: ShellOptions): Shell {
       });
   }
 
+  /**
+   * Replace the whole application with the child's surface. Not a tab and not a
+   * page inside the shell: while this is up, the tabs, the masthead, Settings
+   * and the Adult space are not on the document at all, which is the strongest
+   * form of docs/04-family-space.md's "no way to reach the parent's data".
+   */
+  function handToChild(profileId: string): void {
+    const verify = options.security?.verify;
+    if (verify === undefined || !store.document().kernel.settings.passcodeEnabled) {
+      // Handing the phone over is only safe if getting back out needs a code.
+      container.replaceChildren(
+        el('div', { class: 'wrap' }, [
+          el('div', { class: 'card' }, [
+            el('p', { class: 'sub', text: CHILD_STRINGS.needCode }),
+            (() => {
+              const back = el('button', {
+                type: 'button',
+                class: 'btn primary',
+                text: 'Back',
+              });
+              back.addEventListener('click', () => refresh());
+              return back;
+            })(),
+          ]),
+        ]),
+      );
+      return;
+    }
+
+    const surface = mountChildSurface({
+      store,
+      modules: registry.all(),
+      profileId,
+      verify,
+      onLeave: () => {
+        surface.destroy();
+        refresh();
+      },
+    });
+    container.replaceChildren(surface.element);
+  }
+
   function paintMasthead(): void {
     const title = el('h1', { text: 'Adnotia' });
     const settings = el('button', {
@@ -139,9 +190,42 @@ export function mountShell(options: ShellOptions): Shell {
     });
     help.addEventListener('click', () => router.openPage(crisisPage()));
 
+    const controls: HTMLElement[] = [settings, help];
+
+    // The Family space adds the child switcher and the hand-over. Neither
+    // exists in the Adult space, where there are no children to switch between.
+    if (space() === 'family') {
+      const children = el('button', {
+        type: 'button',
+        class: 'btn small',
+        text: PROFILE_STRINGS.title,
+      });
+      children.addEventListener('click', () => {
+        router.openPage(
+          profilesPage({
+            store,
+            onChanged: () => refresh(),
+            ...(options.confirm ? { confirm: options.confirm } : {}),
+          }),
+        );
+      });
+      controls.push(children);
+
+      const current = getProfile(store.document(), store.profile());
+      if (current !== undefined) {
+        const handOver = el('button', {
+          type: 'button',
+          class: 'btn small',
+          text: CHILD_STRINGS.handOver(current.nickname),
+        });
+        handOver.addEventListener('click', () => handToChild(current.id));
+        controls.push(handOver);
+      }
+    }
+
     masthead.replaceChildren(
       el('div', { class: 'brand' }, [title]),
-      el('div', { class: 'btnrow', style: 'margin-top:10px' }, [settings, help]),
+      el('div', { class: 'btnrow', style: 'margin-top:10px' }, controls),
     );
   }
 
