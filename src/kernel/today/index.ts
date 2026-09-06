@@ -162,6 +162,19 @@ function controlFor(
   }
 }
 
+export const TODAY_STRINGS = {
+  /**
+   * Not "your day so far" and not a score of it. It names what is underneath —
+   * things that already happened — so that the questions below read as the rest
+   * of the same record rather than as a separate form.
+   */
+  soFar: 'So far today',
+  empty: 'Nothing to record yet',
+  emptySub:
+    'This is where the day gets written down. Turning a tool on in Settings puts its ' +
+    'questions here.',
+} as const;
+
 export function mountToday(options: TodayOptions): TodayView {
   const { store, modules } = options;
   const now = options.now ?? (() => new Date());
@@ -348,8 +361,41 @@ export function mountToday(options: TodayOptions): TodayView {
     }
   }
 
+  /**
+   * What already happened today, across every enabled module, in words.
+   *
+   * This is what stops the day's record being a form. `groups()` builds a card
+   * only for a module that asks a daily question, so a module whose whole
+   * contribution is a tool — mindfulness, exercise — recorded something real and
+   * appeared nowhere on this screen. It reads its own day record and nothing
+   * else, the same as `derive` and the day table do.
+   *
+   * A quiet day prints nothing at all: no card, no heading, no empty row. A gap
+   * is a fact, never a failure, and the absence of a line is how that is said.
+   */
+  function logCard(): HTMLElement | undefined {
+    const lines: { weight: number; text: string }[] = [];
+    for (const manifest of modules) {
+      const log = manifest.contributes.log;
+      if (log === undefined) continue;
+      const day = (daysOf(store, manifest.id)[date] ?? {}) as Readonly<Record<string, unknown>>;
+      for (const text of log.lines(day)) {
+        if (text.trim() !== '') lines.push({ weight: log.weight, text });
+      }
+    }
+    if (lines.length === 0) return undefined;
+
+    lines.sort((a, b) => a.weight - b.weight);
+    const list = el('ul', { class: 'sofar' });
+    for (const line of lines) list.append(el('li', { text: line.text }));
+    return card({ title: TODAY_STRINGS.soFar, children: [list] });
+  }
+
   function paint(): void {
     root.replaceChildren();
+
+    const sofar = logCard();
+    if (sofar !== undefined) root.append(sofar);
 
     for (const group of groups()) {
       const body = el('div', {});
@@ -368,12 +414,7 @@ export function mountToday(options: TodayOptions): TodayView {
     }
 
     if (modules.length === 0) {
-      root.append(
-        card({
-          title: 'Nothing to fill in',
-          sub: 'When you turn a tool on, its questions appear here as one short check-in.',
-        }),
-      );
+      root.append(card({ title: TODAY_STRINGS.empty, sub: TODAY_STRINGS.emptySub }));
     }
   }
 

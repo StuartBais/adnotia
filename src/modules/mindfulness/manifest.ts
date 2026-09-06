@@ -8,6 +8,7 @@
 import type { ModuleManifest } from '../../kernel/index';
 import { fixtures } from './fixtures/index';
 import { library } from './library';
+import { log } from './log';
 import { renderRecords } from './records';
 import { strings } from './strings';
 import { tools } from './tools';
@@ -34,6 +35,7 @@ const manifest: ModuleManifest = {
     // with extra steps.
     tools,
     records: { render: renderRecords as (container: HTMLElement, context: unknown) => void },
+    log,
     library,
   },
 

@@ -95,6 +95,24 @@ Rules:
 
 Things a person opens deliberately and uses now: a timer, a plan-the-next-hour sheet, a breathing exercise. A tool is a view with a title, an icon name, and a `mount(container, kernel)` function. Tools are reached through the area index rather than mounted on a tab: one card per area, an area page, then the tool on its own page. See `decisions/ADR-030`. Tools may keep their own transient state and may write to the module's state slice (a completed session, for instance) but must not add fields to `today` from inside a tool.
 
+### `log` — what already happened today
+
+Screen-only, never printed. The day's record shows a person their whole day, and most of a day is not a question anybody asked: a module whose only contribution is a tool records something real and, before this existed, appeared nowhere on that screen, because the assembler builds a card only for modules that declare `today` fields.
+
+```js
+{
+  weight: 40,                                  // lower reads first
+  lines: (day) => ["Three minutes: sat for 3 minutes."]
+}
+```
+
+`lines` sees only this module's own day record, the same argument `derive` and `DayColumn.cell` get.
+
+Two rules, and both are the reason this is not `columns`:
+
+- **It never leaves the screen.** `columns` feeds the clinical report's day table; "sat for three minutes" does not belong in a prescriber's document. `mirror` is the precedent for a screen-only seam.
+- **It carries no guilt.** A module with nothing to say returns no lines, and the whole card disappears on a quiet day. There is no way to express "you did not meditate today", and a total or a streak is the app having an opinion about how much is the right amount. Describe what happened; count nothing.
+
 ### `records` — history
 
 Each module renders its own history. The shell provides the date range and a container; the module returns rows. Records are read-only views onto `today` data plus anything a tool saved.

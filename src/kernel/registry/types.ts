@@ -195,6 +195,37 @@ export interface TimelineContribution {
 }
 
 /**
+ * What a module says already happened today.
+ *
+ * Screen-only, and never printed. The day's record is where a person sees their
+ * whole day, and most of it is not a question anybody asked: a module whose only
+ * contribution is a tool — mindfulness, exercise — records something real and
+ * had no way to show it there, because `mountToday` builds a card only for
+ * modules that declare `today` fields.
+ *
+ * It cannot be `columns`. That seam feeds the clinical report's day table, only
+ * medication and sleep declare it, and putting "sat for six minutes" into a
+ * prescriber's document is exactly the leak the contract exists to prevent.
+ * `mirror` is the precedent: a screen-only seam that never leaves the device.
+ *
+ * Two rules, both from docs/03-scope.md. It **describes**: what happened, in the
+ * words the person's own tool used, never a judgement about it. And it carries
+ * **no guilt**: a module with nothing to say returns no lines, and the log never
+ * says a thing did not happen. There is no "you did not meditate today", because
+ * there is no way to express one.
+ */
+export interface LogContribution {
+  /** Lower reads first. */
+  weight: number;
+  /**
+   * Lines for one day, from this module's own day record — the same argument
+   * `DayColumn.cell` and `derive` get, and the same rule: nothing outside this
+   * module's slice is visible here. Return an empty array for a quiet day.
+   */
+  lines: (day: Readonly<Record<string, unknown>>) => string[];
+}
+
+/**
  * One column of the shared day-by-day table. Like the timeline, the table reads
  * from every module at once, so no module owns it and none declares a dependency
  * to appear in it. See docs/decisions/ADR-018-shared-day-table.md.
@@ -305,6 +336,8 @@ export interface Contributions {
   columns?: DayColumn[];
   /** What this module notices about the person's own record, for their eyes only. */
   mirror?: MirrorContribution;
+  /** What this module says already happened today. Screen-only, never printed. */
+  log?: LogContribution;
   /** Required for every module, including Tier C. */
   library: LibraryEntry;
   settings?: SettingsItem[];
