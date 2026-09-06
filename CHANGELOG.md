@@ -11,6 +11,14 @@ yet. See the implementation checkpoint in `docs/08-roadmap.md` for current limit
 
 ### Added
 
+- Parent tools for the Family space: routines you build for a part of the day, a first/then
+  pair, a star chart you run yourself, and worked examples of saying what you noticed.
+- The screen you hand over, with the four things `docs/04-family-space.md` lists on it: a
+  timer the child can start, the routine, the first/then pair, and their chart to look at.
+  Nothing to type, nowhere to go, and the parent's code to get back out.
+- A tool now receives the slices of the modules it declares as dependencies, read-only. It is
+  how a child module reads the schedule and chart a parent set up, and it is scoped to what
+  was declared rather than to everything.
 - Parent guidance in the Family Library: what an assessment actually involves, what to do
   when a child is under six and no validated free form exists, and what to do at thirteen and
   over where the usual parent form stops being validated. None of it scores anything and none

@@ -516,6 +516,8 @@ describe('the registry', () => {
       'exercise',
       'preparation',
       'family-observations',
+      'family-routines',
+      'child-tools',
     ]);
     // createRegistry throws in strict mode, so this failing means a shipped
     // module would not have registered.

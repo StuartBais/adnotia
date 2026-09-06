@@ -92,10 +92,25 @@ export interface LibraryEntry {
 export interface ToolContext {
   /** This module's slice, or undefined if it has never been written. */
   slice: unknown;
+  /**
+   * The slices of the modules this one declares in `dependencies`, read-only and
+   * keyed by module id.
+   *
+   * This is how the handed-over surface works at all: docs/04-family-space.md
+   * lets a child module "read their own slice and the parent-configured schedule
+   * and chart for that child", and a child module has no other route to them.
+   * There is no setter — a child cannot change what a parent set up.
+   */
+  reads: Readonly<Record<string, unknown>>;
   /** Replace this module's slice. The kernel routes it to the right place. */
   save: (next: unknown) => void;
   /** Today, under the after-midnight rule. */
   today: string;
+  /**
+   * The nickname of the child these tools belong to, in the Family space.
+   * Absent in the Adult space, where there is nobody to name.
+   */
+  nickname?: string;
   /** Redraw, after a change that alters what else is on the page. */
   refresh: () => void;
 }

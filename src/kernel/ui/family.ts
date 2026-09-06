@@ -19,6 +19,12 @@ export interface RewardChartOptions {
   onAward?: () => void;
   /** True on the handed-over surface, where the chart is view-only. */
   readOnly?: boolean;
+  /**
+   * Whether to draw the chart's own heading. Off where the caller has already
+   * titled it: two headings on one card reads as two things, and on a child's
+   * screen that is one more thing to work out than there needs to be.
+   */
+  heading?: boolean;
 }
 
 /**
@@ -39,10 +45,17 @@ export function rewardChart(options: RewardChartOptions): HTMLElement {
     text: '★'.repeat(points),
   });
 
-  const chart = el('div', { class: 'card reward' }, [
-    el('h2', { text: `${options.nickname}'s chart` }),
-    stars,
-  ]);
+  const chart = el('div', { class: 'card reward' }, [stars]);
+
+  if (options.heading !== false) {
+    // Without a name it is "The chart", not "'s chart": a possessive with
+    // nothing in front of it is what a missing value looks like on a page.
+    chart.prepend(
+      el('h2', {
+        text: options.nickname.trim() === '' ? 'The chart' : `${options.nickname.trim()}'s chart`,
+      }),
+    );
+  }
 
   if (options.goal !== undefined) {
     chart.append(

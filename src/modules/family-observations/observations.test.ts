@@ -16,6 +16,7 @@ function mount(initial: unknown = { version: 1, days: {} }) {
     get slice() {
       return slice;
     },
+    reads: {},
     save: (next) => {
       slice = next;
     },
