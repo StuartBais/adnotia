@@ -11,6 +11,14 @@ yet. See the implementation checkpoint in `docs/08-roadmap.md` for current limit
 
 ### Added
 
+- A mindfulness module, Tier B: three practices written as steps with a timer, and a session
+  log. No audio — the roadmap rules it out, and there is nothing here to fetch it with. The
+  evidence limit sits on the practice as well as in the Library.
+- An exercise module, Tier B: a light log of what you did and roughly how long. No target, no
+  weekly minimum, no total.
+- A countdown timer in the kernel, used by the mindfulness practice and needed later by the
+  focus timer and the child surface. It works out where it is from the clock rather than from
+  how often it was ticked, so a backgrounded tab does not come back wrong. It makes no sound.
 - A planning module: a plan for the day, breaking something down so the first step is small
   enough to start, an estimate against what it actually took, and if–then prompts. Tools
   first, with one optional daily question at eight seconds.

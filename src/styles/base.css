@@ -1249,3 +1249,30 @@ svg .cellblank {
   color: var(--ink2);
   font-size: 13px;
 }
+
+/* ---------- the timer ---------- */
+/* Big enough to read across a room, because the child surface will use this one
+   too. No animation: docs/07-design-system.md keeps motion to almost none, and a
+   ticking thing in the corner of the eye is the opposite of what this is for. */
+
+.timer {
+  background: var(--paper);
+  border: 1px solid var(--line2);
+  border-radius: var(--r);
+  padding: 14px;
+  margin: 12px 0;
+  text-align: center;
+}
+
+.timer-face {
+  font-family: var(--serif);
+  font-size: 44px;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+  margin: 4px 0 10px;
+}
+
+.timer .btnrow {
+  justify-content: center;
+}

@@ -7,7 +7,9 @@
 
 import { validateManifest, type ValidationIssue } from './validate';
 import type { Audience, ModuleManifest } from './types';
+import exercise from '../../modules/exercise/manifest';
 import medication from '../../modules/medication/manifest';
+import mindfulness from '../../modules/mindfulness/manifest';
 import planning from '../../modules/planning/manifest';
 import preparation from '../../modules/preparation/manifest';
 import sleep from '../../modules/sleep/manifest';
@@ -19,7 +21,14 @@ export { validateManifest, type ValidationIssue } from './validate';
  * Every module in this build. Deleting a module is deleting its directory and
  * its line here; nothing else references it.
  */
-export const MODULES: readonly ModuleManifest[] = [medication, sleep, planning, preparation];
+export const MODULES: readonly ModuleManifest[] = [
+  medication,
+  sleep,
+  planning,
+  mindfulness,
+  exercise,
+  preparation,
+];
 
 export interface RegisterOptions {
   /**

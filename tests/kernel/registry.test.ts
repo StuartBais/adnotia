@@ -512,6 +512,8 @@ describe('the registry', () => {
       'medication',
       'sleep',
       'planning',
+      'mindfulness',
+      'exercise',
       'preparation',
     ]);
     // createRegistry throws in strict mode, so this failing means a shipped
