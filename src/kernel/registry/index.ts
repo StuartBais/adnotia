@@ -8,6 +8,7 @@
 import { validateManifest, type ValidationIssue } from './validate';
 import type { Audience, ModuleManifest } from './types';
 import exercise from '../../modules/exercise/manifest';
+import familyObservations from '../../modules/family-observations/manifest';
 import medication from '../../modules/medication/manifest';
 import mindfulness from '../../modules/mindfulness/manifest';
 import planning from '../../modules/planning/manifest';
@@ -28,6 +29,7 @@ export const MODULES: readonly ModuleManifest[] = [
   mindfulness,
   exercise,
   preparation,
+  familyObservations,
 ];
 
 export interface RegisterOptions {

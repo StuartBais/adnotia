@@ -29,6 +29,27 @@ is presumably why the design documents assumed it was free to use. Widely
 tolerated is not the same as licensed, and an AGPL repository is not a clinic
 handout: everyone who forks it republishes whatever is in it.
 
+### The NICHQ Vanderbilt
+
+Checked when Milestone 6 reached it, and it is the same answer in a softer voice.
+The form the American Academy of Pediatrics publishes carries, on its last page:
+
+> Original document included as part of *Caring for Children With ADHD: A
+> Resource Toolkit for Clinicians*, 2nd Edition. **Copyright © 2002 American
+> Academy of Pediatrics. All Rights Reserved.** The American Academy of
+> Pediatrics does not review or endorse any modifications made to this document
+> and in no event shall the AAP be liable for any such changes.
+
+It is genuinely given away — downloadable from the AAP and from NICHQ, in English
+and Spanish, and described as free for use — but "free to download and use in a
+clinic" and "licensed for anyone to republish inside their software" are
+different things, and the notice says All Rights Reserved rather than the second
+one. The sentence about modifications is also pointed: transcribing a form into
+an app *is* a modification, and it is the specific thing that sentence disclaims.
+
+`04-family-space.md` described it as "free to reproduce". That claim is now
+corrected there, as the equivalent adult claim was corrected in `03-scope.md`.
+
 ### ASRS-5
 
 Worse, and in a way that also explains ADR-021's missing table. New York
@@ -106,9 +127,10 @@ Whichever way it goes, `03-scope.md` no longer says the instruments are free.
 - The exclusion entry for "type" quizzes still says they compete with "the one
   instrument that is [validated]". That remains true and remains the reason to
   pursue permission rather than abandon the screener.
-- `04-family-space.md` has the same problem waiting: the NICHQ Vanderbilt is
-  described there as free to reproduce, and that claim needs the same check
-  before Milestone 6 builds on it.
+- All three instruments this project would use are copyrighted and none is ours
+  to redistribute without asking. That is a fact about screening instruments
+  generally rather than bad luck three times, and it is worth knowing before any
+  future module is designed around one.
 - The items were pushed to a public repository before this was checked, so they
   are in the git history as well as having been in the tree. Purging history is
   the repository owner's call.

@@ -94,6 +94,8 @@ export function mountReport(options: ReportViewOptions): ReportView {
   function paintSheet(): void {
     const report = buildReport({
       document: store.document(),
+      // Family-space slices hang off a child; the engine cannot guess which.
+      ...(store.profile() === undefined ? {} : { profileId: store.profile() as string }),
       modules,
       choice,
       now: now(),

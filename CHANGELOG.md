@@ -11,6 +11,10 @@ yet. See the implementation checkpoint in `docs/08-roadmap.md` for current limit
 
 ### Added
 
+- An observation log for the Family space: dated entries with where, what happened in the
+  parent's words, what was going on beforehand and whether anything helped. It prints as a
+  dated list grouped by setting with a coverage line and the same record-quality footer the
+  adult report uses. Nothing is scored, nothing is rated and nothing is labelled.
 - The Family space foundations: child profiles with a nickname and an age band and nothing
   else, switching between them, and removal behind a confirmation that says what goes with it.
 - The handed-over surface. It replaces the whole app rather than sitting in a tab, mounts only
@@ -101,6 +105,14 @@ yet. See the implementation checkpoint in `docs/08-roadmap.md` for current limit
 
 ### Fixed
 
+- Reports in the Family space read the adult module bag and so came out empty for every
+  child. A module's slice lives under the child there, and the report engine holds the whole
+  document rather than the store, so it has to route that itself.
+- Opening the app in the Family space with children saved threw on the first module read,
+  because nothing selected a child on load. A space with no child at all now says to add one
+  rather than asking the store for a slice that cannot resolve.
+- A report's audience is a space and a module's is an audience, and the engine compared them
+  directly. `parent` never equals `family`, so the Family reports had no contributors.
 - Adding a child appeared to work and was never written to disk. `updateFamily` changed the
   document in memory without scheduling the persist that every other writer schedules, so a
   parent could add a child, see it on the page, and find it gone on the next load.

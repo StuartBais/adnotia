@@ -38,6 +38,12 @@ export interface ViewContext {
   onDismissBackupNag?: () => void;
 }
 
+/** Shown on every Family tab until a child exists to attach anything to. */
+const NO_CHILD = {
+  title: 'Add a child first',
+  sub: 'Everything in this space belongs to one child, so there is nowhere to put anything yet. Children is in the bar at the top.',
+} as const;
+
 const EMPTY: Readonly<Record<TabId, { title: string; sub: string }>> = {
   today: {
     title: 'Nothing to fill in',
@@ -58,6 +64,7 @@ const EMPTY: Readonly<Record<TabId, { title: string; sub: string }>> = {
 };
 
 export function renderTab(tab: TabId, context: ViewContext): HTMLElement {
+  const { store } = context;
   const section = el('div', {
     class: 'view',
     'aria-label': TAB_LABELS[tab],
@@ -89,12 +96,23 @@ export function renderTab(tab: TabId, context: ViewContext): HTMLElement {
     return section;
   }
 
+  // A Family-space tab has nothing to resolve against until there is a child,
+  // and asking the store for a slice without one throws rather than returning
+  // nothing. Say so instead.
+  if (context.space === 'family' && store !== undefined && store.profile() === undefined) {
+    section.append(
+      card({
+        title: NO_CHILD.title,
+        sub: NO_CHILD.sub,
+      }),
+    );
+    return section;
+  }
+
   if (context.enabled.length === 0) {
     section.append(card(EMPTY[tab]));
     return section;
   }
-
-  const { store } = context;
 
   if (tab === 'today' && store !== undefined) {
     // Everything lives in this browser. At most once a fortnight, on this screen
@@ -102,7 +120,7 @@ export function renderTab(tab: TabId, context: ViewContext): HTMLElement {
     // the-nag.md and src/kernel/reports/nag.ts.
     const document_ = store.document();
     const reminder = backupNag({
-      entries: loggedDates(document_, context.enabled).length,
+      entries: loggedDates(document_, context.enabled, store.profile()).length,
       ...(document_.kernel.lastBackup === undefined
         ? {}
         : { lastBackup: document_.kernel.lastBackup }),
@@ -151,7 +169,7 @@ export function renderTab(tab: TabId, context: ViewContext): HTMLElement {
       panel.append(
         calendar({
           value: todayView.date(),
-          logged: loggedDates(store.document(), context.enabled),
+          logged: loggedDates(store.document(), context.enabled, store.profile()),
           onSelect: (date) => {
             todayView.setDate(date);
             context.onDateChange?.(date);
@@ -196,7 +214,7 @@ export function renderTab(tab: TabId, context: ViewContext): HTMLElement {
   if (tab === 'records' && store !== undefined) {
     // History first, then the sheet: a person comes here to look back before
     // they come here to print.
-    const dates = [...loggedDates(store.document(), context.enabled)].sort();
+    const dates = [...loggedDates(store.document(), context.enabled, store.profile())].sort();
     let anything = false;
 
     for (const manifest of context.enabled) {

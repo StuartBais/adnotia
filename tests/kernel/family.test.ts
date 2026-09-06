@@ -5,13 +5,17 @@ import {
   PROFILE_STRINGS,
   REPORTS,
   addProfile,
+  buildReport,
   createStore,
   getProfile,
   isValidNickname,
   listProfiles,
+  loggedDates,
   memoryStorageAdapter,
   mountChildSurface,
+  mountShell,
   profilesPage,
+  renderTab,
   removeProfile,
   renameProfile,
   type KernelStore,
@@ -269,6 +273,48 @@ describe('the profiles page', () => {
   });
 });
 
+describe('a Family space with no child chosen', () => {
+  let store: KernelStore;
+
+  beforeEach(async () => {
+    store = createStore({ adapter: memoryStorageAdapter() });
+    await store.load();
+    store.useSpace('family');
+  });
+
+  it('says to add one rather than throwing', () => {
+    // Every Family slice resolves against a child. Asking for one without a
+    // child selected throws, so the tab has to check before it asks.
+    const module_ = { ...childModule('family-observations'), audience: 'parent' as const };
+    expect(() =>
+      renderTab('tools', { space: 'family', enabled: [module_], known: [module_], store }),
+    ).not.toThrow();
+
+    const view = renderTab('today', {
+      space: 'family',
+      enabled: [module_],
+      known: [module_],
+      store,
+    });
+    expect(view.textContent).toContain('Add a child first');
+  });
+
+  it('picks one up on load when there is one to pick', async () => {
+    // Reopening the app with children saved and none selected used to throw on
+    // the first module read.
+    store.updateFamily(() =>
+      addProfile({ children: {} }, { nickname: 'Sam', ageBand: '4-11', id: 'c_1' }),
+    );
+    store.useProfile(undefined);
+    expect(store.profile()).toBeUndefined();
+
+    const container = document.createElement('div');
+    const shell = mountShell({ store, container, modules: [] });
+    expect(store.profile()).toBe('c_1');
+    shell.destroy();
+  });
+});
+
 describe('the handed-over surface', () => {
   let store: KernelStore;
 
@@ -355,6 +401,114 @@ describe('the handed-over surface', () => {
 
   it('never prints', () => {
     expect(surface([childModule()]).element.getAttribute('data-print')).toBe('never');
+  });
+});
+
+describe('a report in the Family space', () => {
+  let store: KernelStore;
+
+  const parentModule: ModuleManifest = {
+    id: 'family-observations',
+    name: 'Observations',
+    version: 1,
+    tier: 'A',
+    audience: 'parent',
+    summary: 's',
+    contributes: {
+      library: libraryEntry(),
+      reports: [
+        {
+          report: 'observations',
+          id: 'family-observations.entries',
+          weight: 10,
+          title: () => 'What we have noticed',
+          render: (context) =>
+            `<h3>What we have noticed</h3><p>${JSON.stringify(
+              (context as { slice?: { note?: string } }).slice?.note ?? '',
+            )}</p>`,
+          renderText: () => 'What we have noticed',
+        },
+      ],
+    },
+  };
+
+  beforeEach(async () => {
+    store = createStore({ adapter: memoryStorageAdapter() });
+    await store.load();
+    store.useSpace('family');
+    let family = addProfile({ children: {} }, { nickname: 'Sam', ageBand: '4-11', id: 'c_1' });
+    family = addProfile(family, { nickname: 'Alex', ageBand: '12-17', id: 'c_2' });
+    store.updateFamily(() => family);
+
+    store.useProfile('c_1');
+    store.set('family-observations', {
+      version: 1,
+      note: 'for Sam',
+      days: { '2026-09-02': { x: 1 } },
+    });
+    store.useProfile('c_2');
+    store.set('family-observations', {
+      version: 1,
+      note: 'for Alex',
+      days: { '2026-09-05': { x: 1 } },
+    });
+  });
+
+  it('reads the child’s slices, not the adult module bag', () => {
+    // The engine holds the whole document and has to route this itself: in the
+    // Family space a slice lives at family.children[p].modules.<id>, and reading
+    // document.modules there finds nothing for every module, quietly.
+    const report = buildReport({
+      document: store.document(),
+      profileId: 'c_1',
+      modules: [parentModule],
+      report: 'observations',
+      choice: 'all',
+    });
+    expect(report.empty).toBe(false);
+    expect(report.html).toContain('for Sam');
+    expect(report.html).not.toContain('for Alex');
+  });
+
+  it('gives each child their own', () => {
+    const alex = buildReport({
+      document: store.document(),
+      profileId: 'c_2',
+      modules: [parentModule],
+      report: 'observations',
+      choice: 'all',
+    });
+    expect(alex.html).toContain('for Alex');
+    expect(alex.html).not.toContain('for Sam');
+  });
+
+  it('is empty with no child chosen, rather than falling back to the adult bag', () => {
+    // The adult bag is not empty here on purpose: falling back to it would look
+    // like working, and would show one household's adult data on a child's page.
+    const withAdult = structuredClone(store.document()) as ReturnType<typeof store.document>;
+    (withAdult as { modules: Record<string, unknown> }).modules = {
+      'family-observations': {
+        version: 1,
+        note: 'from the adult space',
+        days: { '2026-09-09': { x: 1 } },
+      },
+    };
+
+    const none = buildReport({
+      document: withAdult,
+      modules: [parentModule],
+      report: 'observations',
+      choice: 'all',
+    });
+    expect(none.html).not.toContain('from the adult space');
+    expect(none.empty).toBe(true);
+    expect(loggedDates(withAdult, [parentModule])).toEqual([]);
+  });
+
+  it('counts the child’s logged days, not the adult document’s', () => {
+    expect(loggedDates(store.document(), [parentModule], 'c_1')).toEqual(['2026-09-02']);
+    expect(loggedDates(store.document(), [parentModule], 'c_2')).toEqual(['2026-09-05']);
+    expect(loggedDates(store.document(), [parentModule])).toEqual([]);
   });
 });
 

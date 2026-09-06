@@ -10,6 +10,15 @@ export type Tier = 'A' | 'B' | 'C';
 /** Which space a module mounts in. See docs/04-family-space.md. */
 export type Audience = 'adult' | 'parent' | 'child';
 
+/**
+ * The space an audience belongs to. A report names a space; a module names who
+ * it is for. Comparing the two directly looks right and is not: `parent` is a
+ * Family-space audience and never equals `family`.
+ */
+export function audienceInSpace(audience: Audience, space: 'adult' | 'family'): boolean {
+  return space === 'adult' ? audience === 'adult' : audience === 'parent' || audience === 'child';
+}
+
 export type FieldType =
   | 'scale5'
   | 'chips'
