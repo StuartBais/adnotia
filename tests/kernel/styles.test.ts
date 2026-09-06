@@ -103,11 +103,11 @@ describe('base', () => {
 
   it('never puts anything only in a chart label', () => {
     // Chart labels are 9 user units in a 640-wide viewBox, so on a narrow phone
-    // they render well under the 12.5px floor. That is accepted only because
-    // nothing is available solely from them: every chart carries an aria-label
-    // describing it and a legend in body text, and every figure it plots is also
-    // stated in words by a section of the same report. Recorded for the
-    // accessibility audit in docs/08-roadmap.md Milestone 8.
+    // they render well under the 12.5px floor and on paper under the 7.5pt one.
+    // ADR-027 accepts that, on the condition that nothing a chart plots is
+    // available from the picture alone. The condition is held by
+    // tests/kernel/a11y.test.ts, which is where it belongs: when it was only
+    // written here as a claim, it was false for the dose chart for months.
     expect(base).toMatch(/svg \.tick \{[^}]*font-size: 9px/);
 
     for (const chart of [stepChart, dayTimeline, severityGrid]) {
