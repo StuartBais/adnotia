@@ -47,6 +47,7 @@ function childModule(id = 'child-tools'): ModuleManifest {
     version: 1,
     tier: 'C',
     audience: 'child',
+    area: 'routines',
     summary: 's',
     contributes: {
       library: libraryEntry(),
@@ -70,6 +71,7 @@ function adultModule(): ModuleManifest {
     version: 1,
     tier: 'A',
     audience: 'adult',
+    area: 'focus',
     summary: 's',
     contributes: {
       library: libraryEntry(),
@@ -480,6 +482,7 @@ describe('a report in the Family space', () => {
     version: 1,
     tier: 'A',
     audience: 'parent',
+    area: 'routines',
     summary: 's',
     contributes: {
       library: libraryEntry(),

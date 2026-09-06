@@ -8,6 +8,7 @@
 // A manifest either registers whole or not at all. It never half-mounts.
 
 import {
+  AREAS,
   CHILD_ALLOWED_CONTRIBUTIONS,
   DERIVED_METADATA_KEY,
   RESERVED_FIELD_IDS,
@@ -26,6 +27,8 @@ const ID_PATTERN = /^[a-z][a-z0-9-]*$/;
 const REVIEW_DATE_PATTERN = /^\d{4}-\d{2}$/;
 const TIERS = new Set(['A', 'B', 'C']);
 const AUDIENCES = new Set(['adult', 'parent', 'child']);
+/** Read from the contract rather than retyped, so the two cannot drift. */
+const AREA_SET: ReadonlySet<string> = new Set(AREAS);
 const FIELD_TYPES = new Set([
   'scale5',
   'chips',
@@ -94,6 +97,12 @@ export function validateManifest(
   }
   if (!AUDIENCES.has(manifest?.audience)) {
     fail('audience', 'audience must be adult, parent or child.');
+  }
+  // A module with no area is a module nobody can reach: the index is built from
+  // the areas, so an unplaced module would exist in the build and nowhere on the
+  // screen. Failing here is how that stays impossible.
+  if (!AREA_SET.has(manifest?.area as string)) {
+    fail('area', `area must be one of: ${[...AREA_SET].join(', ')}.`);
   }
 
   const contributes = manifest?.contributes;

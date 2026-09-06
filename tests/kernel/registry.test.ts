@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
+  AREAS,
   createRegistry,
   ManifestError,
   MODULES,
@@ -40,6 +41,7 @@ function valid(overrides: Partial<ModuleManifest> = {}): ModuleManifest {
     version: 1,
     tier: 'A',
     audience: 'adult',
+    area: 'focus',
     summary: 'A daily record, summarised into one page for your prescriber.',
     dependencies: [],
     contributes: {
@@ -105,6 +107,28 @@ describe('identity', () => {
 
   it('refuses two modules sharing an id', () => {
     expect(() => createRegistry([valid(), valid()])).toThrow(/share the id/);
+  });
+});
+
+describe('the area', () => {
+  // Where a module is found. The index is built from the areas, so a module
+  // with no area is a module that exists in the build and nowhere on screen.
+
+  it('has to be one the kernel knows', () => {
+    expect(rules(valid({ area: 'wellness' as never }))).toContain('area');
+    expect(rules(valid({ area: '' as never }))).toContain('area');
+    expect(rules(valid({ area: undefined as never }))).toContain('area');
+  });
+
+  it('says which ones it knows, rather than only that this one is wrong', () => {
+    const issue = validateManifest(valid({ area: 'nope' as never })).find(
+      (entry) => entry.rule === 'area',
+    );
+    for (const area of AREAS) expect(issue?.message).toContain(area);
+  });
+
+  it('accepts every area in the vocabulary', () => {
+    for (const area of AREAS) expect(rules(valid({ area }))).not.toContain('area');
   });
 });
 
@@ -223,6 +247,7 @@ describe('no medication in the Family space', () => {
     const manifest = valid({
       id: 'family-thing',
       audience: 'parent',
+      area: 'routines',
       contributes: {
         today: [{ id, label: 'Something', type: 'text', cost: 2 }],
         library: library(),
@@ -246,6 +271,7 @@ describe('no medication in the Family space', () => {
     const manifest = valid({
       id: 'family-thing',
       audience: 'parent',
+      area: 'routines',
       contributes: {
         today: [
           {
@@ -269,6 +295,7 @@ describe('a child module', () => {
     return valid({
       id: 'child-tools',
       audience: 'child',
+      area: 'routines',
       contributes: { library: library(), ...overrides },
     });
   }
@@ -349,6 +376,7 @@ describe('report sections', () => {
     const manifest = valid({
       id: 'family-observations',
       audience: 'parent',
+      area: 'routines',
       contributes: { reports: [section()], library: library() },
     });
     const issues = validateManifest(manifest);
@@ -528,6 +556,7 @@ describe('the registry', () => {
     const parent = valid({
       id: 'family-observations',
       audience: 'parent',
+      area: 'routines',
       contributes: { library: library() },
     });
     const registry = createRegistry([valid(), parent]);

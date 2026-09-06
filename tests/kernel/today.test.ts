@@ -35,6 +35,7 @@ function manifest(fields: TodayField[], overrides: Partial<ModuleManifest> = {})
     version: 1,
     tier: 'A',
     audience: 'adult',
+    area: 'focus',
     summary: 's',
     contributes: { today: fields, library: libraryEntry() },
     fixtures: { empty: {}, threeDays: {}, thirtyDays: {} },

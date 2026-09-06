@@ -18,6 +18,7 @@ const manifest: ModuleManifest = {
   version: 1,
   tier: 'B',
   audience: 'adult',
+  area: 'movement',
   summary: strings.summary,
 
   eligibility: {

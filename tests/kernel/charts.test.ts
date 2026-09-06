@@ -190,6 +190,7 @@ describe('assembling the shared timeline', () => {
       version: 1,
       tier: 'A',
       audience: 'adult',
+      area: 'focus',
       summary: 's',
       contributes: {
         library: {
@@ -289,6 +290,7 @@ describe('assembling the shared day table', () => {
       version: 1,
       tier: 'A',
       audience: 'adult',
+      area: 'focus',
       summary: 's',
       contributes: {
         library: {

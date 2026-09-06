@@ -31,6 +31,7 @@ function appender(): { manifest: ModuleManifest; seen: ToolContext[] } {
     version: 1,
     tier: 'A',
     audience: 'adult',
+    area: 'focus',
     summary: 's',
     contributes: {
       library: libraryEntry(),
@@ -91,6 +92,7 @@ describe('the Tools tab', () => {
       version: 1,
       tier: 'A',
       audience: 'adult',
+      area: 'focus',
       summary: 's',
       contributes: { library: libraryEntry() },
     };
