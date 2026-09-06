@@ -11,6 +11,10 @@ yet. See the implementation checkpoint in `docs/08-roadmap.md` for current limit
 
 ### Added
 
+- The logo is on screen. The stylesheet had sized `.brand .logo` and `.brand.big .logo`
+  since the design system was written, and nothing rendered either — so the masthead, the
+  first-run screen and both lock screens showed the name with no mark, and there was no tab
+  icon or home-screen icon at all.
 - The dose chart's legend describes the 7-day rolling average instead of telling a clinician
   to prefer it over the daily dots. The fact that justified the advice is kept.
 - The printed clinical report now states, in words under the dose chart, how many days it

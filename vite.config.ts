@@ -1,4 +1,4 @@
-import { copyFile } from 'node:fs/promises';
+import { copyFile, readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { defineConfig, type Plugin } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
@@ -15,6 +15,38 @@ function deployHeaders(): Plugin {
     async writeBundle(options) {
       const outDir = options.dir ?? resolve('dist');
       await copyFile(resolve('deploy/_headers'), resolve(outDir, '_headers'));
+    },
+  };
+}
+
+// The tab icon and the home-screen icon, inlined into index.html at build time.
+//
+// docs/07-design-system.md makes assets/logo.svg canonical and says not to embed
+// the original raster, so neither is pasted into index.html by hand. They cannot
+// be plain <link href> either: the single-file build has to work when saved to a
+// disk with nothing beside it, and finish-single.mjs rejects a build that still
+// points at anything outside itself.
+//
+// Inlining them as data: URIs satisfies both. The CSP already allows `img-src
+// 'self' data:`, so no policy changes to let an icon through.
+function inlineIcons(): Plugin {
+  return {
+    name: 'adnotia:inline-icons',
+    transformIndexHtml: {
+      order: 'pre',
+      async handler(html) {
+        const svg = await readFile(resolve('assets/logo.svg'), 'utf8');
+        const png = await readFile(resolve('assets/icon-180.png'));
+        // encodeURIComponent rather than base64: an SVG data URI stays readable
+        // in view-source, and is smaller.
+        const mark = `data:image/svg+xml,${encodeURIComponent(svg.trim())}`;
+        const home = `data:image/png;base64,${png.toString('base64')}`;
+        return html.replace(
+          '<title>',
+          `<link rel="icon" href="${mark}" type="image/svg+xml" />\n    ` +
+            `<link rel="apple-touch-icon" href="${home}" />\n    <title>`,
+        );
+      },
     },
   };
 }
@@ -50,8 +82,9 @@ export default defineConfig(({ mode }) => {
     },
 
     plugins: single
-      ? [viteSingleFile()]
+      ? [inlineIcons(), viteSingleFile()]
       : [
+          inlineIcons(),
           deployHeaders(),
           VitePWA({
             registerType: 'autoUpdate',

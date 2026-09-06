@@ -5,7 +5,7 @@
 // See docs/05-architecture.md "Shell and spaces".
 
 import { createRegistry, type ModuleManifest, type KernelStore, type Space } from '../index';
-import { el } from '../ui/index';
+import { brand, el, logoMark } from '../ui/index';
 import { createRouter, TABS, TAB_LABELS, type Router, type TabId } from './router';
 import { firstRun } from './firstRun';
 import { backupPage, settingsPage } from './settings';
@@ -225,7 +225,7 @@ export function mountShell(options: ShellOptions): Shell {
     }
 
     masthead.replaceChildren(
-      el('div', { class: 'brand' }, [title]),
+      el('div', { class: 'brand' }, [logoMark(), title]),
       el('div', { class: 'btnrow', style: 'margin-top:10px' }, controls),
     );
   }
@@ -325,7 +325,7 @@ export function mountShell(options: ShellOptions): Shell {
     if (settings.firstRunComplete !== true) {
       container.replaceChildren(
         el('div', { class: 'wrap' }, [
-          el('header', { class: 'mast' }, [el('h1', { text: 'Adnotia' })]),
+          el('header', { class: 'mast' }, [brand()]),
           saveStatus,
           firstRun({
             available: (chosen) => registry.forAudience(chosen === 'family' ? 'parent' : 'adult'),
