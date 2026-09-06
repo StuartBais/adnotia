@@ -40,3 +40,4 @@ export {
   type StepChartOptions,
   type StepColumn,
 } from './charts';
+export { formatCountdown, timer, type TimerControl, type TimerOptions } from './timer';
