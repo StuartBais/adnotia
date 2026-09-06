@@ -6,6 +6,7 @@
 
 export { el, field, fieldLabel, type Attributes, type Control } from './dom';
 export { chips, chipsMulti, type ChipsMultiOptions, type ChipsOptions } from './chips';
+export { brand, logoMark, type BrandOptions } from './logo';
 export { scale5, type Scale5Options } from './scale';
 export {
   numberInput,

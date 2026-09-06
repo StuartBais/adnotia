@@ -99,6 +99,8 @@ Almost none. Save confirmation fades its colour over 200 ms. Everything else is 
 
 The logo mark is the only graphic. It is an inline SVG in the masthead (34 × 31 px) and the lock screen (44 × 40 px), and a 180 px PNG for the home screen icon. `assets/logo.svg` is canonical; do not embed the original raster.
 
+One copy of the artwork exists. `src/kernel/ui/logo.ts` imports that file with `?raw` and `vite.config.ts` inlines it into `index.html` as the tab icon at build time, so nothing is pasted into a second place to go stale. Inline rather than `<link href>` because the single-file build has to work saved to a disk with nothing beside it. The mark is `aria-hidden`: the word Adnotia is always next to it, and announcing both makes a screen reader say the name twice. Each copy's clip-path ids are rewritten per instance, because SVG ids are document-global and two marks sharing them clip to whichever resolved first.
+
 Two clip-path halves, one shared path. When embedding, use two full `<path>` elements, never `<use>` referencing a path that already carries a `clip-path` — the clone inherits it and the second half disappears. This bit us once.
 
 ## Voice

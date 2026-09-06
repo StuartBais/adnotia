@@ -48,6 +48,10 @@ describe('the passcode workflow', () => {
       click('Lock now');
       await vi.waitFor(() => expect(root.textContent).toContain('Unlock your data'));
       expect(root.querySelector('[role="tab"]')).toBeNull();
+      // docs/07-design-system.md sizes the lock screen's mark at 44 × 40, which
+      // is `.brand.big` — the only place that class is for. It went unused, and
+      // unnoticed, because nothing rendered the mark anywhere.
+      expect(root.querySelector('.brand.big svg.logo')).not.toBeNull();
       input('Passcode', '123456');
       root.querySelector('form')!.dispatchEvent(new Event('submit', { cancelable: true }));
       await vi.waitFor(() => expect(root.querySelectorAll('[role="tab"]')).toHaveLength(4));

@@ -64,7 +64,10 @@ const referenced = [
 const seen = new Set();
 const parts = [];
 for (const reference of referenced) {
-  if (/^(https?:)?\/\//.test(reference) || reference.startsWith('data:')) {
+  // A data: URI is already inside index.html, so its bytes are counted with the
+  // document and there is no second file to fetch. The inlined icons are these.
+  if (reference.startsWith('data:')) continue;
+  if (/^(https?:)?\/\//.test(reference)) {
     // check-no-network.mjs is the authority on this and fails first. Here it
     // would silently drop a remote file out of the budget, so say so instead.
     console.error(`Remote reference in dist/index.html: ${reference}`);

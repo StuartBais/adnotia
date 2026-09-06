@@ -13,7 +13,7 @@ import { DOCUMENT_KEY } from '../store/document';
 import type { StorageAdapter } from '../store/adapters';
 import { migrateDocument, V0_KEY } from '../store/migrations/index';
 import type { ModuleManifest } from '../registry/types';
-import { card, el, passwordInput } from '../ui/index';
+import { brand, card, el, passwordInput } from '../ui/index';
 import { mountShell, type Shell } from './shell';
 import type { PasscodeActions } from './passcode';
 
@@ -46,7 +46,7 @@ export async function mountApplication(options: ApplicationOptions): Promise<{ d
     });
     container.replaceChildren(
       el('main', { class: 'wrap' }, [
-        el('h1', { text: 'Adnotia' }),
+        brand({ big: true }),
         card({
           title: 'Your data could not be opened',
           sub: message,
@@ -76,7 +76,7 @@ export async function mountApplication(options: ApplicationOptions): Promise<{ d
     });
     container.replaceChildren(
       el('main', { class: 'wrap' }, [
-        el('h1', { text: 'Adnotia' }),
+        brand({ big: true }),
         card({
           title: 'Unlock your data',
           sub: 'Your passcode cannot be recovered. Nothing is sent anywhere.',
