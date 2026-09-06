@@ -11,6 +11,11 @@ yet. See the implementation checkpoint in `docs/08-roadmap.md` for current limit
 
 ### Added
 
+- Accessibility audit against the rules in `docs/05-architecture.md`, and the seven violations
+  it found are fixed: six classes below the 12.5 px screen floor, and three on the child
+  surface below its 16 px one. The rules are now held by tests against the real stylesheet.
+- The performance budget is enforced in CI rather than checked at release. Initial load is
+  75.8 kB gzipped against a 150 kB budget.
 - Talking to the school: what a daily report card is, what the evidence for it does and does
   not show, and the specific things to ask for. There is nowhere to enter a teacher's
   ratings and there will not be — the card is the school's to run.

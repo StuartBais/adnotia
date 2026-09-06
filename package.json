@@ -16,6 +16,7 @@
     "typecheck": "tsc --noEmit",
     "build": "vite build",
     "build:single": "vite build --mode single && node scripts/finish-single.mjs",
+    "budget": "node scripts/check-budget.mjs",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "check": "npm run format:check && npm run typecheck && node scripts/check-no-network.mjs && node scripts/check-contrast.mjs"
