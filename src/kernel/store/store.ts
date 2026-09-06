@@ -14,6 +14,7 @@ import {
   DOCUMENT_KEY,
   type AdnotiaDocument,
   type KernelState,
+  type FamilyState,
   type ModuleSlice,
   type Space,
 } from './document';
@@ -46,6 +47,11 @@ export interface KernelStore extends Store {
   useProfile(profileId: string | undefined): void;
   /** Kernel-only writes. Modules never write outside their slice. */
   updateKernel(update: (kernel: Readonly<KernelState>) => KernelState): void;
+  /**
+   * Kernel-only writes to the child profiles. A module never sees this: it sees
+   * one slice, scoped to the profile in use, and cannot tell there are others.
+   */
+  updateFamily(update: (family: Readonly<FamilyState>) => FamilyState): void;
   /** Remove a slice entirely. Explicit and separate from disabling a module. */
   deleteSlice(sliceId: string): void;
   /** Stop the debounce timer. No timer outlives the page. */
@@ -311,6 +317,19 @@ export function createStore(options: CreateStoreOptions = {}): KernelStore {
       }
       replace(doc);
       notify(sliceId);
+      schedulePersist();
+    },
+
+    updateFamily(update) {
+      const doc = clone(document);
+      doc.family = update(doc.family);
+      replace(doc);
+      // Every slice in the current space may have moved, and the profile in use
+      // may have been deleted out from under the caller.
+      if (profileId !== undefined && doc.family.children[profileId] === undefined) {
+        profileId = undefined;
+      }
+      for (const sliceId of listeners.keys()) notify(sliceId);
       schedulePersist();
     },
 

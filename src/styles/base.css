@@ -1276,3 +1276,25 @@ svg .cellblank {
 .timer .btnrow {
   justify-content: center;
 }
+
+/* ---------- child profiles ---------- */
+
+.profile-row {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.profile-row .linkrow {
+  flex: 1;
+  margin: 0;
+}
+
+.child-who {
+  font-family: var(--serif);
+  font-size: 22px;
+  text-align: center;
+  margin: 0 0 14px;
+  color: var(--ink2);
+}

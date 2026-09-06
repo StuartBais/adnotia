@@ -10,5 +10,6 @@ export * from './today/index';
 export * from './reports/index';
 export * from './library/index';
 export * from './screeners/index';
+export * from './family/index';
 export * from './ui/index';
 export * from './shell/index';
