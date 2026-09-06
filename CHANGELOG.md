@@ -11,6 +11,10 @@ yet. See the implementation checkpoint in `docs/08-roadmap.md` for current limit
 
 ### Added
 
+- You land on what you can do, not on a form. The Tools tab is an index of areas — one
+  card each, two taps to any tool — and it comes first. Today is a tab now, and is written
+  as the day's record rather than as the app's front door. Every module declares which area
+  it belongs to. See ADR-030.
 - The serif is now the document's voice and the sans is the interface's. It set the masthead,
   every card heading, the calendar, the Library and a child's countdown; it is reserved for the
   printed report sheet, which is the one thing here that leaves the screen. Interface headings

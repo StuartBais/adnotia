@@ -29,6 +29,7 @@ export default {
   version: 3,                    // schema version of THIS module's state
   tier: "A",                     // from the evidence rubric
   audience: "adult",             // "adult" | "parent" | "child"; see Family space rules below
+  area: "body",                  // where a person looks for it; the kernel owns the vocabulary
   summary: "A daily record of dose, cover, side effects and sleep, summarised into one page for your prescriber.",
 
   eligibility: {
@@ -92,7 +93,7 @@ Rules:
 
 ### `tools` — in-the-moment views
 
-Things a person opens deliberately and uses now: a timer, a plan-the-next-hour sheet, a breathing exercise. A tool is a view with a title, an icon name, and a `mount(container, kernel)` function. Tools may keep their own transient state and may write to the module's state slice (a completed session, for instance) but must not add fields to `today` from inside a tool.
+Things a person opens deliberately and uses now: a timer, a plan-the-next-hour sheet, a breathing exercise. A tool is a view with a title, an icon name, and a `mount(container, kernel)` function. Tools are reached through the area index rather than mounted on a tab: one card per area, an area page, then the tool on its own page. See `decisions/ADR-030`. Tools may keep their own transient state and may write to the module's state slice (a completed session, for instance) but must not add fields to `today` from inside a tool.
 
 ### `records` — history
 

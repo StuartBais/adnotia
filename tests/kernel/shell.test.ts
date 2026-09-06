@@ -67,8 +67,10 @@ function sampleModule(overrides: Partial<ModuleManifest> = {}): ModuleManifest {
 }
 
 describe('routing', () => {
-  it('starts on Today', () => {
-    expect(createRouter().tab()).toBe('today');
+  it('starts on the index of what you can do, not on the day’s record', () => {
+    // Today was the landing, and that is what made the app read as a medication
+    // log with things bolted on. See the note on TABS in shell/router.ts.
+    expect(createRouter().tab()).toBe('tools');
   });
 
   it('moves between tabs and tells subscribers', () => {
@@ -233,7 +235,7 @@ describe('navigation once first run is done', () => {
   it('shows the four tabs', () => {
     mountShell({ store, container });
     const tabs = [...container.querySelectorAll('[role="tab"]')].map((t) => t.textContent);
-    expect(tabs).toEqual(['Today', 'Tools', 'Records', 'Library']);
+    expect(tabs).toEqual(['Tools', 'Today', 'Records', 'Library']);
   });
 
   it('marks the current tab with aria-selected', () => {
@@ -247,7 +249,7 @@ describe('navigation once first run is done', () => {
 
   it('has no deep link to a module', () => {
     // Modules appear inside the four areas; the shell never routes to one.
-    expect(TABS).toEqual(['today', 'tools', 'records', 'library']);
+    expect(TABS).toEqual(['tools', 'today', 'records', 'library']);
   });
 
   it('opens Settings as an off-tab page with a Back button', () => {
@@ -282,7 +284,7 @@ describe('the tab views', () => {
   const context = { space: 'adult' as const, enabled: [], known: [] };
 
   it('show an empty state per tab', () => {
-    expect(renderTab('today', context).textContent).toContain('Nothing to fill in');
+    expect(renderTab('today', context).textContent).toContain('Nothing to record yet');
     expect(renderTab('records', context).textContent).toContain('Nothing recorded yet');
   });
 

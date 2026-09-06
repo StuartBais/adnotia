@@ -57,8 +57,8 @@ const NO_CHILD = {
 
 const EMPTY: Readonly<Record<TabId, { title: string; sub: string }>> = {
   today: {
-    title: 'Nothing to fill in',
-    sub: 'When you turn a tool on, its questions appear here as one short check-in.',
+    title: 'Nothing to record yet',
+    sub: 'This is where the day gets written down. Turning a tool on in Settings puts its questions here.',
   },
   tools: {
     title: AREA_STRINGS.empty.title,

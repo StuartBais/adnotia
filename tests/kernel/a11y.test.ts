@@ -162,9 +162,14 @@ describe('state a sighted person reads from a colour', () => {
     }));
   });
 
+  /**
+   * The shell, on the day's record. The landing is the area index now, and the
+   * controls this section is about — chips, the calendar — live on Today.
+   */
   function app(): HTMLElement {
     const container = document.createElement('div');
-    mountShell({ store, container, modules: MODULES });
+    const shell = mountShell({ store, container, modules: MODULES });
+    shell.router.goTab('today');
     return container;
   }
 
