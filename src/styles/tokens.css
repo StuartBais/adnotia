@@ -73,8 +73,21 @@
   --sev-unrated: #dde0da;
   --sev-absent: #eff1ec;
 
-  /* type */
-  --serif: 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif;
+  /*
+   * Type. Two faces, one rule: the serif is the document's voice and the sans is
+   * the interface's. It is a real distinction rather than a taste — the report
+   * is printed and handed to a clinician, and everything else is a thing you
+   * tap. So --doc-serif is named for where it is allowed rather than for what it
+   * is, and a test fails the build if it appears outside the report sheet.
+   *
+   * The old stack led with Iowan Old Style and Palatino: warm, calligraphic
+   * old-styles that carry a distinctly editorial register. Charter and Cambria
+   * are sturdier and quieter, and Charter in particular was drawn to survive
+   * low-resolution printing — which is what happens to this report.
+   *
+   * No font files, so both are system stacks. See docs/05-architecture.md.
+   */
+  --doc-serif: Charter, 'Bitstream Charter', Cambria, 'Noto Serif', Georgia, serif;
   --sans:
     -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 

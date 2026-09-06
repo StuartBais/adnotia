@@ -10,9 +10,10 @@
  */
 
 .wrap > h1 {
-  font-family: var(--serif);
+  font-family: var(--sans);
   font-size: 30px;
-  font-weight: normal;
+  font-weight: 600;
+  letter-spacing: -0.021em;
   margin: 22px 0 14px;
 }
 
@@ -94,12 +95,12 @@ body {
 }
 
 .mast h1 {
-  font-family: var(--serif);
+  font-family: var(--sans);
   font-size: 30px;
   line-height: 1.05;
-  font-weight: normal;
+  font-weight: 600;
   margin: 0;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.023em;
 }
 
 .mast p {
@@ -167,9 +168,10 @@ body {
 }
 
 .card > h2 {
-  font-family: var(--serif);
-  font-weight: normal;
+  font-family: var(--sans);
+  font-weight: 600;
   font-size: 19px;
+  letter-spacing: -0.012em;
   margin: 0 0 3px;
 }
 
@@ -503,9 +505,10 @@ button:focus-visible,
 }
 
 .mirror h2 {
-  font-family: var(--serif);
-  font-weight: normal;
+  font-family: var(--sans);
+  font-weight: 600;
   font-size: 19px;
+  letter-spacing: -0.012em;
   margin: 0 0 3px;
 }
 
@@ -545,8 +548,9 @@ button:focus-visible,
   justify-content: space-between;
   align-items: center;
   gap: 10px;
-  font-family: var(--serif);
+  font-family: var(--sans);
   font-size: 17px;
+  font-weight: 600;
   color: var(--ink);
   text-align: left;
   background: var(--paper);
@@ -583,8 +587,9 @@ button:focus-visible,
 }
 
 .calhead span {
-  font-family: var(--serif);
+  font-family: var(--sans);
   font-size: 16px;
+  font-weight: 600;
 }
 
 .calnav {
@@ -683,9 +688,10 @@ button:focus-visible,
 
 /* A page that covers the tabs, reached by a link row and left by Back. */
 .page-title {
-  font-family: var(--serif);
-  font-weight: normal;
+  font-family: var(--sans);
+  font-weight: 600;
   font-size: 22px;
+  letter-spacing: -0.016em;
   margin: 12px 0 14px;
 }
 
@@ -769,8 +775,9 @@ button:focus-visible,
 }
 
 .entry b {
-  font-family: var(--serif);
+  font-family: var(--sans);
   font-size: 16px;
+  font-weight: 600;
 }
 
 .entry span {
@@ -792,14 +799,14 @@ button:focus-visible,
 }
 
 .sheet h2 {
-  font-family: var(--serif);
+  font-family: var(--doc-serif);
   font-weight: normal;
   font-size: 22px;
   margin: 0 0 2px;
 }
 
 .sheet h3 {
-  font-family: var(--serif);
+  font-family: var(--doc-serif);
   font-weight: normal;
   font-size: 16px;
   margin: 22px 0 8px;
@@ -1087,8 +1094,8 @@ svg .cellblank {
 }
 
 .lib-part > h3 {
-  font-family: var(--serif);
-  font-weight: normal;
+  font-family: var(--sans);
+  font-weight: 600;
   font-size: 15px;
   margin: 0 0 4px;
 }
@@ -1274,8 +1281,10 @@ svg .cellblank {
 }
 
 .timer-face {
-  font-family: var(--serif);
+  font-family: var(--sans);
   font-size: 44px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
   line-height: 1.1;
   font-variant-numeric: tabular-nums;
   color: var(--ink);
@@ -1301,8 +1310,10 @@ svg .cellblank {
 }
 
 .child-who {
-  font-family: var(--serif);
+  font-family: var(--sans);
   font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.014em;
   text-align: center;
   margin: 0 0 14px;
   color: var(--ink2);
@@ -1360,8 +1371,10 @@ svg .cellblank {
 
 .firstthen-what {
   display: block;
-  font-family: var(--serif);
+  font-family: var(--sans);
   font-size: 26px;
+  font-weight: 600;
+  letter-spacing: -0.016em;
   line-height: 1.2;
   color: var(--ink);
 }

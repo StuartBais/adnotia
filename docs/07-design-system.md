@@ -59,10 +59,12 @@ Dark mode: not in the first milestones. When it comes, it is a second token set,
 
 ## Typography
 
-Two families, system-provided, no font files:
+Two families, system-provided, no font files. **The serif is the document's voice and the sans is the interface's**, and that line is not decorative: the report is printed and handed to a clinician, and everything else is a thing you tap. A test fails the build if the serif appears anywhere but the report sheet.
 
-- **Headings:** `"Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif`, weight normal. Masthead 30 px, card heading 19 px, report h2 22 px, report h3 16 px.
-- **Everything else:** `-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif`. Body 16 px, labels 14 px, hints 12.5 px, chips 14 px, table cells 12.5 px.
+- **The report sheet only:** `--doc-serif`, `Charter, "Bitstream Charter", Cambria, "Noto Serif", Georgia, serif`, weight normal. Report h2 22 px, h3 16 px. Charter on Apple systems, Cambria on Windows, Noto Serif on Android, Georgia as the safety net — all four sturdier and quieter than an old-style, and Charter in particular was drawn to survive low-resolution printing, which is what happens to this report.
+- **Everything else:** `-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif`. Masthead 30 px / 600, page title 22 px / 600, card heading 19 px / 600, body 16 px, labels 14 px, hints 12.5 px, chips 14 px, table cells 12.5 px.
+
+Interface headings carry weight and negative tracking, between −0.012 and −0.023 em by size. What the serif did by its shape, the sans has to do by weight: a system sans set at 30 px and weight normal reads as an operating system dialog rather than as a heading.
 
 Line height 1.45 body, 1.5 for anything a clinician reads. Minimum 12.5 px on screen. Tabular numerals on anything numeric.
 

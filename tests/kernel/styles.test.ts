@@ -55,6 +55,31 @@ describe('tokens', () => {
     expectColour('sev-absent', '#EFF1EC');
   });
 
+  it('keeps the serif to the printed document', () => {
+    // One rule, and it is a real distinction rather than a taste: the report is
+    // printed and handed to a clinician, and everything else is a thing you tap.
+    // The serif used to set the masthead, every card heading, the calendar, the
+    // Library and the child's timer — which is most of what made the app read as
+    // an editorial magazine rather than as a notebook.
+    const users = [...base.matchAll(/([^\n{}]+)\{[^}]*var\(--doc-serif\)[^}]*\}/g)].map((match) =>
+      (match[1] ?? '').trim(),
+    );
+    expect(users).toEqual(['.sheet h2', '.sheet h3']);
+  });
+
+  it('gives the interface headings weight, since they no longer have shape', () => {
+    // A system sans at 30px and weight normal reads as an operating system
+    // dialog. What the serif did by its shape, the sans has to do by weight.
+    for (const selector of ['.mast h1', '.card > h2', '.page-title']) {
+      const rule = new RegExp(
+        `${selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*\\{([^}]*)\\}`,
+      ).exec(base)?.[1];
+      expect(rule, selector).toBeDefined();
+      expect(rule, selector).toMatch(/font-weight: 600/);
+      expect(rule, selector).not.toMatch(/font-weight: normal/);
+    }
+  });
+
   it('keeps every colour in the token file', () => {
     // The palette change of September 2026 found ten colours written into
     // base.css by hand, six of which duplicated the value of a token that
@@ -84,7 +109,7 @@ describe('tokens', () => {
   });
 
   it('uses system font stacks, because there are no font files', () => {
-    expect(tokenValue('serif')).toContain('Iowan Old Style');
+    expect(tokenValue('doc-serif')).toContain('Charter');
     expect(tokenValue('sans')).toContain('-apple-system');
     expect(tokens).not.toMatch(/@font-face/);
   });
