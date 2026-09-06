@@ -105,6 +105,20 @@ These are the sources this rubric currently rests on. Each must be checked again
 - Cortese S, et al. Comparative efficacy and tolerability of medications for ADHD in children, adolescents, and adults: a systematic review and network meta-analysis. *Lancet Psychiatry*, 2018.
 - Ustün B, Adler LA, Rudin C, Faraone SV, Lane MJ, Kessler RC, et al. The World Health Organization Adult Attention-Deficit/Hyperactivity Disorder Self-Report Screening Scale for DSM-5. *JAMA Psychiatry*, 2017. PMC5470397. (The instrument the Adult space uses; the scoring table is what `decisions/ADR-021` is waiting on.)
 - Kessler RC, et al. The World Health Organization Adult ADHD Self-Report Scale (ASRS). *Psychological Medicine*, 2005. (The origin of the ASRS family, and the reference behind the exclusion entry for "type" quizzes.)
-- NICE guideline NG87: Attention deficit hyperactivity disorder: diagnosis and management. 2018, updated 2019.
+- NICE guideline NG87: Attention deficit hyperactivity disorder: diagnosis and management. Published 14 March 2018, last updated 13 September 2019; cited as 2019 throughout.
 
 Anything not on this list that appears in a Library entry needs its own citation. "Studies show" without a reference fails review.
+
+### Identifier pass, September 2026
+
+Every reference in the build — 29 of them, 19 distinct works — was resolved against Crossref or the PubMed and PMC records, and its authors, year, venue and title compared to what the repository claims. Three were wrong, and the way they were wrong is the argument for doing this at all.
+
+**The DOI given for Safren's ADHD trial was `10.1001/jama.2010.608`, which resolves to Roy-Byrne et al., "Delivery of Evidence-Based Treatment for Multiple Anxiety Disorders in Primary Care".** A real paper, in the right journal, in the right year, about something else entirely. The correct DOI is `10.1001/jama.2010.1192`. Nothing inside the repository could have caught this: a well-formed DOI belonging to a real paper looks exactly like a correct one, and the reference reads perfectly until somebody follows it.
+
+**Solanto's `10.1176/appi.ajp.2010.09081123` did not resolve at all.** The journal's own identifier carries the submission year, not the publication year: `10.1176/appi.ajp.2009.09081123`.
+
+**NG87 was cited five times and written four different ways** — 2018 or 2019, "(NG87)" or "(NICE guideline NG87)", venue "NICE" or "NICE guideline". It is published 14 March 2018 and last updated 13 September 2019; the year given is now 2019 everywhere, because the version in force is the one a reader needs. Wolraich 2003 had the same problem more quietly: named authors in one place, "et al." in another.
+
+`tests/kernel/citations.test.ts` holds what is checkable without a network, which is the shape of every identifier and the agreement of any work cited more than once. The last is what would have caught the NICE drift, and it will catch the next one.
+
+**What this pass was not.** Nobody read the papers. Every reference now points at the work it says it points at, and no claim made about any of those works has been checked against what they actually found. That is a different piece of work, it is the one this section's opening paragraph asks for, and it is still outstanding. `citationsVerified` is therefore unset on every Library entry, and every entry still tells the reader in as many words that its references have not been checked against the originals.

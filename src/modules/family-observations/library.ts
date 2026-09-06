@@ -51,7 +51,7 @@ export const library: LibraryEntry = {
       title:
         'Psychometric properties of the Vanderbilt ADHD Diagnostic Parent Rating Scale in a ' +
         'referred population',
-      authors: 'Wolraich ML, et al.',
+      authors: 'Wolraich ML, Lambert W, Doffing MA, Bickman L, Simmons T, Worley K',
       year: 2003,
       venue: 'Journal of Pediatric Psychology',
       doi_or_url: 'doi:10.1093/jpepsy/jsg046',

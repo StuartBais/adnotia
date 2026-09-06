@@ -11,6 +11,10 @@ yet. See the implementation checkpoint in `docs/08-roadmap.md` for current limit
 
 ### Added
 
+- Every reference in the build was resolved against Crossref and PubMed. Three were wrong,
+  including a DOI that pointed at a real paper about anxiety in primary care rather than at
+  the ADHD trial it was cited for. Nobody has read the papers yet, and every Library entry
+  still says so.
 - The logo is on screen. The stylesheet had sized `.brand .logo` and `.brand.big .logo`
   since the design system was written, and nothing rendered either — so the masthead, the
   first-run screen and both lock screens showed the name with no mark, and there was no tab
