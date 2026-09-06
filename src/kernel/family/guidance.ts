@@ -39,7 +39,11 @@ export interface GuidanceEvidence {
 const NICE: Citation = {
   title: 'Attention deficit hyperactivity disorder: diagnosis and management (NG87)',
   authors: 'National Institute for Health and Care Excellence',
-  year: 2018,
+  // Published 14 March 2018, last updated 13 September 2019. The year is the
+  // version in force, which is what a reader needs to find what we read, and it
+  // is what the module entries already said. See the citation pass in
+  // docs/02-evidence-rubric.md.
+  year: 2019,
   venue: 'NICE guideline',
   doi_or_url: 'https://www.nice.org.uk/guidance/ng87',
 };

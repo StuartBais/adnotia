@@ -54,14 +54,14 @@ export const library: LibraryEntry = {
       authors: 'Safren SA, et al.',
       year: 2010,
       venue: 'JAMA',
-      doi_or_url: 'doi:10.1001/jama.2010.608',
+      doi_or_url: 'doi:10.1001/jama.2010.1192',
     },
     {
       title: 'Efficacy of meta-cognitive therapy for adult ADHD',
       authors: 'Solanto MV, et al.',
       year: 2010,
       venue: 'American Journal of Psychiatry',
-      doi_or_url: 'doi:10.1176/appi.ajp.2010.09081123',
+      doi_or_url: 'doi:10.1176/appi.ajp.2009.09081123',
     },
   ],
 

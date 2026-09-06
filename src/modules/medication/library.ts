@@ -44,11 +44,10 @@ export const library: LibraryEntry = {
       doi_or_url: '10.1016/S2215-0366(18)30269-4',
     },
     {
-      title:
-        'Attention deficit hyperactivity disorder: diagnosis and management (NICE guideline NG87)',
+      title: 'Attention deficit hyperactivity disorder: diagnosis and management (NG87)',
       authors: 'National Institute for Health and Care Excellence',
       year: 2019,
-      venue: 'NICE',
+      venue: 'NICE guideline',
       doi_or_url: 'https://www.nice.org.uk/guidance/ng87',
     },
   ],
