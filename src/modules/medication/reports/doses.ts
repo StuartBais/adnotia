@@ -142,7 +142,17 @@ function doseSummary(series: {
 function doseLegend(hasTrend: boolean): string {
   return (
     "Solid line: daily dose (left scale). Dots: each day's focus rating (right scale). " +
-    (hasTrend ? 'Dashed line: 7-day rolling average of focus — read this, not the dots. ' : '') +
+    // Describes, never instructs. The monolith said "read this, not the dots",
+    // which tells a clinician how to weigh a derived series rather than saying
+    // what it is. See the regulatory review in docs/03-scope.md: the MHRA's
+    // monitoring guidance excepts a symptom diary but warns that "the addition
+    // of features that enhance the data presented" can change the answer, and a
+    // rolling average carrying an instruction is the clearest example of that in
+    // this app. The fact that justified the advice is kept; the advice is not.
+    (hasTrend
+      ? 'Dashed line: 7-day rolling average of focus. A single day’s rating moves more ' +
+        'than the underlying picture does. '
+      : '') +
     'Bars below the axis: rough crash days.'
   );
 }

@@ -109,6 +109,68 @@ These are promises the architecture enforces, not policies a future maintainer c
 
 Adnotia is designed to remain a general-wellbeing and self-record tool. The hard exclusions are what keep it there: software that records self-report is generally treated differently from software that influences treatment decisions. This document is not legal advice. Before public launch, the scope should be reviewed against the current position in the jurisdictions where it will be promoted, at minimum the UK, EU and US, and that review should be recorded here with its date. The Family space additionally needs review against codes for services likely to be used by children, such as the UK Age Appropriate Design Code, even though no data leaves the device.
 
+### Review of September 2026
+
+Reviewed against primary sources by the author, who is not a lawyer and not a regulatory consultant. This is a desk review that reads the guidance and applies it honestly to what the app actually does. It is not legal advice, it does not clear the app for launch, and its main purpose is to name precisely what a person with the relevant qualification should be asked. Where it finds a risk it says so rather than reasoning its way to the comfortable answer.
+
+Sources read in full rather than in summary: MHRA, *Medical device stand-alone software including apps (including IVDMDs)* v1.10; Data Protection Act 2018 s.123 and the ICO's scope guidance for the Children's Code.
+
+#### Is Adnotia a medical device? Probably not, and the reason it is close is worth knowing
+
+The qualifying test is intended purpose, and the MHRA is explicit that this is set by the manufacturer: "A medical purpose is determined by what the manufacturer states in the device's labelling, instructions for use and any promotional materials," which it lists as adverts, the app store description and category, the landing page and social media.
+
+Two things this rules out as defences before anything else.
+
+Being free and open source is not one. The guidance includes "Freeware / open-source software" in what it covers, and notes that "The regulations apply to all methods of software distribution. It applies to products that have been 'placed on the market' rather than sold." Publishing under the AGPL and charging nothing changes nothing here.
+
+Nor is the disclaimer at the top of this document, on its own: "General disclaimers (for example 'this product is not a medical device') are not acceptable if medical claims are made or implied elsewhere in the product labelling or associated promotional literature." The line "Not a medical device" in *What Adnotia is not* does work only so long as everything else — the Library, the landing page, the About page, the report itself — makes no medical claim. It is a summary of a position that has to be held everywhere, not a shield.
+
+The limb Adnotia sits closest to is **monitoring**: "devices that monitor the progress or severity of disease, an injury or handicap". Under it, the guidance's list of things unlikely to be devices opens with a sentence that describes this app almost exactly:
+
+> Apps and software that simply replace a written diary/log of symptoms that can be used when consulting with the patient's doctor. **However, the addition of features that enhance the data presented may bring it into the remit of the UK MDR 2002.**
+
+The first sentence is what Adnotia is for. The second is the live risk, and it is not hypothetical, because the app does add features that enhance the data presented. Named honestly, in order of how much they enhance it:
+
+1. **The 7-day rolling average of focus on the dose chart**, whose legend tells a clinician "read this, not the dots". That is not presentation of what was recorded; it is a derived series plus an instruction on how to weigh it. It is the single item in the app that most resembles what the guidance is warning about, and it is worth putting to a reviewer by name.
+2. **The dose chart plotting focus ratings against dose over time.** Juxtaposing an intervention with an outcome invites an inference about the intervention. The app never draws that inference and the words *should*, *increase*, *decrease* and *recommend* are absent by rule — but the arrangement does some of the work.
+3. **The severity grid and the coverage percentages.** These are arithmetic on what was entered — how many days, how many rated, how bad at worst. Closest to "stores or transmits medical data without change", which the guidance lists as a non-medical function.
+
+Against that, the things that keep it on the right side are structural rather than cosmetic, and each is already a hard rule elsewhere in this document: no dose calculation of any kind; no conclusion about a dose; no diagnosis, prognosis or risk figure; no alarm or threshold that fires on the data; no link to a specific medicine's dosing; no screening instrument scored in the app; and nothing hidden from the person that is shown to a clinician. The guidance's "most likely to be a device" list is three items — linked to a specific medicine or device, intended to influence the actual treatment, or resulting in a diagnosis or prognosis — and the app is on none of them.
+
+**Assessment:** on the guidance as written, Adnotia is the diary sentence rather than the enhancement caveat, and is not a medical device. The margin is not large, and it is smallest at the rolling average.
+
+**What would change the answer:** adding a threshold that fires; adding any figure the person did not enter and cannot check; describing the report as showing whether a medication is working; adding a "compare your scores" feature; scoring a screening instrument in the app; or any promotional wording using the MHRA's indicative verbs — *detects*, *screens*, *predicts*, *measures*, *monitors your ADHD*.
+
+**To put to a qualified person, by name:** the rolling average and its legend; whether the `clinical` report's name and its framing as a document for an appointment constitute an implied medical claim; and whether the EU position under MDR Rule 11 differs, given that a device under Rule 11 that informs decisions with therapeutic impact classifies higher than Class I and the qualification reasoning above would need to hold there too.
+
+#### Data protection: UK GDPR and GDPR
+
+The app processes no personal data on anybody's behalf but the person's own. There is no server, no account, no analytics and no third-party request; the kernel exposes no networking primitive, and `scripts/check-no-network.mjs` fails the build if one appears. Data written in the browser is held on the device under the origin's storage and never transmitted. On the face of it there is no controller and no processing to regulate.
+
+The exception is the site that distributes the app. Serving `adnotia.com` involves processing IP addresses and request logs, which are personal data, and that processing has a controller whoever operates the origin. The privacy commitments in this document are about the app; the distribution site needs its own short, accurate statement, and it is the only place a data protection obligation actually attaches.
+
+#### The UK Children's Code
+
+Section 123 of the Data Protection Act 2018 applies the Code to information society services **that process personal data** and are likely to be accessed by children in the UK. Both limbs have to be met.
+
+The app meets the second and not the first. It is plainly likely to be accessed by children — the Family space exists to hand a phone to one — and it processes no personal data on the provider's side. On a literal reading the Code's standards, which are obligations of a controller under the UK GDPR, have nothing to attach to.
+
+That is a thin answer and `04-family-space.md` is right not to rest on it: "Regulatory codes for services likely to be used by children… apply in spirit even to an app with no server." The Code's substance — high privacy by default, no nudges, no profiling, data minimisation, no detrimental use of data — is the design already. The child surface collects no self-report, holds no state of its own, shows no adult module, has no way out except a passcode, and the one mechanic that could be an engagement loop is add-only, parent-driven and forbidden from acting on its own initiative.
+
+Where the Code does bite literally is the distribution site, on the same reasoning as above: it processes personal data and is likely to be accessed by children. A standard-by-standard assessment of `adnotia.com` against the fifteen standards is a launch task, and it is a short one for a static site with no analytics.
+
+#### United States
+
+The FDA's position on general wellness and low-risk software, and the exclusions in section 520(o) of the FD&C Act as amended by the 21st Century Cures Act — which carve out certain software for maintaining or encouraging a healthy lifestyle, and software that serves as an electronic patient record — point the same way as the MHRA reasoning above, and for the same reasons. This was not read to primary source and is the weakest part of this review.
+
+COPPA applies to operators that collect personal information from children under 13. Nothing is collected, maintained or transmitted, so there is no operator in the sense the rule uses.
+
+#### What this review does not settle
+
+It was done by the author, on the author's own product, which is the wrong person for the job even when the reading is careful. Nothing here has been checked by a lawyer or a regulatory consultant. The US section rests on secondary sources. And a desk review of guidance cannot substitute for the judgement of somebody who has taken a borderline product through an actual determination.
+
+The four questions to put to that person are listed above by name rather than left as "review the regulatory position", so that the conversation starts at the hard parts.
+
 ## Tone
 
 Every screen is written for someone who may be tired, distracted, ashamed of a gap in the record, or reading at one in the morning.

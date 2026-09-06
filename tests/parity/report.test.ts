@@ -224,6 +224,27 @@ const DIFFERENCES: readonly Difference[] = [
   },
   {
     what:
+      'The dose chart legend describes the rolling average instead of telling the reader ' +
+      'to prefer it. The monolith says "read this, not the dots".',
+    why:
+      'The regulatory review in docs/03-scope.md, September 2026. The MHRA excepts software ' +
+      'that "simply replace[s] a written diary/log of symptoms that can be used when ' +
+      'consulting with the patient\u2019s doctor", and warns in the same breath that "the ' +
+      'addition of features that enhance the data presented may bring it into the remit of ' +
+      'the UK MDR 2002". A derived series carrying an instruction on how to weigh it is the ' +
+      'clearest instance of that in this app, and it also breaks this document\u2019s own ' +
+      'rule that every report section describes and none reaches a conclusion. The fact ' +
+      'that justified the advice is kept, so a clinician loses nothing.',
+    status: 'decided',
+    rewrites: {
+      from: 'Dashed line: 7-day rolling average of focus — read this, not the dots.',
+      to:
+        'Dashed line: 7-day rolling average of focus. A single day\u2019s rating moves more ' +
+        'than the underlying picture does.',
+    },
+  },
+  {
+    what:
       'The dose section states, in words under the chart, how many days it covers and ' +
       'which dose levels it steps through.',
     why:

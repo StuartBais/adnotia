@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+  MODULES,
   buildReport,
   coverageOf,
   createDocument,
@@ -16,6 +17,8 @@ import {
   type ModuleManifest,
   type ReportSection,
 } from '../../src/kernel/index';
+import { thirtyDays as medicationDays } from '../../src/modules/medication/fixtures/index';
+import { thirtyDays as sleepDays } from '../../src/modules/sleep/fixtures/index';
 
 // The kernel owns the report frame. See docs/01-module-contract.md "reports",
 // docs/05-architecture.md "Reports engine" and
@@ -428,6 +431,63 @@ describe('the report engine', () => {
     const report = buildReport({ document: doc, modules: [manifest([section()])], choice: 'all' });
     const frame = report.html.replace('<h3>Demo</h3><p class="meta">A section.</p>', '');
     expect(frame).not.toMatch(/\b(should|increase|decrease|recommend|advise|suggest)\b/i);
+  });
+});
+
+describe('the whole clinical report, built from the real modules', () => {
+  // docs/03-scope.md: "Every report section states what was recorded. None of
+  // them reach a conclusion about the dose." The word-list test above holds the
+  // frame; this holds everything the modules actually print.
+
+  function clinical() {
+    const document_ = createDocument({ now: new Date('2026-09-30T00:00:00Z') });
+    document_.modules['medication'] = medicationDays;
+    document_.modules['sleep'] = sleepDays;
+    document_.kernel.days = Object.fromEntries(
+      [...Array<undefined>(30)].map((_, index) => [
+        `2026-09-${String(index + 1).padStart(2, '0')}`,
+        { focus: ((index % 5) + 1) as 1 | 2 | 3 | 4 | 5 },
+      ]),
+    ) as never;
+    return buildReport({
+      document: document_,
+      modules: MODULES.filter((manifest) => ['medication', 'sleep'].includes(manifest.id)),
+      choice: 'all',
+      now: new Date('2026-09-30T00:00:00Z'),
+    });
+  }
+
+  const report = clinical();
+
+  it('prints something, or the rest of this proves nothing', () => {
+    expect(report.empty).toBe(false);
+    expect(report.html.length).toBeGreaterThan(2000);
+  });
+
+  it('recommends nothing, anywhere in it', () => {
+    const words = report.html.replace(/<[^>]+>/g, ' ');
+    expect(words).not.toMatch(/\b(should|recommend|advise|suggest)\b/i);
+  });
+
+  it('never tells the reader which part of a chart to believe', () => {
+    // Added by the regulatory review of September 2026. The dose legend used to
+    // say "read this, not the dots" about the rolling average, which is an
+    // instruction on how to weigh a derived series rather than a description of
+    // what it is — and a derived series carrying an instruction is the clearest
+    // case in this app of the MHRA's "addition of features that enhance the data
+    // presented". None of the forbidden words appear in that phrase, which is
+    // why the word list did not catch it and this test exists.
+    const words = report.html.replace(/<[^>]+>/g, ' ');
+    expect(words).not.toMatch(
+      /\b(read this|ignore the|rely on|trust the|prefer the|not the dots|instead of the)\b/i,
+    );
+  });
+
+  it('still says what the rolling average is', () => {
+    // The rule is describe, not go quiet. Removing the instruction must not
+    // remove the fact that made it good advice.
+    expect(report.html).toContain('7-day rolling average of focus');
+    expect(report.html).toContain('moves more than the underlying picture does');
   });
 });
 
