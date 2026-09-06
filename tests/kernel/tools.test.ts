@@ -5,6 +5,7 @@ import {
   renderTab,
   type KernelStore,
   type ModuleManifest,
+  type OffTabPage,
   type ToolContext,
 } from '../../src/kernel/index';
 
@@ -62,10 +63,12 @@ function appender(): { manifest: ModuleManifest; seen: ToolContext[] } {
 
 describe('the Tools tab', () => {
   let store: KernelStore;
+  let opened: OffTabPage[];
 
   beforeEach(async () => {
     store = createStore({ adapter: memoryStorageAdapter() });
     await store.load();
+    opened = [];
   });
 
   function render(manifest: ModuleManifest): HTMLElement {
@@ -74,18 +77,60 @@ describe('the Tools tab', () => {
       enabled: [manifest],
       known: [manifest],
       store,
+      onOpenPage: (page) => opened.push(page),
     });
   }
 
-  it('mounts a module’s tools under their own titles', () => {
+  /** Render a page the tab handed us, the way the shell would. */
+  function open(page: OffTabPage): HTMLElement {
+    const host = document.createElement('div');
+    page.render(host);
+    return host;
+  }
+
+  /** Click the row with this label, wherever it is. */
+  function follow(view: HTMLElement, label: string): OffTabPage {
+    const row = [...view.querySelectorAll('button')].find((button) =>
+      (button.textContent ?? '').startsWith(label),
+    );
+    expect(row, label).toBeDefined();
+    row?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    const page = opened.at(-1);
+    expect(page, label).toBeDefined();
+    return page as OffTabPage;
+  }
+
+  it('is an index of areas, not a pile of mounted tools', () => {
+    // The whole point of the change: nine tools used to mount here expanded, in
+    // registration order, with no way to see what was there without scrolling
+    // past all of it.
     const { manifest } = appender();
     const view = render(manifest);
-    expect([...view.querySelectorAll('.card > h2')].map((h) => h.textContent)).toEqual([
-      'Appender',
-    ]);
+    expect(view.querySelectorAll('.area-card').length).toBeGreaterThan(1);
+    expect(view.textContent).toContain('Focus and starting');
+    // The tool itself is not on the tab at all.
+    expect(view.textContent).not.toContain('Appender');
   });
 
-  it('says so plainly when nothing contributes a tool', () => {
+  it('reaches a tool in two taps', () => {
+    const { manifest } = appender();
+    const area = open(follow(render(manifest), 'Focus and starting'));
+    const tool = open(follow(area, 'Appender'));
+    expect(tool.querySelector('button')?.textContent).toBe('add');
+  });
+
+  it('shows an area with nothing in it, without pretending it opens', () => {
+    // Somebody choosing what to turn on needs to see that the room exists.
+    const { manifest } = appender();
+    const view = render(manifest);
+    const empty = [...view.querySelectorAll('.area-card')].filter((element) =>
+      element.classList.contains('empty'),
+    );
+    expect(empty.length).toBeGreaterThan(0);
+    for (const element of empty) expect(element.getAttribute('aria-disabled')).toBe('true');
+  });
+
+  it('says so plainly when nothing is turned on', () => {
     const bare: ModuleManifest = {
       id: 'bare',
       name: 'Bare',
@@ -96,15 +141,18 @@ describe('the Tools tab', () => {
       summary: 's',
       contributes: { library: libraryEntry() },
     };
-    expect(render(bare).textContent).toContain('No tools yet');
+    const view = render(bare);
+    expect(view.textContent).toContain('Turning something on in Settings');
   });
 
   it('shows a tool its own first save before its second', () => {
     // The slice is read live, not captured at mount. A tool that saves twice
-    // without being redrawn was silently discarding the first write.
+    // without being redrawn was silently discarding the first write. The tool
+    // now mounts on its own page, so this follows it there.
     const { manifest } = appender();
-    const view = render(manifest);
-    const add = view.querySelector('button') as HTMLButtonElement;
+    const area = open(follow(render(manifest), 'Focus and starting'));
+    const tool = open(follow(area, 'Appender'));
+    const add = tool.querySelector('button') as HTMLButtonElement;
 
     add.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     add.dispatchEvent(new MouseEvent('click', { bubbles: true }));
@@ -115,7 +163,8 @@ describe('the Tools tab', () => {
   it('hands a tool nothing but its own slice', () => {
     const { manifest, seen } = appender();
     store.set('somebody-else', { version: 1, secret: true });
-    render(manifest);
+    const area = open(follow(render(manifest), 'Focus and starting'));
+    open(follow(area, 'Appender'));
 
     const context = seen[0]!;
     expect(Object.keys(context).sort()).toEqual(['reads', 'refresh', 'save', 'slice', 'today']);

@@ -301,6 +301,7 @@ export function mountShell(options: ShellOptions): Shell {
         // again, the same as taking a backup does.
         onOpenPage: (page) => router.openPage(page),
         onRefresh: () => refresh(),
+        onGoTab: (next: TabId) => router.goTab(next),
         onDismissBackupNag: () => {
           store.updateKernel((kernel) => ({
             ...kernel,

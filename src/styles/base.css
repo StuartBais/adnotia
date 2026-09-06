@@ -726,6 +726,62 @@ button:focus-visible,
   word-break: break-word;
 }
 
+/* ---------- the area index ---------- */
+/* One card per area. The whole map on one screen, and two taps to any tool.
+   See src/kernel/shell/areaIndex.ts. */
+
+.areas {
+  display: grid;
+  gap: var(--gap-card);
+}
+
+.area-card {
+  display: grid;
+  gap: 3px;
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  background: var(--paper);
+  border: 1px solid var(--line2);
+  border-radius: var(--r);
+  padding: var(--pad-card);
+  cursor: pointer;
+}
+
+.area-card:hover {
+  border-color: var(--line);
+}
+
+/* An area with nothing turned on is still shown: somebody choosing what to
+   enable needs to see that the room exists. It just does not pretend to open. */
+.area-card.empty {
+  background: var(--ground);
+  cursor: default;
+}
+
+.area-name {
+  font-size: 19px;
+  font-weight: 600;
+  letter-spacing: -0.012em;
+  color: var(--ink);
+}
+
+.area-blurb {
+  font-size: 13.5px;
+  color: var(--ink2);
+  line-height: 1.45;
+}
+
+.area-count {
+  font-size: 12.5px;
+  color: var(--mark);
+  margin-top: 2px;
+}
+
+.area-card.empty .area-count {
+  color: var(--ink2);
+}
+
 /* ---------- the child surface ---------- */
 
 /* Large targets and nothing below 16px. See docs/05-architecture.md. */

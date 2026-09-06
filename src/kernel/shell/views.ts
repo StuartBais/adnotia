@@ -4,12 +4,13 @@
 // each says so plainly rather than showing an encouraging blank page: a gap is a
 // fact to show, never a failure to punish.
 
-import { renderLibrary, tierWording } from '../library/index';
+import { renderLibrary } from '../library/index';
+import { AREA_STRINGS, renderAreaIndex } from './areaIndex';
 import { ABOUT_STRINGS, aboutPage } from './about';
-import { GUIDANCE, getProfile } from '../family/index';
+import { GUIDANCE } from '../family/index';
 import { SCREENER_STRINGS, isUsable, screenerPage } from '../screeners/index';
-import { loggingDay, parseIsoDate, type IsoDate } from '../dates/index';
-import { REPORTS, backupNag, loggedDates, mountReport } from '../reports/index';
+import { parseIsoDate, type IsoDate } from '../dates/index';
+import { backupNag, loggedDates, mountReport } from '../reports/index';
 import type { KernelStore } from '../store/store';
 import {
   BUDGET_STRINGS,
@@ -36,6 +37,11 @@ export interface ViewContext {
   onOpenPage?: (page: OffTabPage) => void;
   /** Redraw the current tab, after a tool changes what belongs on it. */
   onRefresh?: () => void;
+  /**
+   * Switch tabs. An area page whose modules ask a daily question offers the way
+   * back to the day's log, and that is a tab rather than a page.
+   */
+  onGoTab?: (tab: TabId) => void;
   onDismissBackupNag?: () => void;
 }
 
@@ -55,8 +61,8 @@ const EMPTY: Readonly<Record<TabId, { title: string; sub: string }>> = {
     sub: 'When you turn a tool on, its questions appear here as one short check-in.',
   },
   tools: {
-    title: 'No tools yet',
-    sub: 'Tools are things you open when you need them: a timer, a plan for the next hour.',
+    title: AREA_STRINGS.empty.title,
+    sub: AREA_STRINGS.empty.sub,
   },
   records: {
     title: 'Nothing recorded yet',
@@ -282,69 +288,25 @@ export function renderTab(tab: TabId, context: ViewContext): HTMLElement {
   }
 
   if (tab === 'tools' && store !== undefined) {
-    const childNickname = getProfile(store.document(), store.profile())?.nickname;
-    let anything = false;
-    for (const manifest of context.enabled) {
-      for (const tool of manifest.contributes.tools ?? []) {
-        anything = true;
-        const body = el('div', {});
-        // A tool reads and writes its own slice and has no route to another's.
-        // `slice` is a live read, not a value captured at mount: a tool that
-        // saves twice without being redrawn must see its own first save, or the
-        // second write is built on a stale copy and silently discards it.
-        tool.mount(body, {
-          get slice() {
-            return store.get(manifest.id);
-          },
-          get reads() {
-            return Object.fromEntries(
-              (manifest.dependencies ?? []).map((id) => [id, store.get(id)]),
-            );
-          },
-          save: (next: unknown) => store.set(manifest.id, next),
-          today: loggingDay(),
-          ...(childNickname === undefined ? {} : { nickname: childNickname }),
-          refresh: () => context.onRefresh?.(),
-        });
-        // A tool that carries a lower tier than its module says so, in the
-        // rubric's own wording, where the person is about to use it. ADR-025.
-        const children: (Node | string)[] =
-          tool.tier === undefined
-            ? [body]
-            : [el('p', { class: 'tier', text: tierWording(tool.tier, context.space) }), body];
-        section.append(card({ title: tool.title, children }));
-      }
-    }
-    // A named report other than the clinical one lives on its own page rather
-    // than under the sheet on Records: print.css shows every .sheet, so two on
-    // one screen would print as one document.
-    for (const [name, definition] of Object.entries(REPORTS)) {
-      if (name === 'clinical' || definition.audience !== context.space) continue;
-      const contributes = context.enabled.some((manifest) =>
-        (manifest.contributes.reports ?? []).some((entry) => entry.report === name),
-      );
-      if (!contributes || context.onOpenPage === undefined) continue;
+    // An index, not a pile. See src/kernel/shell/areaIndex.ts for why the tools
+    // stopped mounting here and what an area page holds besides tools.
+    if (context.onOpenPage === undefined) return section;
 
-      anything = true;
-      section.append(
-        linkRow({
-          label: definition.title,
-          value: 'Open',
-          onSelect: () =>
-            context.onOpenPage?.({
-              id: `report-${name}`,
-              title: definition.title,
-              render: (host) => {
-                host.replaceChildren(
-                  mountReport({ store, modules: context.enabled, report: name }).element,
-                );
-              },
-            }),
-        }),
-      );
-    }
+    const options = {
+      space: context.space,
+      enabled: context.enabled,
+      store,
+      openPage: context.onOpenPage,
+      refresh: () => context.onRefresh?.(),
+      ...(context.onGoTab === undefined
+        ? {}
+        : {
+            goToday: () => context.onGoTab?.('today'),
+            goRecords: () => context.onGoTab?.('records'),
+          }),
+    };
 
-    if (!anything) section.append(card(EMPTY.tools));
+    section.append(card({ sub: AREA_STRINGS.sub }), renderAreaIndex(options));
     return section;
   }
 
