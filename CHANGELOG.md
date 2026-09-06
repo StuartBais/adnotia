@@ -11,6 +11,8 @@ yet. See the implementation checkpoint in `docs/08-roadmap.md` for current limit
 
 ### Added
 
+- The dose chart's legend describes the 7-day rolling average instead of telling a clinician
+  to prefer it over the daily dots. The fact that justified the advice is kept.
 - The printed clinical report now states, in words under the dose chart, how many days it
   covers and which dose levels it steps through. It said this only in the plain-text export,
   so a prescriber reading the printed sheet had the dose levels only as marks inside a
