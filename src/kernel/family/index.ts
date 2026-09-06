@@ -22,3 +22,12 @@ export {
   type ChildSurface,
   type ChildSurfaceOptions,
 } from './childSurface';
+export {
+  ASSESSMENT_STRINGS,
+  GUIDANCE,
+  THIRTEEN_PLUS_STRINGS,
+  UNDER_SIX_STRINGS,
+  assessmentPage,
+  thirteenPlusPage,
+  underSixPage,
+} from './guidance';
