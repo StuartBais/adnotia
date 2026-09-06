@@ -14,6 +14,7 @@ import {
   CHILD_STRINGS,
   PROFILE_STRINGS,
   getProfile,
+  listProfiles,
   mountChildSurface,
   profilesPage,
 } from '../family/index';
@@ -312,6 +313,14 @@ export function mountShell(options: ShellOptions): Shell {
   }
 
   function refresh(): void {
+    // In the Family space every slice resolves against a child, and nothing
+    // chooses one on load. Without this, reopening the app with children saved
+    // throws on the first module read: "no child profile is selected".
+    if (store.space() === 'family' && store.profile() === undefined) {
+      const first = listProfiles(store.document())[0];
+      if (first !== undefined) store.useProfile(first.id);
+    }
+
     const settings = store.document().kernel.settings;
     if (settings.firstRunComplete !== true) {
       container.replaceChildren(

@@ -15,6 +15,7 @@ import { formatShortDate, today, type IsoDate } from '../dates/index';
 import type { AdnotiaDocument } from '../store/document';
 import {
   DAY_METADATA_KEYS,
+  audienceInSpace,
   type DayColumn,
   type FrameContribution,
   type MirrorObservation,
@@ -52,6 +53,8 @@ export interface BuildReportOptions {
   /** Defaults to `clinical`. */
   report?: string;
   document: AdnotiaDocument;
+  /** Which child the Family-space slices resolve against. */
+  profileId?: string;
   /** The person's enabled modules, in their chosen order. */
   modules: readonly ModuleManifest[];
   /** Defaults to the last 30 days, as the monolith did. */
@@ -97,8 +100,27 @@ function hasContent(record: ReportDay | undefined): boolean {
   return false;
 }
 
-function daysOf(document: AdnotiaDocument, moduleId: string): Days {
-  return ((document.modules[moduleId] as { days?: Days } | undefined)?.days ?? {}) as Days;
+/**
+ * The module bag a report reads from.
+ *
+ * Not `document.modules` unconditionally: in the Family space a module's slice
+ * lives at `family.children[<profileId>].modules.<id>`, and reading the adult
+ * bag there returns nothing for every module, quietly, so the report comes out
+ * empty rather than wrong. The store routes this for a module; the engine holds
+ * the whole document and has to route it itself.
+ */
+function sliceBag(
+  document: AdnotiaDocument,
+  profileId: string | undefined,
+): Record<string, unknown> {
+  if (document.space === 'adult') return document.modules;
+  if (profileId === undefined) return {};
+  return document.family.children[profileId]?.modules ?? {};
+}
+
+function daysOf(document: AdnotiaDocument, moduleId: string, profileId?: string): Days {
+  const slice = sliceBag(document, profileId)[moduleId] as { days?: Days } | undefined;
+  return (slice?.days ?? {}) as Days;
 }
 
 /**
@@ -108,11 +130,12 @@ function daysOf(document: AdnotiaDocument, moduleId: string): Days {
 export function loggedDates(
   document: AdnotiaDocument,
   modules: readonly ModuleManifest[],
+  profileId?: string,
 ): IsoDate[] {
   const dates = new Set<IsoDate>();
 
   for (const manifest of modules) {
-    for (const [date, record] of Object.entries(daysOf(document, manifest.id))) {
+    for (const [date, record] of Object.entries(daysOf(document, manifest.id, profileId))) {
       if (hasContent(record)) dates.add(date);
     }
   }
@@ -131,6 +154,7 @@ export function buildTimeline(
   document: AdnotiaDocument,
   modules: readonly ModuleManifest[],
   dates: readonly IsoDate[],
+  profileId?: string,
 ): { rows: TimelineRow[]; legend: string } {
   const contributors = modules
     .filter((manifest) => manifest.contributes.timeline !== undefined)
@@ -144,7 +168,7 @@ export function buildTimeline(
     const marks: TimelineRow['marks'][number][] = [];
 
     for (const manifest of contributors) {
-      const day = daysOf(document, manifest.id)[date];
+      const day = daysOf(document, manifest.id, profileId)[date];
       if (day === undefined) continue;
       const parts = manifest.contributes.timeline!.parts(day);
       bands.push(...(parts.bands ?? []));
@@ -171,6 +195,7 @@ export function buildDayTable(
   document: AdnotiaDocument,
   modules: readonly ModuleManifest[],
   dates: readonly IsoDate[],
+  profileId?: string,
 ): DayTable {
   const columns: { column: DayColumn; moduleId: string }[] = [];
   for (const manifest of modules) {
@@ -188,7 +213,7 @@ export function buildDayTable(
     let anything = false;
 
     for (const { column, moduleId } of columns) {
-      const day = daysOf(document, moduleId)[date];
+      const day = daysOf(document, moduleId, profileId)[date];
       if (day === undefined) {
         cells.push({ text: '', note: '' });
         continue;
@@ -223,19 +248,27 @@ export function buildReport(options: BuildReportOptions): Report {
 
   // A report only ever sees modules that may contribute to it. The clinical
   // report is adult-only; docs/04-family-space.md is explicit about that.
-  const modules = options.modules.filter((manifest) => manifest.audience === definition.audience);
+  //
+  // Not a direct comparison: a report names a space and a module names an
+  // audience, and `parent` is a Family-space audience that never equals
+  // `family`. Comparing them looked right and quietly gave the Family reports
+  // no contributors at all.
+  const modules = options.modules.filter((manifest) =>
+    audienceInSpace(manifest.audience, definition.audience),
+  );
 
   const range = resolveRange({
     choice: options.choice ?? 30,
-    logged: loggedDates(document, modules),
+    logged: loggedDates(document, modules, options.profileId),
     now,
     ...(document.kernel.lastAppointment !== undefined
       ? { lastAppointment: document.kernel.lastAppointment }
       : {}),
   });
 
-  const timeline = buildTimeline(document, modules, range.dates);
-  const table = buildDayTable(document, modules, range.dates);
+  const { profileId } = options;
+  const timeline = buildTimeline(document, modules, range.dates, profileId);
+  const table = buildDayTable(document, modules, range.dates, profileId);
 
   const base: ReportContext = {
     report: name,
@@ -263,13 +296,13 @@ export function buildReport(options: BuildReportOptions): Report {
   function contextFor(manifest: ModuleManifest): ReportContext {
     const moduleDays: Record<string, Days> = {};
     for (const dependency of manifest.dependencies ?? []) {
-      if (enabled.has(dependency)) moduleDays[dependency] = daysOf(document, dependency);
+      if (enabled.has(dependency)) moduleDays[dependency] = daysOf(document, dependency, profileId);
     }
     return {
       ...base,
-      days: daysOf(document, manifest.id),
+      days: daysOf(document, manifest.id, profileId),
       moduleDays,
-      slice: document.modules[manifest.id],
+      slice: sliceBag(document, profileId)[manifest.id],
     };
   }
 
