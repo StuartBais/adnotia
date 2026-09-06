@@ -16,6 +16,9 @@ describe('choosing a logging day', () => {
     const root = document.createElement('div');
     const shell = mountShell({ store, container: root, modules: [sleep] });
     try {
+      // The date picker belongs to the day's record, which is no longer the tab
+      // the shell opens on.
+      shell.router.goTab('today');
       (root.querySelector('.datebtn') as HTMLButtonElement).click();
       const days = [...root.querySelectorAll<HTMLButtonElement>('.calday')];
       expect(days.find((day) => day.textContent === '6')?.disabled).toBe(true);

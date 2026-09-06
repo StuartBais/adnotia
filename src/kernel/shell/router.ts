@@ -5,12 +5,25 @@
 // modules: modules appear inside these areas. See docs/05-architecture.md
 // "Shell and spaces".
 
-export const TABS = ['today', 'tools', 'records', 'library'] as const;
+/**
+ * Tools first, and so the landing.
+ *
+ * Today used to be, and that is what made the app read as a medication log with
+ * things bolted on: it is the day's record, medication contributes two thirds of
+ * its fields, and three of the adult modules contribute nothing to it at all, so
+ * the front door showed a dose form and could not show a third of the app
+ * whatever you turned on. A person opening this at nine in the morning is not
+ * there to write up a day that has not happened yet.
+ *
+ * So the landing is what you can do, and the day's record is a tab you go to
+ * when there is a day to record. Four tabs either way.
+ */
+export const TABS = ['tools', 'today', 'records', 'library'] as const;
 export type TabId = (typeof TABS)[number];
 
 export const TAB_LABELS: Readonly<Record<TabId, string>> = {
-  today: 'Today',
   tools: 'Tools',
+  today: 'Today',
   records: 'Records',
   library: 'Library',
 };
@@ -32,7 +45,7 @@ export interface Router {
   subscribe(listener: () => void): () => void;
 }
 
-export function createRouter(initial: TabId = 'today'): Router {
+export function createRouter(initial: TabId = TABS[0]): Router {
   let current: TabId = initial;
   let open: OffTabPage | undefined;
   const listeners = new Set<() => void>();

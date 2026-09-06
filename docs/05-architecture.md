@@ -112,7 +112,7 @@ PBKDF2-SHA256 (500 000 iterations, 16-byte salt) to AES-GCM-256 with a 12-byte I
 
 ### Shell and spaces
 
-The shell owns first run, space selection (Adult or Family), navigation, and page routing. Navigation is a small fixed set: Today, Tools, Records, Library, plus Settings. Family adds the child-profile switcher and "hand to child". There is no deep-link routing to individual modules; modules appear inside these areas.
+The shell owns first run, space selection (Adult or Family), navigation, and page routing. Navigation is a small fixed set: **Tools, Today, Records, Library**, plus Settings. Tools is first and so is the landing: Today is the day's record, medication contributes two thirds of its fields, and three of the adult modules contribute nothing to it at all — so a Today landing showed a dose form and structurally could not show a third of the app, whatever a person turned on. Tools is an index of areas, two taps from any tool; see `decisions/ADR-030`. Family adds the child-profile switcher and "hand to child". There is no deep-link routing to individual modules; modules appear inside these areas.
 
 ### Today assembler
 

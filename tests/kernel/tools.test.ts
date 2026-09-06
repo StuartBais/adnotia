@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
+  TABS,
+  createRouter,
   createStore,
   memoryStorageAdapter,
   renderTab,
@@ -99,6 +101,16 @@ describe('the Tools tab', () => {
     expect(page, label).toBeDefined();
     return page as OffTabPage;
   }
+
+  it('is what the app opens on', () => {
+    // Not a preference about tab order. Today was the landing, it is the day's
+    // record, medication contributes two thirds of its fields, and three adult
+    // modules contribute nothing to it at all — so the front door showed a dose
+    // form and structurally could not show a third of the app. If this flips
+    // back, that is the thing that comes back with it.
+    expect(TABS[0]).toBe('tools');
+    expect(createRouter().tab()).toBe('tools');
+  });
 
   it('is an index of areas, not a pile of mounted tools', () => {
     // The whole point of the change: nine tools used to mount here expanded, in
