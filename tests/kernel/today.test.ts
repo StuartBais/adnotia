@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+  TODAY_STRINGS,
   carriedValue,
   createStore,
   measure,
@@ -194,7 +195,7 @@ describe('the Today assembler', () => {
   it('shows nothing of the kernel’s own when no module is enabled', () => {
     const view = mountToday({ store, modules: [], date: '2026-09-04' });
     const headings = [...view.element.querySelectorAll('h2')].map((h) => h.textContent);
-    expect(headings).toEqual(['Nothing to fill in']);
+    expect(headings).toEqual([TODAY_STRINGS.empty]);
   });
 
   it('writes a value under modules.<id>.days[date].<fieldId>', () => {
@@ -335,9 +336,9 @@ describe('the Today assembler', () => {
     expect(view.date()).toBe('2026-09-04');
   });
 
-  it('says so when there is nothing to fill in', () => {
+  it('says so when there is nothing to record', () => {
     const view = mountToday({ store, modules: [], date: '2026-09-04' });
-    expect(view.element.textContent).toContain('Nothing to fill in');
+    expect(view.element.textContent).toContain(TODAY_STRINGS.empty);
     expect(view.element.textContent).not.toMatch(/you forgot|you missed|streak/i);
   });
 });

@@ -11,6 +11,10 @@ yet. See the implementation checkpoint in `docs/08-roadmap.md` for current limit
 
 ### Added
 
+- Today opens with what already happened: a practice, a walk, whatever a tool recorded.
+  Modules that ask no daily question had no way to appear on the record of your day at all,
+  which is why three of the six adult modules were invisible there. A quiet day shows
+  nothing rather than saying nothing happened. See ADR-031.
 - You land on what you can do, not on a form. The Tools tab is an index of areas — one
   card each, two taps to any tool — and it comes first. Today is a tab now, and is written
   as the day's record rather than as the app's front door. Every module declares which area
