@@ -116,6 +116,29 @@ export function doseSeries(context: DosesContext): DoseSeries | undefined {
 
 const DOSE_HEADING = 'Dose over time';
 
+/**
+ * Every figure the chart plots, in words.
+ *
+ * Not a caption. The chart's own labels are drawn inside the SVG and scale with
+ * it, so on a phone they are around 5 CSS px and on paper around 7 pt — below
+ * both floors in docs/05-architecture.md. ADR-027 accepts that for a graphic
+ * only where nothing is available from the picture alone, and this section used
+ * to be the place that was untrue: the printed report carried the chart and
+ * nothing else, while the plain-text export carried this sentence. Now both do.
+ */
+function doseSummary(series: {
+  columns: readonly StepColumn[];
+  first: string;
+  last: string;
+}): string {
+  const levels = [...new Set(series.columns.map((column) => column.step))];
+  return (
+    `${series.columns.length} days from ${formatShortDate(series.first)} to ` +
+    `${formatShortDate(series.last)}, across ${levels.length} ` +
+    `${levels.length === 1 ? 'dose level' : 'dose levels'}: ${levels.join(', ')}.`
+  );
+}
+
 function doseLegend(hasTrend: boolean): string {
   return (
     "Solid line: daily dose (left scale). Dots: each day's focus rating (right scale). " +
@@ -143,20 +166,20 @@ export const doseOverTimeSection: ReportSection = {
       title: 'Dose over time with daily focus ratings',
       legend: doseLegend(series.hasTrend),
     });
-    return chart === '' ? '' : `<h3>${escapeHtml(DOSE_HEADING)}</h3>${chart}`;
+    return chart === ''
+      ? ''
+      : `<h3>${escapeHtml(DOSE_HEADING)}</h3>${chart}` +
+          `<p class="meta">${escapeHtml(doseSummary(series))}</p>`;
   },
 
   renderText: (context) => {
     const series = doseSeries(context as DosesContext);
     if (series === undefined) return '';
-    const levels = [...new Set(series.columns.map((column) => column.step))];
     return [
       DOSE_HEADING,
       '-'.repeat(DOSE_HEADING.length),
       chartNote('dose chart'),
-      `${series.columns.length} days from ${formatShortDate(series.first)} to ` +
-        `${formatShortDate(series.last)}, across ${levels.length} ` +
-        `${levels.length === 1 ? 'dose level' : 'dose levels'}: ${levels.join(', ')}.`,
+      doseSummary(series),
       doseLegend(series.hasTrend),
     ].join('\n');
   },

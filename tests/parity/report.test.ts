@@ -112,6 +112,12 @@ interface Difference {
    */
   rewrites?: { from: string; to: string };
   /**
+   * Something this build says that the monolith does not. It is removed from our
+   * text before the comparison, so the rest of the section is still held to the
+   * letter and the addition cannot grow to hide a loss underneath it.
+   */
+  adds?: RegExp;
+  /**
    * A section heading whose wording is not compared to the letter, because the
    * two builds say different things there on purpose. The figures inside it are
    * still checked; see the test that follows the letter comparison.
@@ -217,6 +223,19 @@ const DIFFERENCES: readonly Difference[] = [
     status: 'decided',
   },
   {
+    what:
+      'The dose section states, in words under the chart, how many days it covers and ' +
+      'which dose levels it steps through.',
+    why:
+      'ADR-027 accepts small labels inside a chart on the condition that nothing it plots ' +
+      'is available from the picture alone. This section was the place that was untrue: ' +
+      'the monolith and this build both printed the chart and a heading, and only the ' +
+      'plain-text export named the dose levels. A prescriber reading the printed report ' +
+      'had them as 7-point marks inside a picture.',
+    status: 'decided',
+    adds: /\s*\d+ days from [^.]+, across \d+ dose levels?: [^.]+\./,
+  },
+  {
     what: 'The sleep section appears whenever a night was recorded.',
     why:
       'The monolith shows it only if a quality chip or a note was added, so bed and wake ' +
@@ -289,6 +308,10 @@ describe('the report, against the monolith', () => {
       (rule): rule is { from: string; to: string } => rule !== undefined,
     );
 
+    const added = DIFFERENCES.map((entry) => entry.adds).filter(
+      (pattern): pattern is RegExp => pattern !== undefined,
+    );
+
     const reshaped = new Set(
       DIFFERENCES.map((entry) => entry.reshapes).filter(
         (heading): heading is string => heading !== undefined,
@@ -303,7 +326,11 @@ describe('the report, against the monolith', () => {
       let expected = body;
       for (const phrase of omitted) expected = expected.replace(phrase, '').trim();
       for (const rule of rewrites) expected = expected.split(rule.from).join(rule.to);
-      expect(ourBody, `section: ${heading}`).toBe(expected.replace(/\s+/g, ' '));
+
+      let ours_ = ourBody;
+      for (const pattern of added) ours_ = ours_.replace(pattern, '').trim();
+
+      expect(ours_, `section: ${heading}`).toBe(expected.replace(/\s+/g, ' '));
       compared++;
     }
     // Guards the loop: a comparison that silently matched nothing would pass.

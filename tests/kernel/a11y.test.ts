@@ -2,6 +2,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   MODULES,
   addProfile,
+  buildReport,
+  createDocument,
   createStore,
   memoryStorageAdapter,
   mountChildSurface,
@@ -9,6 +11,8 @@ import {
   type KernelStore,
 } from '../../src/kernel/index';
 import { threeDays as parentSetup } from '../../src/modules/family-routines/fixtures/index';
+import { thirtyDays as medicationDays } from '../../src/modules/medication/fixtures/index';
+import { thirtyDays as sleepDays } from '../../src/modules/sleep/fixtures/index';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { effectiveFontSize, declared, parseRules } from './styleRules';
@@ -192,6 +196,82 @@ describe('state a sighted person reads from a colour', () => {
     open?.click();
     const label = container.querySelector('.calhead [aria-live], .cal [aria-live]');
     expect(label).not.toBeNull();
+  });
+});
+
+describe('what the charts say, said in words', () => {
+  // ADR-027. The tick labels inside a chart scale with the graphic, so on a
+  // phone they are about 5 CSS px and on paper about 7 pt — under both floors.
+  // That is accepted for a graphic on one condition: nothing a chart plots is
+  // available from the picture alone. The condition is the thing to hold, so it
+  // is tested here rather than described in a comment.
+  //
+  // It was described in a comment, and the comment was wrong. The dose section
+  // rendered the chart and a heading, and stated its figures only in the
+  // plain-text export — so the printed report, the one a prescriber is handed,
+  // had the dose levels only as marks inside the picture.
+
+  function clinical() {
+    const document_ = createDocument({ now: new Date('2026-09-30T00:00:00Z') });
+    document_.modules['medication'] = medicationDays;
+    document_.modules['sleep'] = sleepDays;
+    document_.kernel.days = Object.fromEntries(
+      [...Array<undefined>(30)].map((_, index) => [
+        `2026-09-${String(index + 1).padStart(2, '0')}`,
+        { focus: ((index % 5) + 1) as 1 | 2 | 3 | 4 | 5 },
+      ]),
+    ) as never;
+    return buildReport({
+      document: document_,
+      modules: MODULES.filter((manifest) => ['medication', 'sleep'].includes(manifest.id)),
+      choice: 'all',
+      now: new Date('2026-09-30T00:00:00Z'),
+    });
+  }
+
+  const report = clinical();
+
+  it('draws the charts at all, or this proves nothing', () => {
+    expect([...report.html.matchAll(/<svg/g)].length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('gives every chart a description a screen reader can read', () => {
+    const labels = [...report.html.matchAll(/<svg[^>]*aria-label="([^"]*)"/g)].map((m) => m[1]);
+    expect(labels.length).toBe([...report.html.matchAll(/<svg/g)].length);
+    for (const label of labels) expect((label ?? '').length).toBeGreaterThan(20);
+  });
+
+  it('puts a legend in body text under every one of them', () => {
+    // Per chart, not by counting: .legend is used by sections that draw nothing,
+    // so a total that happens to match would prove the wrong thing.
+    const after = report.html.split('</svg>').slice(1);
+    expect(after.length).toBeGreaterThanOrEqual(2);
+    const bare = after
+      .map((tail) => tail.slice(0, tail.search(/<h3|<svg/) + 1 || undefined))
+      .filter((tail) => !tail.includes('class="legend"'));
+    expect(bare).toEqual([]);
+  });
+
+  it('states the dose chart’s own figures in the printed report, not only in the export', () => {
+    const html = report.html;
+    const summary =
+      /(\d+) days from ([^,]+) to ([^,]+), across (\d+) dose levels?: ([^.<]+)\./.exec(html);
+    expect(summary).not.toBeNull();
+    // Every level the stair steps through, in words next to the picture.
+    const levels = (summary?.[5] ?? '').split(', ');
+    expect(levels.length).toBeGreaterThan(1);
+    for (const level of levels) expect(html).toContain(level);
+  });
+
+  it('says the same thing in the printed report and in the text export', () => {
+    const inHtml = /(\d+ days from [^.<]+\.)/.exec(report.html)?.[1];
+    expect(inHtml).toBeDefined();
+    expect(report.text).toContain(inHtml as string);
+  });
+
+  it('pairs the severity grid with the table that names its rows', () => {
+    // The grid's row labels are the only place the picture names anything.
+    expect(report.html).toContain('<th>Reported</th>');
   });
 });
 
