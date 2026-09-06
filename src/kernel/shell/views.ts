@@ -6,6 +6,7 @@
 
 import { renderLibrary, tierWording } from '../library/index';
 import { ABOUT_STRINGS, aboutPage } from './about';
+import { GUIDANCE } from '../family/index';
 import { SCREENER_STRINGS, isUsable, screenerPage } from '../screeners/index';
 import { loggingDay, parseIsoDate, type IsoDate } from '../dates/index';
 import { REPORTS, backupNag, loggedDates, mountReport } from '../reports/index';
@@ -39,6 +40,10 @@ export interface ViewContext {
 }
 
 /** Shown on every Family tab until a child exists to attach anything to. */
+const GUIDANCE_TITLE = 'Before a form, or instead of one';
+const GUIDANCE_SUB =
+  'What an assessment actually involves, and what to do at the ages no validated form covers.';
+
 const NO_CHILD = {
   title: 'Add a child first',
   sub: 'Everything in this space belongs to one child, so there is nowhere to put anything yet. Children is in the bar at the top.',
@@ -77,15 +82,38 @@ export function renderTab(tab: TabId, context: ViewContext): HTMLElement {
     // turning it on — and every exclusion, so they can read why the thing they
     // came looking for is absent. See docs/02-evidence-rubric.md.
     section.append(renderLibrary({ modules: context.known, space: context.space }));
+
+    // Guidance a parent reads rather than fills in. Listed rather than routed to
+    // by the child's age band: the bands are 4-11 and 12-17, these pages turn on
+    // 6 and 13, and asking for a finer age would collect more about a child than
+    // the tools need. See src/kernel/family/guidance.ts.
+    if (context.space === 'family' && context.onOpenPage !== undefined) {
+      section.append(card({ title: GUIDANCE_TITLE, sub: GUIDANCE_SUB }));
+      for (const entry of GUIDANCE) {
+        section.append(
+          linkRow({
+            label: entry.title,
+            value: 'Read',
+            onSelect: () => context.onOpenPage?.(entry.page()),
+          }),
+        );
+      }
+    }
+
     if (context.onOpenPage !== undefined) {
       // docs/03-scope.md: the screener lives in the Library, never in the daily
-      // check-in and never on the home screen. This is the only route to it.
+      // check-in and never on the home screen. This is the only route to it, and
+      // it is the adult instrument, so it is not offered in the Family space.
       section.append(
-        linkRow({
-          label: SCREENER_STRINGS.title,
-          value: isUsable() ? 'Open' : 'Not yet',
-          onSelect: () => context.onOpenPage?.(screenerPage()),
-        }),
+        ...(context.space === 'adult'
+          ? [
+              linkRow({
+                label: SCREENER_STRINGS.title,
+                value: isUsable() ? 'Open' : 'Not yet',
+                onSelect: () => context.onOpenPage?.(screenerPage()),
+              }),
+            ]
+          : []),
         linkRow({
           label: ABOUT_STRINGS.title,
           value: 'Open',

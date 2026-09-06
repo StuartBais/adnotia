@@ -11,6 +11,10 @@ yet. See the implementation checkpoint in `docs/08-roadmap.md` for current limit
 
 ### Added
 
+- Parent guidance in the Family Library: what an assessment actually involves, what to do
+  when a child is under six and no validated free form exists, and what to do at thirteen and
+  over where the usual parent form stops being validated. None of it scores anything and none
+  of it reads what the parent has written.
 - An observation log for the Family space: dated entries with where, what happened in the
   parent's words, what was going on beforehand and whether anything helped. It prints as a
   dated list grouped by setting with a coverage line and the same record-quality footer the
