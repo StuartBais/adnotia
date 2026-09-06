@@ -217,7 +217,7 @@ label.minor {
 
 /* "Optional" never shouts. */
 .opt {
-  font-size: 11.5px;
+  font-size: 12.5px;
   color: var(--ink2);
   font-weight: normal;
 }
@@ -313,7 +313,7 @@ button:focus-visible,
   display: flex;
   justify-content: space-between;
   color: var(--ink2);
-  font-size: 12px;
+  font-size: 12.5px;
   margin-top: 5px;
 }
 
@@ -532,7 +532,7 @@ button:focus-visible,
 
 .mirror .tag {
   display: block;
-  font-size: 11.5px;
+  font-size: 12.5px;
   color: var(--ink2);
   margin-bottom: 2px;
 }
@@ -617,7 +617,7 @@ button:focus-visible,
 
 .caldow span {
   text-align: center;
-  font-size: 11px;
+  font-size: 12.5px;
   color: var(--ink2);
   padding: 2px 0;
 }
@@ -734,6 +734,15 @@ button:focus-visible,
   font-size: 18px;
 }
 
+/* These three are shared with the adult app, where 13 and 14px are right. On a
+   screen a child is holding they are not, and the rule is a floor rather than a
+   size: raised to 16px and no further, so the hierarchy still reads. */
+.child-surface .flabel,
+.child-surface .firstthen-label,
+.child-surface .sub {
+  font-size: 16px;
+}
+
 /* ---------- motion ---------- */
 
 /* Almost none by design; what there is stops here. */
@@ -824,7 +833,7 @@ td {
 
 th {
   font-weight: 600;
-  font-size: 11.5px;
+  font-size: 12.5px;
   color: var(--ink2);
   border-bottom: 1px solid var(--line);
 }
@@ -855,7 +864,7 @@ td.num {
 }
 
 .legend {
-  font-size: 11.5px;
+  font-size: 12.5px;
   color: var(--ink2);
   margin-top: 8px;
 }

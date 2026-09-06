@@ -37,6 +37,9 @@ jobs:
       - name: Build the single file
         run: npm run build:single
 
+      - name: Performance budget
+        run: npm run budget
+
       - name: Upload the single file
         uses: actions/upload-artifact@v7
         with:

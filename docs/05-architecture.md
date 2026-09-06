@@ -186,9 +186,17 @@ Both builds run in CI on every push. The single-file output is a release artefac
 
 Keyboard reachable throughout; visible focus; `aria-pressed` on every toggle chip; live regions for save confirmation and month changes in the calendar; `prefers-reduced-motion` respected; text never below 12.5 px on screen; print never below 7.5 pt. The child surface additionally uses large targets (≥ 48 px) and no text smaller than 16 px.
 
+Held by `tests/kernel/a11y.test.ts`, which checks these against the real stylesheet and the real rendered app rather than against a list kept beside them. It reads `base.css` into selectors and resolves them with `element.matches` (`tests/kernel/styleRules.ts`), so a class added to the child surface is measured rather than assumed; it records click listeners as they are attached and fails any that landed on something the keyboard cannot focus; and it asserts the focus ring, the motion block, `aria-pressed` on every rendered chip, and the live regions.
+
+**Known gap: text inside the charts.** `svg .tick` is 9 px in the chart's own coordinates, and the SVG is drawn with `width="100%"` against a 640-unit `viewBox`, so it scales with its container. In a report sheet on a phone (≈ 340 px of content) that is about 4.8 CSS px, and on paper about 7.3 pt. It fails both floors. It cannot be fixed by changing the number: text that scales with the graphic cannot hold a fixed pixel floor across the roughly 2× range between a phone and a printed page — a size that clears 12.5 px on the phone is over 25 px on paper. The fix is to take the labels out of the SVG and lay them out in HTML around it, and until that is done the charts are exempted from the check explicitly rather than silently.
+
+Screen-reader testing on iOS and Android is still outstanding, and no automated check substitutes for it.
+
 ## Performance budget
 
 Initial load ≤ 150 kB compressed for the PWA including all modules. If a module pushes past that, lazy-load its `tools` and `reports` renderers; `today` fields and `library` entries stay eager because first run needs them.
+
+Enforced by `scripts/check-budget.mjs`, which runs in CI after both builds. It counts what `dist/index.html` actually asks the browser for, gzipped, and reports the service worker's precache and the single file separately rather than budgeting them. A budget nobody measures is a sentence in a document, and this one can only be broken by a module that was fine on its own.
 
 ## Internationalisation
 
