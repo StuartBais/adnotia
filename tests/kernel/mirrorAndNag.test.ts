@@ -48,6 +48,7 @@ function moduleWith(mirror: ModuleManifest['contributes']['mirror']): ModuleMani
     version: 1,
     tier: 'A',
     audience: 'adult',
+    area: 'focus',
     summary: 's',
     contributes: {
       library: {

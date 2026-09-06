@@ -7,6 +7,24 @@
 
 export type Tier = 'A' | 'B' | 'C';
 
+/**
+ * Where a module is found. A closed vocabulary, kept here beside `Tier` for the
+ * same reason: the contract owns the set of allowed values, and one place owns
+ * the words shown for them — `src/kernel/areas/index.ts`, as `tiers.ts` does
+ * for tiers.
+ */
+export const AREAS = [
+  'focus',
+  'calm',
+  'movement',
+  'body',
+  'assessment',
+  'routines',
+  'observations',
+] as const;
+
+export type Area = (typeof AREAS)[number];
+
 /** Which space a module mounts in. See docs/04-family-space.md. */
 export type Audience = 'adult' | 'parent' | 'child';
 
@@ -306,6 +324,19 @@ export interface ModuleManifest {
   version: number;
   tier: Tier;
   audience: Audience;
+  /**
+   * Where this module is found. `audience` says which space it mounts in; this
+   * says where inside that space a person looks for it.
+   *
+   * On the module rather than on each tool, because an area is not a bag of
+   * tools. Medication and sleep contribute no tools at all — they are a daily
+   * log and a report — and an area that could only hold tools would leave the
+   * two most substantial modules in the app with nowhere to live. If a tool ever
+   * genuinely belongs somewhere its module does not, that is the point to add an
+   * optional override on `Tool`, the way ADR-025 added one for `tier`. Nothing
+   * needs it yet.
+   */
+  area: Area;
   summary: string;
   eligibility?: Eligibility;
   /** Other module ids this reads from. Almost always empty. */

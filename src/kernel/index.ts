@@ -9,6 +9,7 @@ export * from './registry/index';
 export * from './today/index';
 export * from './reports/index';
 export * from './library/index';
+export * from './areas/index';
 export * from './screeners/index';
 export * from './family/index';
 export * from './ui/index';

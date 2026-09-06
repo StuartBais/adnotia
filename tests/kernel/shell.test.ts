@@ -40,6 +40,7 @@ function sampleModule(overrides: Partial<ModuleManifest> = {}): ModuleManifest {
     version: 1,
     tier: 'B',
     audience: 'adult',
+    area: 'focus',
     summary: 'When you went to bed, when you woke, and how the night went.',
     contributes: {
       library: {

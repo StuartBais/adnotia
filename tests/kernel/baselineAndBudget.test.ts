@@ -46,6 +46,7 @@ function manifest(today: TodayField[], id = 'demo'): ModuleManifest {
     version: 1,
     tier: 'A',
     audience: 'adult',
+    area: 'focus',
     summary: 's',
     contributes: { library: libraryEntry(), today },
   };

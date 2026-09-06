@@ -23,6 +23,7 @@ const manifest: ModuleManifest = {
   version: 1,
   tier: 'A',
   audience: 'adult',
+  area: 'body',
   summary: strings.summary,
 
   eligibility: {

@@ -62,6 +62,7 @@ function manifest(
     version: 1,
     tier: 'A',
     audience: 'adult',
+    area: 'focus',
     summary: 'A demo module.',
     contributes: { library: libraryEntry(), reports: sections },
     ...overrides,
@@ -301,6 +302,7 @@ describe('the report engine', () => {
     const parent = manifest([section({ id: 'parent.section' })], {
       id: 'parenting',
       audience: 'parent',
+      area: 'routines',
     });
     const report = buildReport({ document: documentWith(days), modules: [parent], choice: 'all' });
     expect(report.included.map((entry) => entry.id)).not.toContain('parent.section');

@@ -23,6 +23,7 @@ const manifest: ModuleManifest = {
   // other tier in this build.
   tier: 'A',
   audience: 'adult',
+  area: 'focus',
   summary: strings.summary,
 
   eligibility: {

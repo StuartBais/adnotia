@@ -27,6 +27,7 @@ function entryWith(over: Partial<ModuleManifest['contributes']['library']>): Mod
     version: 1,
     tier: over.tier ?? 'A',
     audience: 'adult',
+    area: 'focus',
     summary: 's',
     contributes: {
       library: {
