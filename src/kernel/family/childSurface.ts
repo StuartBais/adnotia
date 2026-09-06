@@ -79,8 +79,16 @@ export function mountChildSurface(options: ChildSurfaceOptions): ChildSurface {
           get slice() {
             return store.get(manifest.id);
           },
+          // The parent's schedule and chart for this child, read-only. There is
+          // no route from here to write them, and none to another child's.
+          get reads() {
+            return Object.fromEntries(
+              (manifest.dependencies ?? []).map((id) => [id, store.get(id)]),
+            );
+          },
           save: (next: unknown) => store.set(manifest.id, next),
           today: '',
+          ...(profile === undefined ? {} : { nickname: profile.nickname }),
           refresh: () => {},
         });
         body.append(card({ title: tool.title, children: [host] }));

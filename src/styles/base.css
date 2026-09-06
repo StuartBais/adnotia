@@ -1298,3 +1298,70 @@ svg .cellblank {
   margin: 0 0 14px;
   color: var(--ink2);
 }
+
+/* ---------- the handed-over screen ---------- */
+/* docs/05-architecture.md: large targets and nothing under 16px on the child
+   surface. Bigger than the rest of the app on purpose — it is read at arm's
+   length by someone who may not read much yet. */
+
+.child-steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: 20px;
+  line-height: 1.5;
+}
+
+.child-steps li {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line2);
+  min-height: 48px;
+}
+
+.child-steps li:last-child {
+  border-bottom: 0;
+}
+
+.child-none {
+  font-size: 18px;
+  color: var(--ink2);
+  margin: 0;
+}
+
+.firstthen {
+  display: grid;
+  gap: 12px;
+}
+
+.firstthen > div {
+  background: var(--ground);
+  border-radius: var(--r);
+  padding: 14px 16px;
+}
+
+.firstthen-label {
+  display: block;
+  font-size: 14px;
+  color: var(--ink2);
+  text-transform: lowercase;
+}
+
+.firstthen-what {
+  display: block;
+  font-family: var(--serif);
+  font-size: 26px;
+  line-height: 1.2;
+  color: var(--ink);
+}
+
+/* The praise examples: what not to say, then what to say instead. */
+.praise-instead {
+  display: block;
+  color: var(--ink2);
+  text-decoration: line-through;
+  font-size: 13px;
+  margin-bottom: 2px;
+}

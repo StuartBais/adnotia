@@ -6,7 +6,7 @@
 
 import { renderLibrary, tierWording } from '../library/index';
 import { ABOUT_STRINGS, aboutPage } from './about';
-import { GUIDANCE } from '../family/index';
+import { GUIDANCE, getProfile } from '../family/index';
 import { SCREENER_STRINGS, isUsable, screenerPage } from '../screeners/index';
 import { loggingDay, parseIsoDate, type IsoDate } from '../dates/index';
 import { REPORTS, backupNag, loggedDates, mountReport } from '../reports/index';
@@ -282,6 +282,7 @@ export function renderTab(tab: TabId, context: ViewContext): HTMLElement {
   }
 
   if (tab === 'tools' && store !== undefined) {
+    const childNickname = getProfile(store.document(), store.profile())?.nickname;
     let anything = false;
     for (const manifest of context.enabled) {
       for (const tool of manifest.contributes.tools ?? []) {
@@ -295,8 +296,14 @@ export function renderTab(tab: TabId, context: ViewContext): HTMLElement {
           get slice() {
             return store.get(manifest.id);
           },
+          get reads() {
+            return Object.fromEntries(
+              (manifest.dependencies ?? []).map((id) => [id, store.get(id)]),
+            );
+          },
           save: (next: unknown) => store.set(manifest.id, next),
           today: loggingDay(),
+          ...(childNickname === undefined ? {} : { nickname: childNickname }),
           refresh: () => context.onRefresh?.(),
         });
         // A tool that carries a lower tier than its module says so, in the

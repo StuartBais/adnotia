@@ -20,6 +20,7 @@ import {
   renameProfile,
   type KernelStore,
   type ModuleManifest,
+  type ToolContext,
 } from '../../src/kernel/index';
 
 // The Family space. See docs/04-family-space.md, which is the authority for
@@ -397,6 +398,43 @@ describe('the handed-over surface', () => {
       ?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
 
     await vi.waitFor(() => expect(onLeave).toHaveBeenCalledOnce());
+  });
+
+  it('hands a child module only what it declared, and read-only', () => {
+    // docs/04-family-space.md lets a child module read "their own slice and the
+    // parent-configured schedule and chart for that child" — that, and no more.
+    // Handing over every module's slice would put a parent's observation log on
+    // the screen a child is holding.
+    store.set('family-routines', { version: 1, firstThen: { first: 'Shoes', then: 'Tablet' } });
+    store.set('family-observations', { version: 1, days: { '2026-09-02': { entries: [] } } });
+
+    const seen: ToolContext[] = [];
+    const watcher: ModuleManifest = {
+      ...childModule('watcher'),
+      dependencies: ['family-routines'],
+      contributes: {
+        library: libraryEntry(),
+        tools: [
+          {
+            title: 'Watcher',
+            icon: 'w',
+            mount: (_container, kernel) => seen.push(kernel as ToolContext),
+          },
+        ],
+      },
+    };
+
+    mountChildSurface({
+      store,
+      modules: [watcher],
+      profileId: 'c_1',
+      verify: async () => {},
+      onLeave: () => {},
+    });
+
+    const context = seen[0]!;
+    expect(Object.keys(context.reads)).toEqual(['family-routines']);
+    expect(context.reads['family-observations']).toBeUndefined();
   });
 
   it('never prints', () => {

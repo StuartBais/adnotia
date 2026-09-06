@@ -24,6 +24,7 @@ function mount(index: number, initial: unknown = { version: 1, days: {} }) {
   const host = document.createElement('div');
   const ctx: ToolContext = {
     slice,
+    reads: {},
     save: (next) => {
       slice = next;
       ctx.slice = next;

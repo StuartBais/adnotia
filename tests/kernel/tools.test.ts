@@ -116,7 +116,9 @@ describe('the Tools tab', () => {
     render(manifest);
 
     const context = seen[0]!;
-    expect(Object.keys(context).sort()).toEqual(['refresh', 'save', 'slice', 'today']);
+    expect(Object.keys(context).sort()).toEqual(['reads', 'refresh', 'save', 'slice', 'today']);
+    // Nothing is readable that the module did not declare a dependency on.
+    expect(context.reads).toEqual({});
     expect(context.slice).toBeUndefined();
     context.save({ version: 1, items: [] });
     expect(store.get<{ secret?: boolean }>('somebody-else')?.secret).toBe(true);
