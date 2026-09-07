@@ -4,56 +4,42 @@ Status: draft 0.1 · September 2026 · Milestones are sequential. Each has a def
 
 ## Implementation checkpoint
 
-Development snapshot: 2026-09-05. This records current implementation, not a
-change to milestone order or completion criteria. No milestone is newly marked
-complete by this checkpoint.
+Development snapshot: 2026-09-08. This records current implementation, not a
+change to milestone order or completion criteria.
 
-### Connected workflows
+Milestones 0 to 7 are built and their gates pass. Milestone 8 is partly done;
+Milestone 9 was added after it and is complete. `npm run check` passes
+(TypeScript, the no-network audit, ten contrast pairs); `npm test` passes with
+1167 tests in 55 files; both builds succeed and `npm run budget` reports 83.1 kB
+of a 150 kB initial-load budget.
 
-- Adult medication and sleep logs, descriptive reports, print and text export.
-- Merge-restore persists the complete document before confirming success;
-  failed writes remain visible and can be retried.
-- Automatic sleep duration updates after time edits and reloads, with manual
-  values preserved using ADR-014 metadata.
-- Encrypted startup, wrong-passcode handling, encrypted v0 import, and Settings
-  for setting, changing, removing and locking a passcode. Passcode changes are
-  gated on generating an encrypted backup; the old legacy key is retained.
-- Medication eligibility during onboarding and module management; enable,
-  disable, ordering and separately confirmed data deletion in Settings.
-- Calendar selection for earlier days, selected-day retention across tabs, and
-  space switching after onboarding without removing Adult records.
-- Stale-tab conflict detection, with serialized cross-tab writes where Web
-  Locks are available. The fallback check is best-effort, not atomic.
+### Done since the last checkpoint
+
+- Report parity against the monolith, with every remaining difference recorded
+  and argued in `tests/parity/report.test.ts`. None is open.
+- The Library, the exclusion entries, About, the crisis page, and the parent
+  guidance pages. The screeners are built and **not offered**: they are not ours
+  to reproduce, see ADR-023.
+- The whole Family space: profiles, the parent gate, the handed-over surface,
+  the observation log, routines and the reward chart.
+- Planning, mindfulness, exercise and preparation.
+- The accessibility audit, the performance budget in CI, the regulatory and
+  children's-code review, and the citation identifier pass.
+- Milestone 9's navigation and check-in rework.
 
 ### Still incomplete
 
-- Full thirty-day report, history and text-export parity against the monolith.
-- ~~Baseline editing, the connected screen-only reflection, backup reminders,
-  and the check-in budget's user-facing optional-field controls.~~ All four
-  built; see the changelog.
-- Enabled-module migration orchestration on load and restore, and confirmation
-  before removing the retained legacy key.
-- Complete Library evidence rendering, verified citations, About and safety
-  pages, and both screeners.
-- Family profiles, parent/child workflows, planning and other later modules.
-- Live hosting review, real-device installation/offline-update tests,
-  accessibility and print-layout audits, and clinical/regulatory review.
-
-Cleanup verification on 2026-09-05: `npm run check` passed (TypeScript,
-no-network audit and nine contrast pairs); `npm test` passed with 586 tests in
-31 files; `npm run build` and `npm run build:single` both succeeded. These
-results cover the current implementation, including the space-selection fix.
-
-Browser checks have covered adult eligibility, earlier-day editing, restore,
-save retry, encryption at rest, reload locking and wrong-passcode rejection.
-The integrated browser did not expose a download event during the latest
-passcode check, so actual backup-file delivery remains a manual verification
-item even though encrypted file generation is tested. The last space-selection
-correction has focused regression coverage; the final module-management visual
-check was not completed. These are verification limits, not completed gates.
-
-Work is paused at this checkpoint for cleanup and documentation. Follow the
-existing milestone definitions below when development resumes.
+- **Blocked on a person, not on code.** No evidence tier has been confirmed by
+  anyone other than its author, which the rubric requires. No citation has been
+  read against its original — the September 2026 pass resolved every identifier
+  and checked no claim. The crisis numbers have not been confirmed against each
+  organisation's own site. The paediatric guidance has not been read by a
+  clinician. Permission to reproduce either screener has not been sought.
+- Screen-reader testing on real iOS and Android devices. No automated check
+  substitutes for it.
+- Release tagging, publishing both artefacts, and the live host.
+- Two commits on `main` are unsigned, `22f639f` and `0924770`, because the
+  signing agent was locked at the time. Every other commit is signed.
 
 ## Milestone 0 — foundations
 
@@ -144,6 +130,34 @@ Done when: a child can use the surface without help, and a parent cannot acciden
 - Performance budget check.
 - `CHANGELOG.md`, release tagging, both artefacts published.
 - Static host with a dedicated origin; the About page states the origin-scoping caveat.
+
+## Milestone 9 — how the app is found
+
+Added after Milestone 8 was under way, because the shape of the app turned out to
+be wrong in a way no amount of launch readiness would fix. It read as a
+medication log with other things bolted on, and three measurements said why:
+medication contributed 14 of the 21 `today` fields; the assembler built a card
+only for modules declaring `today` fields, so three of the six adult modules
+appeared nowhere on the landing tab whatever a person enabled; and the Tools tab
+mounted all nine tools expanded into one scroll with no index.
+
+The separation that fixes it was already in `01-module-contract.md` — `today` is
+the daily check-in, `tools` are things a person opens deliberately. The shell did
+not express it.
+
+- **Areas.** A closed vocabulary the kernel owns, on the module. ADR-030.
+- **The tool index.** One card per area, an area page, a tool on its own page.
+  Two taps to anything.
+- **Navigation.** The index comes first; Today is a tab and is written as the
+  day's record.
+- **`log`.** A screen-only contribution so a module that asks no question can
+  still say what happened. ADR-031.
+- **The check-in.** A card opens at its required fields; unanswered optional ones
+  sit behind one disclosure, and nothing answered is ever put away. ADR-032.
+
+Done when: a person can find every tool they have enabled without scrolling past
+the ones they have not, and the record of a day shows the whole day rather than
+the parts that happen to be questions. Both hold.
 
 ## Deliberately not on the roadmap
 
