@@ -343,6 +343,120 @@ describe('the Today assembler', () => {
   });
 });
 
+describe('what a card opens at', () => {
+  // The medication log declares thirteen fields, six of them optional, and used
+  // to render all thirteen at once — which is why the day's record read as a
+  // dose form even once the other modules appeared above it. See ADR-032.
+
+  let store: KernelStore;
+
+  beforeEach(async () => {
+    store = createStore({ adapter: memoryStorageAdapter(), debounceMs: 0 });
+    await store.load();
+  });
+
+  const required = (id: string): TodayField => ({ id, label: id, type: 'text', cost: 1 });
+  const spare = (id: string): TodayField => ({ ...required(id), optional: true });
+
+  function view(fields: TodayField[], date = '2026-09-04'): HTMLElement {
+    return mountToday({ store, modules: [manifest(fields)], date }).element;
+  }
+
+  /** This module's own card. The kernel appends its own groups after it. */
+  function ours(element: HTMLElement): HTMLElement {
+    const card = [...element.querySelectorAll('.card')].find(
+      (node) => node.querySelector('h2')?.textContent === 'Medication log',
+    );
+    expect(card).toBeDefined();
+    return card as HTMLElement;
+  }
+
+  /** The field's own label, without the "optional" marker rendered beside it. */
+  const name = (label: Element): string =>
+    [...label.childNodes]
+      .filter((node) => node.nodeType === 3)
+      .map((node) => (node.textContent ?? '').trim())
+      .join('');
+
+  const openLabels = (element: HTMLElement): string[] =>
+    [...ours(element).querySelectorAll('.flabel')]
+      .filter((label) => label.closest('.more') === null)
+      .map(name);
+
+  const foldedLabels = (element: HTMLElement): string[] =>
+    [...ours(element).querySelectorAll('.more .flabel')].map(name);
+
+  it('opens at what it needs and keeps the rest within reach', () => {
+    const element = view([required('dose'), spare('onset'), spare('woreOff')]);
+    expect(openLabels(element)).toEqual(['dose']);
+    expect(foldedLabels(element)).toEqual(['onset', 'woreOff']);
+  });
+
+  it('says how many are behind the fold, and that they may not apply', () => {
+    const two = view([required('dose'), spare('onset'), spare('woreOff')]);
+    expect(ours(two).querySelector('.more summary')?.textContent).toBe(
+      '2 more questions, if they apply',
+    );
+    const one = view([required('dose'), spare('onset')]);
+    expect(ours(one).querySelector('.more summary')?.textContent).toBe(
+      'One more question, if it applies',
+    );
+  });
+
+  it('never puts away something already answered', () => {
+    // Hiding a field a person filled in takes their own record off the screen
+    // and leaves no way to correct it. Worse than a long form.
+    store.set('medication', { version: 1, days: { '2026-09-04': { onset: '09:30' } } });
+    const element = view([required('dose'), spare('onset'), spare('woreOff')]);
+    expect(openLabels(element)).toEqual(['dose', 'onset']);
+    expect(foldedLabels(element)).toEqual(['woreOff']);
+  });
+
+  it('shows a card that is entirely optional, rather than folding all of it', () => {
+    // A card with nothing open has no opening to keep short. The kernel's own
+    // "What actually happened" is two optional fields; folding it would hide a
+    // two-question card behind a heading and cost a click for nothing.
+    const element = view([spare('win'), spare('miss')]);
+    expect(openLabels(element)).toEqual(['win', 'miss']);
+    expect(ours(element).querySelector('.more')).toBeNull();
+  });
+
+  it('drops the fold when every optional field has been answered', () => {
+    store.set('medication', {
+      version: 1,
+      days: { '2026-09-04': { onset: '09:30', woreOff: '16:30' } },
+    });
+    const element = view([required('dose'), spare('onset'), spare('woreOff')]);
+    expect(ours(element).querySelector('.more')).toBeNull();
+    expect(openLabels(element)).toEqual(['dose', 'onset', 'woreOff']);
+  });
+
+  it('uses a native disclosure, so it works from the keyboard with no script', () => {
+    const element = view([required('dose'), spare('onset')]);
+    const fold = ours(element).querySelector('.more');
+    expect(fold?.tagName.toLowerCase()).toBe('details');
+    expect(fold?.firstElementChild?.tagName.toLowerCase()).toBe('summary');
+    // Closed on arrival: the point is what the card opens at.
+    expect((fold as HTMLDetailsElement).open).toBe(false);
+  });
+
+  it('hides nothing that has a value, even when hiding the optional ones', () => {
+    // The budget control hides optional questions across every card. It used to
+    // hide them whether or not they held anything, which took a person's own
+    // record off the screen.
+    store.set('medication', { version: 1, days: { '2026-09-04': { onset: '09:30' } } });
+    const built = mountToday({
+      store,
+      modules: [manifest([required('dose'), spare('onset'), spare('woreOff')])],
+      date: '2026-09-04',
+    });
+    built.setHideOptional(true);
+    const labels = [...ours(built.element).querySelectorAll('.flabel')].map(name);
+    expect(labels).toContain('onset');
+    expect(labels).not.toContain('woreOff');
+  });
+});
+
 describe('dotted field ids', () => {
   let store: KernelStore;
 

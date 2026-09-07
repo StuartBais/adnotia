@@ -86,7 +86,7 @@ All live in `src/kernel/ui/`. Modules do not build their own controls.
 | `timeInput`, `numberInput`, `textInput` | Native inputs, 16 px text to stop iOS zooming, 8 px radius, `--line` border, `--mark` focus ring. |
 | `calendar` | Custom month grid. One tap selects and closes. Dots mark logged days. Future days disabled. "Jump to today" respects the after-midnight rule. Locale-aware first weekday. |
 | `linkRow` | Full-width row with a label left and a status or action word right in `--mark`. Used for off-tab pages. |
-| `card` | As above. |
+| `card` | As above. A card opens at its required fields; unanswered optional ones sit behind one native `<details>` whose summary counts them ("6 more questions, if they apply"). Anything already answered stays open, and a card that is entirely optional shows itself rather than folding. See `decisions/ADR-032`. |
 | `nag` | `--flag-soft` panel with one action. The kernel shows it at most once per fourteen days per topic. Copy is plain and unalarmed. |
 | `mirror` | Screen-only reflection list. Never printed. |
 | `rewardChart` | Family only. Positive-only, parent-initiated, no reminders, no streaks. |

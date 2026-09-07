@@ -169,6 +169,13 @@ export const TODAY_STRINGS = {
    * of the same record rather than as a separate form.
    */
   soFar: 'So far today',
+  /**
+   * What is behind the fold, said as a number rather than as "more". A person
+   * deciding whether to open it wants to know what it costs, and "if it applies"
+   * is the honest framing: these are questions that will often not.
+   */
+  more: (n: number): string =>
+    n === 1 ? 'One more question, if it applies' : `${n} more questions, if they apply`,
   empty: 'Nothing to record yet',
   emptySub:
     'This is where the day gets written down. Turning a tool on in Settings puts its ' +
@@ -305,13 +312,28 @@ export function mountToday(options: TodayOptions): TodayView {
     return list;
   }
 
+  /**
+   * Whether this field already holds something for this day, counting a value
+   * carried forward from an earlier one.
+   *
+   * Nothing that has been answered is ever put away. Hiding a field a person
+   * filled in takes their own record off the screen and leaves no way to correct
+   * it, which is a worse failure than a long form.
+   */
+  function answered(field: TodayField, values: DayRecord, group: Group): boolean {
+    const carried = carriedValue(field, date, group.read());
+    const value = carried === undefined ? values[field.id] : carried.value;
+    if (value === undefined || value === null || value === '') return false;
+    return !Array.isArray(value) || value.length > 0;
+  }
+
   function renderField(
     group: Group,
     field: TodayField,
     values: DayRecord,
     into: HTMLElement,
   ): void {
-    if (hideOptional && field.optional === true) return;
+    if (hideOptional && field.optional === true && !answered(field, values, group)) return;
 
     const days = group.read();
     const carried = carriedValue(field, date, days);
@@ -402,7 +424,41 @@ export function mountToday(options: TodayOptions): TodayView {
       // A deep copy: the store hands back frozen objects, and a shallow spread
       // would leave the nested ones frozen for writePath to fail on.
       const values: DayRecord = structuredClone(group.read()[date] ?? {}) as DayRecord;
-      for (const field of group.fields) renderField(group, field, values, body);
+
+      // A card opens at what it needs and keeps the rest within reach.
+      //
+      // The medication log declares thirteen fields, six of them optional, and
+      // rendered all thirteen at once — which is why the day's record read as a
+      // dose form even once the other modules appeared above it. Optional
+      // questions now sit behind one disclosure, and docs/01-module-contract.md
+      // already fails "a field shown unconditionally that most people leave
+      // blank" on review; this is that rule with somewhere to put the answer.
+      //
+      // Anything already answered stays open, so nothing a person wrote is ever
+      // put away, and a card whose optional fields are all filled in shows no
+      // disclosure at all.
+      const open: TodayField[] = [];
+      const more: TodayField[] = [];
+      for (const field of group.fields) {
+        (field.optional === true && !answered(field, values, group) ? more : open).push(field);
+      }
+
+      // A card with nothing open has no opening to keep short. Folding all of it
+      // costs a click and hides a two-question card behind a heading, so a card
+      // that is entirely optional simply shows itself.
+      if (open.length === 0) {
+        open.push(...more.splice(0, more.length));
+      }
+
+      for (const field of open) renderField(group, field, values, body);
+
+      if (more.length > 0 && !hideOptional) {
+        const rest = el('div', { class: 'more-body' });
+        for (const field of more) renderField(group, field, values, rest);
+        const fold = el('details', { class: 'more' });
+        fold.append(el('summary', { text: TODAY_STRINGS.more(more.length) }), rest);
+        body.append(fold);
+      }
 
       root.append(
         card({

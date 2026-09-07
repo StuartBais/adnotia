@@ -726,6 +726,53 @@ button:focus-visible,
   word-break: break-word;
 }
 
+/* ---------- the rest of a card ---------- */
+/* Optional questions, behind one disclosure. Native <details> so it is
+   keyboard-operable and needs no script. See src/kernel/today/index.ts. */
+
+.more {
+  margin-top: 12px;
+  border-top: 1px solid var(--line2);
+  padding-top: 10px;
+}
+
+.more > summary {
+  font-size: 13.5px;
+  color: var(--mark);
+  cursor: pointer;
+  list-style: none;
+  padding: 4px 0;
+}
+
+.more > summary::-webkit-details-marker {
+  display: none;
+}
+
+.more > summary::before {
+  content: '+ ';
+  font-variant-numeric: tabular-nums;
+}
+
+.more[open] > summary::before {
+  content: '\2212 ';
+}
+
+.more > summary:focus-visible {
+  outline: 2px solid var(--mark);
+  outline-offset: 1px;
+  border-radius: var(--r-control);
+}
+
+.more-body {
+  padding-top: 6px;
+}
+
+/* Everything behind the fold is optional by definition, and the summary already
+   says "if they apply". Marking each one again is noise. */
+.more-body .opt {
+  display: none;
+}
+
 /* ---------- what already happened today ---------- */
 /* Screen-only, like the mirror: the whole Today view carries
    data-print="never". See src/kernel/registry/types.ts LogContribution. */

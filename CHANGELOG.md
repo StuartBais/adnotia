@@ -11,6 +11,11 @@ yet. See the implementation checkpoint in `docs/08-roadmap.md` for current limit
 
 ### Added
 
+- The medication card opens at seven questions instead of thirteen. Optional ones sit behind
+  one disclosure that says how many there are and that they may not apply. Nothing you have
+  already answered is ever folded away. See ADR-032.
+- Fixed: hiding the optional questions used to hide them even when they held a value, which
+  took your own record off the screen with no way to correct it.
 - Today opens with what already happened: a practice, a walk, whatever a tool recorded.
   Modules that ask no daily question had no way to appear on the record of your day at all,
   which is why three of the six adult modules were invisible there. A quiet day shows
