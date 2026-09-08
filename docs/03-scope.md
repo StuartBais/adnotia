@@ -147,7 +147,7 @@ Against that, the things that keep it on the right side are structural rather th
 
 The app processes no personal data on anybody's behalf but the person's own. There is no server, no account, no analytics and no third-party request; the kernel exposes no networking primitive, and `scripts/check-no-network.mjs` fails the build if one appears. Data written in the browser is held on the device under the origin's storage and never transmitted. On the face of it there is no controller and no processing to regulate.
 
-The exception is the site that distributes the app. Serving `adnotia.com` involves processing IP addresses and request logs, which are personal data, and that processing has a controller whoever operates the origin. The privacy commitments in this document are about the app; the distribution site needs its own short, accurate statement, and it is the only place a data protection obligation actually attaches.
+The exception is the site that distributes the app. Serving `adnotia.com` involves processing IP addresses and request logs, which are personal data, and that processing has a controller whoever operates the origin. The privacy commitments in this document are about the app; the distribution site needs its own short, accurate statement, and it is the only place a data protection obligation actually attaches. That statement is now on the About page, and `decisions/ADR-035` records what it deliberately does not claim and the four things an operator must confirm before it can be relied on.
 
 #### The UK Children's Code
 

@@ -43,6 +43,34 @@ export const ABOUT_STRINGS = {
     'Clearing your browser data deletes all of it. That is why the app asks about backups, ' +
       'no more than once a fortnight.',
   ],
+  /**
+   * The site is not the app, and the difference is the one thing on this page a
+   * person could reasonably feel misled about.
+   *
+   * "No analytics of any kind, and no third-party request of any kind" is true
+   * of the app and says nothing about how the app reached them. Fetching a page
+   * is a request, and a web server sees requests. Somebody who read the list
+   * above and concluded that no record of them exists anywhere would be wrong,
+   * and docs/03-scope.md asks this app to be "honest about limits, including the
+   * app's own".
+   *
+   * Every claim here is either verifiable from the source or true of every web
+   * server. Nothing is asserted about what a particular host keeps, because that
+   * is a deployment fact this code cannot check. See ADR-035.
+   */
+  siteTitle: 'The website is a different thing from the app',
+  site: [
+    'Everything above is about the app once it is open. Getting it to you is a web request, ' +
+      'and every web server sees those: which address was asked for, roughly when, the ' +
+      'address it was asked from, and which browser asked. That is true of every site you ' +
+      'visit and it is true of this one.',
+    'Nothing is switched on here that would record more than that. There is no analytics, ' +
+      'no tag manager and no tracking script, the app sets no cookie of its own, and once ' +
+      'the page has loaded it asks the network for nothing else.',
+    'If that still matters to you, the one-file version answers it completely. Download it ' +
+      'once, keep it, and open it from your own disk: after that there is no request to ' +
+      'make and nothing for anyone to see.',
+  ],
   originTitle: 'Your data belongs to the address, not to the app',
   origin:
     'A browser keeps what a site stores against the address it was served from. Adnotia has ' +
@@ -92,6 +120,7 @@ export function aboutPage(): OffTabPage {
         card({ sub: ABOUT_STRINGS.what }),
         card({ title: ABOUT_STRINGS.notTitle, children: [bullets(ABOUT_STRINGS.not)] }),
         card({ title: ABOUT_STRINGS.privacyTitle, children: [bullets(ABOUT_STRINGS.privacy)] }),
+        card({ title: ABOUT_STRINGS.siteTitle, children: [bullets(ABOUT_STRINGS.site)] }),
         card({
           title: ABOUT_STRINGS.originTitle,
           children: [el('p', { text: ABOUT_STRINGS.origin })],

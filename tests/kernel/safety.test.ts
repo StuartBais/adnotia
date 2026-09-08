@@ -185,6 +185,48 @@ describe('the parent-facing version of it', () => {
   });
 });
 
+describe('the website, which is not the app', () => {
+  // ADR-035. "No analytics of any kind, and no third-party request of any kind"
+  // is true, and it is about the app. Fetching the page is a request and a
+  // server sees requests; a reader who took that list to mean no record of them
+  // exists anywhere would have been misled by the one page whose job is not to.
+  const text = flat(render(aboutPage()));
+
+  it('says a web server sees the request that fetched the page', () => {
+    expect(text).toContain(ABOUT_STRINGS.siteTitle);
+    expect(text).toContain('every web server sees those');
+    expect(text).toMatch(/which address was asked for/);
+  });
+
+  it('does not let the app’s promises stand for the site’s', () => {
+    // Both claims are on the page, and the second is what stops the first
+    // being read as more than it says.
+    expect(text).toContain('no third-party request of any kind');
+    expect(text).toContain('Everything above is about the app once it is open');
+  });
+
+  it('offers the one-file build as the answer, because it is one', () => {
+    expect(text).toMatch(/no request to make and nothing for anyone to see/);
+  });
+
+  it('claims nothing about the host it cannot check', () => {
+    // A privacy statement that guesses is worse than one that is narrow. Log
+    // retention, and any cookie a CDN sets, are deployment facts this source
+    // cannot see; ADR-035 lists them as the operator's to confirm.
+    const site = ABOUT_STRINGS.site.join(' ');
+    expect(site).not.toMatch(/\b(never logged|not logged|no logs|deleted after|retained for)\b/i);
+    expect(site).not.toMatch(/\bno cookies\b/i);
+    // What it does claim about cookies is scoped to the app, which is checkable.
+    expect(site).toContain('the app sets no cookie of its own');
+  });
+
+  it('makes no promise the source cannot back', () => {
+    // Every sentence is either about this code or true of any web server.
+    expect(ABOUT_STRINGS.site.length).toBeGreaterThanOrEqual(3);
+    expect(flat(render(aboutPage()))).not.toMatch(/\b(anonymis|we do not store|we never)\b/i);
+  });
+});
+
 describe('about Adnotia', () => {
   const page = render(aboutPage());
   const text = flat(page);

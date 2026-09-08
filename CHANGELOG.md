@@ -11,6 +11,11 @@ yet. See the implementation checkpoint in `docs/08-roadmap.md` for current limit
 
 ### Added
 
+- About now separates the website from the app. "No analytics of any kind, no third-party
+  request of any kind" is true of the app and says nothing about how the app reached you —
+  fetching a page is a request, and a web server sees requests. The page says so, and points
+  at the one-file build as the answer, because a file on your own disk makes no request at
+  all. See ADR-035.
 - The report you take to an appointment has a page of its own, reached from "Medication and
   body". It used to sit at the bottom of the Records tab, under your own history, on the same
   scroll. Records is now only your own history. See ADR-034.
