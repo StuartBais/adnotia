@@ -57,6 +57,27 @@ function metaPolicy(): string {
   return match[3];
 }
 
+describe('both documents on the origin', () => {
+  it('carry the same policy, so the /* header rule is right for either', () => {
+    // deploy/_headers applies one CSP to every path. If the welcome page and the
+    // app disagreed about their policy, that single rule would be wrong for one
+    // of them and only the deployed site would show it.
+    const directives = (html: string): string =>
+      /content="([^"]*connect-src[^"]*)"/.exec(html)?.[1]?.replace(/\s+/g, ' ').trim() ?? '';
+    expect(directives(welcomeHtml)).not.toBe('');
+    expect(directives(welcomeHtml)).toBe(directives(indexHtml));
+  });
+
+  it('both refuse the network outright', () => {
+    for (const [name, html] of [
+      ['the app', indexHtml],
+      ['the welcome page', welcomeHtml],
+    ] as const) {
+      expect(html, name).toContain("connect-src 'none'");
+    }
+  });
+});
+
 describe('deploy/_headers', () => {
   it('sets a policy for every path', () => {
     expect(siteHeaders.get('Content-Security-Policy')).toBeTruthy();
