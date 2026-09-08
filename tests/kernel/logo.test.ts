@@ -112,7 +112,10 @@ describe('where the mark actually appears', () => {
 });
 
 describe('the icons in the document', () => {
-  const html = readFileSync('index.html', 'utf8');
+  // The app shell. The welcome page is a different document with different
+  // rules — it carries the mark inline on purpose, because it is a page a
+  // stranger reads rather than a shell that boots into one.
+  const html = readFileSync('app/index.html', 'utf8');
 
   it('leaves index.html without a hand-pasted copy of the artwork', () => {
     // The design document makes assets/logo.svg canonical. The icons are inlined

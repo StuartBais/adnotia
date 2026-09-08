@@ -11,6 +11,9 @@ yet. See the implementation checkpoint in `docs/08-roadmap.md` for current limit
 
 ### Added
 
+- There is a welcome page. `adnotia.com` now opens on something a stranger can read and
+  share; the app is at `/app/`. Same origin, so nothing you have recorded moves. If you
+  already have a record you never see the page — you go straight to the app. See ADR-036.
 - About now separates the website from the app. "No analytics of any kind, no third-party
   request of any kind" is true of the app and says nothing about how the app reached you —
   fetching a page is a request, and a web server sees requests. The page says so, and points

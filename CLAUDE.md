@@ -20,7 +20,7 @@ Decisions already made live in `docs/decisions/`. Do not reopen them without wri
 
 ## Hard rules — these are not style preferences
 
-1. **No network. Ever.** No `fetch`, no `XMLHttpRequest`, no `sendBeacon`, no WebSocket, no external `<script>`, `<link>`, font or image URL. The CSP in `index.html` sets `connect-src 'none'` and the test harness fails any build that makes a request. If you think a feature needs the network, it does not belong in this project.
+1. **No network. Ever.** No `fetch`, no `XMLHttpRequest`, no `sendBeacon`, no WebSocket, no external `<script>`, `<link>`, font or image URL. The CSP in `app/index.html` and in the welcome page at `index.html` both set `connect-src 'none'` and the test harness fails any build that makes a request. If you think a feature needs the network, it does not belong in this project.
 2. **Describe, never prescribe.** Nothing shown to a clinician contains *should*, *increase*, *decrease*, *recommend*, or any equivalent. Nothing tells a person whether to take a dose. See `docs/03-scope.md` "Hard exclusions".
 3. **No guilt mechanics.** No streaks, badges, points, "you missed N days", or shaming notifications anywhere. The one exception is the parent-configured reward chart in the Family space, and only as specified in `docs/01-module-contract.md`.
 4. **No covert assessment.** Anything the app computes about a person is shown to that person first, in the same words. No hidden scoring, no credibility flags. This was considered and rejected; see `docs/decisions/ADR-005-no-covert-assessment.md`.

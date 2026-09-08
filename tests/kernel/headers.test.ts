@@ -13,7 +13,10 @@ import { describe, expect, it } from 'vitest';
 
 const root = process.cwd();
 const headersFile = readFileSync(resolve(root, 'deploy/_headers'), 'utf8');
-const indexHtml = readFileSync(resolve(root, 'index.html'), 'utf8');
+// The app shell's meta CSP is the one the /* header rule must match: the
+// welcome page carries the same policy but the deployed header is what governs.
+const indexHtml = readFileSync(resolve(root, 'app/index.html'), 'utf8');
+const welcomeHtml = readFileSync(resolve(root, 'index.html'), 'utf8');
 
 /** The headers declared for one path pattern in a `_headers` file. */
 function headersFor(pattern: string): Map<string, string> {
@@ -96,7 +99,7 @@ describe('deploy/_headers', () => {
   });
 
   it('lets no edge cache decide which build a person runs', () => {
-    for (const path of ['/index.html', '/sw.js', '/manifest.webmanifest']) {
+    for (const path of ['/index.html', '/app/index.html', '/sw.js', '/manifest.webmanifest']) {
       expect(headersFor(path).get('Cache-Control')).toBe('no-cache');
     }
   });

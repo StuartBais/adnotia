@@ -23,7 +23,17 @@ const FORBIDDEN = [
   [/\bWebSocket\b/, 'WebSocket'],
   [/\bEventSource\b/, 'EventSource'],
   [/\bimportScripts\s*\(/, 'importScripts()'],
-  [/(?:src|href)\s*=\s*["'](?:https?:)?\/\//i, 'an external URL'],
+  /*
+   * A resource the document *loads*. Deliberately not every `href`: an <a> to
+   * the source repository fetches nothing until a person chooses to leave, and
+   * the About page has carried such links since it was written. What must never
+   * appear is a stylesheet, script, font, image or preload from somewhere else.
+   */
+  [/\bsrc\s*=\s*["'](?:https?:)?\/\//i, 'an external URL loaded by the page'],
+  [
+    /<link\b(?![^>]*\brel\s*=\s*["'](?:noreferrer|noopener)?["'])[^>]*\bhref\s*=\s*["'](?:https?:)?\/\//i,
+    'an external stylesheet, font or preload',
+  ],
   [/url\(\s*["']?(?:https?:)?\/\//i, 'an external URL in CSS'],
   [/@import\s+(?:url\()?["']?(?:https?:)?\/\//i, 'an external CSS import'],
 ];
@@ -46,7 +56,16 @@ async function filesUnder(dir) {
   return found;
 }
 
-const targets = [join(root, 'index.html'), ...(await filesUnder(join(root, 'src')))];
+/**
+ * Both documents, and both are named rather than globbed.
+ *
+ * This used to audit one `index.html` and swallow a missing file. When the app
+ * moved to `app/index.html` that would have kept printing "audit passed" while
+ * checking the welcome page and not the app — hard rule 1 unenforced, silently,
+ * with a green tick. A named file that is absent is now a failure.
+ */
+const REQUIRED = [join(root, 'index.html'), join(root, 'app', 'index.html')];
+const targets = [...REQUIRED, ...(await filesUnder(join(root, 'src')))];
 const failures = [];
 
 for (const path of targets) {
@@ -54,6 +73,12 @@ for (const path of targets) {
   try {
     source = readFileSync(path, 'utf8');
   } catch {
+    if (REQUIRED.includes(path)) {
+      failures.push(
+        `${relative(root, path)}  is missing, so this audit was not covering it. ` +
+          'Point REQUIRED at wherever it went.',
+      );
+    }
     continue;
   }
   source.split('\n').forEach((line, index) => {

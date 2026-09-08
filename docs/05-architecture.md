@@ -33,7 +33,8 @@ adnotia/
   CLAUDE.md                     agent instructions
   README.md                     human overview
   LICENSE                       AGPL-3.0
-  index.html                    shell entry, CSP meta, no external refs
+  index.html                    the welcome page: what this is, and a way in
+  app/index.html                shell entry, CSP meta, no external refs
   vite.config.ts                two build targets
   package.json
   docs/                         design documents and ADRs (source of truth)
@@ -153,7 +154,7 @@ A manifest that fails validation throws at startup in development and is skipped
 
 ## Security posture
 
-`index.html` carries:
+`app/index.html` carries:
 
 ```html
 <meta http-equiv="Content-Security-Policy"
@@ -168,7 +169,7 @@ The service worker precaches the app shell and serves it offline. It never fetch
 
 `vite.config.ts` exposes two modes:
 
-- `build` → `dist/` with manifest, service worker, hashed assets. Deploy to any static host with a dedicated origin (see `03-scope.md` on `localStorage` scoping).
+- `build` → `dist/` with **two documents**: `index.html`, the welcome page a stranger lands on, and `app/index.html`, the app — plus manifest, service worker and hashed assets. Same origin, so `localStorage` is untouched by the split; see `decisions/ADR-036`. Deploy to any static host with a dedicated origin (see `03-scope.md` on `localStorage` scoping).
 - `build:single` → `dist-single/adnotia.html`, all CSS and JS inlined, icon as data URI, no service worker. Offered as a download from the Library's "About" page and works when opened over `https` or from any static host; opened as `file://` it works except for encryption, which needs a secure context, and it says so.
 
 Both builds run in CI on every push. The single-file output is a release artefact.

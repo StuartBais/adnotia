@@ -31,10 +31,20 @@ import { resolve, dirname, join } from 'node:path';
 
 const root = resolve(import.meta.dirname, '..');
 const dist = resolve(root, 'dist');
-const index = join(dist, 'index.html');
+const index = join(dist, 'app', 'index.html');
+const welcome = join(dist, 'index.html');
 
 /** docs/05-architecture.md. In bytes, because that is what we measure. */
 const BUDGET = 150 * 1024;
+
+/**
+ * The welcome page has a budget of its own, and a tighter one.
+ *
+ * It is the first thing a stranger loads, often on a phone on mobile data, and they
+ * have no reason yet to wait for it. The app's 150 kB is the price of a tool somebody
+ * chose; this is the price of an introduction.
+ */
+const WELCOME_BUDGET = 100 * 1024;
 
 /**
  * The single file is not in that budget — it is one document with everything
@@ -45,7 +55,7 @@ const BUDGET = 150 * 1024;
 const SINGLE_LIMIT = 1024 * 1024;
 
 if (!existsSync(index)) {
-  console.error('No dist/index.html. Run `npm run build` first.');
+  console.error('No dist/app/index.html. Run `npm run build` first.');
   process.exit(1);
 }
 
@@ -87,11 +97,36 @@ parts.unshift({ name: 'index.html', bytes: gz(Buffer.from(html)) });
 
 const total = parts.reduce((sum, part) => sum + part.bytes, 0);
 
-console.log(`Initial load, gzipped (budget ${kb(BUDGET)}):`);
+console.log(`The app's initial load, gzipped (budget ${kb(BUDGET)}):`);
 for (const part of parts.sort((a, b) => b.bytes - a.bytes)) {
   console.log(`  ${part.name.padEnd(34)} ${kb(part.bytes).padStart(9)}`);
 }
 console.log(`  ${'total'.padEnd(34)} ${kb(total).padStart(9)}`);
+
+/**
+ * The welcome page, measured the same way and budgeted separately.
+ *
+ * Before this existed the script measured whatever sat at `dist/index.html`. When
+ * the app moved to `/app/` that became the welcome page, and it reported 4.4 kB
+ * of 150 kB with 145 kB to spare — passing, loudly, while measuring nothing
+ * anybody had budgeted.
+ */
+let welcomeTotal = 0;
+if (existsSync(welcome)) {
+  const page = readFileSync(welcome, 'utf8');
+  welcomeTotal = gz(Buffer.from(page));
+  const referenced = [
+    ...page.matchAll(/<script[^>]+src="([^"]+)"/g),
+    ...page.matchAll(/<link[^>]+href="([^"]+)"/g),
+  ];
+  for (const match of referenced) {
+    const reference = match[1] ?? '';
+    if (reference.startsWith('data:') || /^(https?:)?\/\//.test(reference)) continue;
+    const path = join(dist, reference.replace(/^\.?\//, ''));
+    if (existsSync(path)) welcomeTotal += gz(readFileSync(path));
+  }
+  console.log(`\nThe welcome page, gzipped (budget ${kb(WELCOME_BUDGET)}): ${kb(welcomeTotal)}`);
+}
 
 // Reported, not budgeted. See the note at the top.
 const sw = join(dist, 'sw.js');
@@ -111,6 +146,15 @@ if (existsSync(single)) {
   console.log(
     `Single file: ${kb(statSync(single).size)} on disk, ${kb(gz(readFileSync(single)))} gzipped.`,
   );
+}
+
+if (welcomeTotal > WELCOME_BUDGET) {
+  console.error(
+    `\nThe welcome page is over its ${kb(WELCOME_BUDGET)} budget by ` +
+      `${kb(welcomeTotal - WELCOME_BUDGET)}. It is an introduction, loaded by somebody with ` +
+      'no reason yet to wait for it.',
+  );
+  process.exit(1);
 }
 
 if (total > BUDGET) {

@@ -18,7 +18,14 @@
   "assets": {
     "directory": "./dist",
 
-    // The app is one page and routes in memory; there is nothing else to serve.
+    // Unmatched paths fall back to /index.html, which is the welcome page now
+    // rather than the app. That is the right fallback and not a compromise: a
+    // stranger following a broken link gets the introduction, and somebody who
+    // already has a record is sent straight on to /app/ by the redirect in that
+    // page's head. A mistyped app URL heals itself.
+    //
+    // The app itself has no deep links — it routes in memory and never touches
+    // history — so nothing under /app/ depends on this.
     "not_found_handling": "single-page-application",
   },
 }

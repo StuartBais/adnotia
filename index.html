@@ -2,22 +2,172 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
+    <!--
+      The welcome page. Same origin as the app, different document, different
+      obligations — see docs/decisions/ADR-036.
+
+      Every word here is promotional material in the MHRA's sense, and the
+      September 2026 review in docs/03-scope.md turns on exactly that: intended
+      purpose is set by "the device's labelling, instructions for use and any
+      promotional materials", and the guidance names the landing page. This page
+      describes recording. It never says detects, screens, predicts, measures or
+      monitors, never offers to tell anyone whether they have ADHD, and never
+      says the report shows whether a medication is working. A test enforces all
+      of that.
+    -->
     <meta
       http-equiv="Content-Security-Policy"
       content="default-src 'self'; connect-src 'none'; img-src 'self' data:; font-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'"
     />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <meta name="apple-mobile-web-app-title" content="Adnotia" />
     <meta name="theme-color" content="#EAECE7" />
     <meta name="color-scheme" content="light" />
     <meta
       name="description"
-      content="Evidence-based tools for adults with ADHD and for parents of children who may have it. Everything runs in your browser. Nothing is sent anywhere."
+      content="A notebook for the days between appointments. Free, open source, and everything stays on your phone."
     />
-    <title>Adnotia</title>
+    <title>Adnotia — a notebook for ADHD</title>
+    <script>
+      // Somebody who already has a record does not need to be introduced to the
+      // app again: send them straight in. localStorage is scoped to the origin
+      // and not to the path, so /app/ reads the very same key this checks.
+      //
+      // In the head, before anything paints, so there is no flash of a page that
+      // was not meant for them. `replace` rather than `href` so Back does not
+      // bounce them here again.
+      //
+      // The try/catch is not defensive habit: reading localStorage *throws* when
+      // a browser is set to block site data, and in that case this page is
+      // exactly what should be shown. `?welcome` forces it, so the page stays
+      // readable and shareable by somebody who does have a record.
+      try {
+        if (!location.search.includes('welcome') && localStorage.getItem('adnotia-v1')) {
+          location.replace('./app/');
+        }
+      } catch {
+        /* No storage to read. Show the page. */
+      }
+    </script>
+    <link rel="stylesheet" href="./src/styles/tokens.css" />
+    <link rel="stylesheet" href="./src/site/welcome.css" />
   </head>
   <body>
-    <div id="app"></div>
-    <script type="module" src="./src/main.ts"></script>
+    <main class="page">
+      <header class="hero">
+        <div class="brandline">
+          <svg class="mark" viewBox="0 0 464 416" aria-hidden="true" focusable="false">
+            <g transform="translate(-160,-372)">
+              <clipPath id="wg">
+                <polygon points="0,0 880,0 392,488 392,1400 0,1400" />
+              </clipPath>
+              <clipPath id="wt">
+                <polygon points="880,0 1400,0 1400,1400 392,1400 392,488" />
+              </clipPath>
+              <path
+                d="M372 382 C345 392 305 440 289 482 C274 516 205 660 168 781 L228 781 Q254 781 262 757 L380 507 Q386 494 392 488 Q398 494 404 507 L522 757 Q530 781 556 781 L616 781 C579 660 510 516 495 482 C479 440 439 392 412 382 C406 374 378 374 372 382 Z"
+                fill="#728871"
+                clip-path="url(#wg)"
+              />
+              <path
+                d="M372 382 C345 392 305 440 289 482 C274 516 205 660 168 781 L228 781 Q254 781 262 757 L380 507 Q386 494 392 488 Q398 494 404 507 L522 757 Q530 781 556 781 L616 781 C579 660 510 516 495 482 C479 440 439 392 412 382 C406 374 378 374 372 382 Z"
+                fill="#CA7F58"
+                clip-path="url(#wt)"
+              />
+              <circle cx="392" cy="708" r="44" fill="#CA7F58" />
+            </g>
+          </svg>
+          <span class="wordmark">Adnotia</span>
+        </div>
+
+        <h1>The days between appointments are the ones you forget.</h1>
+
+        <p class="standfirst">
+          Adnotia is a notebook for ADHD. You write down how a day went, in about a minute. It keeps
+          those days, and turns a fortnight of them into one page you can hand to whoever you are
+          seeing.
+        </p>
+
+        <div class="actions">
+          <a class="go" href="./app/">Open Adnotia</a>
+          <span class="cost">Free. No account. Nothing to install.</span>
+        </div>
+      </header>
+
+      <section class="strip" aria-label="What it costs you">
+        <p><b>Nothing leaves your phone.</b> There is no server to send it to.</p>
+        <p><b>No account, no email, no sign-up.</b> Open it and start.</p>
+        <p><b>Free, and open source.</b> You can read every line of it.</p>
+      </section>
+
+      <section class="band">
+        <h2>What it does</h2>
+        <div class="three">
+          <article>
+            <h3>A minute at the end of the day</h3>
+            <p>
+              A short check-in built from the tools you turned on, and nothing from the ones you did
+              not. Miss a day and it says a day is missing, which is all it says.
+            </p>
+          </article>
+          <article>
+            <h3>Tools for when you are stuck</h3>
+            <p>
+              Breaking something down, working out how long it will really take, a few minutes of
+              sitting still, a plan for the morning. Each says what the evidence for it is, and how
+              strong that evidence is.
+            </p>
+          </article>
+          <article>
+            <h3>One page to take with you</h3>
+            <p>
+              Your record, laid out as a single sheet: what you took, what you noticed, how the days
+              went, and how complete the record is. You read it before anybody else does.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <section class="band alt">
+        <h2>What it will not do</h2>
+        <ul class="nots">
+          <li>It will not tell you whether you have ADHD. That is a clinician's job, over time.</li>
+          <li>It will not recommend a dose, or tell you whether to take one today.</li>
+          <li>It will not score you, rank you, or judge how honest you are being.</li>
+          <li>It has no streaks, no badges and no points. Nothing here is trying to keep you.</li>
+          <li>It will not send your record anywhere, in any form, ever.</li>
+        </ul>
+        <p class="aside">
+          Each of those is written into the project's scope document rather than into a promise, and
+          the source is public so you can check.
+        </p>
+      </section>
+
+      <section class="band">
+        <h2>For parents, too</h2>
+        <p class="wide">
+          A separate space for a child you care for: a dated log of what you have actually noticed,
+          at home and at school, and the parenting tools with the best evidence behind them —
+          routines, a first-and-then board, and a star chart you run yourself. There is a small
+          screen you can hand over, with a timer and today's plan on it and no way back out without
+          your code.
+        </p>
+      </section>
+
+      <footer class="foot">
+        <a class="go" href="./app/">Open Adnotia</a>
+        <p class="fine">
+          Adnotia is a record you keep, not a medical device, and not a substitute for a clinician.
+          If things are bad right now, the app carries crisis numbers on every screen.
+        </p>
+        <p class="fine">
+          <a href="https://github.com/StuartBais/adnotia" rel="noreferrer noopener">Source</a>
+          ·
+          <a href="https://github.com/StuartBais/adnotia/releases" rel="noreferrer noopener"
+            >Downloads</a
+          >
+          · AGPL-3.0
+        </p>
+      </footer>
+    </main>
   </body>
 </html>

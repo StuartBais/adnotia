@@ -8,7 +8,7 @@ import { describe, expect, it } from 'vitest';
 
 // Resolved from the project root. Under jsdom, import.meta.url is an http URL,
 // so it cannot be used to find a file on disk.
-const html = readFileSync(resolve(process.cwd(), 'index.html'), 'utf8');
+const html = readFileSync(resolve(process.cwd(), 'app/index.html'), 'utf8');
 
 function cspContent(): string {
   // The attribute delimiter is captured and back-referenced because the policy
