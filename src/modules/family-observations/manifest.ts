@@ -12,6 +12,7 @@
 import type { ModuleManifest } from '../../kernel/index';
 import { fixtures } from './fixtures/index';
 import { library } from './library';
+import { log } from './log';
 import { renderRecords } from './entries';
 import { observationsSection } from './reports/observations';
 import { strings } from './strings';
@@ -41,6 +42,7 @@ const manifest: ModuleManifest = {
     records: { render: renderRecords as (container: HTMLElement, context: unknown) => void },
     reports: [observationsSection],
     library,
+    log,
   },
 
   fixtures,

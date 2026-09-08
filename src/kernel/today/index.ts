@@ -469,7 +469,14 @@ export function mountToday(options: TodayOptions): TodayView {
       );
     }
 
-    if (modules.length === 0) {
+    // Whether anything was drawn, not whether anything is enabled.
+    //
+    // These are not the same question, and testing the wrong one left the Family
+    // space with a blank tab: both parent modules are enabled, neither declares
+    // a `today` field — the observation log is a tool — so `groups()` was empty,
+    // the empty state did not fire, and Today rendered a date picker over
+    // nothing at all.
+    if (root.children.length === 0) {
       root.append(card({ title: TODAY_STRINGS.empty, sub: TODAY_STRINGS.emptySub }));
     }
   }

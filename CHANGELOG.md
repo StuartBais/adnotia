@@ -11,6 +11,11 @@ yet. See the implementation checkpoint in `docs/08-roadmap.md` for current limit
 
 ### Added
 
+- Fixed: the Family space's Today tab was blank — a date picker over nothing. Neither parent
+  module asks a daily question, so nothing was drawn, and the empty state never fired because
+  it asked whether anything was *enabled* rather than whether anything was *rendered*.
+- What a parent noticed now appears on the day's record, the way a practice or a walk does in
+  the Adult space. It repeats what they wrote; it never counts it. See ADR-033.
 - The medication card opens at seven questions instead of thirteen. Optional ones sit behind
   one disclosure that says how many there are and that they may not apply. Nothing you have
   already answered is ever folded away. See ADR-032.

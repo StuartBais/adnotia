@@ -170,6 +170,67 @@ describe('the real modules', () => {
   });
 });
 
+describe('the Family space', () => {
+  let store: KernelStore;
+
+  beforeEach(async () => {
+    store = createStore({ adapter: memoryStorageAdapter() });
+    await store.load();
+  });
+
+  it('never leaves the day’s record blank', () => {
+    // The bug this is here for: both parent modules are enabled, neither
+    // declares a `today` field — the observation log is a tool — so nothing was
+    // drawn and the empty state did not fire, because it asked whether anything
+    // was *enabled* rather than whether anything was *rendered*. Today was a
+    // date picker over nothing at all. See ADR-033.
+    const parents = MODULES.filter((m) => m.audience === 'parent');
+    expect(parents.length).toBeGreaterThan(0);
+    expect(parents.every((m) => (m.contributes.today ?? []).length === 0)).toBe(true);
+
+    const element = mountToday({ store, modules: parents, date: TODAY }).element;
+    expect(element.children.length).toBeGreaterThan(0);
+    expect(element.textContent).toContain(TODAY_STRINGS.empty);
+  });
+
+  it('puts what a parent noticed on the day’s record', () => {
+    store.set('family-observations', {
+      version: 1,
+      days: {
+        [TODAY]: {
+          entries: [{ id: 'o1', where: 'school', what: 'Left the reading book again' }],
+        },
+      },
+    });
+    const modules = MODULES.filter((m) => m.id === 'family-observations');
+    const text = mountToday({ store, modules, date: TODAY }).element.textContent ?? '';
+    expect(text).toContain(TODAY_STRINGS.soFar);
+    expect(text).toContain('Left the reading book again');
+  });
+
+  it('repeats what the parent wrote rather than counting it', () => {
+    // docs/04-family-space.md: nothing here scores what a parent records, and a
+    // count is the app measuring how much they have noticed.
+    store.set('family-observations', {
+      version: 1,
+      days: {
+        [TODAY]: {
+          entries: [
+            { id: 'o1', where: 'home', what: 'Took an hour to start homework' },
+            { id: 'o2', where: 'school', what: 'Left the reading book again' },
+          ],
+        },
+      },
+    });
+    const modules = MODULES.filter((m) => m.id === 'family-observations');
+    const items = [
+      ...mountToday({ store, modules, date: TODAY }).element.querySelectorAll('.sofar li'),
+    ].map((n) => n.textContent);
+    expect(items).toHaveLength(2);
+    expect(items.join(' ')).not.toMatch(/\b2 (things|entries|notes)\b/);
+  });
+});
+
 describe('the log never leaves the screen', () => {
   it('is absent from the clinical report', () => {
     // It is not `columns`, deliberately: that seam feeds the prescriber's day
