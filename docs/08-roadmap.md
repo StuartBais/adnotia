@@ -4,14 +4,15 @@ Status: draft 0.1 · September 2026 · Milestones are sequential. Each has a def
 
 ## Implementation checkpoint
 
-Development snapshot: 2026-09-08. This records current implementation, not a
-change to milestone order or completion criteria.
+Milestones 0 to 7 and 9 are built and their gates pass. Milestone 8 is partly
+done.
 
-Milestones 0 to 7 are built and their gates pass. Milestone 8 is partly done;
-Milestone 9 was added after it and is complete. `npm run check` passes
-(TypeScript, the no-network audit, ten contrast pairs); `npm test` passes with
-1167 tests in 55 files; both builds succeed and `npm run budget` reports 83.1 kB
-of a 150 kB initial-load budget.
+**No figures are quoted here on purpose.** This section has carried a test count,
+a bundle size and a list of unsigned commits twice, and been wrong about all
+three within a day both times — a roadmap that says a thing is unbuilt when it is
+built is worse than one that says nothing. The current numbers come from
+`npm run check`, `npm test` and `npm run budget`, which are three commands and
+cannot go stale.
 
 ### Done since the last checkpoint
 
@@ -26,6 +27,9 @@ of a 150 kB initial-load budget.
 - The accessibility audit, the performance budget in CI, the regulatory and
   children's-code review, and the citation identifier pass.
 - Milestone 9's navigation and check-in rework.
+- The clinician's sheet: a letterhead carrying the mark, the name and the
+  provenance line, and a page of its own rather than the foot of the Records tab
+  (ADR-034).
 
 ### Still incomplete
 
@@ -38,8 +42,15 @@ of a 150 kB initial-load budget.
 - Screen-reader testing on real iOS and Android devices. No automated check
   substitutes for it.
 - Release tagging, publishing both artefacts, and the live host.
-- Two commits on `main` are unsigned, `22f639f` and `0924770`, because the
-  signing agent was locked at the time. Every other commit is signed.
+- **Verified by hand, and holding.** The three paths where a defect costs most
+  were driven end to end through the built single file in September 2026: the
+  passcode round trip (encrypted at rest, wrong code rejected with nothing
+  changed, right code restores everything), the backup round trip (encrypted
+  file, storage cleared, restored into a fresh app, and a wrong passphrase
+  leaving the document byte-identical), and the child hand-over (refused without
+  a passcode, four cards, no tabs, no text input, no route to adult data, and a
+  wrong code keeping you in). Nothing was found. The kernel suite already covers
+  all of it; this was a check that the assembled build agrees.
 
 ## Milestone 0 — foundations
 
