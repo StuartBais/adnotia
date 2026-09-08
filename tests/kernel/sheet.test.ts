@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { MODULES, buildReport, createDocument } from '../../src/kernel/index';
+import { MODULES, buildReport, createDocument, formatLongDate } from '../../src/kernel/index';
 import { thirtyDays as medication } from '../../src/modules/medication/fixtures/index';
 import { thirtyDays as sleep } from '../../src/modules/sleep/fixtures/index';
 
@@ -68,7 +68,9 @@ describe('the letterhead', () => {
   it('does not change a word of the reviewed wording', () => {
     // CLAUDE.md makes clinician-facing wording a stop-and-ask. This moved a
     // sentence; it did not write one.
-    expect(built.text).toContain('Generated Wednesday 30 September from a self-kept daily log.');
+    // Derived, never spelled out: CI runs under a different locale to this
+    // machine and a hard-coded date string passes here and fails there.
+    expect(built.text).toContain(`Generated ${formatLongDate(TODAY)} from a self-kept daily log.`);
     expect(built.html).toContain(
       'Kept in Adnotia, a self-managed daily log on the patient&#39;s phone, unverified.',
     );
