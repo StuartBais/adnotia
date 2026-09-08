@@ -37,6 +37,9 @@ jobs:
       - name: Build the single file
         run: npm run build:single
 
+      - name: Check the built output
+        run: npm run check:built
+
       - name: Performance budget
         run: npm run budget
 

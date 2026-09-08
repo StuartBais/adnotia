@@ -1,4 +1,3 @@
-import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import vm from 'node:vm';
@@ -78,47 +77,6 @@ describe('the page a stranger gets', () => {
 
   it('carries no font file', () => {
     expect(html).not.toMatch(/\.(?:woff2?|ttf|otf|eot)\b/);
-  });
-});
-
-describe('the built page, not the source', () => {
-  // The source page carries `script-src 'self'`, which blocks an inline script
-  // outright. The redirect is inline on purpose — it must run before anything
-  // paints — so the build authorises it by hash. Nothing in jsdom enforces CSP,
-  // so without this the redirect could be dead in every real browser and every
-  // other test here would still pass.
-  const built = (() => {
-    try {
-      return readFileSync(resolve(process.cwd(), 'dist/index.html'), 'utf8');
-    } catch {
-      return undefined;
-    }
-  })();
-
-  it.runIf(built !== undefined)('authorises its own inline script by hash', () => {
-    const page = built as string;
-    const inline = /<script>([\s\S]*?)<\/script>/.exec(page)?.[1];
-    expect(inline, 'the inline script').toBeDefined();
-    const digest = createHash('sha256')
-      .update(inline as string, 'utf8')
-      .digest('base64');
-    expect(page).toContain(`'sha256-${digest}'`);
-  });
-
-  it.runIf(built !== undefined)('does not fall back to allowing every inline script', () => {
-    // script-src specifically. style-src carries 'unsafe-inline' on purpose and
-    // docs/05-architecture.md says why: the single-file build needs it, and it
-    // is acceptable precisely because script-src does not have it.
-    const scriptSrc = /script-src([^;]*);/.exec(built as string)?.[1] ?? '';
-    expect(scriptSrc).not.toContain('unsafe-inline');
-    expect(scriptSrc).toContain('sha256-');
-  });
-
-  it.runIf(built !== undefined)('carries none of the app’s plumbing', () => {
-    // It is a page to read, not an installable app, and it must not be the
-    // document that registers a service worker.
-    expect(built as string).not.toContain('registerSW');
-    expect(built as string).not.toMatch(/rel="manifest"/);
   });
 });
 

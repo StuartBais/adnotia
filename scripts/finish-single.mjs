@@ -13,10 +13,16 @@
 
 import { createHash } from 'node:crypto';
 import { readFile, rm, writeFile } from 'node:fs/promises';
-import { resolve } from 'node:path';
+import { dirname, resolve } from 'node:path';
 
 const outDir = resolve(import.meta.dirname, '..', 'dist-single');
-const input = resolve(outDir, 'index.html');
+/*
+ * The app's entry is `app/index.html` now — the repository root belongs to the
+ * welcome page — and rollup mirrors an input path into the output, so the single
+ * build lands a directory deeper than it used to. The finished file still comes
+ * out at the top of dist-single, because that is what a person downloads.
+ */
+const input = resolve(outDir, 'app', 'index.html');
 const output = resolve(outDir, 'adnotia.html');
 
 let html = await readFile(input, 'utf8');
@@ -49,6 +55,9 @@ if (external.length > 0) {
 
 await writeFile(output, html, 'utf8');
 await rm(input, { force: true });
+// And the directory it sat in, so the release artefact is one file and not one
+// file beside an empty folder.
+await rm(dirname(input), { recursive: true, force: true });
 
 const kb = (Buffer.byteLength(html, 'utf8') / 1024).toFixed(1);
 console.log(
