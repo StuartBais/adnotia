@@ -1,7 +1,16 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { describe, expect, it } from 'vitest';
-import { MODULES, buildReport, createDocument, formatLongDate } from '../../src/kernel/index';
+import { beforeEach, describe, expect, it } from 'vitest';
+import {
+  MODULES,
+  buildReport,
+  createDocument,
+  createStore,
+  formatLongDate,
+  memoryStorageAdapter,
+  mountShell,
+  type KernelStore,
+} from '../../src/kernel/index';
 import { thirtyDays as medication } from '../../src/modules/medication/fixtures/index';
 import { thirtyDays as sleep } from '../../src/modules/sleep/fixtures/index';
 
@@ -94,6 +103,105 @@ describe('the letterhead', () => {
   it('leaves no markup in the plain-text export', () => {
     expect(built.text).not.toContain('<');
     expect(built.text).not.toContain('sheet-head');
+  });
+});
+
+describe('where the report lives', () => {
+  // Nothing used to assert that the clinical report was reachable from the
+  // interface at all. mountReport was tested in isolation, so moving it off the
+  // Records tab broke no test — which is why these exist now.
+
+  let store: KernelStore;
+
+  beforeEach(async () => {
+    store = createStore({ adapter: memoryStorageAdapter() });
+    await store.load();
+    store.updateKernel((kernel) => ({
+      ...kernel,
+      enabledModules: ['medication', 'sleep'],
+      moduleOrder: ['medication', 'sleep'],
+      settings: { ...kernel.settings, firstRunComplete: true },
+    }));
+    store.set('medication', medication);
+    store.set('sleep', sleep);
+  });
+
+  function app(): { container: HTMLElement; shell: { destroy(): void } } {
+    const container = document.createElement('div');
+    const shell = mountShell({ store, container, modules: MODULES });
+    return { container, shell };
+  }
+
+  const rows = (container: HTMLElement): string[] =>
+    [...container.querySelectorAll('button.linkrow')].map((b) => b.textContent ?? '');
+
+  it('is reachable, in two taps from the index', () => {
+    const { container, shell } = app();
+    const area = [...container.querySelectorAll('button.area-card')].find((card) =>
+      (card.textContent ?? '').startsWith('Medication and body'),
+    );
+    expect(area, 'the area itself').toBeDefined();
+    (area as HTMLElement).click();
+
+    const row = [...container.querySelectorAll('button.linkrow')].find((b) =>
+      (b.textContent ?? '').startsWith('For an appointment'),
+    );
+    expect(row, `rows were: ${rows(container).join(' | ')}`).toBeDefined();
+    (row as HTMLElement).click();
+
+    expect(container.querySelectorAll('.sheet')).toHaveLength(1);
+    expect(container.querySelector('.sheet-head h2')?.textContent).toBe('Daily record');
+    shell.destroy();
+  });
+
+  it('is not on the Records tab, which is a person looking back at their own days', () => {
+    const { container, shell } = app();
+    const records = [...container.querySelectorAll('[role="tab"]')].find(
+      (t) => t.textContent === 'Records',
+    );
+    (records as HTMLElement).click();
+    expect(container.querySelectorAll('.sheet')).toHaveLength(0);
+    // The history is still there; only the document moved.
+    expect(container.textContent).toContain('Medication log');
+    shell.destroy();
+  });
+
+  it('never puts two sheets on one screen', () => {
+    // print.css shows every .sheet, so two on a screen print as one document.
+    // This is the rule that makes one report per page a rule and not a habit.
+    const { container, shell } = app();
+    for (const tab of ['Tools', 'Today', 'Records', 'Library']) {
+      const button = [...container.querySelectorAll('[role="tab"]')].find(
+        (t) => t.textContent === tab,
+      );
+      (button as HTMLElement).click();
+      expect(container.querySelectorAll('.sheet').length, tab).toBeLessThanOrEqual(1);
+    }
+    shell.destroy();
+  });
+
+  it('keeps the page chrome off the paper', () => {
+    // A named report opens as an off-tab page. Printing one used to carry a
+    // Back button and a second copy of the title above the sheet's letterhead.
+    const { container, shell } = app();
+    const area = [...container.querySelectorAll('button.area-card')].find((card) =>
+      (card.textContent ?? '').startsWith('Medication and body'),
+    );
+    (area as HTMLElement).click();
+    const row = [...container.querySelectorAll('button.linkrow')].find((b) =>
+      (b.textContent ?? '').startsWith('For an appointment'),
+    );
+    (row as HTMLElement).click();
+
+    expect(container.querySelector('.page-title')?.className).toContain('noprint');
+    // The row holding Back, not the masthead's — that one lives inside .mast,
+    // which print.css already hides.
+    const back = [...container.querySelectorAll('.btnrow')].find((row) =>
+      [...row.querySelectorAll('button')].some((b) => b.textContent === 'Back'),
+    );
+    expect(back, 'the Back row').toBeDefined();
+    expect(back?.className).toContain('noprint');
+    shell.destroy();
   });
 });
 

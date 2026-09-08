@@ -267,10 +267,16 @@ export function mountShell(options: ShellOptions): Shell {
         text: 'Back',
       });
       back.addEventListener('click', () => router.back());
-      const heading = el('h2', { text: page.title, class: 'page-title' });
       const body = el('div', {});
       page.render(body);
-      view.replaceChildren(el('div', { class: 'btnrow' }, [back]), heading, body);
+      // The chrome is screen furniture, and `noprint` says so. A named report
+      // opens as one of these, and printing it used to put a Back button and a
+      // second copy of the title above the sheet's own letterhead.
+      view.replaceChildren(
+        el('div', { class: 'btnrow noprint' }, [back]),
+        el('h2', { text: page.title, class: 'page-title noprint' }),
+        body,
+      );
       return;
     }
 

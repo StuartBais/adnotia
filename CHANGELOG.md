@@ -11,6 +11,11 @@ yet. See the implementation checkpoint in `docs/08-roadmap.md` for current limit
 
 ### Added
 
+- The report you take to an appointment has a page of its own, reached from "Medication and
+  body". It used to sit at the bottom of the Records tab, under your own history, on the same
+  scroll. Records is now only your own history. See ADR-034.
+- Fixed: printing a report carried a Back button and a second copy of the title above the
+  sheet. True of the Family reports since they were built.
 - The report a clinician is handed now opens with a letterhead: the mark, the app name, the
   title, what the record covers, and the line saying it is a self-kept log. That last sentence
   used to be the final paragraph on the page, so anyone reading in order met every figure

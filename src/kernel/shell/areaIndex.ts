@@ -46,6 +46,14 @@ export const AREA_STRINGS = {
   todayValue: 'Fill in',
   recordsRow: 'What you have recorded',
   recordsValue: 'Look back',
+  /**
+   * The route, not the document. The report is titled "Daily record" (ADR-017)
+   * and that is what prints; in a list beside "Today's log" and "What you have
+   * recorded" a third similar phrase says nothing about which is which, so the
+   * row is named for the job instead.
+   */
+  reportRow: 'For an appointment',
+  reportValue: 'Open',
   count: (n: number): string => (n === 1 ? '1 thing' : `${n} things`),
 } as const;
 
@@ -174,22 +182,28 @@ function rowsFor(area: Area, options: AreaOptions, nickname: string | undefined)
     );
   }
 
-  // A named report other than the clinical one lives on its own page: print.css
-  // shows every .sheet, so two on one screen would print as one document.
+  // Every named report lives on its own page, the clinical one included: it used
+  // to sit under the history on Records, which put the document a person hands
+  // to a prescriber at the bottom of a tab they scroll through for themselves.
+  // One report per page is also a print rule — print.css shows every `.sheet`,
+  // so two on one screen would come out as one document.
   for (const [name, definition] of Object.entries(REPORTS)) {
-    if (name === 'clinical' || definition.audience !== options.space) continue;
+    if (definition.audience !== options.space) continue;
     const from = modules.filter((manifest) =>
       (manifest.contributes.reports ?? []).some((entry) => entry.report === name),
     );
     if (from.length === 0) continue;
+    const clinical = name === 'clinical';
     rows.push(
       linkRow({
-        label: definition.title,
-        value: AREA_STRINGS.open,
+        label: clinical ? AREA_STRINGS.reportRow : definition.title,
+        value: clinical ? AREA_STRINGS.reportValue : AREA_STRINGS.open,
         onSelect: () =>
           options.openPage({
             id: `report-${name}`,
-            title: definition.title,
+            // The page is named for the errand; the sheet on it carries the
+            // document's own title in its letterhead.
+            title: clinical ? AREA_STRINGS.reportRow : definition.title,
             render: (host) => {
               host.replaceChildren(
                 mountReport({ store: options.store, modules: options.enabled, report: name })

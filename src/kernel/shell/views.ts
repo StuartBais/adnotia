@@ -10,7 +10,7 @@ import { ABOUT_STRINGS, aboutPage } from './about';
 import { GUIDANCE } from '../family/index';
 import { SCREENER_STRINGS, isUsable, screenerPage } from '../screeners/index';
 import { parseIsoDate, type IsoDate } from '../dates/index';
-import { backupNag, loggedDates, mountReport } from '../reports/index';
+import { backupNag, loggedDates } from '../reports/index';
 import type { KernelStore } from '../store/store';
 import {
   BUDGET_STRINGS,
@@ -279,11 +279,9 @@ export function renderTab(tab: TabId, context: ViewContext): HTMLElement {
 
     if (!anything) section.append(card(EMPTY.records));
 
-    // Adult-only for now: the clinical report is the only named report that
-    // exists. docs/04-family-space.md gives the Family space its own two.
-    if (context.space === 'adult') {
-      section.append(mountReport({ store, modules: context.enabled }).element);
-    }
+    // The report is not here. Records is a person looking back at their own
+    // days; the document they hand to a prescriber opens from its area, on a
+    // page of its own, like every other named report. See ADR-034.
     return section;
   }
 

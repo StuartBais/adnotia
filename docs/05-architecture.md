@@ -120,7 +120,7 @@ Collects `today` fields from every enabled module, groups by module in the perso
 
 ### Reports engine
 
-Named reports with an audience. `clinical` (Adult), `screening` and `observations` (Family). The engine owns header, footer, ordering by `weight`, print stylesheet and plain-text export; modules supply sections. Every section receives a `ReportContext` with the date range, the days in range, coverage figures and, for `clinical`, the dose grouping helpers the medication module exposes so shared visuals (cover across the day) can be drawn by the kernel from medication and sleep data together.
+Named reports with an audience. `clinical` (Adult), `screening` and `observations` (Family). **Each opens on a page of its own**, reached from its module's area rather than mounted on a tab — one report per page is a print rule, because `print.css` shows every `.sheet` and two on one screen print as one document. See `decisions/ADR-034`. The engine owns header, footer, ordering by `weight`, print stylesheet and plain-text export; modules supply sections. Every section receives a `ReportContext` with the date range, the days in range, coverage figures and, for `clinical`, the dose grouping helpers the medication module exposes so shared visuals (cover across the day) can be drawn by the kernel from medication and sleep data together.
 
 ### Library
 
