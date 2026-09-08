@@ -236,20 +236,34 @@ describe('what the charts say, said in words', () => {
 
   const report = clinical();
 
+  /**
+   * The chart SVGs, not every SVG. The sheet's letterhead carries the mark,
+   * which is decorative and `aria-hidden` — holding it to the rules below would
+   * mean giving a logo a legend and stating its figures in words.
+   */
+  const charts = (): string[] =>
+    [...report.html.matchAll(/<svg[^>]*>/g)]
+      .map((match) => match[0])
+      .filter((tag) => !tag.includes('aria-hidden'));
+
   it('draws the charts at all, or this proves nothing', () => {
-    expect([...report.html.matchAll(/<svg/g)].length).toBeGreaterThanOrEqual(2);
+    expect(charts().length).toBeGreaterThanOrEqual(2);
   });
 
   it('gives every chart a description a screen reader can read', () => {
     const labels = [...report.html.matchAll(/<svg[^>]*aria-label="([^"]*)"/g)].map((m) => m[1]);
-    expect(labels.length).toBe([...report.html.matchAll(/<svg/g)].length);
+    expect(labels.length).toBe(charts().length);
     for (const label of labels) expect((label ?? '').length).toBeGreaterThan(20);
   });
 
   it('puts a legend in body text under every one of them', () => {
     // Per chart, not by counting: .legend is used by sections that draw nothing,
     // so a total that happens to match would prove the wrong thing.
-    const after = report.html.split('</svg>').slice(1);
+    // Split on the chart SVGs only; the letterhead's mark closes an <svg> too.
+    const after = report.html
+      .split('</svg>')
+      .slice(1)
+      .filter((tail) => !tail.startsWith('<span class="sheet-app"'));
     expect(after.length).toBeGreaterThanOrEqual(2);
     const bare = after
       .map((tail) => tail.slice(0, tail.search(/<h3|<svg/) + 1 || undefined))

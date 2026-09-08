@@ -215,6 +215,20 @@ const DIFFERENCES: readonly Difference[] = [
     status: 'decided',
   },
   {
+    what:
+      'The generated line sits under the title rather than at the foot of the last page, ' +
+      'and the sheet opens with the mark and the app name.',
+    why:
+      'The monolith opened straight into "Daily record" and a line of dates. Nothing said ' +
+      'what the document was or that it is self-report, and the app was named exactly once, ' +
+      'in the last paragraph on the page — so a clinician reading top to bottom met every ' +
+      'figure before they met the caveat. Not one word changed: RECORD_LEGEND and the ' +
+      'generated line are reviewed clinician-facing wording and CLAUDE.md makes rewriting ' +
+      'that a stop-and-ask. This moves where a reviewed sentence sits.',
+    status: 'decided',
+    adds: /\s*Generated [^.]+ from a self-kept daily log\./,
+  },
+  {
     what: 'The footer prints "About this record" before the questions.',
     why:
       'The monolith prints the questions first. The record-quality note is about the ' +
@@ -478,10 +492,14 @@ describe('the text export, against the monolith', () => {
     expect(report.text).not.toContain('<');
   });
 
-  it('ends with the same generated line', () => {
+  it('carries the same generated line, at the top rather than the bottom', () => {
+    // Same sentence, moved. See the register entry: a clinician meets "this is a
+    // self-kept log" before the first figure rather than after the last.
     const theirs = /Generated .+ from a self-kept daily log\./.exec(monolith.exportText);
     expect(theirs).not.toBeNull();
-    expect(report.text.trimEnd().endsWith(theirs?.[0] ?? '@')).toBe(true);
+    expect(report.text).toContain(theirs?.[0] ?? '@');
+    const where = report.text.indexOf(theirs?.[0] ?? '@');
+    expect(where).toBeLessThan(report.text.length / 2);
   });
 
   it('carries the same figures as the sheet it was made from', () => {

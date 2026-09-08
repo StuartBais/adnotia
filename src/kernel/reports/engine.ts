@@ -356,6 +356,10 @@ export function buildReport(options: BuildReportOptions): Report {
   );
 
   const parts = headerParts(base, definition, subject, headerExtras);
+  // The same reviewed sentence the footer used to end with, moved to sit under
+  // the title. A clinician reading top to bottom now meets "this is a self-kept
+  // log" before the first figure rather than after the last. See headerHtml.
+  parts.provenance = generatedLine(base.generatedOn);
   const about = aboutParts(base, qualityExtras);
 
   const html =
@@ -369,8 +373,6 @@ export function buildReport(options: BuildReportOptions): Report {
     ...included.flatMap((entry) => ['', entry.section.renderText(entry.context)]),
     ...aboutText(about),
     ...questionsText(base.questions),
-    '',
-    generatedLine(base.generatedOn),
   ].join('\n');
 
   return {

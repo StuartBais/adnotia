@@ -35,6 +35,29 @@ function parse(): SVGSVGElement {
   return template;
 }
 
+/**
+ * The mark as markup, for the report sheet.
+ *
+ * The sheet is built as an HTML string by the report engine and injected whole,
+ * so it cannot be handed a DOM node. The ids are scoped by an explicit suffix
+ * rather than the shared counter, because the sheet is rebuilt on every range
+ * change and a counter would grow without bound while the masthead's mark keeps
+ * whatever number it was given first.
+ */
+export function logoMarkup(suffix: string, className = 'logo'): string {
+  const mark = parse().cloneNode(true) as SVGSVGElement;
+  for (const id of SCOPED) {
+    for (const node of mark.querySelectorAll(`[id="${id}"]`)) node.setAttribute('id', id + suffix);
+    for (const node of mark.querySelectorAll(`[clip-path="url(#${id})"]`)) {
+      node.setAttribute('clip-path', `url(#${id}${suffix})`);
+    }
+  }
+  mark.setAttribute('class', className);
+  mark.setAttribute('aria-hidden', 'true');
+  mark.setAttribute('focusable', 'false');
+  return mark.outerHTML;
+}
+
 export interface BrandOptions {
   /**
    * The lock screen's larger pairing. Absent is the masthead's. The size lives

@@ -11,6 +11,12 @@ yet. See the implementation checkpoint in `docs/08-roadmap.md` for current limit
 
 ### Added
 
+- The report a clinician is handed now opens with a letterhead: the mark, the app name, the
+  title, what the record covers, and the line saying it is a self-kept log. That last sentence
+  used to be the final paragraph on the page, so anyone reading in order met every figure
+  before the caveat. Not a word of the reviewed wording changed — only where it sits.
+- Printed reports repeat table column headings on every page. A thirty-row table breaks across
+  pages, and page two without headings is a grid of unlabelled numbers.
 - Fixed: the Family space's Today tab was blank — a date picker over nothing. Neither parent
   module asks a daily question, so nothing was drawn, and the empty state never fired because
   it asked whether anything was *enabled* rather than whether anything was *rendered*.

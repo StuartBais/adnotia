@@ -47,8 +47,56 @@
     border-radius: 0;
   }
 
+  /* The letterhead prints. The mark is the only graphic on the page and it
+     carries no information, so it survives a greyscale printer unharmed. */
+  .sheet-head {
+    border-bottom: 1pt solid #000;
+    padding-bottom: 7pt;
+    margin-bottom: 12pt;
+  }
+
+  .sheet-mark {
+    width: 22pt;
+    height: 19pt;
+  }
+
+  .sheet-app {
+    font-size: 8pt;
+    color: #000;
+  }
+
+  .sheet-provenance {
+    font-size: 8.5pt;
+    color: #000;
+  }
+
+  .warn-note {
+    background: transparent;
+    border-left: 2pt solid #000;
+    padding: 3pt 0 3pt 6pt;
+  }
+
   .sheet h2 {
     font-size: 16pt;
+  }
+
+  /* A heading alone at the foot of a page is a heading on the wrong page. */
+  .sheet h2,
+  .sheet h3 {
+    break-after: avoid;
+  }
+
+  /*
+   * Column headings repeat on every page a table spans. The day-by-day table
+   * runs to thirty rows and will break; without this, page two is a grid of
+   * unlabelled numbers, which is worse than no table.
+   */
+  thead {
+    display: table-header-group;
+  }
+
+  tr {
+    break-inside: avoid;
   }
 
   .sheet h3 {

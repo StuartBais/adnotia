@@ -420,7 +420,9 @@ describe('the report engine', () => {
     expect(report.text).toContain('A section.');
     expect(report.text).toContain('Started the tax forms');
     expect(report.text).toContain('1. Could we try splitting the dose?');
-    expect(report.text).toMatch(/Generated .+ from a self-kept daily log\.$/);
+    // At the top now, with the title, rather than after the last question.
+    expect(report.text).toMatch(/Generated .+ from a self-kept daily log\./);
+    expect(report.text.indexOf('Generated ')).toBeLessThan(report.text.indexOf('A section.'));
     expect(report.text).not.toContain('<');
   });
 

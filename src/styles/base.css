@@ -921,6 +921,52 @@ button:focus-visible,
   margin-bottom: 12px;
 }
 
+/* The letterhead. A clinician is handed a sheet of paper: it says what the
+   document is and where it came from before it says anything else. */
+
+.sheet-head {
+  margin-bottom: 20px;
+  padding-bottom: 14px;
+  border-bottom: 2px solid var(--ink);
+}
+
+.sheet-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.sheet-mark {
+  width: 26px;
+  height: 23px;
+  flex: none;
+  display: block;
+}
+
+.sheet-app {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink2);
+}
+
+.sheet-provenance {
+  font-size: 12.5px;
+  color: var(--ink2);
+  margin: 6px 0 0;
+}
+
+/* The one line that changes how everything under it should be read. */
+.warn-note {
+  margin-top: 8px;
+  padding: 7px 10px;
+  background: var(--flag-soft);
+  border-left: 2px solid var(--flag);
+  border-radius: 0 var(--r-control) var(--r-control) 0;
+}
+
 .sheet h2 {
   font-family: var(--doc-serif);
   font-weight: normal;

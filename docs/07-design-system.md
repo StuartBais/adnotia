@@ -104,9 +104,11 @@ Almost none. Save confirmation fades its colour over 200 ms. Everything else is 
 
 `print.css` is part of the design system, not an afterthought. The `clinical`, `screening` and `observations` reports print; nothing else does.
 
+**The sheet opens with a letterhead**: the mark, the app name, the title, what the record is about with its date range and coverage, and the reviewed provenance line. Before that existed, a clinician was handed a page that opened straight into "Daily record" and a line of dates — nothing said what the document was or that it is self-report, and the app was named exactly once, in the last paragraph. Somebody reading top to bottom met every figure before they met the caveat. The wording did not change; where it sits did.
+
 - Page margin 13 mm, portrait. Body 10 pt, tables 7.6 pt, headings 16 / 11.5 pt.
 - All colour goes to greys: cover band `#333`, sleep band `#C9C9C9`, severity ramp `#DDD` → `#999` → `#333`, lines black.
-- Rows and dose blocks do not break across pages.
+- Rows and dose blocks do not break across pages. Column headings repeat on every page a table spans (`thead { display: table-header-group }`): the day-by-day table runs to thirty rows and will break, and page two without headings is a grid of unlabelled numbers. Headings never strand at the foot of a page.
 - Everything that is not the report is `display: none`, including the mirror, the tabs, the masthead and the off-tab pages.
 - Text export mirrors print structure: `=` under h2, `-` under h3, tables as ` | `-separated rows, charts replaced by a bracketed note.
 
