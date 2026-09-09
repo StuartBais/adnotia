@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
+  backupPassphraseProblem,
+  randomBytes,
   createPasscodeCodec,
   createStore,
   deriveKey,
@@ -31,13 +33,13 @@ import {
 
 const FAST = 1000;
 
-describe('the parameters ADR-007 fixes', () => {
-  it('are what the ADR says', () => {
-    expect(PBKDF2_ITERATIONS).toBe(500_000);
+describe('the parameters ADR-007 fixes, as ADR-041 amends them', () => {
+  it('are what the ADRs say', () => {
+    expect(PBKDF2_ITERATIONS).toBe(1_200_000);
     expect(SALT_BYTES).toBe(16);
     expect(IV_BYTES).toBe(12);
     expect(MIN_PASSCODE_DIGITS).toBe(6);
-    expect(MIN_BACKUP_PASSPHRASE_LENGTH).toBe(8);
+    expect(MIN_BACKUP_PASSPHRASE_LENGTH).toBe(12);
   });
 
   it('are available in this environment', () => {
@@ -59,7 +61,7 @@ describe('sealing and opening', () => {
     const envelope = envelopeOf(await seal(key, salt, 'plaintext', FAST))!;
 
     expect(envelope.enc).toBe(1);
-    expect(envelope.v).toBe(1);
+    expect(envelope.v).toBe(2);
     expect(envelope.kdf).toBe('PBKDF2-SHA256');
     expect(envelope.iter).toBe(FAST);
     expect(fromBase64(envelope.salt)).toHaveLength(SALT_BYTES);
@@ -169,10 +171,53 @@ describe('what counts as a usable secret', () => {
     expect(isValidPasscode('abcdef')).toBe(false);
   });
 
-  it('accepts a backup passphrase of eight characters or more', () => {
+  it('accepts a backup passphrase that is long and not obvious', () => {
+    expect(isValidBackupPassphrase('otter lamp gravel harbour')).toBe(true);
     expect(isValidBackupPassphrase('a passphrase')).toBe(true);
-    expect(isValidBackupPassphrase('12345678')).toBe(true);
-    expect(isValidBackupPassphrase('1234567')).toBe(false);
+  });
+
+  /**
+   * ADR-007 said the backup passphrase "is the one that must be strong" and the
+   * rule was eight characters of anything. These are the cases that rule let
+   * through. `coolthis` is here because a real backup sealed with it was opened
+   * by somebody who was not meant to; it is burned and is a test fixture now.
+   */
+  it('refuses what the eight-character rule used to allow', () => {
+    for (const weak of ['coolthis', '12345678', 'password', 'qwertyui', '1234567']) {
+      expect(isValidBackupPassphrase(weak)).toBe(false);
+    }
+  });
+
+  it('refuses a long passphrase that is still guessable', () => {
+    for (const weak of [
+      '123456789012345', // digits alone, whatever the length
+      'aaaaaaaaaaaaaaaa', // too few distinct characters
+      'abababababababab',
+      'qwertyuiopasdfgh', // a walk across the keyboard
+      'password123', // in every guessing list
+      'correcthorsebatterystaple', // famous, therefore not random
+    ]) {
+      expect(isValidBackupPassphrase(weak)).toBe(false);
+    }
+  });
+
+  it('says what is wrong rather than only that something is', () => {
+    // A person told "too short" tries the same thing one character longer.
+    expect(backupPassphraseProblem('short')).toMatch(/at least 12 characters/);
+    expect(backupPassphraseProblem('123456789012')).toMatch(/Digits alone/);
+    expect(backupPassphraseProblem('aaaaaaaaaaaaaa')).toMatch(/too few different/);
+    expect(backupPassphraseProblem('qwertyuiopasdf')).toMatch(/run of keys/);
+    expect(backupPassphraseProblem('otter lamp gravel harbour')).toBeUndefined();
+  });
+
+  it('will not let a passcode double as a backup passphrase', () => {
+    // The two secrets are separate in ADR-007 and this is the mechanical form of
+    // it: anything that passes the passcode rule is digits, and digits alone
+    // never pass here.
+    for (const passcode of ['123456', '1234567890', '000000000000000']) {
+      expect(isValidPasscode(passcode)).toBe(true);
+      expect(isValidBackupPassphrase(passcode)).toBe(false);
+    }
   });
 });
 
@@ -283,5 +328,87 @@ describe('encryption through the store', () => {
     });
     await expect(second.load()).rejects.toThrow(/sealed with a different passcode/);
     second.dispose();
+  });
+});
+
+describe('version 1 envelopes, which people already have on disk', () => {
+  /**
+   * The format before ADR-041: no bound header, and 500 000 iterations. Built
+   * here rather than pasted as a fixture so it is unambiguously what the old
+   * code wrote — same fields, same order, sealed with no additionalData.
+   */
+  async function sealAsV1(secret: string, plaintext: string): Promise<string> {
+    const salt = randomSalt();
+    const iv = randomBytes(IV_BYTES);
+    const key = await deriveKey(secret, salt, FAST);
+    const ct = await globalThis.crypto.subtle.encrypt(
+      { name: 'AES-GCM', iv: iv as BufferSource },
+      key,
+      new TextEncoder().encode(plaintext),
+    );
+    return JSON.stringify({
+      enc: 1,
+      v: 1,
+      kdf: 'PBKDF2-SHA256',
+      iter: FAST,
+      salt: toBase64(salt),
+      iv: toBase64(iv),
+      ct: toBase64(ct),
+    });
+  }
+
+  it('still open, because raising the bar must not lock anybody out', async () => {
+    const raw = await sealAsV1('123456', '{"schemaVersion":1}');
+    const envelope = envelopeOf(raw)!;
+    expect(envelope.v).toBe(1);
+    expect(await unseal('123456', envelope)).toBe('{"schemaVersion":1}');
+  });
+
+  it('open at the iteration count they were sealed with, not the current one', async () => {
+    // The count lives in the envelope precisely so it can be raised. If unseal
+    // used the new default, every existing document would look wrongly locked.
+    const raw = await sealAsV1('123456', 'held');
+    expect(envelopeOf(raw)!.iter).toBe(FAST);
+    expect(envelopeOf(raw)!.iter).not.toBe(PBKDF2_ITERATIONS);
+    expect(await unseal('123456', envelopeOf(raw)!)).toBe('held');
+  });
+
+  it('are rewritten as version 2 by the next save', async () => {
+    const salt = randomSalt();
+    const key = await deriveKey('123456', salt, FAST);
+    expect(envelopeOf(await seal(key, salt, 'anything', FAST))!.v).toBe(2);
+  });
+});
+
+describe('the bound header', () => {
+  async function sealedV2(): Promise<{ raw: string; key: CryptoKey }> {
+    const salt = randomSalt();
+    const key = await deriveKey('123456', salt, FAST);
+    return { raw: await seal(key, salt, '{"dose":"50"}', FAST), key };
+  }
+
+  it('refuses a file whose iteration count has been edited down', async () => {
+    // The attack it closes: `iter` is read from the file to derive the key, so
+    // without binding, editing it to 1 makes the whole thing cheap to attack.
+    const { raw } = await sealedV2();
+    const tampered = { ...envelopeOf(raw)!, iter: 1 };
+    await expect(unseal('123456', tampered)).rejects.toThrow(WrongKeyError);
+  });
+
+  it('refuses a file downgraded to version 1', async () => {
+    const { raw, key } = await sealedV2();
+    const tampered = { ...envelopeOf(raw)!, v: 1 as const };
+    await expect(open(key, tampered)).rejects.toThrow(WrongKeyError);
+  });
+
+  it('refuses a file whose salt has been swapped', async () => {
+    const { raw, key } = await sealedV2();
+    const tampered = { ...envelopeOf(raw)!, salt: toBase64(randomSalt()) };
+    await expect(open(key, tampered)).rejects.toThrow(WrongKeyError);
+  });
+
+  it('opens an untouched file', async () => {
+    const { raw, key } = await sealedV2();
+    expect(await open(key, envelopeOf(raw)!)).toBe('{"dose":"50"}');
   });
 });

@@ -112,14 +112,22 @@ When a passcode is set, `localStorage["adnotia-v1"]` holds this instead of the d
 ```json
 {
   "enc": 1,
-  "v": 1,
+  "v": 2,
   "kdf": "PBKDF2-SHA256",
-  "iter": 500000,
+  "iter": 1200000,
   "salt": "<base64 16 bytes>",
   "iv": "<base64 12 bytes>",
   "ct": "<base64>"
 }
 ```
+
+- `v: 2` since ADR-041. `v`, `kdf`, `iter` and `salt` are passed to AES-GCM as
+  `additionalData`, so the header is authenticated with the ciphertext and
+  editing any of them fails decryption. Without it, `iter` — the number that
+  decides how expensive an attack is — was a field the attacker could edit.
+- `v: 1` envelopes have no bound header and are read forever. They are rewritten
+  as `v: 2` by the next save, with the same key. Nothing is written at `v: 1`
+  again.
 
 - Key: PBKDF2-SHA256 over the UTF-8 passcode with the stored salt and iteration count, output an AES-GCM-256 key, non-extractable.
 - Every write uses a fresh IV. The salt changes only when the passcode changes.
@@ -158,4 +166,4 @@ The reference implementation stores everything under one key, `adhd-titration-lo
 | `questions`, `baseline`, `overall`, `lastAppt`, `lastBackup`                                                         | `kernel.*`                                                         |
 | `last` (carry-forward cache)                                                                                         | dropped; `carry: "nearestPrior"` recomputes it                     |
 
-The migration enables `medication` and `sleep` when it finds v0 data, sets `space: "adult"`, and keeps the old key untouched until the person confirms the import worked, then removes it. If the old key holds an encryption envelope, it is decrypted with the passcode first; the envelope format is unchanged between v0 and v1.
+The migration enables `medication` and `sleep` when it finds v0 data, sets `space: "adult"`, and keeps the old key untouched until the person confirms the import worked, then removes it. If the old key holds an encryption envelope, it is decrypted with the passcode first; the envelope format is unchanged between v0 and v1, so v0 data opens here. Since ADR-041 this build writes v2, whose header is authenticated, and the monolith cannot open that. The import direction is the one that matters and is the only one anybody travels.

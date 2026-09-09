@@ -5,21 +5,28 @@
 // the monolith opens here and vice versa. reference/README.md lists the crypto
 // envelope among the things not to reimplement from scratch.
 //
-// Parameters are fixed by ADR-007: PBKDF2-SHA256 at 500 000 iterations to an
-// AES-GCM-256 key, a fresh IV per write, keys in memory for the page's life only.
+// Parameters are ADR-007 as amended by ADR-041: PBKDF2-SHA256 to an AES-GCM-256
+// key, a fresh IV per write, keys in memory for the page's life only.
 
-/** ADR-007. Stored in the envelope so it can be raised without breaking old data. */
-export const PBKDF2_ITERATIONS = 500_000;
+/**
+ * ADR-041 raised this from 500 000. Stored in the envelope, so old data opens at
+ * the count it was sealed with and only new seals cost more.
+ */
+export const PBKDF2_ITERATIONS = 1_200_000;
 export const SALT_BYTES = 16;
 export const IV_BYTES = 12;
 
-/** Minimums from ADR-007 and docs/05-architecture.md "Crypto". */
+/** The version new envelopes are written at. Version 1 is read, never written. */
+export const ENVELOPE_VERSION = 2;
+
+/** Minimums from ADR-007 as amended by ADR-041. */
 export const MIN_PASSCODE_DIGITS = 6;
-export const MIN_BACKUP_PASSPHRASE_LENGTH = 8;
+export const MIN_BACKUP_PASSPHRASE_LENGTH = 12;
 
 export interface Envelope {
   enc: 1;
-  v: 1;
+  /** 1: no bound header. 2: the header is authenticated (ADR-041). */
+  v: 1 | 2;
   kdf: 'PBKDF2-SHA256';
   iter: number;
   /** base64, 16 bytes */
@@ -106,6 +113,30 @@ export async function deriveKey(
   );
 }
 
+/**
+ * The header, as bytes, for AES-GCM to authenticate alongside the ciphertext.
+ *
+ * Without this the header is unprotected: `iter` could be edited down to 1 and
+ * the file would still open, because the count used to derive the key is read
+ * from the very field an attacker controls. Binding it means any edit to the
+ * version, the KDF, the iteration count or the salt fails decryption instead.
+ *
+ * The field order here is the format. It is written out explicitly rather than
+ * serialising the envelope object, so that adding a field to `Envelope` cannot
+ * silently change what old files were sealed against.
+ */
+function boundHeader(envelope: Pick<Envelope, 'v' | 'kdf' | 'iter' | 'salt'>): Uint8Array {
+  return new TextEncoder().encode(
+    JSON.stringify({
+      enc: 1,
+      v: envelope.v,
+      kdf: envelope.kdf,
+      iter: envelope.iter,
+      salt: envelope.salt,
+    }),
+  );
+}
+
 /** Encrypt `plaintext` into an envelope. A fresh IV every time. */
 export async function seal(
   key: CryptoKey,
@@ -114,17 +145,24 @@ export async function seal(
   iterations: number = PBKDF2_ITERATIONS,
 ): Promise<string> {
   const iv = randomBytes(IV_BYTES);
+  const header = {
+    v: ENVELOPE_VERSION,
+    kdf: 'PBKDF2-SHA256',
+    iter: iterations,
+    salt: toBase64(salt),
+  } as const;
   const ciphertext = await requireCrypto().subtle.encrypt(
-    { name: 'AES-GCM', iv: iv as BufferSource },
+    {
+      name: 'AES-GCM',
+      iv: iv as BufferSource,
+      additionalData: boundHeader(header) as BufferSource,
+    },
     key,
     new TextEncoder().encode(plaintext),
   );
   const envelope: Envelope = {
     enc: 1,
-    v: 1,
-    kdf: 'PBKDF2-SHA256',
-    iter: iterations,
-    salt: toBase64(salt),
+    ...header,
     iv: toBase64(iv),
     ct: toBase64(ciphertext),
   };
@@ -135,7 +173,13 @@ export async function seal(
 export async function open(key: CryptoKey, envelope: Envelope): Promise<string> {
   try {
     const plaintext = await requireCrypto().subtle.decrypt(
-      { name: 'AES-GCM', iv: fromBase64(envelope.iv) as BufferSource },
+      {
+        name: 'AES-GCM',
+        iv: fromBase64(envelope.iv) as BufferSource,
+        // Version 1 sealed nothing alongside the ciphertext, so asking for a
+        // bound header would fail every file written before ADR-041.
+        ...(envelope.v === 2 ? { additionalData: boundHeader(envelope) as BufferSource } : {}),
+      },
       key,
       fromBase64(envelope.ct) as BufferSource,
     );
@@ -177,7 +221,86 @@ export function isValidPasscode(passcode: string): boolean {
   return /^\d+$/.test(passcode) && passcode.length >= MIN_PASSCODE_DIGITS;
 }
 
-/** docs/05-architecture.md: a backup passphrase of at least eight characters. */
-export function isValidBackupPassphrase(passphrase: string): boolean {
-  return passphrase.length >= MIN_BACKUP_PASSPHRASE_LENGTH;
+/**
+ * What is wrong with a backup passphrase, in words a person can act on, or
+ * undefined when nothing is.
+ *
+ * ADR-007 accepted that a six-digit passcode is weak against an offline attack
+ * and said the backup passphrase "is the one that must be strong". The rule was
+ * eight characters of anything, so the mitigation the ADR rested on was never
+ * built: eight lowercase letters is a few hours of one GPU. ADR-041 makes the
+ * rule match the reasoning.
+ *
+ * The checks stay few and explainable on purpose. A passphrase this refuses
+ * should be one the person can see the problem with once it is named, because
+ * the alternative — a meter that says "weak" and will not say why — teaches
+ * nothing and gets worked around with an exclamation mark on the end.
+ *
+ * The backup is the artefact that leaves the device, so this is stricter than
+ * the app passcode and costs less: it is chosen once per export, not typed on
+ * every open.
+ */
+export function backupPassphraseProblem(passphrase: string): string | undefined {
+  if (passphrase.length < MIN_BACKUP_PASSPHRASE_LENGTH) {
+    return `Use at least ${MIN_BACKUP_PASSPHRASE_LENGTH} characters. Four or five ordinary words in a row is easier to remember than a short password, and much harder to break.`;
+  }
+  if (/^\d+$/.test(passphrase)) {
+    return 'Digits alone are guessed quickly, however many there are. Use words as well.';
+  }
+  if (new Set(passphrase.toLowerCase()).size < 5) {
+    return 'This repeats too few different characters to be hard to guess.';
+  }
+
+  const flat = passphrase.toLowerCase().replace(/[^a-z0-9]/g, '');
+  if (WALKS.some((walk) => flat.length > 0 && (walk.includes(flat) || flat.includes(walk)))) {
+    return 'That is a run of keys off the keyboard, which is one of the first things a guessing program tries.';
+  }
+  if (COMMON.has(flat)) {
+    return 'That is one of the most commonly used passwords, so it is already in every guessing list.';
+  }
+  return undefined;
 }
+
+/** True when `backupPassphraseProblem` finds nothing wrong. */
+export function isValidBackupPassphrase(passphrase: string): boolean {
+  return backupPassphraseProblem(passphrase) === undefined;
+}
+
+/**
+ * Deliberately tiny. A full breach corpus is megabytes and would have to ship in
+ * the bundle and in the single file, which the performance budget will not carry
+ * and which would buy little: the length rule already removes the short
+ * passwords that make up nearly all of such a list. This catches the handful a
+ * person might still reach for after being told to make it longer.
+ */
+const WALKS = [
+  'qwertyuiop',
+  'asdfghjkl',
+  'zxcvbnm',
+  'abcdefghijklmnopqrstuvwxyz',
+  '01234567890',
+  '09876543210',
+];
+
+const COMMON = new Set([
+  'password',
+  'passphrase',
+  'password123',
+  'passw0rd',
+  'letmein',
+  'iloveyou',
+  'welcome',
+  'monkey',
+  'dragon',
+  'football',
+  'baseball',
+  'sunshine',
+  'princess',
+  'superman',
+  'trustno1',
+  'changeme',
+  'secret',
+  'admin',
+  'adnotia',
+  'correcthorsebatterystaple',
+]);

@@ -109,7 +109,7 @@ Two levels. The kernel migrates the document shape (`schemaVersion`). Each modul
 
 ### Crypto
 
-PBKDF2-SHA256 (500 000 iterations, 16-byte salt) to AES-GCM-256 with a 12-byte IV per write. Two independent uses: the app passcode (digits, ≥ 6) and the backup passphrase (≥ 8 characters, chosen per export). Keys live in memory for the page's life only. `crypto.subtle` requires a secure context; the UI states plainly when it is unavailable rather than falling back silently. Details in `06-data-model.md`.
+PBKDF2-SHA256 (1 200 000 iterations, 16-byte salt) to AES-GCM-256 with a 12-byte IV per write, and the envelope header authenticated alongside the ciphertext. Two independent uses: the app passcode (digits, ≥ 6) and the backup passphrase (≥ 12 characters and not an obviously guessable shape, chosen per export). The passphrase rule is the stricter one because the backup is what leaves the device; see `decisions/ADR-041`. Keys live in memory for the page's life only. `crypto.subtle` requires a secure context; the UI states plainly when it is unavailable rather than falling back silently. Details in `06-data-model.md`.
 
 ### Shell and spaces
 

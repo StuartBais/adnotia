@@ -1,4 +1,5 @@
 export {
+  backupPassphraseProblem,
   CryptoUnavailableError,
   deriveKey,
   envelopeOf,
@@ -13,6 +14,7 @@ export {
   toBase64,
   unseal,
   WrongKeyError,
+  ENVELOPE_VERSION,
   IV_BYTES,
   MIN_BACKUP_PASSPHRASE_LENGTH,
   MIN_PASSCODE_DIGITS,

@@ -7,7 +7,7 @@ import {
   backupFilename,
   exportBackup,
   isCryptoAvailable,
-  isValidBackupPassphrase,
+  backupPassphraseProblem,
   restoreBackup,
   toIsoDate,
   type AdnotiaDocument,
@@ -45,7 +45,9 @@ export function backupPage(options: SettingsOptions): OffTabPage {
       const encrypt = isCryptoAvailable();
       const passphrase = passwordInput({
         label: 'A passphrase for this backup',
-        hint: 'At least eight characters. It is not your passcode, and there is no way to recover it.',
+        hint:
+          'Four or five ordinary words in a row, and nothing you use anywhere else. ' +
+          'It is not your passcode, and there is no way to recover it.',
       });
 
       passphrase.element.hidden = !encrypt;
@@ -56,8 +58,11 @@ export function backupPage(options: SettingsOptions): OffTabPage {
       });
       download.addEventListener('click', () => {
         const secret = passphrase.value();
-        if (encrypt && !isValidBackupPassphrase(secret)) {
-          status.textContent = 'That passphrase is too short. Eight characters or more.';
+        // The reason, not a restated rule: a person told only "too short" tries
+        // the same thing one character longer.
+        const problem = encrypt ? backupPassphraseProblem(secret) : undefined;
+        if (problem !== undefined) {
+          status.textContent = problem;
           return;
         }
         status.textContent = 'Preparing the file.';

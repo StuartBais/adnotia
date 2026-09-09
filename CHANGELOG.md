@@ -215,6 +215,24 @@ waiting on a person.
 
 ### Fixed
 
+- A backup could be sealed with a passphrase that would not survive being stolen. The rule
+  was eight characters of anything, so "coolthis" was allowed, and eight lowercase letters
+  is hours of one graphics card. It now asks for at least twelve and turns away the shapes
+  that are guessed first — digits alone, a few characters repeated, a run across the
+  keyboard, the handful of passwords everyone tries. It also says which of those is the
+  problem, because being told only "too short" leads to the same word with a digit on the
+  end. Backups you already have still restore, whatever they were sealed with. If one of
+  yours has a short passphrase, make a fresh backup rather than assuming the old file is
+  safe. See ADR-041.
+- Encryption is roughly twice as slow to unlock, on purpose: the work needed to turn a
+  passcode into a key went up, which is the part that makes guessing expensive. It happens
+  once when you open the app, not on every save. What is already stored opens at the
+  setting it was saved with, so nothing is locked out and nothing needs converting.
+- A stolen backup file could be edited to make attacking it cheaper. The file records how
+  much work its own key took to make, and nothing stopped that number being changed. It is
+  now sealed together with the data, so an edited file does not open at all. Files made
+  before this still open normally, and are quietly re-sealed the next time you save.
+
 - An edit made in the last half-second before you closed a tab, or before a phone put the
   installed app to sleep, was lost. Writes wait half a second so a burst of typing is one
   save, and nothing was listening for the page going away, so that last write never

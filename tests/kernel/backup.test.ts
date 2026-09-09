@@ -64,10 +64,17 @@ describe('the backup file', () => {
     expect(envelopeOf(first.content)?.salt).not.toBe(envelopeOf(second.content)?.salt);
   });
 
-  it('refuses a passphrase that is too short', async () => {
+  it('refuses a passphrase that would not survive an offline attack', async () => {
+    // The message is the reason, not the rule. ADR-041.
     await expect(
       exportBackup(createDocument(), { passphrase: 'short', iterations: FAST }),
-    ).rejects.toThrow(/at least 8 characters/);
+    ).rejects.toThrow(/at least 12 characters/);
+    await expect(
+      exportBackup(createDocument(), { passphrase: 'coolthis', iterations: FAST }),
+    ).rejects.toThrow(/at least 12 characters/);
+    await expect(
+      exportBackup(createDocument(), { passphrase: '123456789012', iterations: FAST }),
+    ).rejects.toThrow(/Digits alone/);
   });
 
   it('refuses to export unencrypted when this browser can encrypt', async () => {

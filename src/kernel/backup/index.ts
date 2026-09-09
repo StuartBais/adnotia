@@ -8,11 +8,10 @@ import {
   deriveKey,
   envelopeOf,
   isCryptoAvailable,
-  isValidBackupPassphrase,
+  backupPassphraseProblem,
   randomSalt,
   seal,
   unseal,
-  MIN_BACKUP_PASSPHRASE_LENGTH,
 } from '../crypto/index';
 import { toIsoDate } from '../dates/index';
 import { migrateDocument } from '../store/migrations/index';
@@ -64,11 +63,8 @@ export async function exportBackup(
     return { filename, content: json, encrypted: false };
   }
 
-  if (!isValidBackupPassphrase(options.passphrase)) {
-    throw new Error(
-      `A backup passphrase needs at least ${MIN_BACKUP_PASSPHRASE_LENGTH} characters.`,
-    );
-  }
+  const problem = backupPassphraseProblem(options.passphrase);
+  if (problem !== undefined) throw new Error(problem);
 
   // A salt of its own, so the backup key and the passcode key are unrelated.
   const salt = randomSalt();

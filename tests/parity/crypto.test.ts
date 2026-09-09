@@ -80,13 +80,40 @@ describe('envelope interop with the monolith', () => {
     expect(await unseal('123456', envelope!)).toBe('{"entries":{}}');
   });
 
-  it('the monolith opens what we sealed', async () => {
+  /**
+   * ADR-041 ended interop in this direction, deliberately.
+   *
+   * Binding the header as AES-GCM additionalData is what stops an attacker
+   * editing `iter` down to 1 in a stolen backup. The monolith decrypts without
+   * additionalData, so it cannot open a version 2 envelope, and no change to
+   * this build could make it: the whole value is that the ciphertext no longer
+   * verifies against a header the monolith does not pass.
+   *
+   * The direction that matters is the one above this test and still passes:
+   * the monolith's files open here. That is the migration path in
+   * 06-data-model.md, and it is one-way by design — v0 data is imported and the
+   * old key is then removed. Nothing takes a person back to the monolith.
+   */
+  it('no longer opens what we seal, because our envelopes are authenticated now', async () => {
     const salt = randomSalt();
     const key = await deriveKey('123456', salt, FAST);
     const sealed = await seal(key, salt, '{"schemaVersion":1}', FAST);
+    expect(JSON.parse(sealed).v).toBe(2);
 
     const theirKey = await v0.deriveKey('123456', salt, FAST);
-    expect(await v0.openWith(theirKey, JSON.parse(sealed))).toBe('{"schemaVersion":1}');
+    await expect(v0.openWith(theirKey, JSON.parse(sealed))).rejects.toThrow();
+  });
+
+  it('still opens a version 1 envelope the monolith wrote', async () => {
+    const theirSalt = v0.randBytes(16);
+    const theirSealed = await v0.sealWith(
+      await v0.deriveKey('123456', theirSalt, FAST),
+      theirSalt,
+      '{"entries":{}}',
+      FAST,
+    );
+    expect(JSON.parse(theirSealed).v).toBe(1);
+    expect(await unseal('123456', envelopeOf(theirSealed)!)).toBe('{"entries":{}}');
   });
 
   it('agrees on what an envelope looks like', async () => {

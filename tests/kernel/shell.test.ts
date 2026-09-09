@@ -437,7 +437,8 @@ describe('settings', () => {
       (node) => node.textContent === 'Download a backup',
     );
     click(button);
-    expect(container.textContent).toContain('too short');
+    // It says what is wrong with this one, not that a rule exists.
+    expect(container.textContent).toContain('at least 12 characters');
   });
 
   it('persists a restored document and keeps the confirmation visible', async () => {
