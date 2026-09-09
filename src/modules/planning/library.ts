@@ -2,8 +2,8 @@
 //
 // The honest difficulty here is that the module's tier and its contents do not
 // carry the same weight. The protocols have trial evidence; a particular
-// template inside a particular app does not, and the rubric names two of these
-// four among its Tier C examples. docs/08-roadmap.md asks for that to be said in
+// template inside a particular app does not, and the rubric names three of these
+// five among its Tier C examples. docs/08-roadmap.md asks for that to be said in
 // this entry, and ADR-025 puts it on the tools themselves as well.
 
 import type { LibraryEntry } from '../../kernel/index';
@@ -12,10 +12,12 @@ export const library: LibraryEntry = {
   tier: 'A',
 
   whatItIs:
-    'Four small tools taken from the cognitive-behavioural programmes written for adults ' +
-    'with ADHD: a plan for the day, a way of breaking something down so the first step is ' +
-    'small enough to start, a note of how long you thought a job would take against how ' +
-    'long it did, and if–then prompts that decide in advance what will set something off.',
+    'Five small tools, four of them taken from the cognitive-behavioural programmes written ' +
+    'for adults with ADHD: a plan for the day, a way of breaking something down so the first ' +
+    'step is small enough to start, a note of how long you thought a job would take against ' +
+    'how long it did, and if–then prompts that decide in advance what will set something ' +
+    'off. The fifth is a timer that runs a stretch on one thing, then a break, then another, ' +
+    'and it does not come from those programmes.',
 
   whatTheEvidenceSays:
     'Cognitive-behavioural therapy adapted for adult ADHD has repeated randomised support, ' +
@@ -28,12 +30,20 @@ export const library: LibraryEntry = {
     'own evidence rubric as examples of plausible-but-untested, and they say so on ' +
     'themselves. The estimation tool has the strongest claim of the four, because the ' +
     'correction it offers comes from your own recorded numbers rather than from the app ' +
-    'having an opinion.',
+    'having an opinion. The timer has the weakest claim of the five and is marked as such ' +
+    'where it sits: timers of this kind have no trials behind them in adults with ADHD, and ' +
+    'the familiar lengths — twenty-five minutes of work, five of break, a longer one after ' +
+    'four — are a method somebody published in the nineteen-nineties rather than anything ' +
+    'that was measured. They are offered as settings you can change, because that is what ' +
+    'they are. What is reasonable about it is the mechanism rather than the numbers: putting ' +
+    'time somewhere you can see it, and making starting a smaller decision than finishing.',
 
   whatItWontDo:
     'It will not make you do any of it. Nothing here counts what you finished, keeps a run ' +
     'going, or compares this week with last: there is no score to lose and nothing to be ' +
-    'behind on. It is not a therapy course, and using it is not the same as doing one — if ' +
+    'behind on. The timer will not interrupt you and cannot — there is no sound and no ' +
+    'notification anywhere in this app — so if a stretch ends while you are finally going, ' +
+    'nothing stops you, and nothing counts the stretch you did not take. It is not a therapy course, and using it is not the same as doing one — if ' +
     'the trials are what you are after, what they tested was a therapist. It cannot tell ' +
     'you which things matter, and it will not decide anything for you.',
 

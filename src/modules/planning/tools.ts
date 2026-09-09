@@ -9,6 +9,7 @@
 // rating the toolkit Tier A. See ADR-025.
 
 import {
+  chips,
   el,
   formatClockTime,
   numberInput,
@@ -17,15 +18,20 @@ import {
   type Tool,
   type ToolContext,
 } from '../../kernel/index';
+import { focusTool } from './focus';
 import { BREAK_STRINGS, ESTIMATE_STRINGS, INTENTION_STRINGS, PLAN_STRINGS } from './strings';
 import {
   MIN_TIMED,
+  focusTargets,
   newId,
   nextStep,
   ordered,
   planFor,
+  promote,
   reality,
+  taskById,
   type Estimate,
+  type FocusTarget,
   type Intention,
   type PlanItem,
   type PlanningSlice,
@@ -38,6 +44,41 @@ function sliceOf(context: ToolContext): PlanningSlice {
 
 const button = (text: string, className = 'btn small'): HTMLButtonElement =>
   el('button', { type: 'button', class: className, text });
+
+/**
+ * Pick one of the things already broken down, instead of typing it again.
+ *
+ * The reason the four tools needed linking at all: before this, the same thing
+ * was typed into the breaking-down tool, then into the estimate, then into the
+ * plan. Three keyboards for one thing somebody is already avoiding.
+ *
+ * It fills the text box rather than replacing it, so the line is still editable
+ * and the tool still works with nothing broken down. Editing the text after
+ * picking drops the link and keeps the words: what somebody typed wins over what
+ * the app thought they meant.
+ */
+function picker(
+  context: ToolContext,
+  label: string,
+  field: { value: () => string; set: (value: string) => void },
+  onPick: (target: FocusTarget | undefined) => void,
+): HTMLElement | undefined {
+  const targets = focusTargets(sliceOf(context));
+  if (targets.length === 0) return undefined;
+
+  const control = chips({
+    label,
+    options: targets.map((target) => ({ v: target.key, l: target.label })),
+    value: '',
+    optional: true,
+    onChange: (value) => {
+      const target = targets.find((other) => other.key === value);
+      onPick(target);
+      if (target !== undefined) field.set(target.label);
+    },
+  });
+  return control.element;
+}
 
 /** A row with a body and a control on the right. Used by every list here. */
 function row(children: (Node | string)[], actions: HTMLElement[]): HTMLElement {
@@ -113,15 +154,37 @@ function mountBreak(container: HTMLElement, context: ToolContext): void {
         if (next?.id === item.id) {
           body.unshift(el('span', { class: 'tag', text: BREAK_STRINGS.startHere }));
         }
-        steps.append(row(body, [mark]));
+
+        const actions = [mark];
+        // Not on a step already done: there is nothing left to break down, and
+        // it would be the first button on most lists.
+        if (item.taskId === undefined && item.done !== true) {
+          // Two levels, and a way down when a step turns out to be a thing.
+          // Deeper nesting was considered and refused: see ADR-038.
+          const bigger = button(BREAK_STRINGS.promote);
+          bigger.title = BREAK_STRINGS.promoteHint;
+          bigger.addEventListener('click', () =>
+            save(promote(tasks, task.id, item.id, context.today)),
+          );
+          actions.unshift(bigger);
+        } else {
+          body.push(el('span', { class: 'hint', text: BREAK_STRINGS.promoted }));
+        }
+        steps.append(row(body, actions));
       }
 
       const remove = button(BREAK_STRINGS.remove);
       remove.addEventListener('click', () => save(tasks.filter((other) => other.id !== task.id)));
 
+      const parent = taskById(sliceOf(context), task.parent);
       list.append(
         el('div', { class: 'plan-task' }, [
           el('div', { class: 'plan-head' }, [el('b', { text: task.title }), remove]),
+          // Where it came from, when it came from somewhere. A promoted step is
+          // still part of the thing it was a step of.
+          ...(parent === undefined
+            ? []
+            : [el('p', { class: 'hint', text: BREAK_STRINGS.from(parent.title) })]),
           steps,
           ...(next === undefined && task.steps.length > 0
             ? [el('p', { class: 'hint', text: BREAK_STRINGS.finished })]
@@ -180,6 +243,14 @@ function mountEstimate(container: HTMLElement, context: ToolContext): void {
     placeholder: ESTIMATE_STRINGS.whatPlaceholder,
   });
   const minutes = numberInput({ label: ESTIMATE_STRINGS.minutes });
+
+  let link: FocusTarget | undefined;
+  const pick = picker(context, ESTIMATE_STRINGS.pick, title, (target) => {
+    link = target;
+  });
+  title.element.addEventListener('input', () => {
+    if (link !== undefined && title.value().trim() !== link.label) link = undefined;
+  });
 
   function save(estimates: Estimate[]): void {
     context.save({ ...sliceOf(context), estimates });
@@ -246,13 +317,22 @@ function mountEstimate(container: HTMLElement, context: ToolContext): void {
       status.textContent = ESTIMATE_STRINGS.needBoth;
       return;
     }
-    const estimate: Estimate = { id: newId(), title: name, minutes: guess, date: context.today };
+    const estimate: Estimate = {
+      id: newId(),
+      title: name,
+      minutes: guess,
+      date: context.today,
+      // The estimate is about the task, so a later look at the task can find it.
+      // The title is kept regardless: see the note on Estimate.title.
+      ...(link === undefined ? {} : { taskId: link.taskId }),
+    };
     context.save({
       ...sliceOf(context),
       estimates: [estimate, ...(sliceOf(context).estimates ?? [])],
     });
     title.set('');
     minutes.set('');
+    link = undefined;
     status.textContent = '';
     paint();
   });
@@ -261,6 +341,7 @@ function mountEstimate(container: HTMLElement, context: ToolContext): void {
     el('p', { class: 'sub', text: ESTIMATE_STRINGS.sub }),
     realityLine,
     title.element,
+    ...(pick === undefined ? [] : [pick]),
     minutes.element,
     el('div', { class: 'btnrow' }, [add]),
     status,
@@ -277,6 +358,15 @@ function mountPlan(container: HTMLElement, context: ToolContext): void {
 
   const item = textInput({ label: PLAN_STRINGS.item, placeholder: PLAN_STRINGS.itemPlaceholder });
   const at = timeInput({ label: PLAN_STRINGS.at, optional: true });
+
+  let link: FocusTarget | undefined;
+  const pick = picker(context, PLAN_STRINGS.pick, item, (target) => {
+    link = target;
+  });
+  // Typing over a picked line means they meant the line, not the link.
+  item.element.addEventListener('input', () => {
+    if (link !== undefined && item.value().trim() !== link.label) link = undefined;
+  });
 
   function save(items: PlanItem[]): void {
     const slice = sliceOf(context);
@@ -318,16 +408,24 @@ function mountPlan(container: HTMLElement, context: ToolContext): void {
     const time = at.value();
     save([
       ...planFor(sliceOf(context), context.today),
-      { id: newId(), text, ...(time === '' ? {} : { at: time }) },
+      {
+        id: newId(),
+        text,
+        ...(time === '' ? {} : { at: time }),
+        ...(link === undefined ? {} : { taskId: link.taskId }),
+        ...(link?.stepId === undefined ? {} : { stepId: link.stepId }),
+      },
     ]);
     item.set('');
     at.set('');
+    link = undefined;
     status.textContent = '';
   });
 
   container.append(
     el('p', { class: 'sub', text: PLAN_STRINGS.sub }),
     item.element,
+    ...(pick === undefined ? [] : [pick]),
     at.element,
     el('div', { class: 'btnrow' }, [add]),
     status,
@@ -412,6 +510,9 @@ export const tools: Tool[] = [
     tier: 'C',
     mount: (container, kernel) => mountBreak(container, kernel as ToolContext),
   },
+  // Straight after breaking something down, because that is where the thing it
+  // points at comes from.
+  focusTool,
   {
     title: ESTIMATE_STRINGS.title,
     icon: 'clock',

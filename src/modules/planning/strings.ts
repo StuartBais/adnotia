@@ -7,11 +7,11 @@
 export const strings = {
   name: 'Planning and getting started',
   summary:
-    'Break something down, work out how long it will really take, and set out a day one ' +
-    'line at a time.',
+    'Break something down, work out how long it will really take, set out a day one line at ' +
+    'a time, and sit with one thing for a while.',
   eligibility: 'Would you like help with planning and getting started?',
   eligibilityNote:
-    'Four small tools. They come from the therapy protocols with the best evidence in ' +
+    'Five small tools. Most come from the therapy protocols with the best evidence in ' +
     'adults; the tools themselves are ordinary and some have never been tested on their own.',
 } as const;
 
@@ -33,6 +33,11 @@ export const BREAK_STRINGS = {
   undo: 'Not done after all',
   remove: 'Remove',
   finished: 'All the steps are done.',
+  promote: 'Bigger than a step',
+  promoted: 'Broken down separately',
+  promoteHint:
+    'Turns this step into a thing of its own, with its own steps, still listed under this one.',
+  from: (title: string) => `Came out of: ${title}`,
 } as const;
 
 export const ESTIMATE_STRINGS = {
@@ -56,6 +61,9 @@ export const ESTIMATE_STRINGS = {
   tooFew: (n: number) =>
     `Time ${n} more and this will show how your estimates have compared so far.`,
   nothing: 'Nothing estimated yet.',
+  pick: 'Or one of the things you have broken down',
+  picked: (label: string) => `For: ${label}`,
+  clear: 'Something else',
 } as const;
 
 export const PLAN_STRINGS = {
@@ -70,6 +78,8 @@ export const PLAN_STRINGS = {
   needItem: 'Write the line first.',
   empty: 'Nothing planned for today yet.',
   remove: 'Remove',
+  pick: 'Or one of the things you have broken down',
+  clear: 'Something else',
 } as const;
 
 export const INTENTION_STRINGS = {
@@ -85,6 +95,66 @@ export const INTENTION_STRINGS = {
   needBoth: 'Both halves, and it will save.',
   empty: 'None yet.',
   remove: 'Remove',
+} as const;
+
+export const FOCUS_STRINGS = {
+  title: 'Focus for a while',
+  sub:
+    'A stretch on one thing, then a break, then another. Pick what you are working on, or ' +
+    'just start.',
+  /*
+   * The intervals are stated as convention, in the tool, not only in the
+   * Library. docs/02-evidence-rubric.md puts focus timers at Tier C — no direct
+   * trials — and the familiar 25 and 5 are a method somebody wrote down in the
+   * nineties, not a finding. Presenting them as settings you may change says
+   * that more honestly than any sentence about it could.
+   */
+  convention:
+    'The usual lengths are 25 minutes and 5, with a longer break after four. They are a ' +
+    'convention rather than a finding, and they are yours to change.',
+  what: 'What are you working on?',
+  free: 'Something else',
+  freePlaceholder: 'Clear the desk',
+  focusLength: 'Focus for (minutes)',
+  breakLength: 'Break for (minutes)',
+  longLength: 'Longer break (minutes)',
+  rounds: 'Longer break after (stretches)',
+  lengths: 'Lengths',
+  begin: 'Start',
+  focusing: (label: string) => `Focusing on: ${label}`,
+  focusingNothing: 'Focusing.',
+  onBreak: 'On a break.',
+  /*
+   * What the round position may say, and it is the whole vocabulary for it.
+   *
+   * It names what comes next, never what has been earned: "a longer break after
+   * this one", not "3 of 4". A position in a repeating pattern is not a score,
+   * and the difference is that this sentence has no better and worse version.
+   */
+  nextIsLong: 'A longer break after this one.',
+  nextIsShort: 'A short break after this one.',
+  timeUp: 'Time is up. Carry on if you are in the middle of something.',
+  breakOver: 'Break over.',
+  takeBreak: 'Take the break',
+  skipBreak: 'Straight on',
+  stop: 'Stop',
+  kept: (minutes: number, label: string) =>
+    `Kept: ${minutes} ${minutes === 1 ? 'minute' : 'minutes'} on ${label}.`,
+  keptNothing: (minutes: number) =>
+    `Kept: ${minutes} ${minutes === 1 ? 'minute' : 'minutes'} of focus.`,
+  nothing: 'Nothing yet today.',
+  /*
+   * No limit note of its own.
+   *
+   * The tool carries `tier: 'C'` and the kernel prints the rubric's Tier C
+   * wording above it — "this specific tool has not itself been tested in
+   * trials". A second paragraph underneath saying the same thing in different
+   * words is how a page teaches somebody to skip both. The mindfulness practice
+   * has one because its tool declares no tier; this one does.
+   */
+  noSound:
+    'There is no sound and no notification — nothing here can interrupt you — so this only ' +
+    'tells you the time is up when you look at it.',
 } as const;
 
 /** The one daily question. Nothing counts these and nothing adds them up. */

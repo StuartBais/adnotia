@@ -11,6 +11,14 @@ yet. See the implementation checkpoint in `docs/08-roadmap.md` for current limit
 
 ### Added
 
+- Planning has a focus timer, and its tools link to each other. Break something down once
+  and the day's plan, the estimate and the timer can all point at it instead of asking you
+  to type it a third time. A step that turns out to be a thing of its own can be broken out
+  into its own task, still listed under the one it came from. The timer runs a stretch, then
+  a break, then another, with a longer break after every fourth — and keeps no count of any
+  of it: where it is in the cycle is forgotten the moment the page closes, and what it writes
+  down is minutes on a thing, never rounds finished. It will not interrupt you and cannot;
+  there is no sound anywhere in this app, and it says so where you can see it. See ADR-038.
 - The welcome page shows the app. Three screenshots — the tools index, a day's record, and
   the page you take to an appointment — taken from a real build by `npm run shots` rather than
   drawn, so they cannot quietly become pictures of an app that no longer exists. It also has a

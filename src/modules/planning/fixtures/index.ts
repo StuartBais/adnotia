@@ -60,13 +60,59 @@ export const thirtyDays = slice({
     actual: Math.round((10 + index * 5) * 1.6),
     date: `2026-09-${String(index + 1).padStart(2, '0')}`,
   })),
+  /*
+   * A task with one of its steps promoted into a thing of its own, because that
+   * is a shape the breaking-down tool has to render and nothing else here makes
+   * one. The parent keeps the step and the step points at the new task; see
+   * `promote` in state.ts for why the step is not removed.
+   */
+  tasks: [
+    {
+      id: 'bigT',
+      title: 'Sort out the spare room',
+      created: '2026-09-01',
+      steps: [
+        { id: 'bigS1', text: 'Take the boxes to the tip', done: true },
+        { id: 'bigS2', text: 'Deal with the paperwork', taskId: 'bigT2' },
+        { id: 'bigS3', text: 'Put the bed back together' },
+      ],
+    },
+    {
+      id: 'bigT2',
+      title: 'Deal with the paperwork',
+      created: '2026-09-04',
+      parent: 'bigT',
+      steps: [{ id: 'bigS4', text: 'Find the folder' }],
+    },
+  ],
   days: Object.fromEntries(
     Array.from({ length: 30 }, (_, index) => {
       if (index % 4 !== 0) return null;
       const day = String(index + 1).padStart(2, '0');
       const held = ['followed', 'some', 'other'][index % 3] as string;
-      return [`2026-09-${day}`, { held }] as [string, { held: string }];
-    }).filter((entry): entry is [string, { held: string }] => entry !== null),
+      // Some days carry stretches of focus as well, so the log and the history
+      // are rendered against them rather than only against a day with none.
+      // Uneven on purpose: a fixture where every day looks the same is a fixture
+      // that never finds anything.
+      const focus =
+        index % 8 === 0
+          ? [
+              { id: `f${index}a`, minutes: 25, label: 'Deal with the paperwork', taskId: 'bigT2' },
+              { id: `f${index}b`, minutes: 12, label: '' },
+            ]
+          : undefined;
+      return [`2026-09-${day}`, focus === undefined ? { held } : { held, focus }] as [
+        string,
+        { held: string; focus?: { id: string; minutes: number; label: string; taskId?: string }[] },
+      ];
+    }).filter(
+      (
+        entry,
+      ): entry is [
+        string,
+        { held: string; focus?: { id: string; minutes: number; label: string; taskId?: string }[] },
+      ] => entry !== null,
+    ),
   ),
 });
 

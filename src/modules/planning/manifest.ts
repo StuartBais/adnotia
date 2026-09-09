@@ -10,6 +10,7 @@
 import type { ModuleManifest } from '../../kernel/index';
 import { fixtures } from './fixtures/index';
 import { library } from './library';
+import { log } from './log';
 import { renderRecords } from './records';
 import { strings } from './strings';
 import { today } from './today';
@@ -37,6 +38,7 @@ const manifest: ModuleManifest = {
   contributes: {
     today,
     tools,
+    log,
     records: { render: renderRecords as (container: HTMLElement, context: unknown) => void },
     library,
   },

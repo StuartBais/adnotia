@@ -33,13 +33,22 @@ export function renderRecords(
   for (const date of [...dates].sort().reverse()) {
     const items = ordered(planFor(slice, date));
     const held = context.days[date]?.held;
-    if (items.length === 0 && (held ?? '') === '') continue;
+    const focus = context.days[date]?.focus ?? [];
+    if (items.length === 0 && (held ?? '') === '' && focus.length === 0) continue;
 
     anything = true;
     const lines = items.map(
       (item) =>
         ((item.at ?? '') === '' ? '' : `${formatClockTime(item.at as string)} `) + item.text,
     );
+    // Stretches of focus, as minutes on a thing. Not added up: see log.ts.
+    for (const session of focus) {
+      lines.push(
+        session.label === ''
+          ? `${session.minutes} min focus`
+          : `${session.minutes} min on ${session.label}`,
+      );
+    }
     if ((held ?? '') !== '') lines.push(HELD_LABELS.get(held as string) ?? (held as string));
 
     container.append(

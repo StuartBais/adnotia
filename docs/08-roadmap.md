@@ -27,6 +27,10 @@ cannot go stale.
 - The accessibility audit, the performance budget in CI, the regulatory and
   children's-code review, and the citation identifier pass.
 - Milestone 9's navigation and check-in rework.
+- A focus timer in `planning`, and linking between its tools, which Milestone 3
+  did not ask for. The timer is the first thing in the build that needed an
+  argument for why it is not a guilt mechanic rather than an assurance that it is
+  not one; ADR-038 is that argument, and the test that holds it is named there.
 - The clinician's sheet: a letterhead carrying the mark, the name and the
   provenance line, and a page of its own rather than the foot of the Records tab
   (ADR-034).
