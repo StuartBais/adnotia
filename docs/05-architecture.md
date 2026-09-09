@@ -39,7 +39,7 @@ adnotia/
   package.json
   docs/                         design documents and ADRs (source of truth)
   reference/                    v0 monolith and porting notes
-  assets/                       logo.svg, icon sources
+  assets/                       logo.svg, icon sources, shots/ (welcome-page screenshots)
   src/
     kernel/
       store/                    document, slices, persistence, migrations
@@ -169,6 +169,8 @@ The service worker precaches the app shell and serves it offline. It never fetch
 
 `vite.config.ts` exposes two modes:
 
+The welcome page's screenshots are generated, not drawn: `npm run shots` drives the built app in headless Chromium against the modules' own fixtures and writes `assets/shots/`. It needs Chromium and ImageMagick, it is deliberately not part of `npm run build`, and the images are committed so the site deploys without either. See `decisions/ADR-037`.
+
 - `build` → `dist/` with **two documents**: `index.html`, the welcome page a stranger lands on, and `app/index.html`, the app — plus manifest, service worker and hashed assets. Same origin, so `localStorage` is untouched by the split; see `decisions/ADR-036`. Deploy to any static host with a dedicated origin (see `03-scope.md` on `localStorage` scoping).
 - `build:single` → `dist-single/adnotia.html`, all CSS and JS inlined, icon as data URI, no service worker. Offered as a download from the Library's "About" page and works when opened over `https` or from any static host; opened as `file://` it works except for encryption, which needs a secure context, and it says so.
 
@@ -199,7 +201,7 @@ Screen-reader testing on iOS and Android is still outstanding, and no automated 
 
 Initial load ≤ 150 kB compressed for the PWA including all modules. If a module pushes past that, lazy-load its `tools` and `reports` renderers; `today` fields and `library` entries stay eager because first run needs them.
 
-Enforced by `scripts/check-budget.mjs`, which runs in CI after both builds. It counts what `dist/index.html` actually asks the browser for, gzipped, and reports the service worker's precache and the single file separately rather than budgeting them. A budget nobody measures is a sentence in a document, and this one can only be broken by a module that was fine on its own.
+Enforced by `scripts/check-budget.mjs`, which runs in CI after both builds. It counts what `dist/app/index.html` actually asks the browser for, gzipped, and reports the service worker's precache and the single file separately rather than budgeting them. The welcome page has budgets of its own: 100 kB for the document and its stylesheets, and 200 kB for its screenshots, which are `loading="lazy"` and so are not what stands between a stranger and being able to read it. An image the page asks for and the build has not got fails the check rather than shipping a broken picture. A budget nobody measures is a sentence in a document, and this one can only be broken by a module that was fine on its own.
 
 ## Internationalisation
 

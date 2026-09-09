@@ -114,7 +114,9 @@ Almost none. Save confirmation fades its colour over 200 ms. Everything else is 
 
 ## Iconography
 
-The logo mark is the only graphic. It is an inline SVG in the masthead (34 × 31 px) and the lock screen (44 × 40 px), and a 180 px PNG for the home screen icon. `assets/logo.svg` is canonical; do not embed the original raster.
+The logo mark is the only graphic **in the app**. It is an inline SVG in the masthead (34 × 31 px) and the lock screen (44 × 40 px), and a 180 px PNG for the home screen icon. `assets/logo.svg` is canonical; do not embed the original raster.
+
+The welcome page at `/` is a different document with different obligations (ADR-035, ADR-036) and it carries pictures of the app: screenshots, generated from a real build by `scripts/shots.mjs` and committed. Nothing else — no illustration, no stock photography, no decorative shapes. See `decisions/ADR-037-the-welcome-page-carries-screenshots.md`, which also records why there is no photograph of a person on it.
 
 One copy of the artwork exists. `src/kernel/ui/logo.ts` imports that file with `?raw` and `vite.config.ts` inlines it into `index.html` as the tab icon at build time, so nothing is pasted into a second place to go stale. Inline rather than `<link href>` because the single-file build has to work saved to a disk with nothing beside it. The mark is `aria-hidden`: the word Adnotia is always next to it, and announcing both makes a screen reader say the name twice. Each copy's clip-path ids are rewritten per instance, because SVG ids are document-global and two marks sharing them clip to whichever resolved first.
 

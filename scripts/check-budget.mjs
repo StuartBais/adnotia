@@ -47,6 +47,18 @@ const BUDGET = 150 * 1024;
 const WELCOME_BUDGET = 100 * 1024;
 
 /**
+ * The pictures on the welcome page, budgeted apart from it.
+ *
+ * They are `loading="lazy"`, so they are not what stands between a stranger and
+ * being able to read the page — that is the 100 kB above, and it stays where it
+ * was. But they are still bytes on somebody's mobile data, and a budget that
+ * could not see them at all was the reason this needed writing: the script
+ * counted `<script src>` and `<link href>` only, so three screenshots could have
+ * been added to the first page anybody sees without moving a number anywhere.
+ */
+const IMAGE_BUDGET = 200 * 1024;
+
+/**
  * The single file is not in that budget — it is one document with everything
  * inlined, which is the whole point of it, and ADR-003 accepts the size. It is
  * printed so a jump in it is visible, and held well clear of the limits mail
@@ -112,20 +124,46 @@ console.log(`  ${'total'.padEnd(34)} ${kb(total).padStart(9)}`);
  * anybody had budgeted.
  */
 let welcomeTotal = 0;
+let imageTotal = 0;
 if (existsSync(welcome)) {
   const page = readFileSync(welcome, 'utf8');
   welcomeTotal = gz(Buffer.from(page));
-  const referenced = [
+
+  const resolve_ = (reference) => join(dist, reference.replace(/^\.?\//, ''));
+  const local = (reference) =>
+    reference !== '' && !reference.startsWith('data:') && !/^(https?:)?\/\//.test(reference);
+
+  for (const match of [
     ...page.matchAll(/<script[^>]+src="([^"]+)"/g),
     ...page.matchAll(/<link[^>]+href="([^"]+)"/g),
-  ];
-  for (const match of referenced) {
+  ]) {
     const reference = match[1] ?? '';
-    if (reference.startsWith('data:') || /^(https?:)?\/\//.test(reference)) continue;
-    const path = join(dist, reference.replace(/^\.?\//, ''));
+    if (!local(reference)) continue;
+    const path = resolve_(reference);
     if (existsSync(path)) welcomeTotal += gz(readFileSync(path));
   }
+
+  /*
+   * Images are counted, and a missing one fails rather than costing nothing.
+   *
+   * WebP and PNG are already compressed, so gzip is not applied twice — that
+   * would report a figure smaller than the file a browser actually downloads.
+   * An image the page asks for and the build does not have is a broken picture
+   * on the first page a stranger sees, which is worth more than a warning.
+   */
+  for (const match of page.matchAll(/<img[^>]+src="([^"]+)"/g)) {
+    const reference = match[1] ?? '';
+    if (!local(reference)) continue;
+    const path = resolve_(reference);
+    if (!existsSync(path)) {
+      console.error(`The welcome page asks for an image the build has not got: ${reference}`);
+      process.exit(1);
+    }
+    imageTotal += statSync(path).size;
+  }
+
   console.log(`\nThe welcome page, gzipped (budget ${kb(WELCOME_BUDGET)}): ${kb(welcomeTotal)}`);
+  console.log(`Its pictures, as served (budget ${kb(IMAGE_BUDGET)}): ${kb(imageTotal)}`);
 }
 
 // Reported, not budgeted. See the note at the top.
@@ -146,6 +184,15 @@ if (existsSync(single)) {
   console.log(
     `Single file: ${kb(statSync(single).size)} on disk, ${kb(gz(readFileSync(single)))} gzipped.`,
   );
+}
+
+if (imageTotal > IMAGE_BUDGET) {
+  console.error(
+    `\nThe welcome page's pictures are over their ${kb(IMAGE_BUDGET)} budget by ` +
+      `${kb(imageTotal - IMAGE_BUDGET)}. scripts/shots.mjs makes them; they get smaller by ` +
+      'shipping fewer, or narrower, not by lowering this.',
+  );
+  process.exit(1);
 }
 
 if (welcomeTotal > WELCOME_BUDGET) {

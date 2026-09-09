@@ -27,7 +27,7 @@ body {
 }
 
 .page {
-  max-width: 720px;
+  max-width: 760px;
   margin: 0 auto;
   padding: 0 20px 64px;
 }
@@ -156,20 +156,91 @@ h2 {
   color: var(--ink2);
 }
 
-.three {
+/* ---------- a thing it does, and a picture of it ---------- */
+
+.pair {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-  gap: 26px 30px;
+  gap: 20px 34px;
+  align-items: center;
+  margin-bottom: 40px;
 }
 
-.three h3 {
-  margin: 0 0 7px;
-  font-size: 17px;
+.pair:last-child {
+  margin-bottom: 0;
+}
+
+@media (min-width: 620px) {
+  .pair {
+    grid-template-columns: 1fr 260px;
+  }
+
+  /* The picture changes sides down the page. Three blocks with the image in the
+     same place each time reads as a template; this reads as a page. */
+  .pair:nth-child(odd) > .says {
+    order: 2;
+  }
+}
+
+.says h3 {
+  margin: 0 0 9px;
+  font-size: 19px;
   font-weight: 600;
-  letter-spacing: -0.012em;
+  letter-spacing: -0.015em;
+  text-wrap: balance;
 }
 
-.three p,
+.says p {
+  margin: 0 0 11px;
+  font-size: 15.5px;
+  line-height: 1.55;
+  color: var(--ink2);
+}
+
+.says p:last-child {
+  margin-bottom: 0;
+}
+
+/*
+ * A screenshot of a phone, shown as one.
+ *
+ * The frame is the app's own card — the same border, the same radius — rather
+ * than a drawing of a handset. docs/07-design-system.md has no illustration in
+ * it and ADR-037 did not add one: the picture is the product, and the frame is
+ * only there so a screenshot of a page does not read as part of this page.
+ */
+.shot {
+  margin: 0;
+  justify-self: center;
+}
+
+.shot img {
+  display: block;
+  width: 100%;
+  max-width: 260px;
+  border: 1px solid var(--line2);
+  border-radius: 14px;
+  /* The app's ground, so the image has somewhere to sit while it loads. */
+  background: var(--ground);
+
+  /*
+   * One height for all three, from the top.
+   *
+   * They are screenshots of a phone being scrolled, and they are 1247, 1247 and
+   * 1641 pixels tall. Left to their own proportions the third is half again as
+   * long as the first, the text beside it floats in the middle of a column of
+   * nothing, and the page loses its rhythm exactly where it is trying to look
+   * considered. Cropping from the top keeps what a person would have read first.
+   */
+  height: 420px;
+  object-fit: cover;
+  object-position: top;
+
+  /* Faded out at the foot, because the screen carries on and a hard edge says
+     it does not. */
+  -webkit-mask-image: linear-gradient(to bottom, #000 78%, transparent);
+  mask-image: linear-gradient(to bottom, #000 78%, transparent);
+}
+
 .wide {
   margin: 0;
   font-size: 15.5px;
@@ -195,6 +266,35 @@ h2 {
   color: var(--ink2);
   padding-left: 15px;
   border-left: 2px solid var(--terra-deep);
+}
+
+/* ---------- the part that is a person talking ---------- */
+
+.prose {
+  max-width: 60ch;
+}
+
+.prose p {
+  margin: 0 0 15px;
+  font-size: 16.5px;
+  line-height: 1.62;
+  color: var(--ink);
+}
+
+/*
+ * The sentence everybody says in the appointment, set apart from the sentence
+ * about it. Not a blockquote: it is not a quotation from anybody, it is the
+ * thing you hear yourself saying.
+ */
+.quoted {
+  color: var(--terra-deep);
+}
+
+.latenight {
+  margin-top: 22px;
+  padding-left: 15px;
+  border-left: 2px solid var(--mark);
+  color: var(--ink2);
 }
 
 .aside {

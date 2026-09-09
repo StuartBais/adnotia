@@ -11,6 +11,11 @@ yet. See the implementation checkpoint in `docs/08-roadmap.md` for current limit
 
 ### Added
 
+- The welcome page shows the app. Three screenshots — the tools index, a day's record, and
+  the page you take to an appointment — taken from a real build by `npm run shots` rather than
+  drawn, so they cannot quietly become pictures of an app that no longer exists. It also has a
+  "Why it exists" section that reads like a person wrote it, because one did. There is no
+  photograph of a person on it, and ADR-037 records why not.
 - There is a welcome page. `adnotia.com` now opens on something a stranger can read and
   share; the app is at `/app/`. Same origin, so nothing you have recorded moves. If you
   already have a record you never see the page — you go straight to the app. See ADR-036.

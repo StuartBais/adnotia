@@ -1,0 +1,17 @@
+{
+  "tools": {
+    "alt": "The Adnotia tools index on a phone, showing cards for Focus and starting, Calm, Movement, Medication and body, and Preparing for an appointment.",
+    "width": 640,
+    "height": 1247
+  },
+  "today": {
+    "alt": "Adnotia's Today tab, showing the day's record: a check-in with a few questions, and a list of what already happened today.",
+    "width": 640,
+    "height": 1247
+  },
+  "sheet": {
+    "alt": "The one-page record Adnotia prepares for an appointment, headed with the Adnotia mark, the dates it covers and how many days were logged, above a table of what was recorded.",
+    "width": 640,
+    "height": 1641
+  }
+}

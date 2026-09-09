@@ -132,3 +132,61 @@ describe('who the page is for', () => {
     expect(visit({ throws: true })).toBeNull();
   });
 });
+
+describe('the pictures of the app', () => {
+  /*
+   * The page shows screenshots, and scripts/shots.mjs takes them. See ADR-037.
+   *
+   * The failure this exists for is quiet: regenerate a shot of a different
+   * screen and the page keeps the old alt text, so the only description a
+   * screen-reader user gets is of something that is no longer there. Same for
+   * the dimensions — wrong ones do not break the picture, they just make the
+   * page jump under somebody as it loads.
+   */
+  const manifest = JSON.parse(
+    readFileSync(resolve(process.cwd(), 'scripts/shots/manifest.json'), 'utf8'),
+  ) as Record<string, { alt: string; width: number; height: number }>;
+
+  const images = [...html.matchAll(/<img\b[^>]*>/g)].map(([tag]) => ({
+    tag,
+    attr: (name: string) => new RegExp(`${name}="([^"]*)"`).exec(tag)?.[1],
+  }));
+
+  it('shows some', () => {
+    expect(images.length).toBeGreaterThan(0);
+  });
+
+  it('shows only shots that were actually taken', () => {
+    for (const image of images) {
+      const src = image.attr('src');
+      expect(src, image.tag).toMatch(/^\.\/shots\/[a-z]+\.webp$/);
+      const name = /([a-z]+)\.webp$/.exec(src as string)?.[1] as string;
+      expect(Object.keys(manifest), `${src} is not a shot scripts/shots.mjs takes`).toContain(name);
+    }
+  });
+
+  it('describes what is in each one, in the words it was taken with', () => {
+    for (const image of images) {
+      const name = /([a-z]+)\.webp$/.exec(image.attr('src') as string)?.[1] as string;
+      // Not "has some alt text": alt text describing the previous screenshot
+      // passes that and is worse than none, because it is confidently wrong.
+      expect(image.attr('alt'), image.attr('src')).toBe(manifest[name]?.alt);
+    }
+  });
+
+  it('states the size each one really is, so the page does not jump', () => {
+    for (const image of images) {
+      const name = /([a-z]+)\.webp$/.exec(image.attr('src') as string)?.[1] as string;
+      expect(Number(image.attr('width')), `${name} width`).toBe(manifest[name]?.width);
+      expect(Number(image.attr('height')), `${name} height`).toBe(manifest[name]?.height);
+    }
+  });
+
+  it('waits until they are needed', () => {
+    // They sit below the fold and they are the bulk of the page's weight.
+    // scripts/check-budget.mjs budgets them separately on the strength of this.
+    for (const image of images) {
+      expect(image.attr('loading'), image.attr('src')).toBe('lazy');
+    }
+  });
+});
