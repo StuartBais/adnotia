@@ -24,8 +24,21 @@
 
 # A stale service worker leaves people on an old build with no way back, so the
 # files that decide which version runs are never cached at the edge.
+#
+# Both spellings of each document, because a rule matches the path as requested
+# and nobody requests the long one. A browser asks for `/` and `/app/`; only a
+# redirect asks for `/index.html`, and the edge answered the real URLs with
+# Cloudflare's default instead. That was not theoretical: with the documents
+# edge-cached, turning off a Cloudflare feature that injects into HTML left the
+# injected copies being served, and the setting looked like it had not worked.
+
+/
+  Cache-Control: no-cache
 
 /index.html
+  Cache-Control: no-cache
+
+/app/
   Cache-Control: no-cache
 
 /app/index.html

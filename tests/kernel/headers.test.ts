@@ -129,3 +129,29 @@ describe('deploy/_headers', () => {
     expect(headersFile).not.toMatch(/https?:\/\//);
   });
 });
+
+describe('the documents that decide which build runs', () => {
+  /**
+   * A `_headers` rule matches the path as requested, so a rule is only worth
+   * what somebody actually asks for. `/app/index.html` is asked for by a
+   * redirect and by nothing else: a browser asks for `/app/`. When only the
+   * long spelling carried the rule, the real URLs fell through to Cloudflare's
+   * default and the app shell was cached at the edge — which is how an injected
+   * script outlived the setting that had been turned off to stop it.
+   */
+  const documents = ['/', '/index.html', '/app/', '/app/index.html'];
+  const versionDeciding = ['/sw.js', '/manifest.webmanifest'];
+
+  for (const path of [...documents, ...versionDeciding]) {
+    it(`declares no-cache for ${path}`, () => {
+      expect(headersFor(path).get('Cache-Control')).toBe('no-cache');
+    });
+  }
+
+  it('covers every URL a browser requests a document at, not only the file behind it', () => {
+    // The failure this pins is a rule that exists and never matches.
+    for (const served of ['/', '/app/']) {
+      expect(() => headersFor(served)).not.toThrow();
+    }
+  });
+});
