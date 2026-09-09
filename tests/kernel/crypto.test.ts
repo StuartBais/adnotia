@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   backupPassphraseProblem,
+  randomBytes,
+  UnsupportedEnvelopeError,
   type Envelope,
   createPasscodeCodec,
   createStore,
@@ -331,6 +333,54 @@ describe('encryption through the store', () => {
   });
 });
 
+describe('a document from a build that is gone', () => {
+  /**
+   * ADR-042 removed version 1 and accepted that anybody still holding one could
+   * not open it. What it did not accept, because nobody had thought of it, was
+   * being told the passcode was wrong. That happened to the first person who hit
+   * it, on the day it shipped, with the correct passcode in their hands.
+   */
+  async function v1Envelope(secret: string, plaintext: string): Promise<Envelope> {
+    const salt = randomSalt();
+    const iv = randomBytes(IV_BYTES);
+    const key = await deriveKey(secret, salt, FAST);
+    const ct = await globalThis.crypto.subtle.encrypt(
+      { name: 'AES-GCM', iv: iv as BufferSource },
+      key,
+      new TextEncoder().encode(plaintext),
+    );
+    return {
+      enc: 1,
+      v: 1,
+      kdf: 'PBKDF2-SHA256',
+      iter: FAST,
+      salt: toBase64(salt),
+      iv: toBase64(iv),
+      ct: toBase64(ct),
+    } as unknown as Envelope;
+  }
+
+  it('is refused as an old format, not as a wrong passcode', async () => {
+    const envelope = await v1Envelope('123456', '{"schemaVersion":1}');
+    // The right passcode. The error must not blame it.
+    await expect(unseal('123456', envelope)).rejects.toThrow(UnsupportedEnvelopeError);
+    await expect(unseal('123456', envelope)).rejects.not.toThrow(WrongKeyError);
+  });
+
+  it('says which format, and that the passcode is not the problem', async () => {
+    const envelope = await v1Envelope('123456', 'held');
+    await expect(unseal('123456', envelope)).rejects.toThrow(/format 1/);
+    await expect(unseal('123456', envelope)).rejects.toThrow(/passcode is not the problem/);
+  });
+
+  it('is refused before any decryption is attempted', async () => {
+    // So the reason is the real one rather than whatever the cipher happened to
+    // do. A wrong key and a bound-header mismatch are indistinguishable after.
+    const envelope = await v1Envelope('123456', 'held');
+    await expect(unseal('000000', envelope)).rejects.toThrow(UnsupportedEnvelopeError);
+  });
+});
+
 describe('the bound header', () => {
   async function sealedV2(): Promise<{ raw: string; key: CryptoKey }> {
     const salt = randomSalt();
@@ -347,12 +397,13 @@ describe('the bound header', () => {
   });
 
   it('refuses a file downgraded to the version that had no bound header', async () => {
-    // Cast because a hostile file is not type-checked. Version 1 is gone from
-    // the type and from the reader (ADR-042); this proves a file claiming to be
-    // one is refused rather than quietly read without its header checked.
+    // Cast because a hostile file is not type-checked. The refusal is now
+    // UnsupportedEnvelopeError rather than WrongKeyError, which is a better
+    // error and the same security property: claiming to be version 1 does not
+    // get the header checks skipped.
     const { raw, key } = await sealedV2();
     const tampered = { ...envelopeOf(raw)!, v: 1 } as unknown as Envelope;
-    await expect(open(key, tampered)).rejects.toThrow(WrongKeyError);
+    await expect(open(key, tampered)).rejects.toThrow(UnsupportedEnvelopeError);
   });
 
   it('refuses a file whose salt has been swapped', async () => {

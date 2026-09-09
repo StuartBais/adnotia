@@ -80,16 +80,22 @@ loose, the answer is more direct tests, not a resurrected monolith.
   what the code should do. The provenance comments through `src/kernel/ui/` stay
   accurate.
 - `npm run test:parity` is gone. `npm test` is the whole suite.
-- 1212 tests, down from 1273. The drop is the parity suite and the v0 import
+- 1215 tests, down from 1273. The drop is the parity suite and the v0 import
   tests, not coverage of anything this build still does.
 - **Interop with the monolith is over in both directions.** ADR-041 ended one;
   this ends the other. `06-data-model.md`'s v0 mapping section is replaced by a
   note saying where it went.
 - Anyone who somehow does hold v0 or v1 data — an old browser profile, a backup
-  file from a build before today — cannot open it with this build, and the
-  failure will look like a wrong passcode rather than an unsupported format.
-  That is the accepted cost of the premise. If the premise turns out to be wrong
-  for even one person, the code is in git history and this ADR is the place to
-  record the reversal.
+  file from a build before today — cannot open it with this build. That is the
+  accepted cost of the premise.
+
+  **The first person to hit it was the author, the same day, and the app told
+  them their passcode was wrong.** It was not; the format was. That message is
+  the one thing here that was not an accepted cost but an oversight: it is untrue,
+  it cannot be checked from the outside, and it sends somebody hunting for a code
+  that was never the problem — about data they cannot replace. Fixed the same day.
+  `UnsupportedEnvelopeError` is raised before any decryption is attempted, names
+  the format, says the passcode is not the problem, and says that nothing has
+  been changed or deleted. The removal stands; the lie about why does not.
 - The next milestone that adds a `schemaVersion` migration writes the first entry
   in an empty map, against rules that are still tested.

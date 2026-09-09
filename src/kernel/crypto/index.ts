@@ -13,6 +13,7 @@ export {
   seal,
   toBase64,
   unseal,
+  UnsupportedEnvelopeError,
   WrongKeyError,
   ENVELOPE_VERSION,
   IV_BYTES,

@@ -46,6 +46,25 @@ export class WrongKeyError extends Error {
   }
 }
 
+/**
+ * Thrown when the envelope is a version this build does not read.
+ *
+ * Separate from WrongKeyError because it is a different fact and the person can
+ * do different things about it. ADR-042 removed version 1, and until this
+ * existed a version 1 document met the correct passcode with "that passcode did
+ * not open this data" — which is untrue, unfalsifiable from the outside, and
+ * exactly the wrong thing to tell somebody about a file they cannot replace.
+ */
+export class UnsupportedEnvelopeError extends Error {
+  constructor(readonly version: number) {
+    super(
+      `This was saved by an earlier version of Adnotia (format ${version}) and this one cannot open it. ` +
+        'Your passcode is not the problem.',
+    );
+    this.name = 'UnsupportedEnvelopeError';
+  }
+}
+
 /** Thrown when the browser cannot do the crypto at all. */
 export class CryptoUnavailableError extends Error {
   constructor(
@@ -172,6 +191,10 @@ export async function seal(
 
 /** Decrypt an envelope. A wrong key changes nothing and throws WrongKeyError. */
 export async function open(key: CryptoKey, envelope: Envelope): Promise<string> {
+  // Checked before decrypting, so the reason given is the real one. Decrypting a
+  // version 1 envelope with a bound header fails the same way a wrong key does,
+  // and the two are indistinguishable once it has.
+  if (envelope.v !== ENVELOPE_VERSION) throw new UnsupportedEnvelopeError(envelope.v);
   try {
     const plaintext = await requireCrypto().subtle.decrypt(
       {
@@ -185,6 +208,7 @@ export async function open(key: CryptoKey, envelope: Envelope): Promise<string> 
     return new TextDecoder().decode(plaintext);
   } catch (error) {
     if (error instanceof CryptoUnavailableError) throw error;
+    if (error instanceof UnsupportedEnvelopeError) throw error;
     throw new WrongKeyError();
   }
 }

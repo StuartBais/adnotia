@@ -5,6 +5,7 @@ import {
   isValidPasscode,
   sealParameters,
   unseal,
+  UnsupportedEnvelopeError,
   WrongKeyError,
 } from '../crypto/index';
 import { createStore, type KernelStore } from '../store/store';
@@ -171,7 +172,15 @@ export async function mountApplication(options: ApplicationOptions): Promise<{ d
     } catch (error) {
       candidate?.dispose();
       if (destroyed) return;
-      if (error instanceof WrongKeyError)
+      if (error instanceof UnsupportedEnvelopeError)
+        // Not a wrong passcode, and saying so would send somebody hunting for a
+        // code that was never the problem. Nothing is deleted: the data is left
+        // exactly where it is, in case a build that reads it is still to hand.
+        failure(
+          `${error.message} Nothing has been changed or deleted. If you still have the version that saved it, ` +
+            'export a backup from there. Otherwise this browser will need its Adnotia data cleared before you can start again.',
+        );
+      else if (error instanceof WrongKeyError)
         unlock('That passcode did not open this data. Nothing has changed.');
       else
         failure(

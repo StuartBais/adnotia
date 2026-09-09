@@ -215,7 +215,10 @@ waiting on a person.
 
 ### Changed
 
-- Data written by builds from before today cannot be opened by this one. That includes the
+- Data written by earlier builds cannot be opened by this one, and now says so. It briefly
+  reported a wrong passcode instead, which was untrue and unhelpful about data nobody can
+  replace; it now names the format, says your passcode is not the problem, and says nothing
+  has been changed or deleted. That includes the
   original single-file version's records and any backup or stored document made earlier.
   Nothing has been released, nobody has data in those formats, and carrying the code to
   read them would have meant carrying it for the life of the app — so it went now, which
