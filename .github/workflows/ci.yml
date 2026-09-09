@@ -49,3 +49,32 @@ jobs:
           name: adnotia.html
           path: dist-single/adnotia.html
           if-no-files-found: error
+
+  # What Cloudflare deploys. See decisions/ADR-040-the-deploy-branch-is-not-main.md.
+  #
+  # Workers Builds is pointed at `release` rather than `main`, and `release` moves
+  # only from here. `needs: check` is the gate: this job cannot start unless every
+  # step above passed, so a commit that fails the typecheck, the tests, the
+  # no-network audit, the contrast check or either build cannot reach the live
+  # site. When the gates are red, `release` stays where it is and adnotia.com keeps
+  # serving the last commit that was green.
+  promote:
+    needs: check
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    # The only job that writes. Everything else stays read-only, and no Cloudflare
+    # credential is involved at any point: this moves a branch, and Cloudflare
+    # builds from it the way it already does.
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          # A shallow clone cannot push its history on; this needs the whole thing.
+          fetch-depth: 0
+
+      - name: Fast-forward release to the commit that just passed
+        # Deliberately not forced. `release` can only move forward along main's
+        # history, so a force-push to main fails here rather than quietly
+        # rewriting what is live.
+        run: git push origin ${{ github.sha }}:refs/heads/release
