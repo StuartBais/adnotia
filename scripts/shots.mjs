@@ -358,6 +358,27 @@ async function main() {
         '--disable-gpu',
         '--hide-scrollbars',
         '--force-device-scale-factor=2',
+        /*
+         * Deterministic text, and better-looking text.
+         *
+         * Subpixel antialiasing is not reproducible run to run: today.webp came
+         * out with different bytes about one run in five, entirely below a 5%
+         * intensity threshold — no layout change, no content change, just the
+         * rasteriser landing differently. That made the reproducibility this
+         * script is built on nearly true, which is the least useful kind.
+         *
+         * Turning it off also removes the colour fringing that LCD text leaves
+         * on glyph edges, which is visible as tinted words once one of these is
+         * scaled down on the welcome page.
+         */
+        '--disable-lcd-text',
+        '--font-render-hinting=none',
+        // Paint everything before the capture rather than whatever the
+        // compositor had ready. Without it the text inside native form controls
+        // rasterised one of two ways depending on timing — invisible, and enough
+        // to change the bytes on about a third of runs.
+        '--run-all-compositor-stages-before-draw',
+        '--disable-partial-raster',
         `--window-size=${CAPTURE_WIDTH},${shot.height}`,
         // Runs the page's timers to exhaustion, then captures. Without it the
         // shot lands before `drive` has pressed anything.

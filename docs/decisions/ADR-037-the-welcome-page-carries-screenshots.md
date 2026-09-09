@@ -43,6 +43,20 @@ consequences, and each is the reason:
   images in a year and a difference between them and these means the interface
   changed, not that time passed.
 
+That last property had to be earned rather than assumed. It was checked with two
+runs, which agreed, and the claim went into this ADR. Over twenty runs `today`
+came out one of two ways at about seven to three — the shot with native form
+controls in it, differing only inside those controls, by less than five per cent
+on any pixel: invisible, and enough to change every byte. Chromium was painting
+whatever the compositor had ready. `--run-all-compositor-stages-before-draw` and
+`--disable-partial-raster` make it paint everything first, and twelve consecutive
+runs then agreed. `--disable-lcd-text` and `--font-render-hinting=none` are there
+alongside them, which also removes the colour fringing subpixel text leaves on
+glyph edges once a shot is scaled down on the page.
+
+Removing any of those four brings the flapping back, quietly, and the only symptom
+is a screenshot that shows up in `git status` having changed nothing.
+
 They are committed, and generating them is not part of `npm run build`. The
 welcome page is static and must deploy without a browser or ImageMagick present.
 
