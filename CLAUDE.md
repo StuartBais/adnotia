@@ -18,6 +18,8 @@ You are building this from design documents that were written before the code. R
 
 Decisions already made live in `docs/decisions/`. Do not reopen them without writing a new ADR.
 
+Where the work is: the implementation checkpoint at the top of `docs/08-roadmap.md`. It says what is built, what is known to be wrong and not yet fixed, what is waiting on a person, and the next steps as options. Start there, and refresh it when you stop.
+
 ## Hard rules — these are not style preferences
 
 1. **No network. Ever.** No `fetch`, no `XMLHttpRequest`, no `sendBeacon`, no WebSocket, no external `<script>`, `<link>`, font or image URL. The CSP in `app/index.html` and in the welcome page at `index.html` both set `connect-src 'none'` and the test harness fails any build that makes a request. If you think a feature needs the network, it does not belong in this project.

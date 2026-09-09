@@ -6,8 +6,9 @@ with its version pair and a one-line description.
 
 ## Unreleased
 
-Foundations and medication-log parity are in progress; nothing has been released
-yet. See the implementation checkpoint in `docs/08-roadmap.md` for current limits.
+Nothing has been released yet. See the implementation checkpoint in
+`docs/08-roadmap.md` for what is built, what is known to be wrong, and what is
+waiting on a person.
 
 ### Added
 

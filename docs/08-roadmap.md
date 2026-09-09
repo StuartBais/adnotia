@@ -5,7 +5,8 @@ Status: draft 0.1 · September 2026 · Milestones are sequential. Each has a def
 ## Implementation checkpoint
 
 Milestones 0 to 7 and 9 are built and their gates pass. Milestone 8 is partly
-done.
+done, and what remains of it is mostly review by a person rather than code.
+Refreshed 2026-09-09.
 
 **No figures are quoted here on purpose.** This section has carried a test count,
 a bundle size and a list of unsigned commits twice, and been wrong about all
@@ -34,6 +35,56 @@ cannot go stale.
 - The clinician's sheet: a letterhead carrying the mark, the name and the
   provenance line, and a page of its own rather than the foot of the Records tab
   (ADR-034).
+- What a browser extension can see is said, not detected: on the welcome page,
+  in About, and as a third first-run step that offers a passcode. ADR-039,
+  amending ADR-007.
+- The store persists when the page is hidden or unloaded, so the last
+  half-second of edits before a tab closes or a phone suspends the app is no
+  longer lost. Best effort, and the limit is written in the handler.
+- A backup download's object URL outlives the click by a second.
+- The welcome page's screenshots are reproducible run to run; ADR-037 records
+  the claim and the measurement that made it true.
+- The deploy is gated on CI. Cloudflare builds from `release`, which only the
+  `promote` job moves, by fast-forward, after every gate passes. No Cloudflare
+  credential exists in GitHub. ADR-040, amending ADR-009, which now also records
+  how the deploy runs and why `wrangler` is a devDependency.
+- The README describes what is built, by space, and what is not.
+- The edge was checked against the source for the first time, and was wrong:
+  Cloudflare's Bot Fight Mode was injecting a script into every page. The CSP
+  refused to run it, so nothing executed, but the served document was not the
+  built one. It is off, and both documents are now byte-identical to `dist/`.
+  ADR-009 records the method, which is a two-line `curl | diff` anyone can rerun.
+
+### Known wrong, not yet corrected
+
+Found in the September 2026 review and still in the tree. Each is small. Each is
+user-facing wording about privacy, which is the one kind of wording this project
+cannot afford to have wrong.
+
+- **About says the passcode does not work from disk. It does.** Headless Chromium
+  opening a page over `file://` reports `isSecureContext` true and
+  `crypto.subtle` present, and the Secure Contexts specification lists `file:` as
+  potentially trustworthy, so Firefox and Safari agree. The claim is in
+  `src/kernel/shell/about.ts` (`singleFile`), `05-architecture.md` "Build",
+  ADR-003, and a comment in `src/kernel/crypto/envelope.ts`. It matters more
+  since ADR-039, which sends the extension-conscious to the one-file build and
+  then tells them it is the one place they cannot lock. The code path is already
+  right, because `isCryptoAvailable()` decides at runtime; only the words are
+  wrong. Confirm in Firefox, which is on the development machine, before
+  rewording, and amend ADR-003 with a dated note rather than a new ADR, since
+  nothing is being decided.
+- **The extension claim about file URLs is Chrome-specific.** ADR-039 and About
+  say extensions must be granted file access separately and are not by default.
+  That is Chrome's "Allow access to file URLs" toggle. Firefox lets an extension
+  with the all-URLs host permission run on file pages with no separate step.
+  Name Chrome, or soften to "in some browsers", and say so in ADR-039.
+- **A reload in the debounce window after setting a passcode at first run**
+  stores an encrypted document with first run incomplete. On the next open the
+  person unlocks, meets first run again, is offered the passcode step again, and
+  Set fails with "nothing has been encrypted", which is untrue. The hide flush
+  narrows the window and does not close it. Two changes in
+  `src/kernel/shell/shell.ts`: flush the store at the end of `onDone`, and omit
+  `setPasscode` when `passcodeEnabled` is already true. A test for each.
 
 ### Still incomplete
 
@@ -43,9 +94,22 @@ cannot go stale.
   and checked no claim. The crisis numbers have not been confirmed against each
   organisation's own site. The paediatric guidance has not been read by a
   clinician. Permission to reproduce either screener has not been sought.
+- **The live host, half done.** `adnotia.com` is live, built by Cloudflare
+  Workers Builds from git. ADR-040's gate holds only once two dashboard settings
+  match it: the production branch set to `release`, and the build command set
+  to `npm ci && npm run build`. Until both are done, every push to `main` still
+  goes live ungated, and nothing in the repository can see or enforce either
+  setting. ADR-035 lists the operator confirmations the About page's site
+  statement depends on, and `03-scope.md` asks for a standard-by-standard
+  Children's Code assessment of the site before launch.
+- **Release tagging and publishing both artefacts.** `05-architecture.md`
+  "Release" says: tag, CI builds both outputs, attach `adnotia.html` to the
+  release. CI uploads the single file as a workflow artefact and nothing yet
+  turns a tag into a GitHub release. `package.json` is at 0.0.0, About links to
+  `/releases`, which is empty, and `CHANGELOG.md` has one "Unreleased" section
+  waiting for a version.
 - Screen-reader testing on real iOS and Android devices. No automated check
   substitutes for it.
-- Release tagging, publishing both artefacts, and the live host.
 - **Verified by hand, and holding.** The three paths where a defect costs most
   were driven end to end through the built single file in September 2026: the
   passcode round trip (encrypted at rest, wrong code rejected with nothing
@@ -55,6 +119,54 @@ cannot go stale.
   a passcode, four cards, no tabs, no text input, no route to adult data, and a
   wrong code keeping you in). Nothing was found. The kernel suite already covers
   all of it; this was a check that the assembled build agrees.
+
+### Decisions waiting on a person
+
+None of these is for an agent to take. Each is a "stop and ask" item under
+`CLAUDE.md`, written here so the question is not rediscovered from scratch.
+
+- **The dependency list.** `CLAUDE.md` permits five and `package.json` holds
+  ten. jsdom, prettier and the two `@types` packages are implied elsewhere in
+  the same file, and `wrangler` is argued in ADR-009. Widen the list, or not. A
+  linter is the piece of `npm run check` still missing, and it is a dependency.
+- **The screener items in git history.** ADR-023 removed the ASRS items from
+  the tree; they remain in history. Purging is a rewrite of `main`, and under
+  ADR-040 a rewritten `main` makes the promote job fail on purpose, so it needs
+  doing deliberately and once, with `release` reset by hand afterwards.
+- **The open questions** at the end of `01-module-contract.md` and
+  `04-family-space.md`: an adolescent space, a child's own check-in, a second
+  carer merging entries, and country-specific instruments.
+- A stray `copilot/fetch-cloudflare-setup-instructions` branch on the remote,
+  to delete or keep.
+
+### Next steps, as options
+
+In the recommended order. The first is not optional if the site is to stay
+protected; the rest are a choice, and each is sized so it can be picked up cold.
+
+1. **Flip the two dashboard settings.** A person, minutes. This is what makes
+   ADR-040 true. Record the date in ADR-009 when done.
+2. **Close "Known wrong".** An agent, about an hour. Three small changes, each
+   with a test, and dated amendments to ADR-003 and ADR-039.
+3. **A release workflow.** An agent, a session. On a `v*` tag: run the gates,
+   build both outputs, create a GitHub release with `adnotia.html` and a zip of
+   `dist/` attached, and move the changelog's "Unreleased" under the version.
+   Then tag `v0.1.0`. This finishes the code side of Milestone 8.
+4. **Review packets.** An agent prepares, a person reviews. The human-blocked
+   items stall because nobody has been handed something to review. From the
+   Library entries as built, produce: a claim-by-claim list with its citation for
+   the second reader; the crisis numbers beside the URL each was taken from; the
+   paediatric guidance pages as one document for a clinician; and a draft
+   permission request for ASRS v1.1 Part A, addressed as ADR-023 describes.
+5. **A device accessibility script.** An agent prepares, a person runs. A
+   checklist for VoiceOver and TalkBack against the built single file, so the
+   real-device testing is repeatable and its result can be recorded here.
+6. **Dark mode as a second token set.** `07-design-system.md` reserves it for
+   later, and it is the first feature work worth doing once the above is
+   closed.
+
+Not on this list: anything on the exclusion list, and anything that needs the
+network.
 
 ## Milestone 0 — foundations
 
