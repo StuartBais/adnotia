@@ -12,7 +12,6 @@
     "dev": "vite",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:parity": "vitest run tests/parity --passWithNoTests",
     "typecheck": "tsc --noEmit",
     "build": "vite build",
     "build:single": "vite build --mode single && node scripts/finish-single.mjs",

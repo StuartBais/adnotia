@@ -34,7 +34,7 @@ Where the work is: the implementation checkpoint at the top of `docs/08-roadmap.
 
 - **Stack:** TypeScript (strict), vanilla DOM, ES modules, Vite. No UI framework in Milestones 0–1. If module boilerplate becomes a real cost later, propose Preact in an ADR rather than adding it quietly.
 - **Tests:** Vitest with jsdom. Every module ships `fixtures/` (empty, threeDays, thirtyDays) and a smoke test that renders every contribution against each fixture, runs every migration, and asserts no network call. `npm test` must pass before any commit.
-- **The reference implementation** is `reference/adnotia-v0-monolith.html`. It is a working single-file app containing the complete medication log. **Port from it; do not extend it.** When porting a feature, write a parity test that replays the same fixture through the monolith (jsdom can run it) and the new module and compares output. `reference/README.md` explains what to keep and what the contract exercise already decided to move.
+- **`reference/adnotia-v0-monolith.html` is history, not a gate.** It is the working single-file predecessor and the origin of much of the design; the provenance comments through `src/kernel/ui/` point at it. It is no longer executed by any test and nothing is compared against it. The port is finished, and ADR-042 records why keeping a second implementation running was no longer worth what it cost. Read it to understand where something came from. Do not extend it, and do not add code here whose only justification is that the monolith did it that way.
 - **Two build outputs, always:** `npm run build` produces the PWA in `dist/`; `npm run build:single` produces `dist-single/adnotia.html`, one self-contained file. Both must work from a fresh clone. See ADR-003.
 - **Copy and tone** follow `docs/07-design-system.md` "Voice". Sentence case. No exclamation marks. A missing day is "a day missing", not "you forgot".
 - **Accessibility** is not optional: every interactive element keyboard-reachable, `aria-pressed` on toggles, contrast ≥ 4.5:1 checked against the token table.
@@ -57,7 +57,6 @@ Otherwise, decide, write it down, and keep going.
 npm install
 npm run dev            # Vite dev server
 npm test               # Vitest, all suites
-npm run test:parity    # monolith vs module comparisons
 npm run build          # PWA to dist/
 npm run build:single   # one-file bundle to dist-single/adnotia.html
 npm run check          # format + typecheck + no-network audit + contrast

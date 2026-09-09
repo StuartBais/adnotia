@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   backupPassphraseProblem,
-  randomBytes,
+  type Envelope,
   createPasscodeCodec,
   createStore,
   deriveKey,
@@ -331,55 +331,6 @@ describe('encryption through the store', () => {
   });
 });
 
-describe('version 1 envelopes, which people already have on disk', () => {
-  /**
-   * The format before ADR-041: no bound header, and 500 000 iterations. Built
-   * here rather than pasted as a fixture so it is unambiguously what the old
-   * code wrote — same fields, same order, sealed with no additionalData.
-   */
-  async function sealAsV1(secret: string, plaintext: string): Promise<string> {
-    const salt = randomSalt();
-    const iv = randomBytes(IV_BYTES);
-    const key = await deriveKey(secret, salt, FAST);
-    const ct = await globalThis.crypto.subtle.encrypt(
-      { name: 'AES-GCM', iv: iv as BufferSource },
-      key,
-      new TextEncoder().encode(plaintext),
-    );
-    return JSON.stringify({
-      enc: 1,
-      v: 1,
-      kdf: 'PBKDF2-SHA256',
-      iter: FAST,
-      salt: toBase64(salt),
-      iv: toBase64(iv),
-      ct: toBase64(ct),
-    });
-  }
-
-  it('still open, because raising the bar must not lock anybody out', async () => {
-    const raw = await sealAsV1('123456', '{"schemaVersion":1}');
-    const envelope = envelopeOf(raw)!;
-    expect(envelope.v).toBe(1);
-    expect(await unseal('123456', envelope)).toBe('{"schemaVersion":1}');
-  });
-
-  it('open at the iteration count they were sealed with, not the current one', async () => {
-    // The count lives in the envelope precisely so it can be raised. If unseal
-    // used the new default, every existing document would look wrongly locked.
-    const raw = await sealAsV1('123456', 'held');
-    expect(envelopeOf(raw)!.iter).toBe(FAST);
-    expect(envelopeOf(raw)!.iter).not.toBe(PBKDF2_ITERATIONS);
-    expect(await unseal('123456', envelopeOf(raw)!)).toBe('held');
-  });
-
-  it('are rewritten as version 2 by the next save', async () => {
-    const salt = randomSalt();
-    const key = await deriveKey('123456', salt, FAST);
-    expect(envelopeOf(await seal(key, salt, 'anything', FAST))!.v).toBe(2);
-  });
-});
-
 describe('the bound header', () => {
   async function sealedV2(): Promise<{ raw: string; key: CryptoKey }> {
     const salt = randomSalt();
@@ -395,9 +346,12 @@ describe('the bound header', () => {
     await expect(unseal('123456', tampered)).rejects.toThrow(WrongKeyError);
   });
 
-  it('refuses a file downgraded to version 1', async () => {
+  it('refuses a file downgraded to the version that had no bound header', async () => {
+    // Cast because a hostile file is not type-checked. Version 1 is gone from
+    // the type and from the reader (ADR-042); this proves a file claiming to be
+    // one is refused rather than quietly read without its header checked.
     const { raw, key } = await sealedV2();
-    const tampered = { ...envelopeOf(raw)!, v: 1 as const };
+    const tampered = { ...envelopeOf(raw)!, v: 1 } as unknown as Envelope;
     await expect(open(key, tampered)).rejects.toThrow(WrongKeyError);
   });
 

@@ -12,9 +12,6 @@
 //     recognise.
 
 import { SCHEMA_VERSION, type AdnotiaDocument } from '../document';
-import { importV0, isV0Document } from './v0';
-
-export { importV0, isV0Document, V0_KEY, type V0ImportResult } from './v0';
 
 export interface MigrationContext {
   now?: Date;
@@ -23,22 +20,23 @@ export interface MigrationContext {
 /** One step up. Keyed by the version being migrated *from*. */
 export type SchemaMigration = (document: unknown, context: MigrationContext) => unknown;
 
-export const schemaMigrations: Readonly<Record<number, SchemaMigration>> = {
-  // v0 is the monolith's flat shape under its own key. See ./v0.ts.
-  0: (document, context) => importV0(document, context).document,
-};
-
 /**
- * The version of a document read back from storage. A monolith document has no
- * `schemaVersion`; it is recognised by its `entries` map and treated as 0.
+ * Empty, and that is the current state rather than a stub.
+ *
+ * Version 1 is the first shape anybody's data is in: ADR-042 removed the v0
+ * import before release, when there was no v0 data anywhere to import. The
+ * machinery below stays because the first real migration will need it, and the
+ * rules in the header are what it will be written against.
  */
+export const schemaMigrations: Readonly<Record<number, SchemaMigration>> = {};
+
+/** The version of a document read back from storage. */
 export function detectSchemaVersion(document: unknown): number {
   if (typeof document === 'object' && document !== null) {
     const version = (document as { schemaVersion?: unknown }).schemaVersion;
     if (typeof version === 'number') return version;
-    if (isV0Document(document)) return 0;
   }
-  throw new Error('That is not an Adnotia document: it has no schemaVersion and no entries.');
+  throw new Error('That is not an Adnotia document: it has no schemaVersion.');
 }
 
 /**

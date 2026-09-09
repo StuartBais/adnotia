@@ -4,9 +4,9 @@
 
 ## What it is for
 
-It is the behavioural specification for Milestone 1. Every feature in it maps to a contribution point in `docs/01-module-contract.md` (see the worked example there), and Milestone 1 is done when parity tests prove the module build produces the same report, history and text export for the same fixtures.
+It **was** the behavioural specification for Milestone 1, and it did that job: every feature in it maps to a contribution point in `docs/01-module-contract.md` (see the worked example there), and parity tests proved the module build produced the same report, history and text export for the same fixtures. Those tests were removed by ADR-042 once the port was finished and before release. Nothing executes this file any more.
 
-jsdom can execute it. `tests/parity/` should load it with `runScripts: "dangerously"`, inject a fixture into `localStorage` under `adhd-titration-log-v1`, and read the rendered DOM. The v0 storage shape is documented in `docs/06-data-model.md`.
+jsdom can still execute it, with `runScripts: "dangerously"` and a fixture in `localStorage` under `adhd-titration-log-v1`, if a question ever needs answering that way. Nothing in the build or the test suite does so.
 
 ## What to port
 
@@ -32,4 +32,4 @@ Everything under the "Worked example" table in the contract. In particular, thes
 
 ## What not to do
 
-Do not add features to this file. Do not fix bugs in it unless a parity test needs the fix to establish correct behaviour, and then record the fix in the test. When Milestone 1 is complete, this file stays in the repository as a historical reference and the parity tests keep running against it.
+Do not add features to this file and do not fix bugs in it. It is a record of what the app was ported from, kept because the provenance comments through `src/kernel/ui/` point at it and because deleting the origin of a design makes the design harder to argue with later. It is not a specification any more, and "the monolith did it this way" is no longer a reason for anything.

@@ -1,10 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { mountApplication } from '../../src/kernel/shell/application';
 import { createPasscodeCodec } from '../../src/kernel/crypto/codec';
-import { envelopeOf, unseal } from '../../src/kernel/crypto/envelope';
 import { createDocument, DOCUMENT_KEY } from '../../src/kernel/store/document';
 import { memoryStorageAdapter } from '../../src/kernel/store/adapters';
-import { V0_KEY } from '../../src/kernel/store/migrations/index';
 
 const click = (element: Element | null | undefined): void => {
   (element as HTMLElement).dispatchEvent(new MouseEvent('click', { bubbles: true }));
@@ -46,28 +44,6 @@ describe('encrypted application startup', () => {
       expect(await adapter.read(DOCUMENT_KEY)).toBe(raw);
       submit(root, '123456');
       await vi.waitFor(() => expect(root.querySelectorAll('[role="tab"]')).toHaveLength(4));
-    } finally {
-      application.destroy();
-    }
-  });
-
-  it('imports encrypted legacy data under encryption and leaves its original key intact', async () => {
-    const codec = await createPasscodeCodec('123456', { iterations: 1000 });
-    const raw = await codec.encode({
-      entries: { '2026-09-01': { dose: '30', med: 'Synthetic' } },
-    } as never);
-    const adapter = memoryStorageAdapter({ [V0_KEY]: raw });
-    const root = document.createElement('div');
-    const application = await mountApplication({ container: root, adapter });
-    try {
-      submit(root, '123456');
-      await vi.waitFor(() => expect(root.querySelectorAll('[role="tab"]')).toHaveLength(4));
-      expect(await adapter.read(V0_KEY)).toBe(raw);
-      const imported = envelopeOf((await adapter.read(DOCUMENT_KEY))!);
-      expect(imported).not.toBeNull();
-      const document = JSON.parse(await unseal('123456', imported!));
-      expect(document.modules.medication.days['2026-09-01'].dose).toBe('30');
-      expect(document.kernel.settings.passcodeEnabled).toBe(true);
     } finally {
       application.destroy();
     }

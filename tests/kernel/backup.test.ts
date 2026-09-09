@@ -7,7 +7,6 @@ import {
   exportBackup,
   mergeDocuments,
   restoreBackup,
-  SCHEMA_VERSION,
   WrongKeyError,
   type AdnotiaDocument,
 } from '../../src/kernel/index';
@@ -133,17 +132,6 @@ describe('restoring', () => {
     const doc = documentWith(['2026-09-04']);
     const { document } = await restoreBackup(createDocument(), JSON.stringify(doc));
     expect(document.modules['medication']).toEqual(doc.modules['medication']);
-  });
-
-  it('migrates an old backup on the way in', async () => {
-    // A v0 monolith export, restored years later.
-    const v0 = JSON.stringify({
-      entries: { '2026-09-04': { dose: '50', med: 'Elvanse', bed: '23:40', wake: '07:00' } },
-    });
-    const { document } = await restoreBackup(createDocument(), v0);
-    expect(document.schemaVersion).toBe(SCHEMA_VERSION);
-    expect(document.modules['medication']).toBeDefined();
-    expect(document.modules['sleep']).toBeDefined();
   });
 
   it('refuses a file that is not a backup', async () => {

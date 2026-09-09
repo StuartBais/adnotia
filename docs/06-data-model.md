@@ -125,9 +125,9 @@ When a passcode is set, `localStorage["adnotia-v1"]` holds this instead of the d
   `additionalData`, so the header is authenticated with the ciphertext and
   editing any of them fails decryption. Without it, `iter` — the number that
   decides how expensive an attack is — was a field the attacker could edit.
-- `v: 1` envelopes have no bound header and are read forever. They are rewritten
-  as `v: 2` by the next save, with the same key. Nothing is written at `v: 1`
-  again.
+- There is no `v: 1`. It had no bound header, and ADR-042 removed the reader for
+  it before release, while no data anywhere was in that format. Every envelope
+  this build will ever open is authenticated, with no exception to reason about.
 
 - Key: PBKDF2-SHA256 over the UTF-8 passcode with the stored salt and iteration count, output an AES-GCM-256 key, non-extractable.
 - Every write uses a fresh IV. The salt changes only when the passcode changes.
@@ -156,14 +156,16 @@ Merging rather than replacing is what makes "restore onto a second device" and "
 
 ## The v0 monolith mapping
 
-The reference implementation stores everything under one key, `adhd-titration-log-v1`, in a flatter shape. The kernel's `schemaVersion` 0 → 1 migration imports it:
+Removed. There was one, from the predecessor's flat `entries` shape under
+`adhd-titration-log-v1`, and ADR-042 deleted it before release on the grounds
+that nobody had run the monolith, so there was no v0 data anywhere to import.
 
-| v0                                                                                                                   | v1                                                                 |
-| -------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
-| `entries[d].{med,dose,unit,times,adherence,focus,mood,onset,woreOff,rebound,reboundTime,appetite,heart,side,detail}` | `modules.medication.days[d]`                                       |
-| `entries[d].{bed,wake,sleep,sleepq,sleepLatency,sleepNote}`                                                          | `modules.sleep.days[d]` as `{bed,wake,hours,quality,latency,note}` |
-| `entries[d].{win,miss,createdAt}`                                                                                    | `kernel.days[d]`                                                   |
-| `questions`, `baseline`, `overall`, `lastAppt`, `lastBackup`                                                         | `kernel.*`                                                         |
-| `last` (carry-forward cache)                                                                                         | dropped; `carry: "nearestPrior"` recomputes it                     |
+Version 1 is therefore the first shape any person's data is in, `schemaVersion`
+starts there, and `schemaMigrations` is empty. The machinery around it is not:
+`detectSchemaVersion` and `migrateDocument` still refuse a document they have no
+path for and still hand back a newer document untouched, because the first real
+migration will be written against those rules and they are easier to keep true
+than to reintroduce. `tests/kernel/migrations.test.ts` holds them.
 
-The migration enables `medication` and `sleep` when it finds v0 data, sets `space: "adult"`, and keeps the old key untouched until the person confirms the import worked, then removes it. If the old key holds an encryption envelope, it is decrypted with the passcode first; the envelope format is unchanged between v0 and v1, so v0 data opens here. Since ADR-041 this build writes v2, whose header is authenticated, and the monolith cannot open that. The import direction is the one that matters and is the only one anybody travels.
+The mapping itself is in git history if it is ever wanted, and
+`reference/README.md` says what the monolith stored where.

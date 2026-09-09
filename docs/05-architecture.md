@@ -21,7 +21,7 @@ Status: draft 0.1 · September 2026 · Implements `01-module-contract.md` under 
 | Vite | Dev server, TypeScript, and two production outputs with minimal configuration. |
 | vite-plugin-pwa | Manifest and service worker for offline and install. |
 | vite-plugin-singlefile | The one-file build. |
-| Vitest + jsdom | Fast unit and smoke tests; jsdom can also execute the reference monolith for parity tests. |
+| Vitest + jsdom | Fast unit and smoke tests against the real DOM the app renders into. |
 | No runtime dependencies | Nothing else ships to the user. |
 
 Playwright may be added later for a handful of end-to-end flows (first run, enable module, print report, passcode round-trip). Not before Milestone 2.
@@ -38,7 +38,7 @@ adnotia/
   vite.config.ts                two build targets
   package.json
   docs/                         design documents and ADRs (source of truth)
-  reference/                    v0 monolith and porting notes
+  reference/                    the v0 monolith, kept as history (ADR-042)
   assets/                       logo.svg, icon sources, shots/ (welcome-page screenshots)
   src/
     kernel/
@@ -78,8 +78,7 @@ adnotia/
       print.css
     main.ts
   tests/
-    harness/                    no-network guard, fixture loader, monolith runner
-    parity/                     monolith vs module comparisons
+    harness/                    no-network guard, fixture loader
     kernel/
 ```
 
@@ -180,7 +179,7 @@ Both builds run in CI on every push. The single-file output is a release artefac
 
 - **Kernel unit tests:** store, migrations (every version pair), crypto round-trips including wrong-key rejection, backup merge, dates across midnight, cost budget, registration validation including each failure mode.
 - **Module smoke tests:** generated from a shared helper; a module cannot opt out.
-- **Parity tests:** `tests/parity/` loads `reference/adnotia-v0-monolith.html` in jsdom with a fixture, extracts report text and history text, and compares to the module build's output for the same fixture. These are how Milestone 1 proves it lost nothing.
+- **No parity tests.** They existed, they did their job through Milestone 1, and ADR-042 removed them: the report, the history and the text export are covered directly by `tests/kernel/reports.test.ts` and the module suites, and a second implementation kept running to be compared against is a cost with a finished purpose.
 - **No-network guard:** the test harness stubs `fetch`, `XMLHttpRequest`, `navigator.sendBeacon`, `WebSocket` and `EventSource` to throw; any test that trips one fails.
 - **Contrast check:** a script reads `tokens.css` and asserts every text-on-surface pair used by the design system is ≥ 4.5:1.
 - **Print snapshot:** the `clinical` report for the thirtyDays fixture is rendered with `print.css` applied and snapshotted as text; layout changes must be intentional.

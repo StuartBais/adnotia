@@ -17,8 +17,9 @@ cannot go stale.
 
 ### Done since the last checkpoint
 
-- Report parity against the monolith, with every remaining difference recorded
-  and argued in `tests/parity/report.test.ts`. None is open.
+- Report parity against the monolith was reached, every remaining difference
+  recorded and argued, and none left open. The tests that proved it were then
+  removed with the rest of the v0 compatibility (ADR-042).
 - The Library, the exclusion entries, About, the crisis page, and the parent
   guidance pages. The screeners are built and **not offered**: they are not ours
   to reproduce, see ADR-023.
@@ -49,6 +50,12 @@ cannot go stale.
   credential exists in GitHub. ADR-040, amending ADR-009, which now also records
   how the deploy runs and why `wrangler` is a devDependency.
 - The README describes what is built, by space, and what is not.
+- Backups can no longer be sealed with a passphrase that would not survive being
+  stolen, the work of turning a passcode into a key roughly doubled, and the
+  envelope header is authenticated so a stolen file cannot be edited to make
+  attacking it cheaper. ADR-041, amending ADR-007.
+- The v0 import, the v1 envelope and the parity suite are gone, before release
+  and while there was no data anywhere in either format. ADR-042.
 - The edge was checked against the source for the first time, and was wrong:
   Cloudflare's Bot Fight Mode was injecting a script into every page. The CSP
   refused to run it, so nothing executed, but the served document was not the
@@ -188,7 +195,7 @@ Done when: a fresh clone runs `npm install && npm test && npm run build && npm r
 
 ## Milestone 1 — the medication log as a module
 
-Goal: parity with the monolith, proven by tests.
+Goal: parity with the monolith, proven by tests. (Reached. The tests were removed by ADR-042 once it was; see the checkpoint.)
 
 - `modules/medication` against the contract: manifest, `today` fields with follow-ups and `nearestPrior` carry, `records`, five `clinical` report sections (where things stand, dose over time, cover across the day drawn by the kernel from medication + sleep, per-dose comparison, side-effect grid), `library` entry with citations, fixtures, smoke test.
 - `modules/sleep` split out: bed, wake, hours auto-computed, night-quality chips with the latency follow-up, `records`, its `clinical` section, `library` entry.
@@ -196,7 +203,7 @@ Goal: parity with the monolith, proven by tests.
 - Kernel-owned `clinical` header (identity, range, coverage), footer (about this record, questions), print and text export, "I have had the appointment", the fortnightly backup nag, the screen-only mirror.
 - Parity tests: for the thirtyDays fixture, the monolith and the module build produce the same report text modulo whitespace, the same history lines, and the same text export.
 
-Done when: parity tests pass, a real v0 export imports cleanly, and a person who used the monolith notices nothing missing.
+Done when: parity tests pass, a real v0 export imports cleanly, and a person who used the monolith notices nothing missing. **All three held, and none is checkable now** — ADR-042 removed the parity tests and the v0 import before release, on the grounds that nobody had used v0 and the port was finished. The report, history and text export are covered directly instead.
 
 ## Milestone 2 — Library and the adult screener
 

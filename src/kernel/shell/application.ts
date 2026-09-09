@@ -11,7 +11,7 @@ import { createStore, type KernelStore } from '../store/store';
 import { plainJsonCodec, type DocumentCodec } from '../store/codec';
 import { DOCUMENT_KEY } from '../store/document';
 import type { StorageAdapter } from '../store/adapters';
-import { migrateDocument, V0_KEY } from '../store/migrations/index';
+import { migrateDocument } from '../store/migrations/index';
 import type { ModuleManifest } from '../registry/types';
 import { brand, card, el, passwordInput } from '../ui/index';
 import { mountShell, type Shell } from './shell';
@@ -92,9 +92,7 @@ export async function mountApplication(options: ApplicationOptions): Promise<{ d
     busy = true;
     let candidate: KernelStore | undefined;
     try {
-      const current = await adapter.read(DOCUMENT_KEY);
-      const legacy = current === null ? await adapter.read(V0_KEY) : null;
-      const source = current ?? legacy;
+      const source = await adapter.read(DOCUMENT_KEY);
       const encrypted = source !== null && envelopeOf(source) !== null;
       if (encrypted && !isCryptoAvailable()) {
         failure(
@@ -110,23 +108,14 @@ export async function mountApplication(options: ApplicationOptions): Promise<{ d
         ? await createPasscodeCodec(passcode!, sealParameters(source!))
         : plainJsonCodec;
       candidate = createStore({
-        adapter: guardedStorageAdapter(adapter, DOCUMENT_KEY, current),
+        adapter: guardedStorageAdapter(adapter, DOCUMENT_KEY, source),
         codec: {
           encode: (document) => codec.encode(document),
           decode: async (raw) => migrateDocument(await codec.decode(raw)),
         },
       });
       await candidate.load();
-      if (legacy !== null) {
-        const imported = migrateDocument(await codec.decode(legacy));
-        imported.kernel.settings = {
-          ...imported.kernel.settings,
-          firstRunComplete: true,
-          passcodeEnabled: encrypted,
-        };
-        candidate.replaceDocument(imported);
-        await candidate.flush();
-      } else if (candidate.document().kernel.settings.passcodeEnabled !== encrypted) {
+      if (candidate.document().kernel.settings.passcodeEnabled !== encrypted) {
         candidate.updateKernel((kernel) => ({
           ...kernel,
           settings: { ...kernel.settings, passcodeEnabled: encrypted },

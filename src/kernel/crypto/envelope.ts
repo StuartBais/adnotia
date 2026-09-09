@@ -1,9 +1,10 @@
 // The encryption envelope.
 //
-// Ported from reference/adnotia-v0-monolith.html. The envelope format is
-// unchanged between v0 and v1 (docs/06-data-model.md), so a document sealed by
-// the monolith opens here and vice versa. reference/README.md lists the crypto
-// envelope among the things not to reimplement from scratch.
+// One version, and every envelope is authenticated: `v`, `kdf`, `iter` and
+// `salt` are bound to the ciphertext as AES-GCM additionalData, so there is no
+// code path here that reads a header an attacker could have edited. Version 1
+// had no such binding and was removed before release by ADR-042, when no data
+// anywhere was written in it.
 //
 // Parameters are ADR-007 as amended by ADR-041: PBKDF2-SHA256 to an AES-GCM-256
 // key, a fresh IV per write, keys in memory for the page's life only.
@@ -16,7 +17,7 @@ export const PBKDF2_ITERATIONS = 1_200_000;
 export const SALT_BYTES = 16;
 export const IV_BYTES = 12;
 
-/** The version new envelopes are written at. Version 1 is read, never written. */
+/** The only version. See ADR-041 for what it binds and ADR-042 for why it is alone. */
 export const ENVELOPE_VERSION = 2;
 
 /** Minimums from ADR-007 as amended by ADR-041. */
@@ -25,8 +26,8 @@ export const MIN_BACKUP_PASSPHRASE_LENGTH = 12;
 
 export interface Envelope {
   enc: 1;
-  /** 1: no bound header. 2: the header is authenticated (ADR-041). */
-  v: 1 | 2;
+  /** Always 2. The header is authenticated with the ciphertext (ADR-041). */
+  v: 2;
   kdf: 'PBKDF2-SHA256';
   iter: number;
   /** base64, 16 bytes */
@@ -176,9 +177,7 @@ export async function open(key: CryptoKey, envelope: Envelope): Promise<string> 
       {
         name: 'AES-GCM',
         iv: fromBase64(envelope.iv) as BufferSource,
-        // Version 1 sealed nothing alongside the ciphertext, so asking for a
-        // bound header would fail every file written before ADR-041.
-        ...(envelope.v === 2 ? { additionalData: boundHeader(envelope) as BufferSource } : {}),
+        additionalData: boundHeader(envelope) as BufferSource,
       },
       key,
       fromBase64(envelope.ct) as BufferSource,
