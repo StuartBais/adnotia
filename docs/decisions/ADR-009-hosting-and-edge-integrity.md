@@ -53,6 +53,58 @@ to the deploy path itself.
 - **`.wrangler/` is local scratch** (build state and the dev-server cache) and is
   ignored. Nothing in it is deployable or reproducible.
 
+### Checked against the live site, 2026-09-09
+
+The dashboard settings above had never been verified. They are now, and one of
+them was wrong.
+
+**Cloudflare was injecting a script into every HTML response.** Bot Fight Mode
+was on, and on the Free plan its JavaScript Detections component is automatically
+enabled and cannot be turned off separately — Cloudflare's own documentation says
+so. It inserted an inline `<script>` setting `window.__CF$cv$params` and loading
+`/cdn-cgi/challenge-platform/scripts/jsd/main.js` before `</body>`, on 100% of
+requests to `/` and `/app/`. Exactly the failure this ADR was written to prevent,
+by the exact feature it names.
+
+The CSP held. `script-src 'self'` with no `unsafe-inline` and no nonce means the
+browser refused to run it, so nothing executed and nothing was sent — the
+injected bytes were inert. That is the defence working rather than a reason it
+did not matter: the served document was not the built document, and the promise
+in `03-scope.md` was false as deployed while true in the source. It was also one
+CSP change away from live.
+
+Bot Fight Mode is now off. Both documents were then confirmed **byte-identical**
+to `dist/`, which is a stronger statement than any dashboard toggle: every
+feature in the list above would leave a mark in those bytes, and none does.
+
+**How to check it again**, from a tree that has just run `npm run build`:
+
+```sh
+curl -s https://adnotia.com/app/ | diff -q dist/app/index.html - \
+  && echo "served page is the built page"
+curl -s https://adnotia.com/     | diff -q dist/index.html -     \
+  && echo "served welcome page is the built page"
+```
+
+A difference is the whole finding; no marker list is needed, and none can go
+stale. Two supporting signals when it does differ: JavaScript Detections strips
+`ETag` from responses it injects into, so a missing `ETag` on an HTML response
+implicates it; and the `t:` value inside `__CF$cv$params` is base64 of a Unix
+timestamp, which separates a live injection from a cached one. Both were needed
+here — the documents were edge-cached, so the first two purges looked like the
+fix had failed when it had not yet been made.
+
+Verified off by that method: Bot Fight Mode, Rocket Loader, Email Obfuscation,
+Web Analytics, Speed Brain, Zaraz, HTML minification. Verified on, and required:
+Always Use HTTPS. Confirmed by the account API: no Worker script, so the
+`_headers` exception for Worker-generated responses cannot apply; no Pages
+project, no KV, no D1, no R2.
+
+Not checkable this way, and still resting on the dashboard: Workers Builds'
+production branch and build command, and any Configuration Rule that re-enables a
+setting for some scope. The consequence below — that these live outside the
+repository and outside CI — is unchanged for those.
+
 ## Consequences
 - The privacy claim is verifiable at the edge as well as in the source: a reviewer can read `deploy/_headers` and see that `connect-src 'none'` is served, not merely declared.
 - The hosting choice is now a correctness constraint rather than an ops preference. Changing host is fine; turning on an HTML-rewriting feature is not, and would be caught as "the downloaded single file stopped working" long before anyone suspected the CDN.
