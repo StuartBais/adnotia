@@ -214,6 +214,13 @@ yet. See the implementation checkpoint in `docs/08-roadmap.md` for current limit
 
 ### Fixed
 
+- An edit made in the last half-second before you closed a tab, or before a phone put the
+  installed app to sleep, was lost. Writes wait half a second so a burst of typing is one
+  save, and nothing was listening for the page going away, so that last write never
+  happened and nothing said so. Hiding the page now saves immediately. It is best effort
+  rather than a guarantee — a page can be killed between the two — but the moment a page is
+  hidden comes well before it is discarded, which is the window this needs.
+
 - Reports in the Family space read the adult module bag and so came out empty for every
   child. A module's slice lives under the child there, and the report engine holds the whole
   document rather than the store, so it has to route that itself.

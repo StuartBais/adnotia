@@ -193,10 +193,52 @@ export async function mountApplication(options: ApplicationOptions): Promise<{ d
     }
   }
 
+  /**
+   * Persist before the page goes away.
+   *
+   * Writes are debounced by half a second (docs/05-architecture.md "Store"), so
+   * an edit made just before a tab closes, or just before a phone suspends the
+   * installed app, would otherwise never reach storage. `CreateStoreOptions`
+   * says it plainly: losing a write silently is the one thing this app must not
+   * do. Nothing was listening for the page going away, so it could.
+   *
+   * Both events are registered because neither is reliable alone.
+   * `visibilitychange` is the one that fires when a phone suspends a PWA and is
+   * the only one some mobile browsers send before killing a tab; `pagehide`
+   * covers the desktop close and same-tab navigation. When both fire, the
+   * second usually finds the document saved and returns. If the first write is
+   * still in flight it enqueues a second one, which is a redundant write of
+   * identical bytes, chained behind the first rather than interleaved with it.
+   *
+   * Best effort, and the limit is worth naming rather than implying. Nothing
+   * here can hold the page open until the write lands: the codec is async
+   * (ADR-007), and `guardedStorageAdapter` takes a Web Lock before writing,
+   * which is a task and not a microtask. A page killed between the event and
+   * the write still loses that edit. What makes this worth having anyway is
+   * that `visibilitychange` fires when a page is hidden, which on every
+   * platform is well before it is frozen or discarded — so the window this
+   * needs is the one it reliably gets.
+   */
+  function persistBeforeHidden(): void {
+    // 'error' is included on purpose: hiding the page is a free retry of a
+    // write that failed, and the person is not looking at the status line.
+    if (store === undefined || store.persistence() === 'saved') return;
+    void store.flush().catch(() => undefined);
+  }
+
+  function onVisibilityChange(): void {
+    if (globalThis.document.visibilityState === 'hidden') persistBeforeHidden();
+  }
+
+  globalThis.document.addEventListener('visibilitychange', onVisibilityChange);
+  globalThis.addEventListener('pagehide', persistBeforeHidden);
+
   await start();
   return {
     destroy() {
       destroyed = true;
+      globalThis.document.removeEventListener('visibilitychange', onVisibilityChange);
+      globalThis.removeEventListener('pagehide', persistBeforeHidden);
       shell?.destroy();
       store?.dispose();
       container.replaceChildren();
