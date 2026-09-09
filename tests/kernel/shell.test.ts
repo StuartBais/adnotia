@@ -633,3 +633,71 @@ describe('first run: the passcode step', () => {
     expect(store.document().kernel.settings.firstRunComplete).toBe(true);
   });
 });
+
+describe('the default download', () => {
+  /**
+   * The shell's own `offerDownload`, exercised through the real backup page
+   * rather than injected, because half of what is being pinned is that the
+   * default is what runs when nothing is passed in.
+   *
+   * See the note on `REVOKE_AFTER_MS` in shell.ts: the revoke must not happen
+   * on the click's own task.
+   */
+  it('hands over the file and revokes the object URL later, not on the click', async () => {
+    const created = 'blob:adnotia/one';
+    const revoked: string[] = [];
+    const clicked: { href: string; download: string }[] = [];
+
+    const originalCreate = URL.createObjectURL;
+    const originalRevoke = URL.revokeObjectURL;
+    URL.createObjectURL = vi.fn(() => created);
+    URL.revokeObjectURL = vi.fn((url: string) => void revoked.push(url));
+    const click_ = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (
+      this: HTMLAnchorElement,
+    ) {
+      clicked.push({
+        href: this.getAttribute('href') ?? '',
+        download: this.getAttribute('download') ?? '',
+      });
+    });
+
+    try {
+      store.updateKernel((kernel) => ({
+        ...kernel,
+        settings: { ...kernel.settings, firstRunComplete: true },
+      }));
+      // No offerDownload: this is the case the default exists for.
+      mountShell({ store, container });
+
+      click(byText(container, 'Settings'));
+      const backups = [...container.querySelectorAll('button.linkrow')].find((row) =>
+        row.textContent?.startsWith('Backups'),
+      );
+      click(backups);
+
+      const passphrase = container.querySelector<HTMLInputElement>(
+        'input[aria-label="A passphrase for this backup"]',
+      );
+      if (passphrase) passphrase.value = 'a-long-enough-passphrase';
+      // The card above the button carries the same words, so byText would find
+      // the heading first.
+      const download = [...container.querySelectorAll('button')].find((node) =>
+        node.textContent?.startsWith('Download a'),
+      );
+      click(download);
+
+      await vi.waitFor(() => expect(clicked).toHaveLength(1));
+      expect(clicked[0]!.href).toBe(created);
+      expect(clicked[0]!.download).toMatch(/^adnotia-\d{4}-\d{2}-\d{2}\.json$/);
+
+      // The point of the change: still alive when the click returns.
+      expect(revoked).toEqual([]);
+
+      await vi.waitFor(() => expect(revoked).toEqual([created]), { timeout: 3000 });
+    } finally {
+      click_.mockRestore();
+      URL.createObjectURL = originalCreate;
+      URL.revokeObjectURL = originalRevoke;
+    }
+  });
+});

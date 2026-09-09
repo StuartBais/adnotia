@@ -45,12 +45,33 @@ export interface Shell {
   destroy(): void;
 }
 
+/**
+ * The object URL outlives the click by a second.
+ *
+ * A download starts after the click handler returns, not inside it, so revoking
+ * on the same tick is a race in principle: the URL can be gone before the
+ * browser resolves it, and a cancelled download reports nothing to the page. A
+ * backup that silently does not arrive is the failure this screen exists to
+ * prevent, so the revoke moves off the click's own task.
+ *
+ * Measured rather than assumed, and the measurement did not reproduce the bug:
+ * on Firefox 155 the same-tick revoke delivered a complete file, at 715 bytes
+ * and again at 40 MB, as did every deferred variant and an unrevoked control.
+ * This is kept as the cheaper side of a race that older Firefox did lose and
+ * that nothing here can detect if it comes back.
+ *
+ * A second, not the minute the pattern is usually written with. The blob is a
+ * plaintext copy of the whole document, there is no slow server to wait for,
+ * and holding it any longer than the download needs buys nothing.
+ */
+const REVOKE_AFTER_MS = 1_000;
+
 function defaultDownload(filename: string, content: string): void {
   const blob = new Blob([content], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const link = el('a', { href: url, download: filename });
   link.click();
-  URL.revokeObjectURL(url);
+  setTimeout(() => URL.revokeObjectURL(url), REVOKE_AFTER_MS);
 }
 
 export function mountShell(options: ShellOptions): Shell {

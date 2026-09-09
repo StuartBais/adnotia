@@ -220,6 +220,11 @@ yet. See the implementation checkpoint in `docs/08-roadmap.md` for current limit
   happened and nothing said so. Hiding the page now saves immediately. It is best effort
   rather than a guarantee — a page can be killed between the two — but the moment a page is
   hidden comes well before it is discarded, which is the window this needs.
+- A downloaded backup released its file handle in the same instant the download started.
+  No browser tested cancels the download over it, and Firefox 155 delivers the file intact
+  at every size tried, but the ordering was a race with nothing watching it and a backup
+  that silently does not arrive is the one thing this screen exists to prevent. The handle
+  is now released a second later instead.
 
 - Reports in the Family space read the adult module bag and so came out empty for every
   child. A module's slice lives under the child there, and the report engine holds the whole
