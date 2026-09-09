@@ -11,6 +11,14 @@ yet. See the implementation checkpoint in `docs/08-roadmap.md` for current limit
 
 ### Added
 
+- Adnotia now says what a browser extension can see, and offers a passcode at the start.
+  An extension allowed to read the pages you visit can read what any website stores, and no
+  website can tell you which extensions you have — there is no way for a page to ask. So the
+  app says so plainly on the welcome page and in About rather than pretending to check, and
+  first run has a third step offering to encrypt what is stored. It is one screen and you can
+  skip it in a press. About is also honest that a passcode stops an extension reading your
+  storage in bulk and does not stop one reading the screen while you are using the app.
+  See ADR-039.
 - Planning has a focus timer, and its tools link to each other. Break something down once
   and the day's plan, the estimate and the timer can all point at it instead of asking you
   to type it a third time. A step that turns out to be a thing of its own can be broken out

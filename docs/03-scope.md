@@ -103,6 +103,7 @@ These are promises the architecture enforces, not policies a future maintainer c
 - Backups are user-initiated, encrypted with a passphrase of the person's choosing, and restorable onto any copy of the app.
 - The source is public under the AGPL-3.0, so the privacy claims are verifiable and closed forks with tracking are not permitted.
 - Clearing browser data deletes everything. The app says so and nags about backups no more than once a fortnight, in plain language, without alarm.
+- Anything a browser stores can be read by a browser extension the person has given permission to read the pages they visit. This is true of every website and the app cannot detect it: no page can enumerate extensions or their permissions, and the side channels that remain find only extensions that visibly alter a page, never one that quietly reads storage. So it is stated rather than checked — on the landing page, in About, and in the first-run step that offers a passcode — and the app never implies it has looked. See `decisions/ADR-039-browser-extensions-are-said-not-detected.md`.
 - Storage is scoped to the origin the app is served from, so the origin is where the data is, not a deployment detail. Adnotia is served from a dedicated origin that hosts nothing else; a person who moves between origins, or who opens the single-file build from disk, starts empty and moves their data across by backup and restore. The About page says this plainly. See `decisions/ADR-009-hosting-and-edge-integrity.md`.
 
 ## Regulatory posture

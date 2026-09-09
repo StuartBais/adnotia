@@ -58,6 +58,29 @@ export const ABOUT_STRINGS = {
    * server. Nothing is asserted about what a particular host keeps, because that
    * is a deployment fact this code cannot check. See ADR-035.
    */
+  /*
+   * The one risk this app cannot do anything about, said rather than detected.
+   *
+   * There is no way for a page to enumerate browser extensions or their
+   * permissions: no API, and the side channels that remain find only extensions
+   * that visibly change a page — never the one that quietly reads what is
+   * stored. A check would therefore be most confidently silent exactly where the
+   * danger is real, which is worse than saying nothing. See ADR-039.
+   */
+  extensionsTitle: 'What a browser extension can see',
+  extensions: [
+    'Anything a browser stores can be read by an extension that has permission to see the ' +
+      'pages you visit. That is true of every site you use, not only this one.',
+    'No website can tell you which extensions you have, or what they are allowed to do. ' +
+      'There is no way for a page to ask, and Adnotia does not pretend to check.',
+    'A passcode helps, and it is why the app offers one at the start: what is stored is then ' +
+      'encrypted, so an extension reading the browser\u2019s storage finds nothing it can use. ' +
+      'It cannot protect what is on the screen while you are using the app, and nothing that ' +
+      'runs in a browser can.',
+    'If that matters to you, the surest answers are a browser profile with no extensions in ' +
+      'it, or the one-file version below opened from your own disk — extensions have to be ' +
+      'given permission for files separately, and are not given it by default.',
+  ],
   siteTitle: 'The website is a different thing from the app',
   site: [
     'Everything above is about the app once it is open. Getting it to you is a web request, ' +
@@ -120,6 +143,10 @@ export function aboutPage(): OffTabPage {
         card({ sub: ABOUT_STRINGS.what }),
         card({ title: ABOUT_STRINGS.notTitle, children: [bullets(ABOUT_STRINGS.not)] }),
         card({ title: ABOUT_STRINGS.privacyTitle, children: [bullets(ABOUT_STRINGS.privacy)] }),
+        card({
+          title: ABOUT_STRINGS.extensionsTitle,
+          children: [bullets(ABOUT_STRINGS.extensions)],
+        }),
         card({ title: ABOUT_STRINGS.siteTitle, children: [bullets(ABOUT_STRINGS.site)] }),
         card({
           title: ABOUT_STRINGS.originTitle,

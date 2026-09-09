@@ -329,6 +329,7 @@ export function mountShell(options: ShellOptions): Shell {
     }
 
     const settings = store.document().kernel.settings;
+    const security = options.security;
     if (settings.firstRunComplete !== true) {
       container.replaceChildren(
         el('div', { class: 'wrap' }, [
@@ -336,6 +337,16 @@ export function mountShell(options: ShellOptions): Shell {
           saveStatus,
           firstRun({
             available: (chosen) => registry.forAudience(chosen === 'family' ? 'parent' : 'adult'),
+            /*
+             * Absent when there is no security to work with — no storage, or a
+             * browser without crypto — so first run offers the step only where
+             * it can actually do it. `change` takes the current passcode, and
+             * there is none, so the empty string is right: `verify` returns
+             * immediately when encryption is off.
+             */
+            ...(security === undefined
+              ? {}
+              : { setPasscode: (code: string) => security.change('', code) }),
             onDone: ({ space: chosen, enabled }) => {
               store.useSpace(chosen);
               store.updateKernel((kernel) => ({

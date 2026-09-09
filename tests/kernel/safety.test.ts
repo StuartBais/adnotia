@@ -274,3 +274,43 @@ describe('about Adnotia', () => {
     expect(text).not.toMatch(/\b(cure|proven to|guarantee|clinically validated)\b/i);
   });
 });
+
+describe('what a browser extension can see', () => {
+  const text = flat(render(aboutPage()));
+
+  /*
+   * Said, not detected. There is no API that enumerates browser extensions or
+   * their permissions, and the side channels that remain find only extensions
+   * that visibly change a page — never the one that quietly reads what is
+   * stored. A check would therefore be most confidently silent exactly where the
+   * risk is real, which is worse than saying nothing at all. See ADR-039.
+   */
+
+  it('is on the About page at all', () => {
+    expect(text).toContain(ABOUT_STRINGS.extensionsTitle);
+    for (const claim of ABOUT_STRINGS.extensions) expect(text).toContain(claim);
+  });
+
+  it('says the app does not check, rather than implying it has', () => {
+    expect(text).toContain('does not pretend to check');
+    expect(text).toContain('No website can tell you which extensions you have');
+  });
+
+  it('does not claim a passcode is a cure for it', () => {
+    // ADR-007 said "protects against ... a nosy extension" without splitting the
+    // two cases. It protects against one reading storage in bulk. It does not
+    // protect against one reading the screen while the app is open.
+    expect(text).toContain('cannot protect what is on the screen');
+    expect(text).not.toMatch(/passcode (?:stops|prevents|protects you from) (?:all|any) ?extensi/i);
+  });
+
+  it('offers the two things that actually help', () => {
+    expect(text).toContain('browser profile with no extensions');
+    expect(text).toContain('opened from your own disk');
+  });
+
+  it('never says it has scanned, checked or found anything', () => {
+    // The wording that would turn an honest statement into a false all-clear.
+    expect(text).not.toMatch(/\b(we scanned|no extensions found|none detected|you are safe)\b/i);
+  });
+});

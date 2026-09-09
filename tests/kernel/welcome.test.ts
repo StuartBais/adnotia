@@ -52,6 +52,18 @@ describe('what the welcome page may not say', () => {
     expect(text.toLowerCase()).not.toMatch(/\b(amazing|awesome|revolutionary|game.changer)\b/);
   });
 
+  it('says the one risk it cannot do anything about', () => {
+    // A stranger deciding on this page has not typed anything yet, which is the
+    // only moment the choice is free. No page can enumerate extensions, so this
+    // is stated unconditionally rather than checked. See ADR-039.
+    expect(text).toContain('browser extension');
+    expect(text).toContain('no site can even tell you which extensions you have');
+    // And it points at the two things that do help, rather than stopping at the
+    // bad news.
+    expect(text).toContain('passcode');
+    expect(text).toContain('a file on your own computer');
+  });
+
   it('says what it is not, rather than only what it is', () => {
     expect(text).toContain('will not recommend a dose');
     expect(text).toContain('not a medical device');

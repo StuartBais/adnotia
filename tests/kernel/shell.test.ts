@@ -485,3 +485,151 @@ describe('settings', () => {
     }
   });
 });
+
+describe('first run: the passcode step', () => {
+  /*
+   * Offered at first run because that is the only moment forgetting it costs
+   * nothing: there is no recovery path, and there is not yet anything to lose.
+   *
+   * The wording is unconditional rather than conditional, and ADR-039 is why: no
+   * page can enumerate browser extensions, and the side channels that remain
+   * find only the ones that visibly change a page — never the one that quietly
+   * reads what is stored. A check would be silent exactly where the danger is.
+   */
+
+  const flush = (): Promise<void> => new Promise((resolve) => setTimeout(resolve, 0));
+
+  const fill = (label: string, value: string): void => {
+    const field = [...container.querySelectorAll('.field')].find((node) =>
+      (node.textContent ?? '').includes(label),
+    );
+    const input = field?.querySelector('input') as HTMLInputElement;
+    input.value = value;
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+  };
+
+  function security(change: (current: string, next: string) => Promise<void>) {
+    return {
+      change,
+      remove: async () => undefined,
+      lock: async () => undefined,
+    };
+  }
+
+  /** Through the first two steps, standing on the third. */
+  function reachIt(change: (current: string, next: string) => Promise<void>): void {
+    mountShell({ store, container, security: security(change) });
+    click(byText(container, 'This is for me'));
+    click(byText(container, 'Continue'));
+  }
+
+  /** What the status line says, which is not the same as what is on the screen. */
+  const said = (): string => container.querySelector('.bmsg')?.textContent ?? '';
+
+  it('is offered, and says what a passcode is for', () => {
+    reachIt(async () => undefined);
+    expect(container.textContent).toContain('Lock this with a passcode?');
+    expect(byText(container, 'Not now')).toBeDefined();
+  });
+
+  it('says no site can check which extensions you have, including this one', () => {
+    // The load-bearing sentence. A conditional warning would teach people that
+    // its absence means checked-and-clear, which would be most wrong exactly
+    // where it mattered.
+    reachIt(async () => undefined);
+    expect(container.textContent).toContain('no site can tell you which extensions you have');
+    expect(container.textContent).toContain('including this one');
+  });
+
+  it('says what it cannot do as well as what it can', () => {
+    reachIt(async () => undefined);
+    expect(container.textContent).toContain('cannot protect what is on the screen');
+    expect(container.textContent).toContain('no way to recover it');
+  });
+
+  it('lets somebody say not now, and finishes', () => {
+    let asked = false;
+    reachIt(async () => {
+      asked = true;
+    });
+    click(byText(container, 'Not now'));
+    expect(store.document().kernel.settings.firstRunComplete).toBe(true);
+    expect(asked).toBe(false);
+  });
+
+  it('sets the code it was given, and finishes', async () => {
+    let given: string | undefined;
+    reachIt(async (_current, next) => {
+      given = next;
+    });
+    fill('Passcode', '123456');
+    fill('Type it again', '123456');
+    click(byText(container, 'Set a passcode'));
+    await flush();
+
+    expect(given).toBe('123456');
+    expect(store.document().kernel.settings.firstRunComplete).toBe(true);
+  });
+
+  it('refuses fewer than six digits, and never hands it on', async () => {
+    /*
+     * Asserted against the status line and against the setter, not against the
+     * whole screen. "Six digits or more" is also the field's permanent hint, so
+     * a screen-wide search passes whether or not anything was refused — this
+     * test did exactly that, and a mutation that accepted a three-digit code
+     * survived it.
+     */
+    let given: string | undefined;
+    reachIt(async (_current, next) => {
+      given = next;
+    });
+    fill('Passcode', '123');
+    fill('Type it again', '123');
+    click(byText(container, 'Set a passcode'));
+    await flush();
+
+    expect(said()).toBe('Six digits or more, numbers only.');
+    expect(given).toBeUndefined();
+    expect(store.document().kernel.settings.firstRunComplete).not.toBe(true);
+  });
+
+  it('refuses two that do not match, and never hands it on', async () => {
+    let given: string | undefined;
+    reachIt(async (_current, next) => {
+      given = next;
+    });
+    fill('Passcode', '123456');
+    fill('Type it again', '123457');
+    click(byText(container, 'Set a passcode'));
+    await flush();
+
+    expect(said()).toBe('The two do not match.');
+    expect(given).toBeUndefined();
+    expect(store.document().kernel.settings.firstRunComplete).not.toBe(true);
+  });
+
+  it('does not let anybody into an app they believe is encrypted and is not', async () => {
+    // The one that matters. If setting the code fails and first run finishes
+    // anyway, somebody has been told their record is locked when it is not.
+    reachIt(async () => {
+      throw new Error('no');
+    });
+    fill('Passcode', '123456');
+    fill('Type it again', '123456');
+    click(byText(container, 'Set a passcode'));
+    await flush();
+
+    expect(store.document().kernel.settings.firstRunComplete).not.toBe(true);
+    expect(container.textContent).toContain('nothing has been encrypted');
+  });
+
+  it('is not offered where there is nothing to offer it with', () => {
+    // No security means no storage or no crypto. Offering a step that cannot
+    // work is worse than not offering it.
+    mountShell({ store, container });
+    click(byText(container, 'This is for me'));
+    click(byText(container, 'Continue'));
+    expect(container.textContent).not.toContain('Lock this with a passcode?');
+    expect(store.document().kernel.settings.firstRunComplete).toBe(true);
+  });
+});
