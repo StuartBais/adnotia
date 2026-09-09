@@ -12,7 +12,7 @@ These documents were written before the code. They are the source of truth. When
 6. `06-data-model.md` — the document schema, envelope, backup and migrations, including the v0 import.
 7. `07-design-system.md` — tokens, components, print, voice.
 8. `08-roadmap.md` — milestones in order, each with a definition of done.
-9. `decisions/` — eight ADRs recording what has already been decided and why.
+9. `decisions/` — the numbered decision records, in the order the decisions were taken, saying what has already been settled and why. Read them when something in the code disagrees with a document above.
 
 ## Also in this repository
 

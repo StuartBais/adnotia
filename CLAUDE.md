@@ -58,7 +58,7 @@ npm test               # Vitest, all suites
 npm run test:parity    # monolith vs module comparisons
 npm run build          # PWA to dist/
 npm run build:single   # one-file bundle to dist-single/adnotia.html
-npm run check          # typecheck + lint + contrast + no-network audit
+npm run check          # format + typecheck + no-network audit + contrast
 ```
 
 If a command above does not exist yet, Milestone 0 in the roadmap is where it gets created.
