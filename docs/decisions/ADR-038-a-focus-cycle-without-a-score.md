@@ -121,6 +121,22 @@ text it was given alongside the id. And typing over a picked line drops the link
 and keeps the words: what somebody typed wins over what the app thought they
 meant.
 
+### The lengths are kept; the position is not
+
+How long a stretch is gets written to the slice. Where you are in the cycle does
+not. That looks inconsistent for about a second and then is the whole point: a
+length says how the tool is **set up**, and the position says how somebody **did**.
+Only the second is a figure a person can be behind on, and only the second is
+what `03-scope.md` excludes.
+
+The test for the difference is whether the number has a better and a worse value.
+Twenty-five minutes is not better than forty. Four stretches is better than two,
+to anybody who has ever used one of these, which is exactly why it is not kept.
+
+Lengths are clamped on the way out of the slice as well as on the way in, because
+a slice can arrive from a backup file somebody has edited: a zero-minute stretch
+is a timer that finishes instantly and starts the next one, for ever.
+
 ## The slice stays at version 1
 
 Everything here is an optional field; nothing was renamed and nothing was

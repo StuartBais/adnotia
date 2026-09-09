@@ -52,6 +52,9 @@ export const thirtyDays = slice({
       (entry): entry is [string, { items: { id: string; text: string }[] }] => entry !== null,
     ),
   ),
+  // Not the defaults, so the fixture exercises lengths being read back rather
+  // than the tool happening to agree with them.
+  focusLengths: { focus: 30, rest: 6, long: 20, every: 3 },
   estimates: Array.from({ length: 8 }, (_, index) => ({
     id: `e${index}`,
     title: `A job on day ${index + 1}`,

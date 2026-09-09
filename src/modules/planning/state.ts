@@ -106,6 +106,63 @@ export interface PlanningDay {
  * though it did something. docs/06-data-model.md asks for a migration when one
  * is needed, and one is not.
  */
+/**
+ * How long a stretch, a break and a longer break are, and how often the longer
+ * one comes round.
+ *
+ * A preference, not a record: it says how the tool is set up, not how anybody
+ * did. That is the whole reason it may be kept when the position in the cycle
+ * may not — see ADR-038 — and the distinction is worth stating here because the
+ * two live a few lines apart.
+ */
+export interface FocusLengths {
+  focus: number;
+  rest: number;
+  long: number;
+  every: number;
+}
+
+/** The familiar lengths, and nothing more authoritative than that. */
+export const DEFAULT_LENGTHS: FocusLengths = { focus: 25, rest: 5, long: 15, every: 4 };
+
+/** Long enough to be a stretch, short enough to be honest about. */
+export const LENGTH_LIMITS = { min: 1, max: 180 } as const;
+
+export function clampLength(value: unknown, fallback: number): number {
+  const n = Math.round(Number(value));
+  if (!Number.isFinite(n)) return fallback;
+  return Math.min(LENGTH_LIMITS.max, Math.max(LENGTH_LIMITS.min, n));
+}
+
+/**
+ * The lengths to use, clamped.
+ *
+ * Clamped on the way out as well as on the way in, because a slice can arrive
+ * from a backup file somebody edited or from a build that allowed something this
+ * one does not. A zero-minute stretch is a timer that finishes instantly and
+ * starts the next one, for ever.
+ */
+export function focusLengths(slice: PlanningSlice | undefined): FocusLengths {
+  const kept = slice?.focusLengths;
+  return {
+    focus: clampLength(kept?.focus, DEFAULT_LENGTHS.focus),
+    rest: clampLength(kept?.rest, DEFAULT_LENGTHS.rest),
+    long: clampLength(kept?.long, DEFAULT_LENGTHS.long),
+    every: clampLength(kept?.every, DEFAULT_LENGTHS.every),
+  };
+}
+
+export function withFocusLengths(
+  slice: PlanningSlice | undefined,
+  lengths: FocusLengths,
+): PlanningSlice {
+  return {
+    version: 1,
+    ...slice,
+    focusLengths: focusLengths({ version: 1, ...slice, focusLengths: lengths }),
+  };
+}
+
 export interface PlanningSlice {
   version: number;
   tasks?: Task[];
@@ -113,6 +170,8 @@ export interface PlanningSlice {
   plans?: Record<IsoDate, { items: PlanItem[] }>;
   intentions?: Intention[];
   days?: Record<IsoDate, PlanningDay>;
+  /** How the focus timer is set up. A preference; see FocusLengths. */
+  focusLengths?: FocusLengths;
 }
 
 export function newId(): string {

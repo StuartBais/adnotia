@@ -34,38 +34,24 @@ import {
 } from '../../kernel/index';
 import { FOCUS_STRINGS } from './strings';
 import {
+  DEFAULT_LENGTHS,
+  clampLength,
+  focusLengths,
   focusTargets,
   longBreakAfter,
   newId,
   recordFocus,
+  withFocusLengths,
+  type FocusLengths,
   type FocusSession,
   type FocusTarget,
   type PlanningSlice,
 } from './state';
 
-interface Lengths {
-  focus: number;
-  rest: number;
-  long: number;
-  every: number;
-}
-
-/** The familiar lengths, and nothing more authoritative than that. */
-const DEFAULTS: Lengths = { focus: 25, rest: 5, long: 15, every: 4 };
-
-/** Long enough to be a stretch, short enough to be honest about. */
-const LIMITS = { min: 1, max: 180 } as const;
-
 type Phase = 'idle' | 'focus' | 'rest';
 
 function sliceOf(context: ToolContext): PlanningSlice {
   return { version: 1, ...(context.slice as PlanningSlice | undefined) };
-}
-
-function clamp(value: string, fallback: number): number {
-  const n = Math.round(Number(value));
-  if (!Number.isFinite(n)) return fallback;
-  return Math.min(LIMITS.max, Math.max(LIMITS.min, n));
 }
 
 function minuteWord(minutes: number): string {
@@ -99,16 +85,28 @@ function mount(container: HTMLElement, context: ToolContext): void {
     long: numberInput({ label: FOCUS_STRINGS.longLength }),
     every: numberInput({ label: FOCUS_STRINGS.rounds }),
   };
-  settings.focus.set(String(DEFAULTS.focus));
-  settings.rest.set(String(DEFAULTS.rest));
-  settings.long.set(String(DEFAULTS.long));
-  settings.every.set(String(DEFAULTS.every));
 
-  const lengths = (): Lengths => ({
-    focus: clamp(settings.focus.value(), DEFAULTS.focus),
-    rest: clamp(settings.rest.value(), DEFAULTS.rest),
-    long: clamp(settings.long.value(), DEFAULTS.long),
-    every: clamp(settings.every.value(), DEFAULTS.every),
+  // Whatever they set last time. The lengths are a preference and are kept; the
+  // position in the cycle is not, and the difference is the whole of ADR-038.
+  const kept = focusLengths(sliceOf(context));
+  for (const [name, control] of Object.entries(settings)) {
+    control.set(String(kept[name as keyof FocusLengths]));
+    // On change rather than input: committing halfway through typing "25" would
+    // save a stretch of two minutes.
+    control.element.addEventListener('change', () => {
+      context.save(withFocusLengths(sliceOf(context), lengths()));
+      // A clock already running keeps the length it started with: changing the
+      // setting is not the same as changing the stretch somebody is in the
+      // middle of. This only refreshes the line about where the next break falls.
+      paintPhase();
+    });
+  }
+
+  const lengths = (): FocusLengths => ({
+    focus: clampLength(settings.focus.value(), DEFAULT_LENGTHS.focus),
+    rest: clampLength(settings.rest.value(), DEFAULT_LENGTHS.rest),
+    long: clampLength(settings.long.value(), DEFAULT_LENGTHS.long),
+    every: clampLength(settings.every.value(), DEFAULT_LENGTHS.every),
   });
 
   const free = textInput({

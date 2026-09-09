@@ -17,8 +17,10 @@ yet. See the implementation checkpoint in `docs/08-roadmap.md` for current limit
   into its own task, still listed under the one it came from. The timer runs a stretch, then
   a break, then another, with a longer break after every fourth — and keeps no count of any
   of it: where it is in the cycle is forgotten the moment the page closes, and what it writes
-  down is minutes on a thing, never rounds finished. It will not interrupt you and cannot;
-  there is no sound anywhere in this app, and it says so where you can see it. See ADR-038.
+  down is minutes on a thing, never rounds finished. The lengths you set are remembered,
+  because how long a stretch is says how the tool is set up rather than how you did. It will
+  not interrupt you and cannot; there is no sound anywhere in this app, and it says so where
+  you can see it. See ADR-038.
 - The welcome page shows the app. Three screenshots — the tools index, a day's record, and
   the page you take to an appointment — taken from a real build by `npm run shots` rather than
   drawn, so they cannot quietly become pictures of an app that no longer exists. It also has a

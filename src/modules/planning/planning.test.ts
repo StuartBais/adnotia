@@ -406,6 +406,53 @@ describe('planning: focus for a while', () => {
     expect(host.querySelector('.bmsg')?.textContent).toBe('');
   });
 
+  it('starts at the lengths it was left set to', () => {
+    const { host } = mount(FOCUS, {
+      ...threeDays,
+      focusLengths: { focus: 40, rest: 8, long: 20, every: 3 },
+    });
+    press(host, 'Start');
+    expect(face(host)).toBe('40:00');
+  });
+
+  it('keeps a changed length, because a length is a setting and not a score', () => {
+    const { host, read } = mount(FOCUS, threeDays);
+    const field = [...host.querySelectorAll('.field')].find((node) =>
+      (node.textContent ?? '').includes('Focus for (minutes)'),
+    );
+    const input = field?.querySelector('input') as HTMLInputElement;
+    input.value = '40';
+    // On change, not on input: committing halfway through typing "40" would
+    // have saved a four-minute stretch.
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+
+    expect(read()['focusLengths']).toEqual({ focus: 40, rest: 5, long: 15, every: 4 });
+  });
+
+  it('refuses a length that would make the cycle run away', () => {
+    // A zero-minute stretch is a timer that finishes instantly and starts the
+    // next one, for ever. A slice can arrive from a backup somebody edited.
+    const { host } = mount(FOCUS, {
+      ...threeDays,
+      focusLengths: { focus: 0, rest: -5, long: 9999, every: 0 },
+    });
+    press(host, 'Start');
+    expect(face(host)).toBe('1:00');
+  });
+
+  it('uses the lengths it was left set to for the long break as well', () => {
+    const { host } = mount(FOCUS, {
+      ...threeDays,
+      focusLengths: { focus: 25, rest: 5, long: 20, every: 2 },
+    });
+    // Every two, so the second break is the long one.
+    press(host, 'Start');
+    advance(25);
+    advance(5);
+    advance(25);
+    expect(face(host)).toBe('20:00');
+  });
+
   it('states that the lengths are a convention rather than a finding', () => {
     const { host } = mount(FOCUS, threeDays);
     expect(host.textContent).toContain('convention rather than a finding');
