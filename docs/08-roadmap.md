@@ -54,6 +54,9 @@ cannot go stale.
   refused to run it, so nothing executed, but the served document was not the
   built one. It is off, and both documents are now byte-identical to `dist/`.
   ADR-009 records the method, which is a two-line `curl | diff` anyone can rerun.
+- ADR-040's gate is configured as well as written: Workers Builds' production
+  branch is `release` and its build command no longer re-runs the gates.
+  Confirmed 2026-09-09.
 
 ### Known wrong, not yet corrected
 
@@ -94,14 +97,12 @@ cannot afford to have wrong.
   and checked no claim. The crisis numbers have not been confirmed against each
   organisation's own site. The paediatric guidance has not been read by a
   clinician. Permission to reproduce either screener has not been sought.
-- **The live host, half done.** `adnotia.com` is live, built by Cloudflare
-  Workers Builds from git. ADR-040's gate holds only once two dashboard settings
-  match it: the production branch set to `release`, and the build command set
-  to `npm ci && npm run build`. Until both are done, every push to `main` still
-  goes live ungated, and nothing in the repository can see or enforce either
-  setting. ADR-035 lists the operator confirmations the About page's site
-  statement depends on, and `03-scope.md` asks for a standard-by-standard
-  Children's Code assessment of the site before launch.
+- **The site's own launch review.** The host itself is done: `adnotia.com` is
+  live and ADR-040's gate is configured. What is unfinished is the paperwork the
+  site rather than the app owes. ADR-035 lists the operator confirmations the
+  About page's site statement depends on, and `03-scope.md` asks for a
+  standard-by-standard Children's Code assessment of the distribution site before
+  launch. Neither is code, and neither has been started.
 - **Release tagging and publishing both artefacts.** `05-architecture.md`
   "Release" says: tag, CI builds both outputs, attach `adnotia.html` to the
   release. CI uploads the single file as a workflow artefact and nothing yet
@@ -141,27 +142,26 @@ None of these is for an agent to take. Each is a "stop and ask" item under
 
 ### Next steps, as options
 
-In the recommended order. The first is not optional if the site is to stay
-protected; the rest are a choice, and each is sized so it can be picked up cold.
+In the recommended order, and each sized so it can be picked up cold. The
+dashboard settings that made ADR-040 true were the entry above this one and are
+done; what is left is a choice.
 
-1. **Flip the two dashboard settings.** A person, minutes. This is what makes
-   ADR-040 true. Record the date in ADR-009 when done.
-2. **Close "Known wrong".** An agent, about an hour. Three small changes, each
+1. **Close "Known wrong".** An agent, about an hour. Three small changes, each
    with a test, and dated amendments to ADR-003 and ADR-039.
-3. **A release workflow.** An agent, a session. On a `v*` tag: run the gates,
+2. **A release workflow.** An agent, a session. On a `v*` tag: run the gates,
    build both outputs, create a GitHub release with `adnotia.html` and a zip of
    `dist/` attached, and move the changelog's "Unreleased" under the version.
    Then tag `v0.1.0`. This finishes the code side of Milestone 8.
-4. **Review packets.** An agent prepares, a person reviews. The human-blocked
+3. **Review packets.** An agent prepares, a person reviews. The human-blocked
    items stall because nobody has been handed something to review. From the
    Library entries as built, produce: a claim-by-claim list with its citation for
    the second reader; the crisis numbers beside the URL each was taken from; the
    paediatric guidance pages as one document for a clinician; and a draft
    permission request for ASRS v1.1 Part A, addressed as ADR-023 describes.
-5. **A device accessibility script.** An agent prepares, a person runs. A
+4. **A device accessibility script.** An agent prepares, a person runs. A
    checklist for VoiceOver and TalkBack against the built single file, so the
    real-device testing is repeatable and its result can be recorded here.
-6. **Dark mode as a second token set.** `07-design-system.md` reserves it for
+5. **Dark mode as a second token set.** `07-design-system.md` reserves it for
    later, and it is the first feature work worth doing once the above is
    closed.
 

@@ -105,6 +105,19 @@ production branch and build command, and any Configuration Rule that re-enables 
 setting for some scope. The consequence below — that these live outside the
 repository and outside CI — is unchanged for those.
 
+**The deploy settings were confirmed the same day.** The production branch is
+`release` and the build command no longer re-runs the gates, so ADR-040 is
+configured as well as decided. Confirmed by the account holder on 2026-09-09;
+nothing in this repository can read either setting, so this is a record of what
+was reported rather than something the build checked. It is consistent with what
+was observed from outside: the deploy that followed the next push landed in about
+a minute, against roughly ten for the deploys before the change, which is the
+build command no longer running the test suite a second time.
+
+What would show it had been undone is a push whose gates fail and which reaches
+the site anyway. Nothing here can watch for that, which is the same limitation as
+every other setting on this page.
+
 ## Consequences
 - The privacy claim is verifiable at the edge as well as in the source: a reviewer can read `deploy/_headers` and see that `connect-src 'none'` is served, not merely declared.
 - The hosting choice is now a correctness constraint rather than an ops preference. Changing host is fine; turning on an HTML-rewriting feature is not, and would be caught as "the downloaded single file stopped working" long before anyone suspected the CDN.
