@@ -17,6 +17,10 @@ cannot go stale.
 
 ### Done since the last checkpoint
 
+- A persistent development notice on the welcome page and adult/parent shell,
+  including first run, states that the version is unreleased and breaking changes
+  are possible, with a link to the changelog. It does not print or add links to the
+  handed-over child surface.
 - Report parity against the monolith was reached, every remaining difference
   recorded and argued, and none left open. The tests that proved it were then
   removed with the rest of the v0 compatibility (ADR-042).

@@ -1,0 +1,30 @@
+.development-banner {
+  margin: 0 0 18px;
+  padding: 12px 14px;
+  border-left: 3px solid var(--flag);
+  border-radius: var(--r-control);
+  background: var(--flag-soft);
+  color: var(--flag);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.wrap > .development-banner {
+  margin-top: 14px;
+}
+
+.development-banner a {
+  color: inherit;
+  text-decoration: underline;
+}
+
+.development-banner a:focus-visible {
+  outline: 2px solid var(--mark);
+  outline-offset: 1px;
+}
+
+@media print {
+  .development-banner {
+    display: none !important;
+  }
+}

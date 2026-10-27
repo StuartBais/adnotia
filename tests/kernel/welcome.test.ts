@@ -71,6 +71,20 @@ describe('what the welcome page may not say', () => {
 });
 
 describe('the page a stranger gets', () => {
+  it('shows a persistent development notice between the brand and main heading', () => {
+    const page = new DOMParser().parseFromString(html, 'text/html');
+    const banner = page.querySelector('aside[aria-label="Development status"]');
+    expect(banner?.previousElementSibling?.className).toBe('brandline');
+    expect(banner?.nextElementSibling?.tagName).toBe('H1');
+    expect(banner?.textContent).toContain('In development.');
+    expect(banner?.textContent).toContain('unreleased version');
+    expect(banner?.textContent).toContain('Breaking changes');
+    expect(banner?.querySelector('a')?.getAttribute('href')).toBe(
+      'https://github.com/StuartBais/adnotia/blob/main/CHANGELOG.md',
+    );
+    expect(banner?.querySelector('button')).toBeNull();
+  });
+
   it('leads with the record, which is the safe lead and the true one', () => {
     expect(html).toContain('<h1>');
     expect(text).toContain('notebook for ADHD');
