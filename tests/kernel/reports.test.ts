@@ -570,6 +570,7 @@ describe('the report view', () => {
       store,
       modules: [manifest([section()])],
       choice: 'all',
+      now: () => new Date('2026-09-10T12:00:00Z'),
       ...overrides,
     } as Parameters<typeof mountReport>[0]);
   }
