@@ -10,6 +10,22 @@ const read = (file: string) => readFileSync(resolve(process.cwd(), 'src/styles',
 const tokens = read('tokens.css');
 const base = read('base.css');
 const print = read('print.css');
+const development = read('development.css');
+
+describe('development notice', () => {
+  it('uses the warning palette and readable text', () => {
+    expect(development).toContain('background: var(--flag-soft)');
+    expect(development).toContain('color: var(--flag)');
+    expect(development).toContain('font-size: 14px');
+    expect(development).toContain('.development-banner a:focus-visible');
+  });
+
+  it('never prints', () => {
+    expect(development).toMatch(
+      /@media print\s*\{\s*\.development-banner\s*\{\s*display: none !important;/,
+    );
+  });
+});
 
 function tokenValue(name: string): string | undefined {
   return tokens.match(new RegExp(`--${name}\\s*:\\s*([^;]+);`))?.[1]?.trim();

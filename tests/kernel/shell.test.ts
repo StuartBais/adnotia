@@ -66,6 +66,44 @@ function sampleModule(overrides: Partial<ModuleManifest> = {}): ModuleManifest {
   };
 }
 
+describe('development status', () => {
+  it('persists through first run, all tabs, off-tab pages, and refreshes', () => {
+    const shell = mountShell({ store, container });
+    const assertBanner = () => {
+      const banners = container.querySelectorAll('aside[aria-label="Development status"]');
+      expect(banners).toHaveLength(1);
+      const banner = banners[0];
+      expect(banner?.textContent).toBe(
+        'In development. This is an unreleased version. Breaking changes are possible. Read the changelog.',
+      );
+      expect(banner?.nextElementSibling?.tagName).toBe('HEADER');
+      expect(banner?.getAttribute('data-print')).toBe('never');
+      expect(banner?.querySelector('a')?.getAttribute('href')).toBe(
+        'https://github.com/StuartBais/adnotia/blob/main/CHANGELOG.md',
+      );
+      expect(banner?.querySelector('button')).toBeNull();
+    };
+    assertBanner();
+    click(byText(container, 'This is for me'));
+    assertBanner();
+    click(byText(container, 'Continue'));
+    assertBanner();
+    for (const tab of TABS) {
+      shell.router.goTab(tab);
+      assertBanner();
+    }
+    click(byText(container, 'Settings'));
+    assertBanner();
+    shell.router.back();
+    shell.refresh();
+    assertBanner();
+    store.useSpace('family');
+    shell.refresh();
+    assertBanner();
+    shell.destroy();
+  });
+});
+
 describe('routing', () => {
   it('starts on the index of what you can do, not on the day’s record', () => {
     // Today was the landing, and that is what made the app read as a medication

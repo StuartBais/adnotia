@@ -74,6 +74,23 @@ function defaultDownload(filename: string, content: string): void {
   setTimeout(() => URL.revokeObjectURL(url), REVOKE_AFTER_MS);
 }
 
+function developmentBanner(): HTMLElement {
+  return el(
+    'aside',
+    { class: 'development-banner', 'aria-label': 'Development status', 'data-print': 'never' },
+    [
+      el('strong', { text: 'In development. ' }),
+      'This is an unreleased version. Breaking changes are possible. ',
+      el('a', {
+        href: 'https://github.com/StuartBais/adnotia/blob/main/CHANGELOG.md',
+        rel: 'noreferrer noopener',
+        text: 'Read the changelog',
+      }),
+      '.',
+    ],
+  );
+}
+
 export function mountShell(options: ShellOptions): Shell {
   const { store, container } = options;
   const registry = createRegistry(options.modules ?? [], { strict: false });
@@ -83,7 +100,7 @@ export function mountShell(options: ShellOptions): Shell {
   const masthead = el('header', { class: 'mast' });
   const tabStrip = el('nav', { class: 'tabs', role: 'tablist' });
   const view = el('main', { id: 'view' });
-  const root = el('div', { class: 'wrap' }, [masthead, tabStrip, view]);
+  const root = el('div', { class: 'wrap' }, [developmentBanner(), masthead, tabStrip, view]);
   const saveMessage = el('p', {
     class: 'hint',
     role: 'status',
@@ -151,6 +168,7 @@ export function mountShell(options: ShellOptions): Shell {
       // Handing the phone over is only safe if getting back out needs a code.
       container.replaceChildren(
         el('div', { class: 'wrap' }, [
+          developmentBanner(),
           el('div', { class: 'card' }, [
             el('p', { class: 'sub', text: CHILD_STRINGS.needCode }),
             (() => {
@@ -354,6 +372,7 @@ export function mountShell(options: ShellOptions): Shell {
     if (settings.firstRunComplete !== true) {
       container.replaceChildren(
         el('div', { class: 'wrap' }, [
+          developmentBanner(),
           el('header', { class: 'mast' }, [brand()]),
           saveStatus,
           firstRun({
