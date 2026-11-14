@@ -65,7 +65,7 @@ The tools are the components the evidence identifies as active ingredients, chie
 - **First / then.** The simplest antecedent tool. "First shoes, then tablet."
 - **Specific praise prompts.** Reminders and worked examples of labelled praise, because reinforcement of desired behaviour is one of the two components most associated with reductions in negative parenting.
 - **A positive reward chart.** Parent-configured, positive-only. Points are earned, never lost. The app never runs it autonomously, never nags, never adds a streak. This is a behavioural technique with an evidence base, which is why it is permitted here while engagement mechanics are banned everywhere else. The distinction is written into the contract.
-- **A sleep routine.** Sleep problems are common in children with ADHD and a brief behavioural sleep intervention has trial evidence for improving both sleep and daytime functioning. Bedtime routine builder plus the child sleep observations in the log.
+- **A sleep routine.** Sleep problems are common in children with ADHD and a brief behavioural sleep intervention has trial evidence for improving sleep. In the first trial parents also reported fewer ADHD symptoms, and teachers reported less difficult behaviour but no change in ADHD symptoms; a larger follow-on trial improved sleep and found no benefit in other domains. Corrected November 2026, see `decisions/ADR-044`. Bedtime routine builder plus the child sleep observations in the log.
 - **School.** Plain guidance on talking to the school, what a daily report card is and why it has evidence, and how to ask for one. The app does not manage the report card; the school does.
 
 Psychoeducation for parents lives in the Library, tiered like everything else.
@@ -117,8 +117,9 @@ Everything in `03-scope.md` applies. In addition, the Family space never:
 |---|---|---|---|
 | Vanderbilt screener | parent | Validated instrument, not a treatment; presentation rules as above | Free, widely used in primary care, validated 6 to 12. |
 | Observation log | parent | A (supporting) | Supports clinical assessment, which is the evidenced pathway. Records; does not score. |
-| Routines, first / then, praise, reward chart | parent, child surface | A for parenting and conduct outcomes; honest that blinded effects on core symptoms are small | Multiple meta-analyses; antecedent and reinforcement components identified as active ingredients. |
-| Sleep routine | parent | A/B | RCT evidence for brief behavioural sleep intervention in children with ADHD; parent-reported outcomes. |
+| Routines, clear instructions, praise and rewards, as parent-training techniques | parent | A for parenting and conduct outcomes; honest that blinded effects on core symptoms are small | Multiple meta-analyses; antecedent and reinforcement components identified as active ingredients. |
+| Visual schedule, first / then board, visual timer and reward chart, as aids on their own | parent, child surface | C, proposed November 2026 and awaiting a second reader | They implement techniques used inside parent training. No trial has tested any of them alone in children with ADHD. See `decisions/ADR-044`. |
+| Sleep routine | parent | B, proposed November 2026 and awaiting a second reader | Two RCTs of a brief behavioural sleep intervention in children with ADHD improved sleep. Benefit beyond sleep was parent-reported in the first and absent in the second. |
 | School guidance and daily report card | parent | A | Classroom behavioural interventions have consistent support; the app only explains and helps the parent ask. |
 | Under-6 guidance | parent | B | Guideline-derived; no scoring. |
 | Parent psychoeducation | parent | A/B | Component of most parent-training programmes, though higher doses of psychoeducation alone are associated with weaker parental outcomes. |
@@ -130,6 +131,7 @@ Everything in `03-scope.md` applies. In addition, the Family space never:
 - Dekkers TJ, et al. Meta-analysis: which components of parent training work for children with attention-deficit/hyperactivity disorder? *Journal of the American Academy of Child and Adolescent Psychiatry*, 2022. PMID 34224837
 - Doffer DPA, et al. Sustained improvements by behavioural parent training for children with attention-deficit/hyperactivity disorder: a meta-analytic review of longer-term child and parental outcomes. *JCPP Advances*, 2023. PMC10501699
 - Hiscock H, et al. Impact of a behavioural sleep intervention on symptoms and sleep in children with ADHD, and parental mental health: randomised controlled trial. *BMJ*, 2015.
+- Hiscock H, et al. Impact of a behavioral intervention, delivered by pediatricians or psychologists, on sleep problems in children with ADHD: a cluster-randomized, translational trial. *Journal of Child Psychology and Psychiatry*, 2019;60(11):1230-1241. doi:10.1111/jcpp.13083. (Abstract read, November 2026.)
 - Wolraich ML, et al. Psychometric properties of the Vanderbilt ADHD Diagnostic Parent Rating Scale in a referred population. *Journal of Pediatric Psychology*, 2003.
 - NICE guideline NG87: Attention deficit hyperactivity disorder: diagnosis and management. 2018, updated 2019. (Parent-training recommendations for children under 5 and as adjunct for older children.)
 - Fabiano GA, et al. A meta-analysis of behavioral treatments for attention-deficit/hyperactivity disorder. *Clinical Psychology Review*, 2009.

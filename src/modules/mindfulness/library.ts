@@ -18,7 +18,7 @@ export const library: LibraryEntry = {
 
   whatTheEvidenceSays:
     'The honest position is that this is thinner than it is usually sold as. Mindfulness-' +
-    'based cognitive therapy came second among non-drug approaches in a 2025 network ' +
+    'based cognitive therapy ranked near the top of non-drug approaches in a 2025 network ' +
     'meta-analysis of 37 randomised trials in adults — but the same review rated confidence ' +
     'in most of that evidence low or very low, with around half the trials at high risk of ' +
     'bias, and a 2025 meta-analysis of mindfulness interventions in adults reached much the ' +
