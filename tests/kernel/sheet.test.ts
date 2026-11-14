@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   MODULES,
   buildReport,
@@ -112,6 +112,17 @@ describe('where the report lives', () => {
   // Records tab broke no test — which is why these exist now.
 
   let store: KernelStore;
+
+  // The shell reads the real clock and the fixtures are dated. Without a pinned
+  // date the default range slides past the last recorded day and the sheet has
+  // nothing to title.
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date(`${TODAY}T12:00:00Z`));
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
 
   beforeEach(async () => {
     store = createStore({ adapter: memoryStorageAdapter() });
