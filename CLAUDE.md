@@ -4,6 +4,10 @@ Free, open-source, evidence-based tools for adults with ADHD and for parents of 
 
 You are building this from design documents that were written before the code. Read them before touching anything. They are the source of truth; when code and docs disagree, the docs win unless an ADR says otherwise.
 
+## Direction changed in November 2026
+
+Read `docs/decisions/ADR-043-a-phone-app-rebuilt-around-shared-domains.md` and `docs/decisions/ADR-044-what-the-research-settled.md` before anything below. The owner has decided to rebuild Adnotia as a phone app around shared domains. Those two records win where this file or the numbered documents disagree, and they supersede hard rules 1, 3 and 6 as they describe. The research behind them is in `reports/` and `research_notes/`. The numbered documents describe the first build until a product brief replaces them.
+
 ## Read in this order
 
 @docs/00-start-here.md

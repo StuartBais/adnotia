@@ -4,6 +4,19 @@ Status: draft 0.1 · September 2026 · Milestones are sequential. Each has a def
 
 ## Implementation checkpoint
 
+**Superseded in direction, 14 November 2026.** ADR-043 and ADR-044 record the
+owner's decision to rebuild as a phone app around shared domains, and what the
+research settled. Everything below describes the first build and stays as its
+record. Where things stand now:
+
+- Done: the decisions (ADR-043, ADR-044), the research report and its notes,
+  the full licence text, and two corrections to the evidence documents.
+- Next: a product brief that replaces `03-scope.md`, `01-module-contract.md`,
+  `05-architecture.md` and `07-design-system.md`; an ADR on how the phone apps
+  are built; then one tool built properly as the benchmark.
+- Waiting on a person: a second reader for evidence tiers, and the regulatory
+  and store-policy review for an app with a child's surface.
+
 Milestones 0 to 7 and 9 are built and their gates pass. Milestone 8 is partly
 done, and what remains of it is mostly review by a person rather than code.
 Refreshed 2026-09-09.
