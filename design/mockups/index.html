@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'none'; style-src 'unsafe-inline'; font-src data:; img-src data:; connect-src 'none'; base-uri 'none'; form-action 'none'"
+      content="default-src 'none'; style-src 'unsafe-inline'; font-src data:; img-src 'self' data:; connect-src 'none'; base-uri 'none'; form-action 'none'"
     />
     <link rel="icon" href="data:," />
     <title>Design desk · Adnotia phone studies</title>
@@ -113,6 +113,29 @@
         align-self: center;
         font-weight: 650;
         white-space: nowrap;
+        text-decoration: underline;
+        text-underline-offset: 4px;
+      }
+      .featured:focus-visible,
+      .featured-board:focus-visible {
+        outline: 3px solid #ff9e7c;
+        outline-offset: 4px;
+      }
+      .featured-board {
+        display: block;
+        margin-top: 14px;
+        border-bottom: 1px solid #838897;
+        padding-bottom: 14px;
+        text-decoration: none;
+      }
+      .featured-board img {
+        display: block;
+        width: 100%;
+        height: auto;
+      }
+      .featured-board span {
+        display: block;
+        margin-top: 8px;
         text-decoration: underline;
         text-underline-offset: 4px;
       }
@@ -777,6 +800,14 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
           ><small>Featured · Margin Press</small><strong>The Bookmark Edition</strong
           ><span>Capture a thought and return to the sentence you left.</span></span
         ><span class="read">Open study <span aria-hidden="true">→</span></span></a
+      >
+      <a class="featured-board" href="screenshots/bookmark-edition.png"
+        ><img
+          src="screenshots/bookmark-edition.png"
+          alt="Five Bookmark Edition phone screens: Today, Capture, an opened task, Focus and Sam’s family routine."
+          width="2104"
+          height="1129"
+        /><span>Open the full-size board · 2104 × 1129 PNG</span></a
       >
       <nav class="covers" aria-label="Design directions">
         <a href="direction-a.html" class="cover a">
