@@ -68,6 +68,70 @@
       .intro {
         max-width: 62ch;
       }
+      .featured {
+        display: flex;
+        align-items: center;
+        gap: clamp(14px, 3vw, 36px);
+        margin-top: 24px;
+        background: #fff0b5;
+        color: #321e36;
+        text-decoration: none;
+        padding: 0 clamp(14px, 3vw, 28px) 15px;
+      }
+      .featured .ribbon {
+        flex: none;
+        align-self: flex-start;
+        padding: 13px 10px 24px;
+        font:
+          600 28px/1 'Fraunces',
+          serif;
+        letter-spacing: -0.06em;
+        background: #321e36;
+        color: #ff9e7c;
+        clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 81%, 0 100%);
+      }
+      .featured-copy {
+        padding-top: 14px;
+      }
+      .featured-copy small {
+        font-weight: 650;
+      }
+      .featured-copy strong {
+        display: block;
+        font:
+          600 28px/1.12 'Fraunces',
+          serif;
+        letter-spacing: -0.04em;
+      }
+      .featured-copy span {
+        display: block;
+        margin-top: 4px;
+      }
+      .featured .read {
+        margin-left: auto;
+        padding-top: 14px;
+        align-self: center;
+        font-weight: 650;
+        white-space: nowrap;
+        text-decoration: underline;
+        text-underline-offset: 4px;
+      }
+      @media (max-width: 620px) {
+        .featured {
+          flex-wrap: wrap;
+          column-gap: 12px;
+          row-gap: 0;
+        }
+        .featured-copy {
+          flex: 1;
+          min-width: 0;
+        }
+        .featured .read {
+          padding-top: 8px;
+          margin-left: 54px;
+          width: 100%;
+        }
+      }
       .covers {
         display: grid;
         grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -699,14 +763,21 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
   </head>
   <body>
     <header>
-      <div class="bar"><span>Adnotia / Design desk</span><span>Phone rebuild · 01—03</span></div>
-      <h1>One task, three ways.</h1>
+      <div class="bar"><span>Adnotia / Design desk</span><span>Phone rebuild</span></div>
+      <h1>One task, a place to return.</h1>
       <p class="intro">
-        Compare the same day, the same running timer and the same morning with Sam. Choose a
-        direction to see its five phone screens side by side.
+        Try the second edition, or compare the three original directions below. Each study follows
+        the same school email and the same morning with Sam.
       </p>
     </header>
     <main>
+      <a class="featured" href="bookmark-edition.html"
+        ><span class="ribbon" aria-hidden="true">02</span
+        ><span class="featured-copy"
+          ><small>Featured · Margin Press</small><strong>The Bookmark Edition</strong
+          ><span>Capture a thought and return to the sentence you left.</span></span
+        ><span class="read">Open study <span aria-hidden="true">→</span></span></a
+      >
       <nav class="covers" aria-label="Design directions">
         <a href="direction-a.html" class="cover a">
           <div class="specimen">
@@ -857,7 +928,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
     <footer>
       <p>390 × 844 per screen · Static studies</p>
       <nav aria-label="Reading">
-        <a href="RESEARCH.md">Research notebook</a><a href="README.md">Design notes</a>
+        <a href="README.md">Design notes &amp; research</a>
       </nav>
     </footer>
   </body>
