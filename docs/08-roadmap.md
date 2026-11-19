@@ -11,6 +11,9 @@ record. Where things stand now:
 
 - Done: the decisions (ADR-043, ADR-044), the research report and its notes,
   the full licence text, and two corrections to the evidence documents.
+- Handoff Task 1: the shared task model in `src/domains/tasks/`, with pure
+  operations, selectors, fixtures and tests. It is not yet wired into the shell
+  or the stored document.
 - Next: a product brief that replaces `03-scope.md`, `01-module-contract.md`,
   `05-architecture.md` and `07-design-system.md`; an ADR on how the phone apps
   are built; then one tool built properly as the benchmark.
