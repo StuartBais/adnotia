@@ -68,3 +68,10 @@ I read first-person records, not star averages or testimonial pull-quotes. [Coll
 10. **Make the still frame sufficient.** Legible text, generous targets, visible focus, no colour-only state or motion-dependent feedback. Colour, type and light/dark treatments are identity choices, not ADHD interventions. (HIG, M3, W3C, report.)
 
 **Ruled out:** a launch dashboard of equally weighted tools (delays returning); required scheduling (turns capture into planning); backlog badges, loss, resets and guilt (make returning expensive); hidden swipe-only actions (hard to discover); cloud suggestions and unsolicited nudges (take control and data away); glass-on-text, candy chips and infinite cards (decoration becomes the hierarchy). No screen, illustration or font from a studied app is reproduced.
+
+## Second pass: what happens during an interruption?
+
+**Additional reading, 19 November 2026.** The first plates left two questions unanswered: where does Save take me, and can I reach it while typing?
+
+- **Read:** W3C's [Let Users Go Back](https://github.com/w3c/coga/blob/HEAD/design-guide/o4p02-back-undo.html) distinguishes returning to the same point from merely going home. Its example is returning to the same video after opening another view by mistake. **Inference:** the place to keep in Adnotia is a particular instruction in a particular session. Opening a running task must not be another Start button.
+- **Read:** Apple's [Virtual keyboards](https://developer.apple.com/design/human-interface-guidelines/virtual-keyboards) ([page text read](https://github.com/valentinllpz/apple-human-interface-guidelines/blob/main/references/virtual-keyboards.md)) distinguishes keyboards by the content being entered and describes the Return key as part of the task. **Inference:** judge capture with the alphabetic keyboard taking up real space. Put the destination and Save beside the field, not below the keyboard, and give the keyboard's Done the same result as Save.
