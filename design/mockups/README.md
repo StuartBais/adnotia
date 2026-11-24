@@ -6,6 +6,8 @@ The [research notebook](RESEARCH.md) precedes the drawings. Its ten principles a
 
 ## Featured · [The Bookmark Edition](bookmark-edition.html)
 
+**Chosen colours:** [the same five screens in charcoal and terracotta](bookmark-edition-charcoal.html). This is the direction and palette the owner chose; see `docs/decisions/ADR-045`. Only the colour values differ from the file described below, and the contrast figures in the table below do not apply to it: ADR-045 gives its own.
+
 **A notched bookmark carries the current step from Today into Capture and back into Focus.** The number tells you where you are; the words tell you what to do. In the first Margin Press, the biggest thing on Today looked tappable but wasn't. Here the whole school-email headline opens the running session. In Focus, “Write the question” gets the biggest type, not the clock.
 
 **Try the interruption.** On Today, choose **Open focus**. Notice the sentence “When is the permission slip due?” Choose **Capture a thought**, type **Order printer ink**, then press **Save & return to focus** or the keyboard’s **Done** (Enter on a computer). The receipt appears **below** the sentence. Step 02, the sentence and the 18 minutes left stay where they were. Try leaving Capture without saving, too: the draft is still there when you come back.
