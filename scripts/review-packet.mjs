@@ -31,7 +31,7 @@ export {
   THIRTEEN_PLUS_STRINGS, THIRTEEN_PLUS_EVIDENCE,
 } from '${root}/src/kernel/family/guidance.ts';
 export { SCHOOL_STRINGS, SCHOOL_EVIDENCE } from '${root}/src/kernel/family/school.ts';
-export { CRISIS_LINES, FAMILY_CRISIS_LINES, CRISIS_REVIEWED } from '${root}/src/kernel/shell/crisis.ts';
+export { CRISIS_LINES, FAMILY_CRISIS_LINES, CRISIS_REVIEWED, CRISIS_STRINGS } from '${root}/src/kernel/shell/crisis.ts';
 `;
 writeFileSync(join(work, 'entry.ts'), entry);
 await build({
@@ -195,7 +195,29 @@ The page states it was last reviewed in **${src.CRISIS_REVIEWED}**. That date is
 when the list was written, not when it was checked: no number here has yet been
 confirmed by a person.
 
-## On every page
+## Emergency numbers on every page
+
+These are named in the page's own text, not in a list, so they are quoted with
+the sentence they sit in.
+
+> ${src.CRISIS_STRINGS.emergencyNote}
+
+| Where, as the sentence says | Number | Confirmed as that region's emergency number, with source and date |
+|---|---|---|
+| Much of Europe | 112 | |
+| United Kingdom | 999 | |
+| United States and Canada | 911 | |
+| Australia | 000 | |
+
+## The link for anywhere else
+
+> ${src.CRISIS_STRINGS.elsewhereBody}
+
+| Link | Opens | Confirmed that it lists free lines by country, with date |
+|---|---|---|
+| findahelpline.com | https://findahelpline.com | |
+
+## Helplines on every page
 
 ${lineTable(src.CRISIS_LINES, false)}
 

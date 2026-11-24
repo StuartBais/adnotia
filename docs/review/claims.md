@@ -1,6 +1,6 @@
 # Review packet: claims
 
-Generated 2026-11-24 by `node scripts/review-packet.mjs` from the source at commit `6876975`. If the source has changed since, regenerate it before reviewing.
+Generated 2026-11-24 by `node scripts/review-packet.mjs` from the source at commit `9b80bb3`. If the source has changed since, regenerate it before reviewing.
 
 **For the second reader.** Each row is one sentence the app shows, quoted
 exactly from the source. Check it against the references listed for its entry,

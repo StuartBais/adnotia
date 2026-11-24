@@ -1,6 +1,6 @@
 # Review packet: crisis lines
 
-Generated 2026-11-24 by `node scripts/review-packet.mjs` from the source at commit `6876975`. If the source has changed since, regenerate it before reviewing.
+Generated 2026-11-24 by `node scripts/review-packet.mjs` from the source at commit `9b80bb3`. If the source has changed since, regenerate it before reviewing.
 
 **For whoever confirms the numbers.** Every line on the "if things are bad right
 now" pages, as the app shows it. Confirm each against the organisation's own
@@ -12,7 +12,29 @@ The page states it was last reviewed in **2026-09**. That date is
 when the list was written, not when it was checked: no number here has yet been
 confirmed by a person.
 
-## On every page
+## Emergency numbers on every page
+
+These are named in the page's own text, not in a list, so they are quoted with
+the sentence they sit in.
+
+> If you do not know it, it is worth looking up now rather than later. In much of Europe it is 112, in the UK 999, in the US and Canada 911, in Australia 000.
+
+| Where, as the sentence says | Number | Confirmed as that region's emergency number, with source and date |
+|---|---|---|
+| Much of Europe | 112 | |
+| United Kingdom | 999 | |
+| United States and Canada | 911 | |
+| Australia | 000 | |
+
+## The link for anywhere else
+
+> findahelpline.com lists free lines by country. Opening it leaves Adnotia and uses the internet; nothing about you goes with you.
+
+| Link | Opens | Confirmed that it lists free lines by country, with date |
+|---|---|---|
+| findahelpline.com | https://findahelpline.com | |
+
+## Helplines on every page
 
 | Where | Organisation | Number or contact as shown | Dials | Note shown | Confirmed on the organisation's own site, with date |
 |---|---|---|---|---|---|
