@@ -178,6 +178,33 @@ describe('merging the domains from a backup', () => {
     });
   });
 
+  it('fills an option the backup set inside a scope this device has only partly chosen', () => {
+    const live = withDomains((d) => {
+      d.domains.rewards = { default: {}, scopes: { day: { doneList: true } } };
+    });
+    const backup = withDomains((d) => {
+      d.domains.rewards = { default: {}, scopes: { day: { doneList: false, tally: true } } };
+    });
+    expect(mergeDocuments(live, backup).document.domains.rewards.scopes['day']).toEqual({
+      doneList: true,
+      tally: true,
+    });
+  });
+
+  it('keeps two completions that share a time and scope, and restoring twice adds none', () => {
+    const twin = { at: NOW.toISOString(), scope: 'day' };
+    const backup = withDomains((d) => {
+      d.domains.completions = [twin, { ...twin }];
+    });
+    const once = mergeDocuments(createDocument({ now: NOW }), backup).document;
+    expect(once.domains.completions).toHaveLength(2);
+    expect(mergeDocuments(once, backup).document.domains.completions).toHaveLength(2);
+    const partial = withDomains((d) => {
+      d.domains.completions = [twin];
+    });
+    expect(mergeDocuments(partial, backup).document.domains.completions).toHaveLength(2);
+  });
+
   it('is idempotent, and leaves both inputs untouched', () => {
     const live = withDomains((d) => {
       d.domains.tasks = [task('a', 'a')];

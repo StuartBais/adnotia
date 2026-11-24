@@ -171,6 +171,22 @@ function mergeShelves(
   };
 }
 
+function mergeRewards(
+  live: DomainsState['rewards'],
+  backup: DomainsState['rewards'] | undefined,
+): DomainsState['rewards'] {
+  if (backup === undefined) return live;
+  const scopes: Record<string, (typeof live.scopes)[string]> = { ...backup.scopes };
+  for (const [key, options] of Object.entries(live.scopes))
+    scopes[key] = { ...backup.scopes?.[key], ...options };
+  return {
+    ...backup,
+    ...live,
+    default: { ...backup.default, ...live.default },
+    scopes,
+  };
+}
+
 function mergeDomains(
   current: DomainsState | undefined,
   backup: DomainsState | undefined,
@@ -178,13 +194,20 @@ function mergeDomains(
 ): DomainsState {
   const live = current ?? emptyDomains();
   if (backup === undefined) return live;
-  const seen = new Set(live.completions.map((c) => JSON.stringify([c.at, c.scope])));
+  // Completions carry no id, and two can share a time and a scope. Each one the
+  // backup holds is matched against one held here, so a duplicate is kept as a
+  // duplicate and restoring the same file twice adds nothing.
+  const held = new Map<string, number>();
+  for (const c of live.completions) {
+    const key = JSON.stringify([c.at, c.scope]);
+    held.set(key, (held.get(key) ?? 0) + 1);
+  }
   const completions = [...live.completions];
   for (const completion of backup.completions ?? []) {
     const key = JSON.stringify([completion.at, completion.scope]);
-    if (seen.has(key)) continue;
-    seen.add(key);
-    completions.push(completion);
+    const left = held.get(key) ?? 0;
+    if (left > 0) held.set(key, left - 1);
+    else completions.push(completion);
   }
   return {
     ...live,
@@ -193,14 +216,10 @@ function mergeDomains(
     routines: mergeShelves(live.routines, backup.routines, counts) ?? live.routines,
     reminders: mergeById(live.reminders, backup.reminders, counts),
     completions,
-    // Reward choices are this person's settings. What is set on this device
-    // stands; the backup only fills what was never chosen here.
-    rewards: {
-      ...backup.rewards,
-      ...live.rewards,
-      default: { ...backup.rewards?.default, ...live.rewards.default },
-      scopes: { ...backup.rewards?.scopes, ...live.rewards.scopes },
-    },
+    // Reward choices are this person's settings. Each option chosen on this
+    // device stands; the backup only fills options never chosen here, scope by
+    // scope.
+    rewards: mergeRewards(live.rewards, backup.rewards),
   };
 }
 
