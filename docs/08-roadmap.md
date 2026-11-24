@@ -14,9 +14,11 @@ record. Where things stand now:
 - Handoff Task 1: the shared task model in `src/domains/tasks/`, with pure
   operations, selectors, fixtures and tests. It is not yet wired into the shell
   or the stored document.
-- Next: a product brief that replaces `03-scope.md`, `01-module-contract.md`,
-  `05-architecture.md` and `07-design-system.md`; an ADR on how the phone apps
-  are built; then one tool built properly as the benchmark.
+- Also done: the product brief (`09-product-brief.md`), the design direction
+  and palette (ADR-045), and the shared task model (`src/domains/tasks`).
+- Next: the order of work at the end of the brief. The first item is the
+  remaining domain models; the first one that needs the owner is how the phone
+  apps are built.
 - Waiting on a person: a second reader for evidence tiers, and the regulatory
   and store-policy review for an app with a child's surface.
 
