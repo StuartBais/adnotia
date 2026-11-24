@@ -106,6 +106,19 @@ function appPlumbingOnly(): Plugin {
         );
       }
       await writeFile(welcome, stripped, 'utf8');
+
+      // The benchmark prototype gets neither either. With the app's manifest,
+      // "Add to Home Screen" on the prototype would install the app instead, and
+      // a phone-app prototype must not be the page that registers the worker.
+      const bench = resolve(outDir, 'bench', 'index.html');
+      const benchHtml = await readFile(bench, 'utf8');
+      const benchStripped = benchHtml
+        .replace(/\s*<link rel="manifest"[^>]*>/g, '')
+        .replace(/\s*<script[^>]*register-sw[^>]*>\s*<\/script>/g, '');
+      if (benchStripped === benchHtml) {
+        throw new Error('The prototype page carries no manifest or worker registration to remove.');
+      }
+      await writeFile(bench, benchStripped, 'utf8');
     },
   };
 }
@@ -148,7 +161,13 @@ export default defineConfig(({ mode }) => {
       rollupOptions: {
         input: single
           ? { app: resolve('app/index.html') }
-          : { home: resolve('index.html'), app: resolve('app/index.html') },
+          : {
+              home: resolve('index.html'),
+              app: resolve('app/index.html'),
+              // The benchmark prototype for the phone rebuild. Not linked from
+              // anywhere; reached by its address. See docs/09-product-brief.md.
+              bench: resolve('bench/index.html'),
+            },
       },
       target: 'es2022',
       cssCodeSplit: !single,
@@ -215,7 +234,7 @@ export default defineConfig(({ mode }) => {
                * it — online and offline, for as long as the registration lived,
                * with nothing in the build to say so.
                */
-              navigateFallbackDenylist: [/^\/$/, /^\/index\.html$/, /^\/\?/],
+              navigateFallbackDenylist: [/^\/$/, /^\/index\.html$/, /^\/\?/, /^\/bench\//],
               // There is nothing to fetch at runtime, so there is nothing to cache
               // at runtime either.
               runtimeCaching: [],
