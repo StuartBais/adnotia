@@ -17,8 +17,14 @@ record. Where things stand now:
   routine and options models in `src/domains/`, schema version 2 holding them
   (ADR-046), and the review packet in `docs/review/`. None of the domains is
   wired into an interface yet.
-- Next: item 2 in the brief's order of work, how the phone apps are built. It
-  is the owner's decision and blocks every real screen.
+- The benchmark prototype is built (brief, order of work item 3): Today,
+  capture, a task opened and focus, in the Bookmark Edition direction, on the
+  real task model, at `/bench/` on the site. It is plain web code with no
+  framework, so trying it commits to nothing. It keeps its data under its own
+  storage key and is linked from nowhere.
+- Next: the owner uses the prototype on a phone, then decides how the phone apps
+  are built (item 2). Feeling good in Safari argues for wrapping the web code;
+  feeling not quite like an app argues for React Native or native.
 - Waiting on a person: a second reader for evidence tiers, who now has
   `docs/review/claims.md` to work through; someone to confirm the crisis
   numbers in `docs/review/crisis-numbers.md`; and the regulatory and
