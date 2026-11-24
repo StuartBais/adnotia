@@ -12,6 +12,7 @@
 //     recognise.
 
 import { SCHEMA_VERSION, type AdnotiaDocument } from '../document';
+import { emptyDomains } from '../domains';
 
 export interface MigrationContext {
   now?: Date;
@@ -20,15 +21,30 @@ export interface MigrationContext {
 /** One step up. Keyed by the version being migrated *from*. */
 export type SchemaMigration = (document: unknown, context: MigrationContext) => unknown;
 
+function isObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
 /**
- * Empty, and that is the current state rather than a stub.
- *
+ * 1 to 2: add the shared domains (ADR-046). Nothing that was there moves or
+ * changes. A `domains` object already present is kept, with any of its own keys,
+ * and only the parts it lacks are filled in, so running this twice changes
+ * nothing.
+ */
+export function migrateOneToTwo(document: unknown): unknown {
+  if (!isObject(document)) throw new Error('That is not an Adnotia document.');
+  const held = isObject(document['domains']) ? document['domains'] : {};
+  return { ...document, schemaVersion: 2, domains: { ...emptyDomains(), ...held } };
+}
+
+/**
  * Version 1 is the first shape anybody's data is in: ADR-042 removed the v0
  * import before release, when there was no v0 data anywhere to import. The
- * machinery below stays because the first real migration will need it, and the
- * rules in the header are what it will be written against.
+ * first real migration is 1 to 2.
  */
-export const schemaMigrations: Readonly<Record<number, SchemaMigration>> = {};
+export const schemaMigrations: Readonly<Record<number, SchemaMigration>> = {
+  1: migrateOneToTwo,
+};
 
 /** The version of a document read back from storage. */
 export function detectSchemaVersion(document: unknown): number {
