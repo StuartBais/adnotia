@@ -7,7 +7,10 @@
 import type { IsoDate } from '../dates/index';
 
 /** Bumped only by a kernel migration. See docs/06-data-model.md. */
-export const SCHEMA_VERSION = 1;
+import type { Shelf } from '../../domains/routines';
+import { emptyDomains, type DomainsState } from './domains';
+
+export const SCHEMA_VERSION = 2;
 
 /** Where the document lives. Changed from v0's `adhd-titration-log-v1`. */
 export const DOCUMENT_KEY = 'adnotia-v1';
@@ -81,6 +84,8 @@ export interface ChildProfile {
   ageBand: string;
   createdAt: string;
   modules: Record<string, ModuleSlice>;
+  /** This child's routines and runs. Absent means none. See ADR-046. */
+  routines?: Shelf;
 }
 
 export interface FamilyState {
@@ -94,6 +99,8 @@ export interface AdnotiaDocument {
   kernel: KernelState;
   modules: Record<string, ModuleSlice>;
   family: FamilyState;
+  /** The shared domains, from schema version 2. See ADR-046. */
+  domains: DomainsState;
 }
 
 export interface CreateDocumentOptions {
@@ -116,6 +123,7 @@ export function createDocument(options: CreateDocumentOptions = {}): AdnotiaDocu
     },
     modules: {},
     family: { children: {} },
+    domains: emptyDomains(),
   };
 }
 

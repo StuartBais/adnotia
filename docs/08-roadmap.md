@@ -11,16 +11,18 @@ record. Where things stand now:
 
 - Done: the decisions (ADR-043, ADR-044), the research report and its notes,
   the full licence text, and two corrections to the evidence documents.
-- Handoff Task 1: the shared task model in `src/domains/tasks/`, with pure
-  operations, selectors, fixtures and tests. It is not yet wired into the shell
-  or the stored document.
-- Also done: the product brief (`09-product-brief.md`), the design direction
-  and palette (ADR-045), and the shared task model (`src/domains/tasks`).
-- Next: the order of work at the end of the brief. The first item is the
-  remaining domain models; the first one that needs the owner is how the phone
-  apps are built.
-- Waiting on a person: a second reader for evidence tiers, and the regulatory
-  and store-policy review for an app with a child's surface.
+- Also done: the product brief (`09-product-brief.md`) and the design
+  direction and palette (ADR-045).
+- All five handoff tasks in `docs/handoff/copilot-tasks.md` are done: the task,
+  routine and options models in `src/domains/`, schema version 2 holding them
+  (ADR-046), and the review packet in `docs/review/`. None of the domains is
+  wired into an interface yet.
+- Next: item 2 in the brief's order of work, how the phone apps are built. It
+  is the owner's decision and blocks every real screen.
+- Waiting on a person: a second reader for evidence tiers, who now has
+  `docs/review/claims.md` to work through; someone to confirm the crisis
+  numbers in `docs/review/crisis-numbers.md`; and the regulatory and
+  store-policy review for an app with a child's surface.
 
 Milestones 0 to 7 and 9 are built and their gates pass. Milestone 8 is partly
 done, and what remains of it is mostly review by a person rather than code.

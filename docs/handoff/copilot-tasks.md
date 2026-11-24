@@ -6,6 +6,12 @@ chat. They are chosen because none depends on the two things still undecided
 (the visual direction, and how the phone apps are built), and none touches a
 decision that is the owner's to take.
 
+**Status, 24 November 2026: all five are done**, by Claude rather than
+Copilot. Task 2 and task 4 differ from their briefs in one way, recorded in
+ADR-046: routines are kept on one shelf per owner, and a child's shelf lives
+inside the child's profile, so a profile still deletes cleanly. The briefs are
+kept as written, as the record of what was asked.
+
 Do them in the order given. Tasks 1 to 3 are independent of each other; task 4
 needs 1 and 2 merged first.
 

@@ -10,8 +10,15 @@
 //   - everything else is unioned;
 //   - questions are deduplicated by text;
 //   - lastBackup, lastAppointment and baseline take the more recent value.
+//
+// From schema version 2 (ADR-046) the shared domains merge the same way: tasks,
+// routines, routine runs and reminders by id, the backup winning a collision;
+// completions are unioned; reward settings on this device win, the backup's
+// fill gaps.
 
+import type { Shelf } from '../../domains/routines';
 import type { AdnotiaDocument, ChildProfile, ModuleSlice, Question } from '../store/document';
+import { emptyDomains, type DomainsState } from '../store/domains';
 
 export interface RestoreCounts {
   /** Day records and entries the backup had and the live document did not. */
@@ -128,6 +135,94 @@ function mergeSlices(
   return merged;
 }
 
+/** Merge two lists of records that carry an `id`. Same id: the backup wins, in place. */
+function mergeById<T extends { id: string }>(
+  current: readonly T[] | undefined,
+  backup: readonly T[] | undefined,
+  counts: RestoreCounts,
+): T[] {
+  const merged = [...(current ?? [])];
+  const at = new Map(merged.map((item, index) => [item.id, index]));
+  for (const item of backup ?? []) {
+    const index = at.get(item.id);
+    if (index === undefined) {
+      at.set(item.id, merged.length);
+      merged.push(item);
+      counts.entriesAdded++;
+    } else {
+      merged[index] = item;
+      counts.entriesUpdated++;
+    }
+  }
+  return merged;
+}
+
+function mergeShelves(
+  current: Shelf | undefined,
+  backup: Shelf | undefined,
+  counts: RestoreCounts,
+): Shelf | undefined {
+  if (backup === undefined) return current;
+  return {
+    ...current,
+    ...backup,
+    routines: mergeById(current?.routines, backup.routines, counts),
+    runs: mergeById(current?.runs, backup.runs, counts),
+  };
+}
+
+function mergeRewards(
+  live: DomainsState['rewards'],
+  backup: DomainsState['rewards'] | undefined,
+): DomainsState['rewards'] {
+  if (backup === undefined) return live;
+  const scopes: Record<string, (typeof live.scopes)[string]> = { ...backup.scopes };
+  for (const [key, options] of Object.entries(live.scopes))
+    scopes[key] = { ...backup.scopes?.[key], ...options };
+  return {
+    ...backup,
+    ...live,
+    default: { ...backup.default, ...live.default },
+    scopes,
+  };
+}
+
+function mergeDomains(
+  current: DomainsState | undefined,
+  backup: DomainsState | undefined,
+  counts: RestoreCounts,
+): DomainsState {
+  const live = current ?? emptyDomains();
+  if (backup === undefined) return live;
+  // Completions carry no id, and two can share a time and a scope. Each one the
+  // backup holds is matched against one held here, so a duplicate is kept as a
+  // duplicate and restoring the same file twice adds nothing.
+  const held = new Map<string, number>();
+  for (const c of live.completions) {
+    const key = JSON.stringify([c.at, c.scope]);
+    held.set(key, (held.get(key) ?? 0) + 1);
+  }
+  const completions = [...live.completions];
+  for (const completion of backup.completions ?? []) {
+    const key = JSON.stringify([completion.at, completion.scope]);
+    const left = held.get(key) ?? 0;
+    if (left > 0) held.set(key, left - 1);
+    else completions.push(completion);
+  }
+  return {
+    ...live,
+    ...backup,
+    tasks: mergeById(live.tasks, backup.tasks, counts),
+    routines: mergeShelves(live.routines, backup.routines, counts) ?? live.routines,
+    reminders: mergeById(live.reminders, backup.reminders, counts),
+    completions,
+    // Reward choices are this person's settings. Each option chosen on this
+    // device stands; the backup only fills options never chosen here, scope by
+    // scope.
+    rewards: mergeRewards(live.rewards, backup.rewards),
+  };
+}
+
 function mergeProfiles(
   current: Record<string, ChildProfile>,
   backup: Record<string, ChildProfile>,
@@ -139,6 +234,8 @@ function mergeProfiles(
     if (held === undefined) {
       counts.profilesAdded++;
       merged[id] = profile;
+      counts.entriesAdded +=
+        (profile.routines?.routines.length ?? 0) + (profile.routines?.runs.length ?? 0);
       // Count the days inside a profile that arrived whole.
       for (const slice of Object.values(profile.modules ?? {})) {
         const days = (slice as ModuleSlice)['days'];
@@ -149,10 +246,12 @@ function mergeProfiles(
       }
       continue;
     }
+    const routines = mergeShelves(held.routines, profile.routines, counts);
     merged[id] = {
       ...held,
       ...profile,
       modules: mergeSlices(held.modules ?? {}, profile.modules ?? {}, counts),
+      ...(routines === undefined ? {} : { routines }),
     };
   }
   return merged;
@@ -226,6 +325,7 @@ export function mergeDocuments(
       ...incoming.family,
       children: mergeProfiles(live.family.children ?? {}, incoming.family.children ?? {}, counts),
     },
+    domains: mergeDomains(live.domains, incoming.domains, counts),
   };
 
   const lastBackup = laterDate(live.kernel.lastBackup, incoming.kernel.lastBackup);

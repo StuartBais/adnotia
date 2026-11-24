@@ -146,6 +146,15 @@ Filename `adnotia-YYYY-MM-DD.json`. Content is either the raw document (only if 
 
 Merging rather than replacing is what makes "restore onto a second device" and "restore after a partial data loss" both safe.
 
+## Version 2: the shared domains
+
+From `schemaVersion` 2 the document also carries `domains`: the adult's tasks,
+routines and their runs, reward settings, completions and reminders. A child's
+routines live inside the child's profile at `family.children[<id>].routines`,
+so deleting a profile still removes everything about the child. Backups merge
+these by `id`; completions are unioned; reward settings on the device stand.
+See `decisions/ADR-046-schema-version-2-adds-the-shared-domains.md`.
+
 ## Migration rules
 
 - `schemaVersion` migrations are pure functions `(doc) => doc`, applied in order, tested pairwise from every historical version. Version 1 is the shape above.
@@ -160,8 +169,8 @@ Removed. There was one, from the predecessor's flat `entries` shape under
 `adhd-titration-log-v1`, and ADR-042 deleted it before release on the grounds
 that nobody had run the monolith, so there was no v0 data anywhere to import.
 
-Version 1 is therefore the first shape any person's data is in, `schemaVersion`
-starts there, and `schemaMigrations` is empty. The machinery around it is not:
+Version 1 is therefore the first shape any person's data is in, and
+`schemaVersion` starts there. The first real migration is 1 to 2 (ADR-046). The machinery around it is not:
 `detectSchemaVersion` and `migrateDocument` still refuse a document they have no
 path for and still hand back a newer document untouched, because the first real
 migration will be written against those rules and they are easier to keep true

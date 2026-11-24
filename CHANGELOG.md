@@ -10,6 +10,11 @@ Nothing has been released yet. See the implementation checkpoint in
 `docs/08-roadmap.md` for what is built, what is known to be wrong, and what is
 waiting on a person.
 
+### Migrations
+
+- Schema 1 → 2: adds an empty `domains` object for tasks, routines, reward settings,
+  completions and reminders. Nothing that was there moves or changes. See ADR-046.
+
 ### Added
 
 - Adnotia now says what a browser extension can see, and offers a passcode at the start.

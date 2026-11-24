@@ -20,11 +20,13 @@ export {
   memoryStorageAdapter,
   type StorageAdapter,
 } from './adapters';
+export { emptyDomains, routineBookOf, type DomainsState } from './domains';
 export { plainJsonCodec, type DocumentCodec } from './codec';
 export { createStore, type CreateStoreOptions, type KernelStore, type Store } from './store';
 export {
   detectSchemaVersion,
   migrateDocument,
+  migrateOneToTwo,
   schemaMigrations,
   type MigrationContext,
   type SchemaMigration,

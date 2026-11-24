@@ -8,11 +8,10 @@ import {
 
 // See docs/06-data-model.md "Migration rules".
 //
-// There are no migrations. ADR-042 removed the only one there had ever been —
-// the v0 monolith import — before release, when no v0 data existed anywhere to
-// import. What is under test here is the machinery that will run the first real
-// one: version detection, the loop, and the three refusals that stop a bad
-// migration corrupting a document rather than failing loudly.
+// What is under test here is the machinery: version detection, the loop, and
+// the refusals that stop a bad migration corrupting a document rather than
+// failing loudly. The one migration there is, 1 to 2, is tested in
+// domains-document.test.ts (ADR-046).
 
 describe('recognising a document', () => {
   it('reads the schema version of a current document', () => {
