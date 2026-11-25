@@ -15,8 +15,8 @@ import {
 
 // What the prototype never says (design/lantern/SPEC.md section 13, "Anything
 // that shames", and docs/03-scope.md "Tone"), across every screen built so far
-// (Today, the rest of today, the places, Me, Settings, About and the crisis
-// page), every scenario, and every six-second line and Undo: nothing overdue, late, missed or behind; no streak, no
+// (Today, Focus, the rest of today, the places, Me, Settings, About and the
+// crisis page), every scenario, and every six-second line and Undo: nothing overdue, late, missed or behind; no streak, no
 // greeting and no cheering; no exclamation mark; never "0 min left" and never
 // seconds; no count on a tab; and no figure for time away.
 
@@ -80,6 +80,12 @@ describe('never', () => {
     it(`says none of it in "${scenario}", on Today, the rest of today, the places and Me`, async () => {
       const m = await mount(at, scenario);
       holdsNothing(m, 'Today');
+      const lit = controls(m.container).find((node) => node.id === 'b-lit');
+      if (lit) {
+        lit.click();
+        holdsNothing(m, 'Focus');
+        press(m.container, 'Back to Today');
+      }
       const handle = controls(m.container).find((node) => node.id === 'b-handle');
       if (handle) {
         handle.click();
@@ -124,6 +130,30 @@ describe('never', () => {
     holdsNothing(m, 'Today, started');
     press(m.container, /^Step done: /);
     holdsNothing(m, 'Today, a step done');
+  });
+
+  it('says none of it in Focus, after its taps, its six seconds and its Undo', async () => {
+    const m = await mount('2026-11-24T10:05:00', 'example');
+    press(m.container, /^Now: /);
+    settle(m);
+    press(m.container, 'Add 5 minutes');
+    said(m);
+    holdsNothing(m, 'Focus, five minutes added');
+    press(m.container, /^Step done: /);
+    holdsNothing(m, 'Focus, a step done, its Undo on the foot');
+    press(m.container, /^Undo step done: /);
+    said(m);
+    holdsNothing(m, 'Focus, after Undo');
+    press(m.container, 'Pause');
+    holdsNothing(m, 'Focus, paused');
+    m.clock.now = new Date('2026-11-24T13:20:00');
+    vi.advanceTimersByTime(60_000);
+    holdsNothing(m, 'Focus, paused, hours later');
+    press(m.container, 'Resume');
+    holdsNothing(m, 'Focus, resumed, its Undo on the foot');
+    press(m.container, 'Pause');
+    press(m.container, /^Set aside /);
+    holdsNothing(m, 'Today, after Set aside in Focus');
   });
 
   it('says none of it in any six seconds after a tap, or after Undo', async () => {
