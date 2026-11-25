@@ -1047,6 +1047,46 @@ describe('the 04:00 boundary (SPEC 5.7)', () => {
       'none',
     );
   });
+
+  /**
+   * Started at 3:48, on Tuesday's logging day, with 25 minutes, and left at
+   * 3:56: the estimate runs out at 4:13, on Wednesday's.
+   */
+  const acrossFour = (): BenchDomains => {
+    const base = scene('example', TUE_1005);
+    const email = idOf(base, EMAIL);
+    return {
+      ...base,
+      tasks: base.tasks.map((t) =>
+        t.id === email
+          ? { ...t, sessions: [{ start: at('2026-11-25T03:48:00').toISOString() }] }
+          : t,
+      ),
+      bench: { ...base.bench, away: { since: at('2026-11-25T03:56:00').toISOString() } },
+    };
+  };
+
+  it('keeps the mark of a clock the app closed on the new day', () => {
+    const woken = wake(acrossFour(), WED_0900);
+    expect(woken.closed).toBe(idOf(woken.state, EMAIL));
+    expect(lastStop(woken.state)).toBe(at('2026-11-25T04:13:00').toISOString());
+    expect(woken.state.bench.day).toBe('2026-11-25');
+    expect(present(woken.state, WED_0900)).toMatchObject({ kind: 'paused', closedByApp: true });
+  });
+
+  it('closes a forgotten clock before turning the day on boot too', () => {
+    const booted = migrateBench(acrossFour(), WED_0900);
+    expect(lastStop(booted)).toBe(at('2026-11-25T04:13:00').toISOString());
+    const woken = wake(booted, WED_0900, { boot: true });
+    expect(present(woken.state, WED_0900)).toMatchObject({ kind: 'paused', closedByApp: true });
+    expect(woken.restore).toBe('today');
+  });
+
+  it('lets marks from the day that ended go', () => {
+    const state = scene('clockLeftRunning', TUE_1005);
+    expect(state.bench.closedByApp).toBeDefined();
+    expect(dayBoundary(state, WED_0900).bench.closedByApp).toBeUndefined();
+  });
 });
 
 describe('migrateBench', () => {

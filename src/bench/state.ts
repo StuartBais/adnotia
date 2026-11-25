@@ -912,11 +912,23 @@ export function dayBoundary(state: BenchDomains, now: Date): BenchDomains {
     .map((task) => task.id);
   for (const id of past) tasks = model.unschedule(tasks, id);
 
-  const { setAside: _setAside, closedByApp: _closed, ui: _ui, ...kept } = state.bench;
+  // A mark made on the new day is about the new day: a forgotten clock closed
+  // in the same wake at an estimate that ran out after 04:00 keeps its mark,
+  // so "Timer stopped" still applies to it.
+  const { setAside, closedByApp, ui: _ui, ...kept } = state.bench;
+  const onToday = (mark: { at: string } | undefined) =>
+    mark !== undefined && loggingDay(new Date(mark.at)) === today;
   return {
     ...state,
     tasks,
-    bench: { ...kept, day: today, passed: [], drawer: { ...DEFAULT_DRAWER } },
+    bench: {
+      ...kept,
+      ...(onToday(setAside) ? { setAside } : {}),
+      ...(onToday(closedByApp) ? { closedByApp } : {}),
+      day: today,
+      passed: [],
+      drawer: { ...DEFAULT_DRAWER },
+    },
   };
 }
 
@@ -1120,11 +1132,15 @@ function readBench(value: unknown): BenchState {
  * section 6). The Bookmark round's separate focus box goes; a running session
  * keeps running, because it lives on the task. A missing or damaged `bench`
  * is made whole, keeping any key it does not know, and so are the domains.
- * If the stored day is not today's, the day boundary runs. Safe to run twice.
+ * If the stored day is not today's, the day boundary runs, after a forgotten
+ * clock is closed, in the order a wake takes them (plan section 12), so boot
+ * and wake agree. The record of going away is left for the boot's wake, whose
+ * restore rule reads it. Safe to run twice.
  */
 export function migrateBench(domains: DomainsState, now: Date): BenchDomains {
   const { focus: _focus, ...rest } = domains;
-  return dayBoundary({ ...rest, bench: readBench(domains['bench']) } as BenchDomains, now);
+  const read = { ...rest, bench: readBench(domains['bench']) } as BenchDomains;
+  return dayBoundary(closeForgotten(read, now).state, now);
 }
 
 /**
