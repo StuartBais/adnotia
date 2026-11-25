@@ -106,6 +106,19 @@ describe('strings.ts, against SPEC 11', () => {
     );
   });
 
+  it('says "Timer stopped" where the screen does, for a clock the app closed', () => {
+    expect(
+      litLabel({
+        ...running,
+        paused: true,
+        lead: 'Timer stopped',
+        minutes: { kind: 'over', soFar: 25, estimate: 25 },
+      }),
+    ).toBe(
+      'Timer stopped: Write the question. Step 2 of 3 of Write the school email. 25 minutes so far, estimate 25. Note: When is the permission slip due?',
+    );
+  });
+
   it('names the capsule, and its paused and used-up forms', () => {
     expect(capsuleLabel(running)).toBe(
       'Now: Write the question, step 2 of 3 of Write the school email. 18 of 25 minutes left, ends 10:23.',

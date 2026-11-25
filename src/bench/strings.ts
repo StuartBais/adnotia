@@ -174,6 +174,12 @@ export type SpokenMinutes =
 /** The present task, as the lantern and the capsule say it. */
 export interface SpokenNow {
   paused: boolean;
+  /**
+   * The word that stands where "Now" does, when it is not "Now" or "Paused":
+   * "Timer stopped" for a session the app closed itself, if the owner's
+   * setting says so (SPEC 14). Labels use the same words as the screen.
+   */
+  lead?: string;
   /** The current step, or the task's title when it has no step to show. */
   step: string;
   /** Absent for a task with no steps. */
@@ -182,6 +188,8 @@ export interface SpokenNow {
   minutes: SpokenMinutes;
   note: string | undefined;
 }
+
+const leadOf = (now: SpokenNow): string => now.lead ?? (now.paused ? T.paused : T.now);
 
 function minutesSpoken(minutes: SpokenMinutes): string {
   switch (minutes.kind) {
@@ -202,7 +210,7 @@ function minutesSpoken(minutes: SpokenMinutes): string {
  * permission slip due?"
  */
 export function litLabel(now: SpokenNow): string {
-  const lead = `${now.paused ? 'Paused' : 'Now'}: ${now.step}.`;
+  const lead = `${leadOf(now)}: ${now.step}.`;
   const where = now.position
     ? ` Step ${now.position.number} of ${now.position.count} of ${now.title}.`
     : '';
@@ -218,7 +226,7 @@ export function capsuleLabel(now: SpokenNow): string {
   const where = now.position
     ? `, step ${now.position.number} of ${now.position.count} of ${now.title}`
     : '';
-  return `${now.paused ? 'Paused' : 'Now'}: ${now.step}${where}. ${minutesSpoken(now.minutes)}.`;
+  return `${leadOf(now)}: ${now.step}${where}. ${minutesSpoken(now.minutes)}.`;
 }
 
 /** Focus's context line, a heading: "Focus, Write the school email, step 2 of 3". */
