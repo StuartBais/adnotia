@@ -139,6 +139,15 @@ export const ANNOUNCE_AFTER = 100;
 /** Focus fades in whole, and out, over this long (SPEC 10, Reduce Motion). */
 export const FOCUS_FADE_MS = 200;
 
+/** The Screen Wake Lock, where the browser has one: feature-detected, never required. */
+interface WakeLockLike {
+  release(): Promise<void>;
+  addEventListener?(type: 'release', listener: () => void): void;
+}
+interface WakeLockApi {
+  request(type: 'screen'): Promise<WakeLockLike>;
+}
+
 export function mountBench(options: BenchOptions): { destroy(): void } {
   const { store, container } = options;
   const now = options.now ?? (() => new Date());
@@ -488,6 +497,7 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
       if (capsuleButton) capsuleButton.focus({ preventScroll: true });
       else landFocus();
     }
+    holdAwake(showFocus);
     if (pendingScroll) {
       const restore = pendingScroll;
       pendingScroll = undefined;
@@ -863,6 +873,56 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
   function focusIn(...parts: HTMLElement[]): boolean {
     const active = document.activeElement;
     return active !== null && parts.some((part) => part.contains(active));
+  }
+
+  // ---------------------------------------------------------------- the screen stays awake
+
+  /**
+   * While Focus is on screen, the screen stays awake: a Screen Wake Lock,
+   * where the browser has one (Safari since 16.4; in a home-screen copy since
+   * iOS 18.4). The browser lets go of it when the page is hidden, so it is
+   * asked for again on the way back. Where there is none, nothing is said.
+   */
+  let lock: WakeLockLike | undefined;
+  let lockAsked = false;
+  let lockWanted = false;
+  /** Between hide and wake: nothing is asked for while the page is going. */
+  let away = false;
+
+  function holdAwake(want: boolean): void {
+    lockWanted = want && !destroyed;
+    if (!lockWanted) {
+      const held = lock;
+      lock = undefined;
+      if (held) void held.release().catch(() => undefined);
+      return;
+    }
+    const api = (navigator as Navigator & { wakeLock?: WakeLockApi }).wakeLock;
+    if (lock || lockAsked || away || !api || document.visibilityState !== 'visible') return;
+    lockAsked = true;
+    let asked: Promise<WakeLockLike>;
+    try {
+      asked = api.request('screen');
+    } catch {
+      lockAsked = false;
+      return;
+    }
+    asked.then(
+      (sentinel) => {
+        lockAsked = false;
+        if (!lockWanted || away || destroyed) {
+          void sentinel.release().catch(() => undefined);
+          return;
+        }
+        lock = sentinel;
+        sentinel.addEventListener?.('release', () => {
+          if (lock === sentinel) lock = undefined;
+        });
+      },
+      () => {
+        lockAsked = false;
+      },
+    );
   }
 
   // ---------------------------------------------------------------- measuring
@@ -1304,6 +1364,8 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
   /** Going to the background: when, and where the person was (plan section 12). */
   function hide(): void {
     dropUndo();
+    away = true;
+    holdAwake(false);
     const t = now();
     const state = read();
     commit({
@@ -1315,6 +1377,7 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
 
   /** Coming back: a forgotten clock, the day, passed slots, then where to open. */
   function wakeUp(): void {
+    away = false;
     const state = read();
     const woken = wake(state, now());
     if (woken.restore === 'today') {
@@ -1375,6 +1438,7 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
       destroyed = true;
       if (announcing !== undefined) clearTimeout(announcing);
       if (leaving !== undefined) clearTimeout(leaving);
+      holdAwake(false);
       dropUndo();
       container.removeEventListener('focusout', onFocusOut);
       ticker?.destroy();
