@@ -276,6 +276,33 @@ describe('present', () => {
     const done = withTasks(paused, model.complete(paused.tasks, idOf(paused, EMAIL), TUE_1320));
     expect(present(done, TUE_1320).kind).toBe('none');
   });
+
+  it('stays ended after Start this instead, once the other task is done', () => {
+    const state = scene('example', TUE_1005);
+    const dentist = idOf(state, 'Call the dentist');
+    const instead = withTasks(state, model.startWork(state.tasks, dentist, plus(TUE_1005, 1)));
+    const done = withTasks(instead, model.complete(instead.tasks, dentist, plus(TUE_1005, 5)));
+    // The dentist was the task most recently worked on today, and it is done.
+    expect(present(done, plus(TUE_1005, 6))).toEqual({ kind: 'none' });
+  });
+
+  it('stays ended when another task is started and then done', () => {
+    const paused = scene('pauseLeft', TUE_1320);
+    const bank = idOf(paused, 'Ring the bank');
+    const started = withTasks(paused, model.startWork(paused.tasks, bank, TUE_1320));
+    const done = withTasks(started, model.complete(started.tasks, bank, plus(TUE_1320, 10)));
+    expect(present(done, plus(TUE_1320, 11))).toEqual({ kind: 'none' });
+  });
+
+  it('is not ended by ticking off a task that was never worked on', () => {
+    const paused = scene('pauseLeft', TUE_1320);
+    const ticked = withTasks(
+      paused,
+      model.complete(paused.tasks, idOf(paused, 'Ring the bank'), TUE_1320),
+    );
+    const now = present(ticked, plus(TUE_1320, 1));
+    expect(now.kind === 'paused' && now.task.title).toBe(EMAIL);
+  });
 });
 
 describe('stepFacts', () => {

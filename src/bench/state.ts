@@ -177,9 +177,12 @@ export type Present =
 
 /**
  * Running is the task with an open session. Paused, when nothing runs, is the
- * top-level task not done whose latest stop is on today's logging day, unless
- * it was set aside at or after that stop. Paused ends by itself at 04:00, when
- * anything else starts, and when it is set aside (SPEC 4 "What paused means").
+ * task most recently worked on today, found by the latest stop on today's
+ * logging day across every top-level task, done ones included. It is paused
+ * only if that task is not done and was not set aside at or after that stop.
+ * So paused ends by itself at 04:00, when anything else starts (and stays
+ * ended once that other task is done), and when it is set aside (SPEC 4 "What
+ * paused means"). Ticking a task off is not working on it: no session, no stop.
  */
 export function present(state: BenchDomains, now: Date): Present {
   const running = model.running(state.tasks);
@@ -188,7 +191,7 @@ export function present(state: BenchDomains, now: Date): Present {
   const today = loggingDay(now);
   let latest: { task: Task; stop: number } | undefined;
   for (const task of state.tasks) {
-    if (!isTop(task) || task.doneAt !== undefined) continue;
+    if (!isTop(task)) continue;
     for (const session of task.sessions) {
       if (session.stop === undefined) continue;
       const stop = Date.parse(session.stop);
@@ -196,7 +199,7 @@ export function present(state: BenchDomains, now: Date): Present {
       if (!latest || stop > latest.stop) latest = { task, stop };
     }
   }
-  if (!latest) return { kind: 'none' };
+  if (!latest || latest.task.doneAt !== undefined) return { kind: 'none' };
 
   const aside = state.bench.setAside;
   if (aside?.taskId === latest.task.id && Date.parse(aside.at) >= latest.stop) {
