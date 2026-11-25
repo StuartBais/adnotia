@@ -200,6 +200,7 @@ if (!existsSync(benchIndex)) {
 const benchHtml = readFileSync(benchIndex, 'utf8');
 const benchParts = [{ name: 'bench/index.html', bytes: gz(Buffer.from(benchHtml)) }];
 const benchSeen = new Set();
+const homeIcons = [];
 const fontsSeen = new Set();
 
 /** A reference as written in a file served from `from`, resolved to a path in dist/. */
@@ -210,7 +211,7 @@ function inDist(reference, from) {
 
 for (const match of [
   ...benchHtml.matchAll(/<script[^>]+src="([^"]+)"/g),
-  ...benchHtml.matchAll(/<link[^>]+href="([^"]+)"/g),
+  ...benchHtml.matchAll(/<link[^>]+href="([^"]+)"[^>]*>/g),
 ]) {
   const reference = match[1] ?? '';
   if (reference.startsWith('data:')) continue;
@@ -226,6 +227,12 @@ for (const match of [
     process.exit(1);
   }
   const bytes = readFileSync(path);
+  // Safari fetches the home-screen icon only when the page is added to the
+  // home screen, so it is not part of opening the page. It still has to exist.
+  if (/\srel="apple-touch-icon"/.test(match[0])) {
+    homeIcons.push({ name: path.slice(dist.length + 1), bytes: bytes.length });
+    continue;
+  }
   benchParts.push({ name: path.slice(dist.length + 1), bytes: gz(bytes) });
 
   if (!path.endsWith('.css')) continue;
@@ -260,6 +267,11 @@ for (const part of benchParts.sort((a, b) => b.bytes - a.bytes)) {
   console.log(`  ${part.name.padEnd(56)} ${kb(part.bytes).padStart(9)}`);
 }
 console.log(`  ${'total'.padEnd(56)} ${kb(benchTotal).padStart(9)}`);
+for (const icon of homeIcons) {
+  console.log(
+    `  Not counted: ${icon.name}, ${kb(icon.bytes)}, fetched on adding to the home screen.`,
+  );
+}
 
 // Reported, not budgeted. See the note at the top.
 const sw = join(dist, 'sw.js');
