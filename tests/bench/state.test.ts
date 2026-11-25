@@ -801,10 +801,37 @@ describe('drawer positions (SPEC 9.8)', () => {
   });
 
   it('rests folded rather than half at large text sizes', () => {
-    expect(drawerPositions(scene('notStarted', TUE_0958), TUE_0958, true)).toMatchObject({
+    expect(
+      drawerPositions(scene('notStarted', TUE_0958), TUE_0958, { largeText: true }),
+    ).toMatchObject({
       allowed: ['folded', 'open'],
       position: 'folded',
     });
+  });
+
+  it('rests folded on places and pages, always, with half on idle Today only', () => {
+    const idle = scene('notStarted', TUE_0958);
+    const views = [
+      { kind: 'place' },
+      { kind: 'page', page: { kind: 'task', id: idOf(idle, EMAIL) } },
+      { kind: 'page', page: { kind: 'me' } },
+    ] as const;
+    for (const view of views) {
+      expect(drawerPositions(idle, TUE_0958, { view })).toEqual({
+        mode: 'idle',
+        allowed: ['folded', 'open'],
+        position: 'folded',
+      });
+    }
+    expect(drawerPositions(idle, TUE_0958, { view: { kind: 'today' } }).position).toBe('half');
+    const opened: BenchDomains = {
+      ...idle,
+      bench: { ...idle.bench, drawer: { running: 'folded', idle: 'open' } },
+    };
+    expect(drawerPositions(opened, TUE_0958, { view: { kind: 'place' } }).position).toBe('open');
+    expect(
+      drawerPositions(scene('weeksAway', MON_0912), MON_0912, { view: { kind: 'place' } }).mode,
+    ).toBe('lip');
   });
 
   it('keeps where the person left it for the day, separately for running and idle', () => {

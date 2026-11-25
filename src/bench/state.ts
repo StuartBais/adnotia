@@ -778,14 +778,27 @@ export interface DrawerRule {
   position: DrawerPosition;
 }
 
+export interface DrawerOptions {
+  /** Where the drawer is. Half is a resting place on Today alone. */
+  view?: View;
+  /** At accessibility text sizes the half drawer rests folded. */
+  largeText?: boolean;
+}
+
 /**
  * Folded or open while something runs or is paused, so the step is never on
- * screen twice. Half, folded or open when idle, half by default. Only the lip
- * when nothing has today's date. At large text sizes the half drawer rests
- * folded (SPEC 9.8 and 5.7). When everything dated today is done, there is no
- * half position either: it would hold nothing (undrawn; a proposal).
+ * screen twice. Half, folded or open when idle on Today, half by default; on
+ * places and the pages pushed on them, folded or open, folded always unless
+ * pulled open (SPEC 9.8 "Resting places"). Only the lip when nothing has
+ * today's date. At large text sizes the half drawer rests folded (SPEC 9.8 and
+ * 5.7). When everything dated today is done, there is no half position either:
+ * it would hold nothing (undrawn; a proposal).
  */
-export function drawerPositions(state: BenchDomains, now: Date, largeText = false): DrawerRule {
+export function drawerPositions(
+  state: BenchDomains,
+  now: Date,
+  options: DrawerOptions = {},
+): DrawerRule {
   const chosen = state.bench.drawer;
   if (present(state, now).kind !== 'none') {
     return { mode: 'present', allowed: ['folded', 'open'], position: chosen.running };
@@ -793,10 +806,11 @@ export function drawerPositions(state: BenchDomains, now: Date, largeText = fals
   const today = loggingDay(now);
   if (!hasToday(state, today)) return { mode: 'lip', allowed: ['lip'], position: 'lip' };
 
+  const onToday = (options.view ?? { kind: 'today' }).kind === 'today';
   const rest = restOfToday(state, now);
   const left = [...rest.later, ...rest.anytime].some((task) => task.doneAt === undefined);
   const allowed: DrawerPosition[] =
-    largeText || !left ? ['folded', 'open'] : ['half', 'folded', 'open'];
+    onToday && left && !options.largeText ? ['half', 'folded', 'open'] : ['folded', 'open'];
   const position = allowed.includes(chosen.idle) ? chosen.idle : (allowed[0] as DrawerPosition);
   return { mode: 'idle', allowed, position };
 }
