@@ -265,6 +265,11 @@ describe('7c · Paused (SPEC 5.7c)', () => {
     }));
     expect(visibleText(m.container)).toContain('Timer stopped');
     expect(nameOf(id(m, 'b-lit')!).startsWith('Timer stopped: Write the question.')).toBe(true);
+    // The capsule has no room for it, so it draws Paused, and says what it draws.
+    press(m.container, 'Tasks');
+    const capsule = id(m, 'b-capsule')!;
+    expect(capsule.querySelector('.c1')?.textContent).toBe('PausedWrite the question');
+    expect(nameOf(capsule).startsWith('Paused: Write the question, step 2 of 3')).toBe(true);
   });
 
   it('lets the task go with Set aside, at its step', async () => {

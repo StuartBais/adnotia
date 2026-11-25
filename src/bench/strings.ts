@@ -221,12 +221,17 @@ export function litLabel(now: SpokenNow): string {
 /**
  * The capsule: "Now: Write the question, step 2 of 3 of Write the school
  * email. 18 of 25 minutes left, ends 10:23."
+ *
+ * It always says Now or Paused, because that is what it draws: "Timer
+ * stopped" does not fit its 54 pt first column, so the capsule keeps
+ * "Paused" there, and its label uses the same word as the capsule.
  */
 export function capsuleLabel(now: SpokenNow): string {
   const where = now.position
     ? `, step ${now.position.number} of ${now.position.count} of ${now.title}`
     : '';
-  return `${leadOf(now)}: ${now.step}${where}. ${minutesSpoken(now.minutes)}.`;
+  const lead = now.paused ? T.paused : T.now;
+  return `${lead}: ${now.step}${where}. ${minutesSpoken(now.minutes)}.`;
 }
 
 /** Focus's context line, a heading: "Focus, Write the school email, step 2 of 3". */

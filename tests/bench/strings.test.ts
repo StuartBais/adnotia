@@ -132,6 +132,19 @@ describe('strings.ts, against SPEC 11', () => {
     expect(over.endsWith('27 minutes so far, estimate 25.')).toBe(true);
   });
 
+  it('says Paused on the capsule, as it draws, where Today says "Timer stopped"', () => {
+    expect(
+      capsuleLabel({
+        ...running,
+        paused: true,
+        lead: 'Timer stopped',
+        minutes: { kind: 'over', soFar: 25, estimate: 25 },
+      }),
+    ).toBe(
+      'Paused: Write the question, step 2 of 3 of Write the school email. 25 minutes so far, estimate 25.',
+    );
+  });
+
   it('names a task with no steps by its title alone, and a clock with no estimate', () => {
     expect(
       capsuleLabel({
