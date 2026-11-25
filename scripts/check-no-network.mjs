@@ -3,8 +3,8 @@
 // The CSP enforces this in the browser and tests/harness/no-network.ts enforces it
 // under test. This catches it earlier: at `npm run check`, before anything runs.
 //
-// Scope is deliberately narrow — index.html and src/ — because tests/ and
-// reference/ mention these APIs legitimately.
+// Scope is deliberately narrow — the served documents and src/ — because tests/
+// and reference/ mention these APIs legitimately.
 //
 // Part of `npm run check`, alongside the contrast check. Linting is the one
 // piece of `check` still missing; it needs a linter, which is a dependency
@@ -57,14 +57,22 @@ async function filesUnder(dir) {
 }
 
 /**
- * Both documents, and both are named rather than globbed.
+ * Every document the build serves, and each is named rather than globbed.
  *
  * This used to audit one `index.html` and swallow a missing file. When the app
  * moved to `app/index.html` that would have kept printing "audit passed" while
  * checking the welcome page and not the app — hard rule 1 unenforced, silently,
  * with a green tick. A named file that is absent is now a failure.
+ *
+ * The benchmark prototype is the third. It is linked from nowhere, but it is
+ * served from the same origin and held on the owner's phone, so the rule is the
+ * same for it as for the app.
  */
-const REQUIRED = [join(root, 'index.html'), join(root, 'app', 'index.html')];
+const REQUIRED = [
+  join(root, 'index.html'),
+  join(root, 'app', 'index.html'),
+  join(root, 'bench', 'index.html'),
+];
 const targets = [...REQUIRED, ...(await filesUnder(join(root, 'src')))];
 const failures = [];
 
