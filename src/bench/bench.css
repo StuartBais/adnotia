@@ -1245,6 +1245,12 @@ svg.i28 {
 .app[data-drawer='open'] .drawer .grab {
   top: 6px;
 }
+/* The screen's own header row, 58–102, would show its top 2 pt above the
+   drawer's edge at 60 (Me, and on a white place the back pill too). It is
+   inert under the drawer already, so it is not drawn either. */
+.app[data-drawer='open'] .screen .hdr {
+  visibility: hidden;
+}
 .drawer .hdr {
   top: 16px;
 }
