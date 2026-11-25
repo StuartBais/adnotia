@@ -847,13 +847,40 @@ export function closeForgotten(
   };
 }
 
+/** The last instant of a logging day: one millisecond before the next day's 04:00. */
+function lastInstantOf(day: IsoDate): number {
+  const start = loggingDayStart(day);
+  const next = new Date(start.getFullYear(), start.getMonth(), start.getDate() + 1);
+  next.setHours(SMALL_HOURS_UNTIL, 0, 0, 0);
+  return next.getTime() - 1;
+}
+
+/**
+ * The last moment the record shows the app open during a session that began
+ * at `started`: when it went away, the last page change, or the last of the
+ * task's steps ticked. With none of those, the session's own start, so a
+ * session nobody saw end counts nothing it cannot vouch for.
+ */
+function lastSeen(state: BenchDomains, task: Task, started: number): number {
+  const moments = [
+    state.bench.away?.since,
+    state.bench.ui?.at,
+    ...model.stepsOf(state.tasks, task.id).map((step) => step.doneAt),
+  ]
+    .map((moment) => (moment === undefined ? Number.NaN : Date.parse(moment)))
+    .filter((moment) => moment >= started);
+  return Math.max(started, ...moments);
+}
+
 /**
  * The logging-day boundary, at 04:00 (SPEC 5.7 "Coming back after time away").
  * Whatever was planned for a day that has passed goes back to the inbox. A
  * session still open from before today began is closed at its estimate's end,
- * or with no estimate at the last moment the app was open, else at the
- * boundary; never later than now. The day's own fields start again. Nothing is
- * said about any of it.
+ * or with no estimate at the last moment the app was open (`lastSeen`). Either
+ * way it closes within its own logging day, so the days away are never counted
+ * as time worked, nothing on the new day can call it paused, and no figure for
+ * the time away can surface later, when the task is next started. The day's
+ * own fields start again. Nothing is said about any of it.
  *
  * It runs whenever the stored day is not today's, which includes a clock moved
  * backwards and data these rules have not seen before.
@@ -869,14 +896,13 @@ export function dayBoundary(state: BenchDomains, now: Date): BenchDomains {
   if (running && open && Date.parse(open.start) < boundary) {
     const started = Date.parse(open.start);
     const end = timeFacts(running, now).estimateEnd?.getTime();
-    const since = state.bench.away ? Date.parse(state.bench.away.since) : Number.NaN;
-    const closeAt =
-      end !== undefined && end > started
-        ? end
-        : since >= started
-          ? since
-          : Math.max(boundary, started);
-    tasks = model.stopWork(tasks, running.id, new Date(Math.min(closeAt, now.getTime())));
+    const closeAt = end !== undefined && end > started ? end : lastSeen(state, running, started);
+    const ownDayEnds = lastInstantOf(loggingDay(new Date(started)));
+    tasks = model.stopWork(
+      tasks,
+      running.id,
+      new Date(Math.min(closeAt, ownDayEnds, now.getTime())),
+    );
   }
 
   const past = tasks

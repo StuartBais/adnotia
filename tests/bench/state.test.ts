@@ -4,6 +4,7 @@ import type { Task } from '../../src/domains/tasks';
 import { runsOn } from '../../src/domains/routines';
 import { setOption } from '../../src/domains/options';
 import { emptyDomains } from '../../src/kernel/store';
+import { loggingDay } from '../../src/kernel/dates';
 import { ANYTIME, EMAIL, buildScenario, exampleDay } from '../../src/bench/example';
 import {
   barState,
@@ -966,19 +967,79 @@ describe('the 04:00 boundary (SPEC 5.7)', () => {
     expect(dayBoundary(before, at('2026-11-25T04:00:00'))).not.toBe(before);
   });
 
-  it('closes a clock with no estimate at the last moment the app was open, else at 04:00', () => {
+  /** The example day with no estimate on the email: the clock has nothing to run out. */
+  const noEstimate = () => {
     const base = scene('example', TUE_1005);
-    const open = withTasks(base, model.setEstimate(base.tasks, idOf(base, EMAIL), undefined));
+    return withTasks(base, model.setEstimate(base.tasks, idOf(base, EMAIL), undefined));
+  };
+  const lastStop = (state: BenchDomains) => byTitle(state.tasks, EMAIL).sessions.at(-1)?.stop;
+
+  it('closes a clock with no estimate at the last moment the app was open', () => {
+    const open = noEstimate();
     const away = {
       ...open,
       bench: { ...open.bench, away: { since: at('2026-11-24T22:00:00').toISOString() } },
     };
-    expect(byTitle(dayBoundary(away, WED_0900).tasks, EMAIL).sessions.at(-1)?.stop).toBe(
-      at('2026-11-24T22:00:00').toISOString(),
+    expect(lastStop(dayBoundary(away, WED_0900))).toBe(at('2026-11-24T22:00:00').toISOString());
+  });
+
+  it('with no record of going away, closes it at the last page change', () => {
+    const open = noEstimate();
+    const seen: BenchDomains = {
+      ...open,
+      bench: {
+        ...open.bench,
+        ui: {
+          at: at('2026-11-24T10:40:00').toISOString(),
+          tab: 'tasks',
+          stack: [],
+          list: 'inbox',
+          scroll: {},
+        },
+      },
+    };
+    expect(lastStop(dayBoundary(seen, WED_0900))).toBe(at('2026-11-24T10:40:00').toISOString());
+  });
+
+  it('with no record at all, closes it at the last step ticked, never at the boundary', () => {
+    // Step 1 was ticked at 10:02, the last moment the record shows the app open.
+    const after = dayBoundary(noEstimate(), WED_0900);
+    expect(lastStop(after)).toBe(at('2026-11-24T10:02:00').toISOString());
+    expect(present(after, WED_0900)).toEqual({ kind: 'none' });
+  });
+
+  it('never counts the days away as time worked, and rests at the lip weeks later', () => {
+    const woken = wake(noEstimate(), MON_0912).state;
+    const email = byTitle(woken.tasks, EMAIL);
+    expect(loggingDay(new Date(email.sessions.at(-1)!.stop!))).toBe('2026-11-24');
+    expect(model.minutesWorked(email, MON_0912)).toBeLessThan(60);
+    expect(present(woken, MON_0912)).toEqual({ kind: 'none' });
+    expect(nextLine(woken, MON_0912)).toEqual({ kind: 'lip' });
+    expect(drawerPositions(woken, MON_0912).mode).toBe('lip');
+
+    const nextMorning = wake(noEstimate(), WED_0900).state;
+    expect(present(nextMorning, WED_0900)).toEqual({ kind: 'none' });
+    expect(nextLine(nextMorning, WED_0900)).toEqual({ kind: 'lip' });
+  });
+
+  it('never closes a session after its own logging day ended', () => {
+    // Started at 3:48 on Tuesday's logging day, with an estimate that runs
+    // past 4:00, and no record of going away: it ends with its own day.
+    const base = scene('example', TUE_1005);
+    const email = idOf(base, EMAIL);
+    const late = withTasks(
+      base,
+      base.tasks.map((t) =>
+        t.id === email
+          ? { ...t, sessions: [{ start: at('2026-11-25T03:48:00').toISOString() }] }
+          : t,
+      ),
     );
-    expect(byTitle(dayBoundary(open, WED_0900).tasks, EMAIL).sessions.at(-1)?.stop).toBe(
-      at('2026-11-25T04:00:00').toISOString(),
-    );
+    const after = dayBoundary(late, WED_0900);
+    const stop = lastStop(after)!;
+    expect(loggingDay(new Date(stop))).toBe('2026-11-24');
+    expect(Date.parse(stop)).toBeLessThan(at('2026-11-25T04:00:00').getTime());
+    expect(present(after, WED_0900)).toEqual({ kind: 'none' });
   });
 
   it('lets a paused task go without a word', () => {
