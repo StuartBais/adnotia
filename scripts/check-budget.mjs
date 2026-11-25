@@ -257,9 +257,9 @@ for (const match of [
 const benchTotal = benchParts.reduce((sum, part) => sum + part.bytes, 0);
 console.log(`\nThe prototype at /bench/, gzipped, fonts as served (budget ${kb(BENCH_BUDGET)}):`);
 for (const part of benchParts.sort((a, b) => b.bytes - a.bytes)) {
-  console.log(`  ${part.name.padEnd(48)} ${kb(part.bytes).padStart(9)}`);
+  console.log(`  ${part.name.padEnd(56)} ${kb(part.bytes).padStart(9)}`);
 }
-console.log(`  ${'total'.padEnd(48)} ${kb(benchTotal).padStart(9)}`);
+console.log(`  ${'total'.padEnd(56)} ${kb(benchTotal).padStart(9)}`);
 
 // Reported, not budgeted. See the note at the top.
 const sw = join(dist, 'sw.js');

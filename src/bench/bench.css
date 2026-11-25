@@ -1,9 +1,24 @@
 /*
  * The benchmark prototype, in the Bookmark Edition direction and the palette of
  * ADR-045. A trial, not the design system: it exists to be held on a phone and
- * judged. No font files: ui-serif is New York on Apple devices, and the faces
- * in the mock-up are not yet confirmed (ADR-045).
+ * judged. It is being rebuilt as Lantern with the Now capsule (ADR-047), and
+ * its body text is already in Lantern's face: Instrument Sans, bundled beside
+ * this file as a trial (fonts/README.md). The headings stay in ui-serif, New
+ * York on Apple devices, until the screens are rebuilt.
+ *
+ * `block` rather than `swap`: nothing in the prototype measures text, so
+ * nothing waits on the face, and a flash of the system face would be judged as
+ * the design. The page's `font-src 'self'` is why the file sits here.
  */
+
+@font-face {
+  font-family: 'Instrument Sans';
+  src: url('./fonts/InstrumentSans-latin.woff2') format('woff2');
+  font-weight: 400 700;
+  font-stretch: 75% 100%;
+  font-style: normal;
+  font-display: block;
+}
 
 :root {
   --ink: #222624;
@@ -15,7 +30,9 @@
   --on-ink-muted: #b9bdbb;
   --rule: #d5d8d4;
   --serif: ui-serif, 'New York', Charter, 'Iowan Old Style', Georgia, serif;
-  --sans: -apple-system, system-ui, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --sans:
+    'Instrument Sans', -apple-system, system-ui, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
+    sans-serif;
   --gutter: 20px;
   --tabbar: 64px;
   --safe-top: env(safe-area-inset-top, 0px);
