@@ -1192,6 +1192,28 @@ describe('the 04:00 boundary (SPEC 5.7)', () => {
     expect(state.bench.closedByApp).toBeDefined();
     expect(dayBoundary(state, WED_0900).bench.closedByApp).toBeUndefined();
   });
+
+  it('leaves a clock in the hand running as the day turns, and turns the rest', () => {
+    // The minute tick at 04:00 with the app open: nobody was away.
+    const base = scene('example', TUE_1005);
+    const email = idOf(base, EMAIL);
+    const lateNight = withTasks(
+      base,
+      base.tasks.map((t) =>
+        t.id === email
+          ? { ...t, sessions: [{ start: at('2026-11-25T03:50:00').toISOString() }] }
+          : t,
+      ),
+    );
+    const four = at('2026-11-25T04:00:00');
+    const held = dayBoundary(lateNight, four, { holding: true });
+    expect(model.running(held.tasks)?.id).toBe(email);
+    expect(present(held, four).kind).toBe('running');
+    expect(held.bench.day).toBe('2026-11-25');
+    expect(byTitle(held.tasks, 'Call the dentist').when).toEqual({ kind: 'none' });
+    // Coming back to it after time away still closes it within its own day.
+    expect(model.running(dayBoundary(lateNight, four).tasks)).toBeUndefined();
+  });
 });
 
 describe('migrateBench', () => {

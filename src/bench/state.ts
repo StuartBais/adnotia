@@ -884,8 +884,19 @@ function lastSeen(state: BenchDomains, task: Task, started: number): number {
  *
  * It runs whenever the stored day is not today's, which includes a clock moved
  * backwards and data these rules have not seen before.
+ *
+ * With `holding`, the app is in the person's hand as the day turns: the minute
+ * tick at 04:00, not a return after time away. Nobody was away, so there are
+ * no days away to keep out of the record, and a clock the person is watching
+ * is not stopped under them. It keeps running into the new day; everything
+ * else turns as usual. SPEC describes the boundary only for coming back; this
+ * is the prototype's reading of it.
  */
-export function dayBoundary(state: BenchDomains, now: Date): BenchDomains {
+export function dayBoundary(
+  state: BenchDomains,
+  now: Date,
+  options: { holding?: boolean } = {},
+): BenchDomains {
   const today = loggingDay(now);
   if (state.bench.day === today) return state;
   const boundary = loggingDayStart(today).getTime();
@@ -893,7 +904,7 @@ export function dayBoundary(state: BenchDomains, now: Date): BenchDomains {
 
   const running = model.running(tasks);
   const open = running && openSession(running);
-  if (running && open && Date.parse(open.start) < boundary) {
+  if (running && open && Date.parse(open.start) < boundary && !options.holding) {
     const started = Date.parse(open.start);
     const end = timeFacts(running, now).estimateEnd?.getTime();
     const closeAt = end !== undefined && end > started ? end : lastSeen(state, running, started);
