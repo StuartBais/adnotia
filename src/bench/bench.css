@@ -1,13 +1,12 @@
 /*
- * The benchmark prototype, in the Bookmark Edition direction and the palette of
- * ADR-045. A trial, not the design system: it exists to be held on a phone and
- * judged. It is being rebuilt as Lantern with the Now capsule (ADR-047), and
- * its body text is already in Lantern's face: Instrument Sans, bundled beside
- * this file as a trial (fonts/README.md). The headings stay in ui-serif, New
- * York on Apple devices, until the screens are rebuilt.
+ * The benchmark prototype, as Lantern with the Now capsule (design/lantern,
+ * ADR-047). A trial, not the design system: it exists to be held on a phone
+ * and judged. Values are lifted from design/lantern/board.html and SPEC.md
+ * sections 3, 7, 8 and 9; where a number appears here it is the board's.
  *
- * `block` rather than `swap`: nothing in the prototype measures text, so
- * nothing waits on the face, and a flash of the system face would be judged as
+ * The face is Instrument Sans, bundled beside this file as a trial
+ * (fonts/README.md). `block` rather than `swap`: nothing in the prototype
+ * waits on measured text, and a flash of the system face would be judged as
  * the design. The page's `font-src 'self'` is why the file sits here.
  */
 
@@ -20,23 +19,69 @@
   font-display: block;
 }
 
+/* ═════════════ Tokens (SPEC 7) ═════════════ */
+
 :root {
-  --ink: #222624;
-  --paper: #ffffff;
-  --accent: #f28c5e;
-  --stone: #eef0ec;
-  --sage: #dfe9e0;
-  --muted: #595c5b;
-  --on-ink-muted: #b9bdbb;
-  --rule: #d5d8d4;
-  --serif: ui-serif, 'New York', Charter, 'Iowan Old Style', Georgia, serif;
-  --sans:
-    'Instrument Sans', -apple-system, system-ui, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
-    sans-serif;
-  --gutter: 20px;
-  --tabbar: 64px;
-  --safe-top: env(safe-area-inset-top, 0px);
-  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  color-scheme: dark;
+
+  --charcoal: #222624; /* the present. white 15.3, ash 6.9, terracotta 6.3 */
+  --white: #ffffff; /* charcoal 15.3 */
+  --ash: #a9afab; /* on charcoal only, 6.9 */
+  --terra: #f28c5e; /* time and capture. charcoal on it 6.3 */
+  --stone: #eef0ec; /* the rest of today. charcoal 13.4, muted 5.9 */
+  --sage: #dfe9e0; /* done discs only */
+  --muted: #595c5b; /* on light only */
+  --ash-20: #3d413f; /* secondary pills on charcoal. white 10.4 */
+  --ash-30: #4b4f4d; /* the bar's track */
+  --ash-8: #2d312f; /* the note field, the dark switch */
+  --ash-15: #363b38; /* the lifted capsule */
+  --ash-edge: #737875; /* the lifted capsule's edge */
+  --tint-stone: #dee0dc; /* charcoal 8% on stone */
+  --tint-white: #edeeed; /* charcoal 8% on white */
+  --hair-dark: rgba(169, 175, 171, 0.16);
+  --hair-light: rgba(34, 38, 36, 0.1);
+  --lamp: #323634; /* the brightest point of the lantern's falloff */
+
+  --font: 'Instrument Sans', -apple-system, system-ui, sans-serif;
+
+  /* Shadows. Every one on the dock line ends inside the 14 pt gap above the drawer. */
+  --sh-drawer: 0 -6px 22px rgba(0, 0, 0, 0.24);
+  --sh-drawer-light: 0 -1px 0 rgba(34, 38, 36, 0.08), 0 -1px 5px rgba(34, 38, 36, 0.08);
+  --sh-cover: 0 -6px 10px -6px rgba(34, 38, 36, 0.16);
+  --sh-capsule: 0 6px 14px -6px rgba(34, 38, 36, 0.4), 0 2px 5px rgba(34, 38, 36, 0.12);
+  --sh-capsule-lift:
+    inset 0 0 0 1px var(--ash-edge), 0 6px 14px -6px rgba(0, 0, 0, 0.7),
+    0 2px 5px rgba(0, 0, 0, 0.4);
+  --sh-disc-dark: 0 6px 14px -6px rgba(0, 0, 0, 0.55);
+  --sh-disc-light:
+    inset 0 0 0 1px rgba(34, 38, 36, 0.15), 0 6px 14px -6px rgba(34, 38, 36, 0.45),
+    0 2px 5px rgba(34, 38, 36, 0.14);
+  --sh-lozenge: 0 1px 3px rgba(34, 38, 36, 0.12);
+  --sh-sheet: 0 -8px 28px rgba(0, 0, 0, 0.28);
+  --halo: 0 0 10px 2px rgba(242, 140, 94, 0.45);
+
+  /* ═════════════ The frame's rows (SPEC 3), from the safe areas ═════════════
+     On 390 x 844 with insets of 54 and 34 these land on the board exactly. */
+  --sa-top: max(env(safe-area-inset-top, 0px), 20px);
+  --sa-bot: env(safe-area-inset-bottom, 0px);
+  --tabs-b: max(calc(var(--sa-bot) - 2px), 12px); /* tabs end at y 812 */
+  --handle: 70px; /* the folded handle, 684–754 */
+  --hair-b: calc(var(--tabs-b) + 58px); /* the hairline, y 754 */
+  --fold-b: calc(var(--hair-b) + var(--handle)); /* the folded drawer's top, y 684 */
+  --dock-b: calc(var(--fold-b) + 14px); /* the dock line, 606–670 */
+  --lit-b: calc(var(--dock-b) + 64px + 56px); /* the lit block's foot, y 550 */
+  --lip-b: calc(var(--tabs-b) + 82px); /* the lip, y 730 */
+  --hdr-t: calc(var(--sa-top) + 4px); /* the header row, 58–102 */
+  --open-t: calc(var(--sa-top) + 6px); /* the open drawer's top, y 60 */
+  --content-t: calc(var(--sa-top) + 56px); /* content from y 110 */
+  --half-t: calc(var(--sa-top) + 312px); /* the half drawer's top at least, y 366 */
+}
+
+/* Compact heights: the handle is one 52 pt line (SPEC 3). */
+@media (max-height: 739px) {
+  :root {
+    --handle: 52px;
+  }
 }
 
 * {
@@ -46,31 +91,64 @@
 html,
 body {
   margin: 0;
-  background: var(--paper);
-  color: var(--ink);
-  font-family: var(--sans);
-  font-size: 17px;
-  line-height: 1.4;
+  height: 100%;
+  background: var(--charcoal);
+  overscroll-behavior: none;
   -webkit-text-size-adjust: 100%;
-  -webkit-tap-highlight-color: transparent;
 }
 
-button,
-input {
-  font: inherit;
-  color: inherit;
+body {
+  color: var(--white);
+  font-family: var(--font);
+  font-size: 15px;
+  line-height: 20px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  font-synthesis: none;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 
 button {
+  font: inherit;
+  color: inherit;
+  letter-spacing: inherit;
+  border: 0;
+  background: none;
+  padding: 0;
+  margin: 0;
   cursor: pointer;
+  text-align: inherit;
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+h1,
+h2,
+h3,
+p,
+ul,
+ol {
+  margin: 0;
+  padding: 0;
+  font: inherit;
+}
+
+ul,
+ol {
+  list-style: none;
 }
 
 :focus-visible {
-  outline: 3px solid var(--accent);
+  outline: 2px solid var(--terra);
   outline-offset: 2px;
 }
 
-.sr-only {
+.vh {
   position: absolute;
   width: 1px;
   height: 1px;
@@ -79,641 +157,1317 @@ button {
   white-space: nowrap;
 }
 
-/* ------------------------------------------------------------------ screens */
-
-.screen {
-  min-height: 100dvh;
-  display: flex;
-  flex-direction: column;
-  padding: calc(var(--safe-top) + 12px) var(--gutter) calc(var(--safe-bottom) + 16px);
-}
-
-.screen.with-tabs {
-  padding-bottom: calc(var(--safe-bottom) + var(--tabbar) + 88px);
-}
-
-.screen.stone {
-  background: var(--stone);
-}
-
-.screen.dark {
-  background: var(--ink);
-  color: var(--paper);
-}
-
-.topbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  min-height: 44px;
-  border-bottom: 1px solid currentColor;
-  margin-bottom: 8px;
-}
-
-.brand {
-  font-family: var(--serif);
-  font-weight: 600;
-  font-size: 21px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.brand-mark {
-  width: 14px;
-  height: 18px;
-  background: var(--accent);
-  clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 78%, 0 100%);
-}
-
-.link {
-  background: none;
-  border: 0;
-  min-height: 44px;
-  min-width: 44px;
-  padding: 0 4px;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 15px;
-}
-
-.kicker {
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--muted);
-}
-
-.dark .kicker {
-  color: var(--accent);
-}
-
-.headline {
-  font-family: var(--serif);
-  font-weight: 600;
-  letter-spacing: -0.02em;
-  line-height: 1.05;
-  margin: 0;
-}
-
-.title-row {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 18px 0 14px;
-}
-
-.title-row .headline {
-  font-size: 52px;
-}
-
-.date {
-  font-size: 14px;
-  text-align: right;
-  color: var(--muted);
-}
-
-/* -------------------------------------------------------------- now running */
-
-.now {
-  background: var(--ink);
-  color: var(--paper);
-  margin: 0 calc(-1 * var(--gutter));
-  padding: 18px var(--gutter) 20px;
-  position: relative;
-}
-
-.now .headline {
-  font-size: 34px;
-  margin: 6px 0 6px;
-  padding-right: 64px;
-}
-
-.now-open {
-  display: block;
-  width: 100%;
-  text-align: left;
-  background: none;
-  border: 0;
-  padding: 0;
-  color: inherit;
-}
-
-.now .kicker {
-  color: var(--accent);
-}
-
-.now-step {
-  color: var(--on-ink-muted);
-  font-size: 16px;
-}
-
-.now-foot {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 14px;
-  font-size: 15px;
-}
-
-.now-foot .link {
-  color: var(--paper);
-  text-decoration: underline;
-  text-underline-offset: 3px;
-}
-
-.bookmark {
-  background: var(--accent);
-  color: var(--ink);
-  width: 52px;
-  padding: 6px 0 14px;
-  text-align: center;
-  clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 82%, 0 100%);
-  line-height: 1;
-}
-
-.bookmark small {
-  display: block;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-}
-
-.bookmark b {
-  font-family: var(--serif);
-  font-size: 26px;
-  font-weight: 600;
-}
-
-.now .bookmark {
+.sprite {
   position: absolute;
-  top: 0;
-  right: var(--gutter);
-}
-
-.quiet {
-  color: var(--muted);
-  font-size: 15px;
-  margin: 8px 0;
-}
-
-/* -------------------------------------------------------------------- tally */
-
-.tally {
-  display: flex;
-  gap: 4px;
-  align-items: flex-end;
-  height: 18px;
-  margin-top: 10px;
-}
-
-.tally i {
-  flex: 1 1 0;
-  max-width: 6px;
-  height: 18px;
-  background: currentColor;
-  border-radius: 1px;
-}
-
-.tally i.gone {
-  height: 4px;
-  opacity: 0.55;
-}
-
-/* -------------------------------------------------------------------- lists */
-
-.section {
-  margin-top: 22px;
-}
-
-.section h2 {
-  font-family: var(--serif);
-  font-weight: 600;
-  font-size: 24px;
-  margin: 0 0 4px;
-  padding-bottom: 6px;
-  border-bottom: 1px solid var(--ink);
-}
-
-.row {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  width: 100%;
-  min-height: 52px;
-  background: none;
-  border: 0;
-  border-bottom: 1px solid var(--rule);
-  text-align: left;
-  padding: 8px 0;
-}
-
-.row .time {
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-  min-width: 52px;
-}
-
-.row .dash {
-  width: 14px;
-  height: 2px;
-  background: var(--ink);
-  flex: none;
-}
-
-.row .grow {
-  flex: 1;
-}
-
-.row .meta {
-  color: var(--muted);
-  font-size: 14px;
-}
-
-/* ------------------------------------------------------------------ buttons */
-
-.primary,
-.secondary,
-.light {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  width: 100%;
-  min-height: 52px;
-  padding: 0 18px;
-  border: 0;
-  border-radius: 2px;
-  font-weight: 600;
-  font-size: 17px;
-  text-align: left;
-}
-
-.primary {
-  background: var(--ink);
-  color: var(--paper);
-}
-
-.light {
-  background: var(--paper);
-  color: var(--ink);
-}
-
-.secondary {
-  background: transparent;
-  color: inherit;
-  box-shadow: inset 0 0 0 1.5px currentColor;
-}
-
-.stack {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.capture-dock {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: calc(var(--safe-bottom) + var(--tabbar));
-  padding: 10px var(--gutter);
-  background: linear-gradient(to top, var(--paper) 70%, rgb(255 255 255 / 0));
-}
-
-/* ------------------------------------------------------------------ tab bar */
-
-.tabbar {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: calc(var(--tabbar) + var(--safe-bottom));
-  padding-bottom: var(--safe-bottom);
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  background: var(--paper);
-  border-top: 1px solid var(--ink);
-}
-
-.tabbar button {
-  background: none;
-  border: 0;
-  font-size: 13px;
-  color: var(--muted);
-}
-
-.tabbar button[aria-current='page'] {
-  color: var(--ink);
-  font-weight: 700;
-  text-decoration: underline;
-  text-decoration-thickness: 2px;
-  text-underline-offset: 6px;
-}
-
-/* --------------------------------------------------------------------- task */
-
-.task-title {
-  width: 100%;
-  border: 0;
-  background: transparent;
-  font-family: var(--serif);
-  font-weight: 600;
-  font-size: 38px;
-  line-height: 1.1;
-  letter-spacing: -0.02em;
-  padding: 4px 0;
-  resize: none;
+  width: 0;
+  height: 0;
   overflow: hidden;
+}
+
+svg.i {
   display: block;
-}
-
-.field-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  min-height: 56px;
-  border-top: 1px solid var(--ink);
-}
-
-.field-row:last-of-type {
-  border-bottom: 1px solid var(--ink);
-}
-
-.stepper {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.stepper button,
-.seg button {
-  min-width: 44px;
-  min-height: 44px;
-  border: 1.5px solid var(--ink);
-  background: var(--paper);
-  border-radius: 2px;
-  font-weight: 600;
-}
-
-.stepper output {
-  min-width: 92px;
-  text-align: center;
-  font-family: var(--serif);
-  font-size: 20px;
-  font-weight: 600;
-}
-
-.seg {
-  display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-}
-
-.seg button {
-  padding: 0 10px;
-  font-size: 15px;
-}
-
-.seg button[aria-pressed='true'] {
-  background: var(--ink);
-  color: var(--paper);
-}
-
-input.time,
-input.text {
-  min-height: 44px;
-  border: 1.5px solid var(--ink);
-  border-radius: 2px;
-  background: var(--paper);
-  padding: 0 10px;
-  font-size: 17px;
-}
-
-.steps {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.step {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  min-height: 52px;
-  border-bottom: 1px solid var(--rule);
-}
-
-.step .grow {
-  flex: 1;
-}
-
-.step .num {
-  font-family: var(--serif);
-  font-weight: 600;
-  font-size: 20px;
-  min-width: 30px;
-}
-
-.step button.tick {
-  width: 44px;
-  height: 44px;
   flex: none;
-  border: 0;
-  background: none;
-  display: grid;
-  place-items: center;
-}
-
-.step button.tick span {
   width: 24px;
   height: 24px;
-  border: 2px solid var(--ink);
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  font-size: 14px;
+}
+svg.i12 {
+  width: 12px;
+  height: 12px;
+}
+svg.i16 {
+  width: 16px;
+  height: 16px;
+}
+svg.i18 {
+  width: 18px;
+  height: 18px;
+}
+svg.i20 {
+  width: 20px;
+  height: 20px;
+}
+svg.i28 {
+  width: 28px;
+  height: 28px;
 }
 
-.step.done .title {
-  color: var(--muted);
-  text-decoration: line-through;
+/* ═════════════ Type roles (SPEC 8) ═════════════ */
+
+.t-step-focus {
+  font-size: 44px;
+  line-height: 50px;
+  font-weight: 700;
+  letter-spacing: -0.026em;
+}
+.t-step {
+  font-size: 40px;
+  line-height: 46px;
+  font-weight: 700;
+  letter-spacing: -0.024em;
+}
+.t-idle {
+  font-size: 32px;
+  line-height: 38px;
+  font-weight: 700;
+  letter-spacing: -0.022em;
+}
+.t-place {
+  font-size: 28px;
+  line-height: 34px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.t-min-focus {
+  font-size: 24px;
+  line-height: 30px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.t-min {
+  font-size: 22px;
+  line-height: 28px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.t-heading {
+  font-size: 22px;
+  line-height: 28px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+}
+.t-field {
+  font-size: 22px;
+  line-height: 28px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+.t-context {
+  font-size: 20px;
+  line-height: 26px;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+}
+.t-control {
+  font-size: 17px;
+  line-height: 22px;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+}
+.t-sheet {
+  font-size: 17px;
+  line-height: 22px;
+  font-weight: 650;
+  letter-spacing: -0.005em;
+}
+.t-row {
+  font-size: 17px;
+  line-height: 22px;
+  font-weight: 500;
+}
+.t-meta {
+  font-size: 15px;
+  line-height: 20px;
+  font-weight: 500;
+}
+.t-meta-strong {
+  font-size: 15px;
+  line-height: 20px;
+  font-weight: 650;
+}
+.t-label {
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: 650;
+  letter-spacing: 0.01em;
+}
+.t-tab {
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
 }
 
-.step.done button.tick span {
-  background: var(--ink);
-  color: var(--paper);
+/* One separator everywhere: a word space plus 0.3em either side. */
+.sep {
+  margin: 0 0.3em;
 }
 
-.add-step {
+/* ═════════════ The app and its layers (plan section 8) ═════════════ */
+
+.app {
+  position: fixed;
+  inset: 0;
+  /* Clipped, not merely hidden: a hidden overflow can still be scrolled by
+     focus or scrollIntoView, which would slide the whole frame off its rows. */
+  overflow: hidden;
+  overflow: clip;
+  background: var(--charcoal);
+  color: var(--white);
+}
+
+/* For review on a desktop: the phone's width, centred. */
+@media (min-width: 500px) {
+  .app {
+    left: calc(50% - 215px);
+    right: calc(50% - 215px);
+  }
+}
+
+.screen {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
+/* The places, in charcoal (the default) or white (the owner's alternative). */
+.app[data-places='white'][data-ground='place'] .screen {
+  background: var(--white);
+  color: var(--charcoal);
+}
+
+/* The lantern's falloff (SPEC 7): a still pool of light around the block. */
+.screen.today {
+  background:
+    radial-gradient(
+      ellipse 360px 300px at 170px var(--ly, 380px),
+      #323634 0%,
+      rgba(50, 54, 52, 0.66) 38%,
+      rgba(50, 54, 52, 0.22) 72%,
+      rgba(34, 38, 36, 0) 100%
+    ),
+    var(--charcoal);
+}
+.screen.today[data-lamp='lit'] {
+  --ly: calc(100% - var(--lit-b) - 170px); /* (170, 380): Today and paused Today */
+}
+.screen.today[data-lamp='idle'] {
+  --ly: calc(var(--sa-top) + 166px); /* (170, 220): nothing running */
+}
+.screen.today[data-lamp='planned'] {
+  --ly: calc(100% - var(--lit-b) - 160px); /* (170, 390): nothing planned */
+}
+
+/* The fade behind the dock line on a place, while a capsule shows. */
+.fade {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: var(--fold-b);
+  height: 102px; /* 582 to the drawer */
+  z-index: 5;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    rgba(34, 38, 36, 0) 0,
+    rgba(34, 38, 36, 0.94) 24px,
+    rgba(34, 38, 36, 0.94) 100%
+  );
+}
+.fade[hidden] {
+  display: none;
+}
+.app[data-places='white'][data-ground='place'] .fade {
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0) 0,
+    rgba(255, 255, 255, 0.94) 24px,
+    rgba(255, 255, 255, 0.94) 100%
+  );
+}
+
+.live {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* ═════════════ Header row, 58–102, and Me (SPEC 9.10) ═════════════ */
+
+.hdr {
+  position: absolute;
+  top: var(--hdr-t);
+  left: 24px;
+  right: 24px;
+  height: 44px;
   display: flex;
-  gap: 8px;
-  margin-top: 10px;
+  align-items: center;
+  gap: 10px;
+  z-index: 2;
 }
-
-.add-step input {
+.hdr > .grow,
+.hdr > .date,
+.hdr > .place-title {
   flex: 1;
   min-width: 0;
 }
-
-/* -------------------------------------------------------------------- focus */
-
-.focus-head {
-  padding: 8px 0 10px;
-  border-bottom: 1px solid var(--on-ink-muted);
+.date {
+  color: var(--ash);
 }
-
-.focus-head .task-name {
-  font-size: 17px;
-  margin-top: 4px;
-}
-
-.focus-body {
-  flex: 1;
-  padding-top: 14px;
-}
-
-.focus-place {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-}
-
-.focus-place .of {
-  padding-top: 10px;
-  color: var(--on-ink-muted);
-}
-
-.focus-body .headline {
-  font-size: 40px;
-  margin-top: 12px;
-}
-
-.note {
-  border-left: 3px solid var(--accent);
-  padding-left: 12px;
-  margin-top: 14px;
-  font-family: var(--serif);
-  font-size: 20px;
-}
-
-.receipt {
-  margin-top: 18px;
-  padding: 10px 12px;
-  background: var(--sage);
-  color: var(--ink);
+.me {
+  flex: none;
+  width: 52px;
+  height: 44px;
+  border-radius: 22px;
+  display: grid;
+  place-items: center;
   font-size: 15px;
+  line-height: 20px;
+  font-weight: 600;
+  background: var(--ash-20);
+  color: var(--white);
+}
+.hpill {
+  flex: none;
+  height: 44px;
+  border-radius: 22px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 16px 0 10px;
+  font-size: 15px;
+  line-height: 20px;
+  font-weight: 600;
+  background: var(--ash-20);
+  color: var(--white);
+}
+.app[data-places='white'][data-ground='place'] .screen .me,
+.app[data-places='white'][data-ground='place'] .screen .hpill {
+  background: var(--tint-white);
+  color: var(--charcoal);
 }
 
-.timer {
-  border-top: 1px solid var(--on-ink-muted);
-  padding-top: 8px;
-  margin-top: 12px;
-}
+/* ═════════════ The lantern (SPEC 9.1), bottom-aligned at y 550 ═════════════ */
 
-.timer .left {
-  margin: 4px 0 0;
+.lantern {
+  position: absolute;
+  left: 24px;
+  right: 24px;
+  bottom: var(--lit-b);
 }
-
-.focus-body .section {
+.lit-block {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+.lit-block > * {
+  display: block;
+}
+.nowline {
+  position: relative;
+  height: 20px;
+  white-space: nowrap;
+  color: var(--ash);
+  font-size: 15px;
+  line-height: 20px;
+  font-weight: 500;
+}
+.nowtag {
+  display: inline;
+  white-space: nowrap;
+  color: var(--terra);
+  font-size: 15px;
+  line-height: 20px;
+  font-weight: 650;
+}
+/* The dot is inline so the tag keeps the text's baseline: a crisp 7 pt disc, no halo. */
+.nowtag::before {
+  content: '';
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-right: 6px;
+  vertical-align: 1.5px;
+  border-radius: 50%;
+  background: var(--terra);
+}
+.nowline.paused > svg {
+  display: inline-block;
+  vertical-align: -2.5px;
+  margin-right: 6px;
+  color: var(--ash);
+}
+.nowline.paused b {
+  font-weight: 650;
+  color: var(--white);
+}
+/* "Focus ›" labels the block, which is the target: words and a chevron, no fill. */
+.flabel {
+  position: absolute;
+  right: -4px;
+  top: 0;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  color: var(--ash);
+  font-size: 15px;
+  line-height: 20px;
+  font-weight: 600;
+}
+.lit-block .ttl {
+  margin-top: 4px;
+  color: var(--ash);
+}
+.lit-block .step {
+  margin-top: 14px;
+  color: var(--white);
+  text-wrap: balance;
+}
+.lit-block .bar {
+  margin-top: 28px;
+}
+.mins {
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+  white-space: nowrap;
+}
+.lit-block .mins {
   margin-top: 14px;
 }
-
-.timer-line {
+.mins strong {
+  color: var(--terra);
+}
+.mins strong.still {
+  color: var(--white);
+}
+.mins .rest {
+  color: var(--ash);
+}
+.note {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  gap: 9px;
+  height: 20px;
+  color: var(--ash);
+  white-space: nowrap;
+  min-width: 0;
+}
+.note > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.note b {
+  font-weight: 650;
+}
+.lit-block .note {
+  margin-top: 18px;
 }
 
-.timer-line .left {
-  font-size: 19px;
+/* Paused (5.7c): the minutes row makes room for Set aside, 44 tall beside it,
+   so the block starts 14 higher than Today's: minutes at 480–508, Set aside at
+   472–516, the note at 530. */
+.lantern.paused .lit-block .mins {
+  margin-top: 24px;
+}
+.lantern.paused .lit-block .note {
+  margin-top: 22px;
+}
+.lantern .aside {
+  position: absolute;
+  right: 0;
+  bottom: var(--aside-b, 34px);
 }
 
-.timer-line .left b {
-  font-family: var(--serif);
-  font-size: 30px;
+/* ═════════════ The unlit lantern (5.7) and nothing planned (5.7b) ═════════════ */
+
+.idle {
+  position: absolute;
+  left: 24px;
+  right: 24px;
+  top: var(--content-t);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
 }
-
-.dark .link {
-  color: var(--paper);
+.idle-status {
+  height: 22px;
+  white-space: nowrap;
+  color: var(--ash);
+  font-size: 15px;
+  line-height: 22px;
+  font-weight: 500;
 }
-
-.dark .secondary {
-  color: var(--paper);
+.idle-status b {
+  font-size: 17px;
+  line-height: 22px;
+  font-weight: 650;
+  color: var(--white);
 }
-
-/* ------------------------------------------------------------------ capture */
-
-.slip {
-  background: var(--paper);
-  margin: 20px calc(-1 * var(--gutter)) 0;
-  padding: 18px var(--gutter) 20px;
-  border-top: 4px solid var(--ink);
-}
-
-.slip label {
-  display: block;
-  font-weight: 600;
-  margin-bottom: 6px;
-}
-
-.slip input {
+.idle-block {
+  margin-top: 20px;
   width: 100%;
-  border: 0;
-  border-bottom: 2px solid var(--ink);
-  background: transparent;
-  font-family: var(--serif);
-  font-size: 26px;
-  padding: 6px 0;
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 2px;
+}
+.idle-block > * {
+  display: block;
+}
+.idle-block .label {
+  color: var(--ash);
+}
+.idle-block .sentence {
+  margin-top: 12px;
+  color: var(--white);
+  text-wrap: balance;
+}
+.idle-block .label + .sentence {
+  margin-top: 12px;
+}
+.idle-block .sentence:first-child {
+  margin-top: 0;
+}
+.idle-block .after {
+  margin-top: 10px;
+  color: var(--ash);
+}
+.idle-block .after b {
+  font-weight: 650;
+}
+.idle-block .meta {
+  margin-top: 6px;
+  color: var(--ash);
+}
+.idle-block .under {
+  margin-top: 10px;
+  color: var(--ash);
+}
+.idle .pill {
+  margin-top: 12px;
+}
+/* Start is drawn 116 wide, x 24–140, its glyph and word centred (5.7). */
+.idle .pill.start {
+  width: 116px;
+  padding: 0;
+}
+
+.planned {
+  position: absolute;
+  left: 24px;
+  right: 24px;
+  bottom: var(--lit-b);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+.planned h1 {
+  color: var(--white);
+  text-wrap: balance;
+}
+.planned p {
+  margin-top: 10px;
+  color: var(--ash);
+}
+/* The board sets the line at 454 (17/22, to 476) and the pill at 494. */
+.planned .pill {
+  margin-top: 18px;
+}
+
+/* ═════════════ The bar (SPEC 9.2) ═════════════ */
+
+.bar {
+  position: relative;
+  display: block;
+  flex: none;
+  width: 100%;
+  height: var(--h);
+  border-radius: calc(var(--h) / 2);
+  background: var(--ash-30);
+}
+.bar-today {
+  --h: 10px;
+}
+.bar-focus {
+  --h: 12px;
+}
+.bar-page {
+  --h: 8px;
+  width: 132px;
+}
+.bar-capsule {
+  --h: 4px;
+}
+.bar .fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: calc(var(--p, 0) * 100%);
+  background: var(--terra);
+  border-radius: calc(var(--h) / 2) 1px 1px calc(var(--h) / 2);
+}
+/* The tick: a white mark 2 wide and 8 taller than the bar, with the one halo. */
+.bar .fill::after {
+  content: '';
+  position: absolute;
+  right: -1px;
+  top: -4px;
+  width: 2px;
+  height: calc(var(--h) + 8px);
+  border-radius: 1px;
+  background: var(--white);
+  box-shadow: var(--halo);
+}
+/* The end cap: a 2 wide ash mark 4 taller than the bar, so the whole estimate reads. */
+.bar .end {
+  position: absolute;
+  right: 0;
+  top: -2px;
+  width: 2px;
+  height: calc(var(--h) + 4px);
+  border-radius: 1px;
+  background: var(--ash);
+}
+/* The capsule's bar keeps the end cap and drops the tick. */
+.bar-capsule .fill {
+  border-radius: calc(var(--h) / 2);
+}
+.bar-capsule .fill::after {
+  display: none;
+}
+/* Focus: edge to edge, square ends; the screen's edge is the end. */
+.bar-focus,
+.bar-focus .fill {
   border-radius: 0;
 }
-
-.slip input::placeholder {
-  color: var(--muted);
+.bar-focus .end {
+  display: none;
+}
+/* Paused: the fill ash and still; the tick and halo go, the cap stays. */
+.bar.is-paused .fill,
+.bar.is-frozen .fill {
+  background: var(--ash);
+}
+.bar.is-paused .fill::after,
+.bar.is-frozen .fill::after {
+  display: none;
+}
+/* Used up: a 1 pt ash outline with nothing inside. */
+.bar.is-over {
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--ash);
+}
+.bar.is-over .fill,
+.bar.is-over .end {
+  display: none;
+}
+/* No estimate: one terracotta length from the leading edge, no track, tick or cap. */
+.bar.is-countUp {
+  background: transparent;
+}
+.bar.is-countUp .fill {
+  border-radius: calc(var(--h) / 2);
+}
+.bar.is-countUp .fill::after,
+.bar.is-countUp .end {
+  display: none;
 }
 
-.slip .hint {
-  color: var(--muted);
+/* ═════════════ Duration tracks (SPEC 9.2) ═════════════ */
+
+.dur {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  flex: none;
   font-size: 15px;
-  margin: 10px 0 16px;
+  line-height: 20px;
+  font-weight: 500;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.dur .m {
+  display: block;
+  flex: none;
+  height: 4px;
+  border-radius: 2px;
+  background: currentColor;
+  position: relative;
+  top: 1px; /* centred on the x-height, not on the line box */
 }
 
-.place {
+/* ═════════════ Pills (SPEC 9.5) ═════════════ */
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex: none;
+  height: 56px;
+  border-radius: 28px;
+  font-size: 17px;
+  line-height: 22px;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  white-space: nowrap;
+}
+.pill.white {
+  background: var(--white);
+  color: var(--charcoal);
+}
+.pill.ash {
+  background: var(--ash-20);
+  color: var(--white);
+}
+.pill.present {
+  background: var(--charcoal);
+  color: var(--white);
+}
+.pill.pad {
+  padding: 0 22px 0 18px;
+}
+.pill.p44 {
+  height: 44px;
+  border-radius: 22px;
+  padding: 0 20px;
+  font-size: 15px;
+  line-height: 20px;
+}
+
+/* ═════════════ The dock line, 606–670 (SPEC 3) ═════════════ */
+
+.dock {
+  position: absolute;
+  left: 24px;
+  right: 24px;
+  bottom: var(--dock-b);
+  height: 64px;
+  z-index: 30;
+  pointer-events: none;
+}
+.dock > * {
+  pointer-events: auto;
+}
+.dock .pill.dock-pill {
+  position: absolute;
+  top: 0;
+  height: 64px;
+  border-radius: 32px;
+}
+/* Glyph and word centred by their ink: Step done +2 on its right, Pause +4, Resume +6.
+   Pause keeps 120 so Resume fits the same slot, and ends where the capsule
+   does; Step done takes the rest, 138 on a 390 pt screen (x 24–162). */
+.dock .stepdone {
+  left: 0;
+  right: 204px;
+  padding-right: 2px;
+}
+.dock .pause {
+  right: 74px;
+  width: 120px;
+  padding-right: 4px;
+}
+.dock .pause.resume {
+  padding-right: 6px;
+}
+
+/* ═════════════ The capture disc (SPEC 9.4): x 302–366, y 606–670 ═════════════ */
+
+.capture {
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 64px;
+  height: 64px;
+  border-radius: 32px;
+  background: var(--terra);
+  color: var(--charcoal);
+  display: grid;
+  place-items: center;
+  box-shadow: var(--sh-disc-dark);
+}
+.capture.on-light {
+  box-shadow: var(--sh-disc-light);
+}
+
+/* ═════════════ The Now capsule (SPEC 4): x 24–292, y 606–670 ═════════════ */
+
+.capsule {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: calc(100% - 74px);
+  height: 64px;
+  border-radius: 32px;
+  background: var(--charcoal);
+  color: var(--white);
+  box-shadow: var(--sh-capsule);
+  -webkit-touch-callout: none;
+}
+.capsule.lift {
+  background: var(--ash-15);
+  box-shadow: var(--sh-capsule-lift);
+}
+.capsule .c1 {
+  position: absolute;
+  left: 16px;
+  right: 14px;
+  top: 7px;
+  height: 22px;
   display: flex;
-  gap: 12px;
+  align-items: baseline;
+  white-space: nowrap;
+}
+.capsule .c1 .nowtag {
+  display: block;
+  flex: none;
+  width: 54px;
+}
+/* Paused: the word where Now was, in ash, at width 90 so it fits the 54 pt column. */
+.capsule .c1 .ptag {
+  display: block;
+  flex: none;
+  width: 54px;
+  font-size: 15px;
+  line-height: 20px;
+  font-weight: 650;
+  font-stretch: 90%;
+  color: var(--ash);
+}
+.capsule .c1 .cstep {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 17px;
+  line-height: 22px;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  color: var(--white);
+}
+.capsule > .bar {
+  position: absolute;
+  left: 16px;
+  right: 14px;
+  top: 33px;
+  width: auto;
+}
+/* Line 2 is one row. The task's name wraps out of sight, whole, when it does not fit. */
+.capsule .c2 {
+  position: absolute;
+  left: 16px;
+  right: 14px;
+  top: 40px;
+  height: 20px;
+  overflow: hidden;
+  display: flex;
+  flex-wrap: wrap;
+  font-size: 15px;
+  line-height: 20px;
+  font-weight: 500;
+  color: var(--ash);
+}
+.capsule .c2 > * {
+  white-space: nowrap;
+}
+.capsule .c2 b {
+  font-weight: 650;
+  color: var(--terra);
+}
+.capsule .c2 b.still {
+  color: var(--white);
+}
+/* The name at width 95, so "18 min left · Write the school email" fits 238 whole. */
+.capsule .c2 .tn > span:last-child {
+  font-stretch: 95%;
+}
+
+/* ═════════════ The drawer (SPEC 9.8) ═════════════ */
+
+.drawer {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 100%;
+  z-index: 10;
+  background: var(--stone);
+  color: var(--charcoal);
+  border-radius: 28px 28px 0 0;
+  box-shadow: var(--sh-drawer);
+  transform: translateY(var(--dy));
+  --dy: calc(100% - var(--fold-b));
+}
+.app[data-drawer='lip'] .drawer {
+  --dy: calc(100% - var(--lip-b));
+}
+.app[data-drawer='half'] .drawer {
+  --dy: var(--half-t);
+}
+.app[data-drawer='open'] .drawer {
+  --dy: var(--open-t);
+}
+/* On a white place the lift is short, so the gap under the capsule stays white. */
+.app[data-places='white'][data-ground='place'] .drawer {
+  box-shadow: var(--sh-drawer-light);
+}
+
+.grab {
+  position: absolute;
+  left: calc(50% - 19px);
+  top: 8px;
+  width: 38px;
+  height: 5px;
+  border-radius: 3px;
+  background: rgba(89, 92, 91, 0.42);
+  pointer-events: none;
+  touch-action: none;
+}
+
+/* The handle: one button the full width of the drawer's top. */
+.handle {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: var(--handle);
+  color: var(--charcoal);
+  touch-action: none;
+}
+.handle > span {
+  position: absolute;
+}
+.handle .h-l1 {
+  left: 24px;
+  top: 20px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.handle .h-l2 {
+  left: 24px;
+  top: 40px;
+  width: 222px; /* clear of "Rest of today ⌃", whose ink starts at 266 */
+  height: 22px;
+  display: flex;
+  align-items: center;
+}
+.handle .h-time {
+  flex: none;
+  width: 60px;
+  font-size: 17px;
+  line-height: 22px;
+  font-weight: 650;
+}
+.handle .h-title {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 17px;
+  line-height: 22px;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+}
+/* "Rest of today ⌃", centred across both lines (715–735); it heads no column. */
+.handle .h-more {
+  right: 20px;
+  top: 31px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  color: var(--muted);
+}
+
+/* Compact: one 52 pt line, "Next 10:30 Call the dentist · in 25 min ⌃". */
+@media (max-height: 739px) {
+  .handle.folded .h-l1,
+  .handle.folded .h-l2 {
+    display: contents;
+  }
+  .handle.folded {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 20px 0 24px;
+  }
+  .handle.folded > span,
+  .handle.folded .h-l1 > *,
+  .handle.folded .h-l2 > * {
+    position: static;
+  }
+  .handle.folded .h-sec {
+    order: 1;
+    color: var(--muted);
+  }
+  .handle.folded .h-time {
+    order: 2;
+    width: auto;
+  }
+  .handle.folded .h-title {
+    order: 3;
+    flex: 0 1 auto;
+  }
+  .handle.folded .h-l1 .sep {
+    order: 4;
+    margin: 0;
+    color: var(--muted);
+  }
+  .handle.folded .h-when {
+    order: 5;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .handle.folded .h-more {
+    order: 6;
+    margin-left: auto;
+  }
+  .handle.folded .h-more .h-more-words {
+    display: none;
+  }
+  .grab {
+    top: 3px;
+  }
+}
+
+/* The half drawer's handle: its name at the left in charcoal, the chevron at 366. */
+.handle.half {
+  height: 46px;
+}
+.handle.half .h-row {
+  left: 24px;
+  right: 20px;
+  top: 20px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.handle.half .h-row svg {
+  color: var(--muted);
+}
+
+/* The half drawer's list, cut at rest to a row boundary above the tabs' cover. */
+.viewport {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 46px;
+  bottom: calc(var(--hair-b) + var(--half-t));
+  overflow: hidden;
+  overflow: clip;
+}
+.list {
+  position: absolute;
+  inset: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 6px 0 96px;
+  -webkit-overflow-scrolling: touch;
+}
+/* The covered row: ring and title under one cover, on one ramp, from nothing at
+   the ring's top (10 below the row's top) to 30% stone at its foot (34 below). */
+.covered {
+  position: absolute;
+  left: 20px;
+  right: 20px;
+  bottom: 10px;
+  height: 24px;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    rgba(238, 240, 236, 0) 0%,
+    rgba(238, 240, 236, 0.3) 92%,
+    rgba(238, 240, 236, 0.3) 100%
+  );
+}
+.list .lbl {
+  padding: 0 24px;
+  color: var(--muted);
+}
+.list .lbl + ul {
+  margin-top: 4px;
+}
+.list ul + .lbl {
+  margin-top: 12px;
+}
+
+/* ═════════════ Rows (SPEC 9.7) ═════════════ */
+
+.row {
+  position: relative;
+  min-height: 44px;
+  margin: 0 24px;
+}
+.rowbtn {
+  display: flex;
   align-items: flex-start;
-  margin-top: 20px;
+  width: 100%;
+  min-height: 44px;
+  padding: 11px 0;
+  font-size: 17px;
+  line-height: 22px;
+  font-weight: 500;
+  color: inherit;
+}
+.trow .rowbtn {
+  align-items: center;
+}
+.trow .t {
+  flex: none;
+  width: 60px;
+  font-weight: 650;
+}
+.trow .ti {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.trow .ti small {
+  display: block;
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: 500;
+  color: var(--muted);
+}
+.rrow .rowbtn {
+  padding-left: 40px;
+}
+.rrow .rt {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* The half drawer: a title wraps to end by x 286, never cut or faded beside the disc. */
+.rrow.lane .rt {
+  max-width: 222px;
+  white-space: normal;
+}
+.ring,
+.disc {
+  position: absolute;
+  left: -10px;
+  top: 0;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  color: var(--charcoal);
+}
+.disc > span {
+  width: 24px;
+  height: 24px;
+  border-radius: 12px;
+  background: var(--sage);
+  color: var(--charcoal);
+  display: grid;
+  place-items: center;
+  box-shadow: inset 0 0 0 1px var(--hair-light);
+}
+.rrow.done .rowbtn,
+.row.donerow {
+  color: var(--muted);
+}
+/* A done row in "Done today": a sage disc with a check and a 10% hairline,
+   the title in muted. A quiet record, not a control. */
+.disc-static {
+  flex: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 12px;
+  background: var(--sage);
+  color: var(--charcoal);
+  display: grid;
+  place-items: center;
+  box-shadow: inset 0 0 0 1px var(--hair-light);
+}
+.row.donerow {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 0;
+  font-size: 17px;
+  line-height: 22px;
 }
 
-.place .bookmark {
-  background: var(--ink);
-  color: var(--paper);
-  width: 40px;
+/* ═════════════ The tabs (SPEC 9.11), on stone, and the hairline at 754 ═════════════ */
+
+.tabs {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: var(--hair-b);
+  z-index: 20;
+  background: var(--stone);
+}
+.tabs .hair {
+  position: absolute;
+  left: 24px;
+  right: 24px;
+  top: 0;
+  height: 1px;
+  background: var(--hair-light);
+}
+/* At the lip the drawer says nothing, so there is no hairline either. */
+.app[data-drawer='lip'] .tabs .hair {
+  display: none;
+}
+/* On the half drawer the tabs' band is the cover the list goes under. */
+.app[data-drawer='half'] .tabs {
+  box-shadow: var(--sh-cover);
+}
+.tabs nav {
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  bottom: var(--tabs-b);
+  height: 52px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+}
+.tab {
+  height: 52px;
+  border-radius: 26px;
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 2px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  text-align: center;
+}
+.tab[aria-current='page'] {
+  background: var(--white);
+  color: var(--charcoal);
+  font-weight: 700;
+  box-shadow: var(--sh-lozenge);
 }
 
-.place .bookmark b {
-  font-size: 18px;
+/* ═════════════ Places and pages ═════════════ */
+
+.place-title {
+  color: inherit;
+}
+.body {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(var(--content-t) - 4px);
+  bottom: var(--fold-b);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 4px 24px 96px;
+  -webkit-overflow-scrolling: touch;
+}
+.page-title {
+  margin: 8px 0 16px;
+  color: inherit;
+}
+.helper {
+  color: var(--ash);
+}
+.app[data-places='white'][data-ground='place'] .helper {
+  color: var(--muted);
 }
 
-/* -------------------------------------------------------------------- about */
+/* Me's rows: a title, and a chevron ending at x 366. */
+.menu .row {
+  margin: 0;
+}
+.menu .rowbtn {
+  align-items: center;
+  justify-content: space-between;
+  padding-right: 0;
+}
+.menu .rowbtn svg {
+  color: var(--ash);
+  margin-right: -4px;
+}
 
+.prose {
+  display: grid;
+  gap: 12px;
+}
 .prose p {
-  margin: 0 0 14px;
+  color: var(--ash);
 }
-
+.prose .lead {
+  color: var(--white);
+  font-size: 17px;
+  line-height: 22px;
+  font-weight: 600;
+}
 .prose h2 {
-  font-family: var(--serif);
-  font-size: 22px;
-  margin: 22px 0 8px;
+  margin-top: 16px;
+  color: var(--ash);
+}
+.prose .lines {
+  display: grid;
+  gap: 16px;
+  margin-top: 4px;
+}
+.prose .line b {
+  color: var(--white);
+  font-weight: 650;
+}
+.prose a {
+  color: var(--white);
+}
+.scenarios {
+  display: grid;
+  gap: 8px;
+  justify-items: start;
+}
+.textbtn {
+  min-height: 44px;
+  font-size: 17px;
+  line-height: 22px;
+  font-weight: 600;
+  color: var(--ash);
 }
 
-@media (prefers-reduced-motion: reduce) {
-  * {
-    transition: none !important;
-    animation: none !important;
+/* ═════════════ When what was stored cannot be read ═════════════ */
+
+.fail {
+  position: fixed;
+  inset: 0;
+  padding: calc(var(--sa-top) + 56px) 24px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: flex-start;
+  background: var(--charcoal);
+  color: var(--white);
+}
+.fail p {
+  color: var(--ash);
+}
+
+/* ═════════════ Display settings (SPEC 10) ═════════════ */
+
+@media (prefers-contrast: more) {
+  :root {
+    --hair-dark: rgba(169, 175, 171, 0.25);
+    --hair-light: rgba(34, 38, 36, 0.25);
+    --ash-edge: rgba(169, 175, 171, 0.8);
+  }
+  .pill.ash,
+  .me,
+  .hpill {
+    box-shadow: inset 0 0 0 1px var(--ash);
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .fade {
+    background: var(--charcoal) !important;
+  }
+  .app[data-places='white'][data-ground='place'] .fade {
+    background: var(--white) !important;
   }
 }

@@ -78,11 +78,9 @@ export async function startBench(options: StartOptions): Promise<Started> {
       return;
     }
     store = candidate;
+    // The prototype writes where the person was and flushes when the page is
+    // hidden or left (app.ts).
     bench = mountBench({ store, container, now, confirm });
-    // Best effort: write the last change before the page goes away.
-    document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'hidden') void candidate.flush();
-    });
   }
 
   function failed(): void {

@@ -1,0 +1,685 @@
+import { afterEach, describe, expect, it } from 'vitest';
+import * as model from '../../src/domains/tasks';
+import { setOption } from '../../src/domains/options';
+import { EMAIL } from '../../src/bench/example';
+import type { BenchDomains } from '../../src/bench/state';
+import { ABOUT } from '../../src/bench/screens/places';
+import {
+  advance,
+  button,
+  choices,
+  hintOf,
+  mount,
+  nameOf,
+  press,
+  readingOrder,
+  stateOf,
+  unmount,
+  visibleText,
+  type Mounted,
+} from './mount';
+
+// The screens of design/lantern/SPEC.md section 5, as built so far (plan
+// section 19, chunk 2): Today in every state, the drawer at rest, the capsule
+// on the places, the tabs, and Me with its pages. Each is held to its exact
+// words, its spoken names, its choice count and its reading order. Times are
+// the board's scenes, in local time, and nothing reads the real clock.
+
+const TUE_1005 = '2026-11-24T10:05:00';
+const TUE_0958 = '2026-11-24T09:58:00';
+const TUE_1320 = '2026-11-24T13:20:00';
+const MON_0912 = '2026-12-14T09:12:00';
+
+afterEach(unmount);
+
+const TABS = ['Today', 'Tasks', 'Routines', 'Library'];
+const id = (m: Mounted, key: string) => m.container.querySelector<HTMLElement>(`#${key}`);
+const emailOf = (state: BenchDomains) =>
+  state.tasks.find((task) => task.title === EMAIL && task.parentId === undefined)!;
+const titled = (state: BenchDomains, title: string) =>
+  state.tasks.find((task) => task.title === title && task.parentId === undefined)!;
+const at = (local: string) => new Date(local);
+
+/** Keeps only the names in `wanted`, in the order they were read. */
+const inOrder = (names: string[], wanted: string[]) =>
+  names.filter((name) => wanted.includes(name));
+
+describe('1 · Today, running (SPEC 5.1)', () => {
+  const LIT =
+    'Now: Write the question. Step 2 of 3 of Write the school email. 18 of 25 minutes left, ends 10:23. Note: When is the permission slip due?';
+  const HANDLE = 'Next, in 25 minutes: 10:30, Call the dentist. Rest of today';
+
+  it('lights the step, its bar and its minutes, with the date and Me above', async () => {
+    const m = await mount(TUE_1005);
+    const text = visibleText(m.container);
+    for (const words of [
+      'Tuesday 24 November',
+      'Now',
+      'step 2 of 3',
+      'Focus',
+      'Write the school email',
+      'Write the question',
+      '18 min left',
+      'of 25',
+      'ends 10:23',
+      'Note',
+      'When is the permission slip due?',
+    ]) {
+      expect(text).toContain(words);
+    }
+    expect(m.container.dataset['ground']).toBe('present');
+    expect(id(m, 'b-lit')?.classList.contains('lit-block')).toBe(true);
+    expect(m.container.querySelector('.screen')?.getAttribute('data-lamp')).toBe('lit');
+    expect(m.container.querySelector('.lit-block .bar')?.className).toBe('bar bar-today is-burn');
+  });
+
+  it('is one button that opens focus, named in SPEC 11’s words', async () => {
+    const m = await mount(TUE_1005);
+    const block = button(m.container, LIT);
+    expect(hintOf(block)).toBe('Opens focus.');
+  });
+
+  it('holds Step done, Pause and capture on the dock line, and no capsule', async () => {
+    const m = await mount(TUE_1005);
+    expect(nameOf(id(m, 'b-stepdone')!)).toBe('Step done: Write the question');
+    expect(id(m, 'b-stepdone')?.textContent).toBe('Step done');
+    expect(nameOf(id(m, 'b-pause')!)).toBe('Pause');
+    expect(nameOf(id(m, 'b-capture')!)).toBe('Capture');
+    expect(hintOf(id(m, 'b-capture')!)).toBe('Write something down. It goes to the inbox.');
+    expect(m.container.querySelector('.capsule')).toBeNull();
+  });
+
+  it('folds the drawer to its Next line', async () => {
+    const m = await mount(TUE_1005);
+    expect(m.container.dataset['drawer']).toBe('folded');
+    const handle = button(m.container, HANDLE);
+    expect(hintOf(handle)).toBe('Shows the rest of today.');
+    expect(handle.textContent).toContain('Next');
+    expect(handle.textContent).toContain('in 25 min');
+    expect(handle.textContent).toContain('10:30');
+    expect(handle.textContent).toContain('Call the dentist');
+    expect(handle.textContent).toContain('Rest of today');
+    // No minutes on the Next line.
+    expect(handle.textContent).not.toContain('10 min');
+  });
+
+  it('offers four choices, and reads them in SPEC 11’s order', async () => {
+    const m = await mount(TUE_1005);
+    expect(choices(m.container)).toBe(4);
+    expect(readingOrder(m.container)).toEqual([
+      'Tuesday 24 November',
+      'Me',
+      LIT,
+      'Step done: Write the question',
+      'Pause',
+      'Capture',
+      HANDLE,
+      ...TABS,
+    ]);
+    expect(hintOf(id(m, 'b-me')!)).toBe('Settings and help.');
+  });
+
+  it('moves the minutes and the bar in place as time passes, without rebuilding', async () => {
+    const m = await mount(TUE_1005);
+    const block = id(m, 'b-lit');
+    const fill = m.container.querySelector<HTMLElement>('.lit-block .bar')!;
+    const before = fill.style.getPropertyValue('--p');
+    advance(m, 1);
+    expect(id(m, 'b-lit')).toBe(block);
+    expect(visibleText(m.container)).toContain('17 min left');
+    expect(block?.getAttribute('aria-label')).toContain('17 of 25 minutes left, ends 10:23.');
+    expect(fill.style.getPropertyValue('--p')).not.toBe(before);
+  });
+
+  it('over the estimate: the outline, the minutes so far, and the estimate in words', async () => {
+    const m = await mount(TUE_1005);
+    advance(m, 20); // 27 minutes worked of 25
+    const text = visibleText(m.container);
+    expect(text).toContain('27 min so far');
+    expect(text).toContain('estimate 25');
+    expect(text).not.toContain('ends');
+    expect(text).not.toMatch(/\b0 min left/);
+    expect(m.container.querySelector('.lit-block .bar')?.className).toBe('bar bar-today is-over');
+    expect(nameOf(id(m, 'b-lit')!)).toContain('27 minutes so far, estimate 25.');
+  });
+
+  it('with no estimate: a length that grows, and the minutes so far', async () => {
+    const m = await mount(TUE_1005, 'example', (state) => ({
+      ...state,
+      tasks: model.setEstimate(state.tasks, emailOf(state).id, undefined),
+    }));
+    expect(visibleText(m.container)).toContain('7 min so far');
+    const bar = m.container.querySelector<HTMLElement>('.lit-block .bar')!;
+    expect(bar.className).toBe('bar bar-today is-countUp');
+    expect(Number(bar.style.getPropertyValue('--p'))).toBeCloseTo(7 / 60, 2);
+  });
+
+  it('says Done on the last step, and for a task with no steps', async () => {
+    const m = await mount(TUE_1005);
+    press(m.container, 'Step done: Write the question');
+    expect(m.container.querySelector('.live')?.textContent).toBe(
+      'Step done. Now: Read it once and send',
+    );
+    expect(id(m, 'b-stepdone')?.textContent).toBe('Done');
+    expect(visibleText(m.container)).toContain('step 3 of 3');
+    press(m.container, /^Done: Read it once and send$/);
+    expect(m.container.querySelector('.live')?.textContent).toBe('Done: Write the school email');
+    expect(emailOf(stateOf(m)).doneAt).toBeDefined();
+    // Nothing runs now: the canvas is unlit.
+    expect(visibleText(m.container)).toContain('Nothing running');
+  });
+
+  it('pauses and resumes on the spot, saying so', async () => {
+    const m = await mount(TUE_1005);
+    press(m.container, 'Pause');
+    expect(m.container.querySelector('.live')?.textContent).toBe('Paused');
+    expect(model.running(stateOf(m).tasks)).toBeUndefined();
+    expect(visibleText(m.container)).toContain('Paused');
+    press(m.container, 'Resume');
+    expect(model.running(stateOf(m).tasks)?.title).toBe(EMAIL);
+    expect(id(m, 'b-pause')).not.toBeNull();
+  });
+});
+
+describe('7c · Paused (SPEC 5.7c)', () => {
+  const BLOCK =
+    'Paused: Write the question. Step 2 of 3 of Write the school email. 18 of 25 minutes left. Note: When is the permission slip due?';
+  const ASIDE = 'Set aside Write the school email. It keeps its place at step 2.';
+  const HANDLE = 'Anytime today: Call the dentist. Rest of today';
+
+  it('says Paused in words, the bar still in ash, the minutes in white with no end time', async () => {
+    const m = await mount(TUE_1320, 'pauseLeft');
+    const text = visibleText(m.container);
+    expect(text).toContain('Paused');
+    expect(text).toContain('18 min left');
+    expect(text).toContain('of 25');
+    expect(text).not.toContain('ends');
+    expect(text).not.toMatch(/welcome|while you were away|hours? ago/i);
+    expect(m.container.querySelector('.lit-block .bar')?.className).toBe(
+      'bar bar-today is-paused is-frozen',
+    );
+    expect(m.container.querySelector('.lit-block .mins strong')?.className).toContain('still');
+    expect(m.container.querySelector('.lantern')?.classList.contains('paused')).toBe(true);
+  });
+
+  it('has Set aside beside the minutes, Resume in Pause’s place, and Step done kept', async () => {
+    const m = await mount(TUE_1320, 'pauseLeft');
+    expect(nameOf(id(m, 'b-aside')!)).toBe(ASIDE);
+    expect(id(m, 'b-aside')?.closest('.lit-block')).toBeNull();
+    expect(id(m, 'b-resume')?.textContent).toBe('Resume');
+    expect(id(m, 'b-stepdone')?.className).toContain('ash');
+    expect(id(m, 'b-pause')).toBeNull();
+  });
+
+  it('names the passed call on the Next line, under Anytime today, unmarked', async () => {
+    const m = await mount(TUE_1320, 'pauseLeft');
+    const handle = button(m.container, HANDLE);
+    expect(handle.textContent).toContain('Anytime today');
+    expect(handle.textContent).toContain('Call the dentist');
+    expect(handle.querySelector('.h-time')).toBeNull();
+    expect(handle.textContent).not.toMatch(/missed|late|overdue/i);
+  });
+
+  it('offers five choices, and reads them in SPEC 11’s order', async () => {
+    const m = await mount(TUE_1320, 'pauseLeft');
+    expect(choices(m.container)).toBe(5);
+    expect(readingOrder(m.container)).toEqual([
+      'Tuesday 24 November',
+      'Me',
+      BLOCK,
+      ASIDE,
+      'Step done: Write the question',
+      'Resume',
+      'Capture',
+      HANDLE,
+      ...TABS,
+    ]);
+  });
+
+  it('after a clock left running: the outline and "estimate 25", never "0 min left"', async () => {
+    const m = await mount(TUE_1005, 'clockLeftRunning');
+    const text = visibleText(m.container);
+    expect(text).toContain('Paused');
+    expect(text).toContain('estimate 25');
+    expect(text).not.toMatch(/\b0 min left/);
+    expect(m.container.querySelector('.lit-block .bar')?.className).toBe(
+      'bar bar-today is-over is-frozen',
+    );
+  });
+
+  it('says "Timer stopped" there instead, when the owner’s setting says so', async () => {
+    const m = await mount(TUE_1005, 'clockLeftRunning', (state) => ({
+      ...state,
+      bench: { ...state.bench, settings: { ...state.bench.settings, closedLabel: 'stopped' } },
+    }));
+    expect(visibleText(m.container)).toContain('Timer stopped');
+    expect(nameOf(id(m, 'b-lit')!).startsWith('Timer stopped: Write the question.')).toBe(true);
+  });
+
+  it('lets the task go with Set aside, at its step', async () => {
+    const m = await mount(TUE_1320, 'pauseLeft');
+    press(m.container, ASIDE);
+    expect(stateOf(m).bench.setAside?.taskId).toBe(emailOf(stateOf(m)).id);
+    // The idle lantern lights the passed call, first in Anytime today.
+    const text = visibleText(m.container);
+    expect(text).toContain('Nothing running');
+    expect(text).toContain('Call the dentist');
+    expect(model.stepsOf(stateOf(m).tasks, emailOf(stateOf(m)).id)[1]?.doneAt).toBeUndefined();
+  });
+});
+
+describe('7 · Nothing running (SPEC 5.7)', () => {
+  const ITEM =
+    "First on today's list: Write the school email. Starts with Find the school address. 3 steps, 25 minutes, would end about 10:23";
+
+  it('says Nothing running first, and lights the first item a size smaller', async () => {
+    const m = await mount(TUE_0958, 'notStarted');
+    const text = visibleText(m.container);
+    expect(text).toContain('Nothing running');
+    expect(text).toContain('free until 10:30');
+    expect(text).toContain("First on today's list");
+    expect(text).toContain('Starts with: Find the school address');
+    expect(text).toContain('3 steps · 25 min · would end about 10:23');
+    expect(m.container.querySelector('.screen')?.getAttribute('data-lamp')).toBe('idle');
+    expect(m.container.querySelector('.idle-block .sentence')?.className).toContain('t-idle');
+    expect(m.container.querySelector('.lit-block')).toBeNull();
+  });
+
+  it('rests the day half open, the lit email not repeated, with no "in" line', async () => {
+    const m = await mount(TUE_0958, 'notStarted');
+    expect(m.container.dataset['drawer']).toBe('half');
+    const list = m.container.querySelector('.list')!;
+    expect(list.textContent).toContain('Later today');
+    expect(list.textContent).toContain('Anytime today');
+    expect(list.textContent).not.toContain(EMAIL);
+    expect(list.textContent).not.toMatch(/\bin \d+ min/);
+    const times = [...list.querySelectorAll('.trow')].map((row) => row.textContent);
+    expect(times).toEqual([
+      '10:30Call the dentist10 min',
+      '11:00Walk to the park20 min',
+      '14:00Ring the bank15 min',
+    ]);
+    // Every track sits in a 30 pt slot, the longest's, so the numbers end on one line.
+    const tracks = [...list.querySelectorAll<HTMLElement>('.trow .dur .m')].map((m) => [
+      m.style.width,
+      m.style.marginRight,
+    ]);
+    expect(tracks).toEqual([
+      ['15px', '15px'],
+      ['30px', '0px'],
+      ['22.5px', '7.5px'],
+    ]);
+    // Titles beside capture wrap in their lane rather than run under the disc.
+    expect(list.querySelector('.rrow')?.classList.contains('lane')).toBe(true);
+  });
+
+  it('has capture alone on the dock line, on the stone, and no capsule anywhere', async () => {
+    const m = await mount(TUE_0958, 'notStarted');
+    expect(id(m, 'b-capture')?.classList.contains('on-light')).toBe(true);
+    expect(m.container.querySelector('.capsule')).toBeNull();
+    expect(id(m, 'b-stepdone')).toBeNull();
+  });
+
+  it('offers four choices, and reads them in SPEC 11’s order', async () => {
+    const m = await mount(TUE_0958, 'notStarted');
+    expect(choices(m.container)).toBe(4);
+    const names = readingOrder(m.container);
+    expect(
+      inOrder(names, [
+        'Tuesday 24 November',
+        'Me',
+        'Nothing running, free until 10:30',
+        ITEM,
+        'Start',
+        'Rest of today',
+        'Later today',
+        'Anytime today',
+        'Capture',
+        ...TABS,
+      ]),
+    ).toEqual([
+      'Tuesday 24 November',
+      'Me',
+      'Nothing running, free until 10:30',
+      ITEM,
+      'Start',
+      'Rest of today',
+      'Later today',
+      'Anytime today',
+      'Capture',
+      ...TABS,
+    ]);
+    expect(hintOf(button(m.container, 'Rest of today'))).toBe('Shows the rest of today.');
+  });
+
+  it('starts the lit item on the spot, and folds the drawer', async () => {
+    const m = await mount(TUE_0958, 'notStarted');
+    press(m.container, 'Start');
+    expect(model.running(stateOf(m).tasks)?.title).toBe(EMAIL);
+    expect(m.container.dataset['drawer']).toBe('folded');
+    expect(id(m, 'b-lit')).not.toBeNull();
+  });
+
+  it('ticks a ring in place, and the disc takes it back', async () => {
+    const m = await mount(TUE_0958, 'notStarted');
+    press(m.container, 'Mark done: Renew the parking permit');
+    expect(m.container.querySelector('.live')?.textContent).toBe('Done: Renew the parking permit');
+    expect(titled(stateOf(m), 'Renew the parking permit').doneAt).toBeDefined();
+    // Still in the list, where it was, as a disc that un-ticks it.
+    const disc = button(m.container, 'Undo done: Renew the parking permit');
+    expect(disc.closest('li')?.classList.contains('done')).toBe(true);
+    disc.click();
+    expect(titled(stateOf(m), 'Renew the parking permit').doneAt).toBeUndefined();
+    expect(button(m.container, 'Mark done: Renew the parking permit')).toBeTruthy();
+  });
+
+  it('lists what got done today only when that reward is on', async () => {
+    const off = await mount(TUE_0958, 'notStarted');
+    expect(visibleText(off.container)).not.toContain('Done today');
+    unmount();
+    const on = await mount(TUE_0958, 'notStarted', (state) => ({
+      ...state,
+      rewards: setOption(state.rewards, { kind: 'day' }, 'doneList', true),
+    }));
+    expect(visibleText(on.container)).toContain('Done today');
+    expect(readingOrder(on.container)).toContain('Bins out, done');
+    expect(visibleText(on.container)).not.toMatch(/\b\d+ done\b/);
+  });
+
+  it('rule 1: a booked item within 15 minutes is lit, with when it starts', async () => {
+    const m = await mount(TUE_0958, 'notStarted');
+    advance(m, 22); // 10:20
+    const text = visibleText(m.container);
+    expect(text).toContain('starts at 10:30, in 10 min');
+    expect(text).toContain('Next booked');
+    expect(m.container.querySelector('.idle-block .sentence')?.textContent).toBe(
+      'Call the dentist',
+    );
+    expect(readingOrder(m.container)).toContain('Nothing running, starts at 10:30, in 10 minutes');
+    expect(id(m, 'b-start')).not.toBeNull();
+  });
+
+  it('rule 1, its slot under way: booked now, until it ends (a proposal)', async () => {
+    const m = await mount(TUE_0958, 'notStarted');
+    advance(m, 35); // 10:33
+    const text = visibleText(m.container);
+    expect(text).toContain('until 10:40');
+    expect(text).toContain('Booked now');
+  });
+
+  it('rule 3: nothing anytime but booked items to come, and no Start', async () => {
+    const m = await mount(TUE_0958, 'notStarted', (state, now) => {
+      let tasks = state.tasks;
+      for (const task of state.tasks) {
+        if (task.parentId === undefined && task.when.kind === 'anytime') {
+          tasks = model.complete(tasks, task.id, now);
+        }
+      }
+      return { ...state, tasks };
+    });
+    const text = visibleText(m.container);
+    expect(text).toContain('Free until 10:30');
+    expect(text).toContain('Call the dentist at 10:30');
+    expect(id(m, 'b-start')).toBeNull();
+    expect(readingOrder(m.container)).toContain('Nothing running');
+  });
+});
+
+describe('7b · Nothing planned (SPEC 5.7b)', () => {
+  it('says only what is true now, and offers the inbox', async () => {
+    const m = await mount(MON_0912, 'weeksAway');
+    const text = visibleText(m.container);
+    expect(text).toContain('Monday 14 December');
+    expect(text).toContain('Nothing planned for today');
+    expect(text).toContain('Anything without a date is in the inbox.');
+    expect(text).not.toContain('Nothing running');
+    expect(hintOf(button(m.container, 'Open the inbox'))).toBe('Opens at the newest items.');
+    expect(m.container.querySelector('.screen')?.getAttribute('data-lamp')).toBe('planned');
+  });
+
+  it('rests the drawer at its lip: no grabber, no words, not read', async () => {
+    const m = await mount(MON_0912, 'weeksAway');
+    expect(m.container.dataset['drawer']).toBe('lip');
+    const drawer = m.container.querySelector('.drawer')!;
+    expect(drawer.hasAttribute('inert')).toBe(true);
+    expect(drawer.children).toHaveLength(0);
+    expect(id(m, 'b-handle')).toBeNull();
+  });
+
+  it('offers two choices, and reads them in SPEC 11’s order', async () => {
+    const m = await mount(MON_0912, 'weeksAway');
+    expect(choices(m.container)).toBe(2);
+    expect(readingOrder(m.container)).toEqual([
+      'Monday 14 December',
+      'Me',
+      'Nothing planned for today',
+      'Anything without a date is in the inbox.',
+      'Open the inbox',
+      'Capture',
+      ...TABS,
+    ]);
+  });
+
+  it('opens the inbox on Tasks', async () => {
+    const m = await mount(MON_0912, 'weeksAway');
+    press(m.container, 'Open the inbox');
+    expect(id(m, 't-tasks')?.getAttribute('aria-current')).toBe('page');
+    expect(m.container.querySelector('h1')?.textContent).toBe('Tasks');
+  });
+
+  it('is the same with nothing at all', async () => {
+    const m = await mount(TUE_1005, 'empty');
+    expect(visibleText(m.container)).toContain('Nothing planned for today');
+    expect(m.container.dataset['drawer']).toBe('lip');
+  });
+});
+
+describe('the Now capsule (SPEC 4)', () => {
+  const capsuleOf = (m: Mounted) => m.container.querySelector<HTMLElement>('.capsule');
+
+  it('rides the places, lifted on charcoal, and opens focus', async () => {
+    const m = await mount(TUE_1005);
+    press(m.container, 'Tasks');
+    const capsule = capsuleOf(m)!;
+    expect(capsule.tagName).toBe('BUTTON');
+    expect(capsule.classList.contains('lift')).toBe(true);
+    expect(nameOf(capsule)).toBe(
+      'Now: Write the question, step 2 of 3 of Write the school email. 18 of 25 minutes left, ends 10:23.',
+    );
+    expect(hintOf(capsule)).toBe('Opens focus.');
+    expect(capsule.querySelector('.c1')?.textContent).toBe('NowWrite the question');
+    expect(capsule.querySelector('.c2')?.textContent).toBe('18 min left·Write the school email');
+    expect(capsule.querySelector('.bar')?.className).toBe('bar bar-capsule is-burn');
+    expect(m.container.querySelector('.fade')?.hasAttribute('hidden')).toBe(false);
+    // Not in the capsule: the step count, the note, "of 25" and the end time.
+    expect(capsule.textContent).not.toMatch(/step 2 of 3|of 25|ends|permission/);
+  });
+
+  it('is plain charcoal on white places', async () => {
+    const m = await mount(TUE_1005, 'example', (state) => ({
+      ...state,
+      bench: { ...state.bench, settings: { ...state.bench.settings, places: 'white' } },
+    }));
+    press(m.container, 'Routines');
+    expect(capsuleOf(m)?.classList.contains('lift')).toBe(false);
+    expect(m.container.dataset['places']).toBe('white');
+  });
+
+  it('counts up once the estimate is used up, and the name gives way', async () => {
+    const m = await mount(TUE_1005);
+    press(m.container, 'Tasks');
+    advance(m, 20);
+    const capsule = capsuleOf(m)!;
+    expect(capsule.querySelector('.c2 b')?.textContent).toBe('27 min so far');
+    expect(capsule.querySelector('.bar')?.className).toBe('bar bar-capsule is-over');
+    expect(nameOf(capsule).endsWith('27 minutes so far, estimate 25.')).toBe(true);
+  });
+
+  it('with no estimate, grows as one length', async () => {
+    const m = await mount(TUE_1005, 'example', (state) => ({
+      ...state,
+      tasks: model.setEstimate(state.tasks, emailOf(state).id, undefined),
+    }));
+    press(m.container, 'Library');
+    const capsule = capsuleOf(m)!;
+    expect(capsule.querySelector('.c2 b')?.textContent).toBe('7 min so far');
+    expect(capsule.querySelector('.bar')?.className).toBe('bar bar-capsule is-countUp');
+  });
+
+  it('paused: the word where Now was, the minutes in white', async () => {
+    const m = await mount(TUE_1320, 'pauseLeft');
+    press(m.container, 'Tasks');
+    const capsule = capsuleOf(m)!;
+    expect(capsule.querySelector('.ptag')?.textContent).toBe('Paused');
+    expect(capsule.querySelector('.nowtag')).toBeNull();
+    expect(capsule.querySelector('.c2 b')?.className).toBe('still');
+    expect(capsule.querySelector('.c2 b')?.textContent).toBe('18 min left');
+    expect(capsule.querySelector('.bar')?.className).toBe('bar bar-capsule is-paused is-frozen');
+    expect(nameOf(capsule).startsWith('Paused: Write the question')).toBe(true);
+  });
+
+  it('paused with the estimate used up: "estimate 25" alone', async () => {
+    const m = await mount(TUE_1005, 'clockLeftRunning');
+    press(m.container, 'Tasks');
+    const capsule = capsuleOf(m)!;
+    expect(capsule.querySelector('.c2')?.textContent).toBe('estimate 25');
+    expect(capsule.querySelector('.tn')).toBeNull();
+    expect(capsule.querySelector('.bar')?.className).toBe('bar bar-capsule is-over is-frozen');
+  });
+
+  it('a task with no steps: its title on line 1 and the minutes alone', async () => {
+    const m = await mount(TUE_1005, 'example', (state, now) => {
+      const bins = titled(state, 'Book the boiler service');
+      let tasks = model.setEstimate(state.tasks, bins.id, 25);
+      tasks = model.startWork(tasks, bins.id, new Date(now.getTime() - 7 * 60_000));
+      return { ...state, tasks };
+    });
+    press(m.container, 'Tasks');
+    const capsule = capsuleOf(m)!;
+    expect(capsule.querySelector('.cstep')?.textContent).toBe('Book the boiler service');
+    expect(capsule.querySelector('.c2')?.textContent).toBe('18 min left');
+    expect(nameOf(capsule)).toBe(
+      'Now: Book the boiler service. 18 of 25 minutes left, ends 10:23.',
+    );
+  });
+
+  it('is hidden on Today, with nothing running, and on the crisis page', async () => {
+    const m = await mount(TUE_1005);
+    expect(capsuleOf(m)).toBeNull();
+    press(m.container, 'Me');
+    expect(capsuleOf(m)).not.toBeNull();
+    press(m.container, 'If things are bad right now');
+    expect(capsuleOf(m)).toBeNull();
+    expect(id(m, 'b-capture')).not.toBeNull();
+    unmount();
+    const idle = await mount(TUE_0958, 'notStarted');
+    press(idle.container, 'Tasks');
+    expect(capsuleOf(idle)).toBeNull();
+    expect(idle.container.querySelector('.fade')?.hasAttribute('hidden')).toBe(true);
+  });
+});
+
+describe('the frame (SPEC 3)', () => {
+  it('has four tabs, the current one marked, and never a count', async () => {
+    const m = await mount(TUE_1005);
+    const tabs = [...m.container.querySelectorAll('nav button')];
+    expect(tabs.map((tab) => tab.textContent)).toEqual(TABS);
+    expect(tabs.map((tab) => tab.getAttribute('aria-current'))).toEqual(['page', null, null, null]);
+    press(m.container, 'Routines');
+    expect(id(m, 't-routines')?.getAttribute('aria-current')).toBe('page');
+    expect(m.container.dataset['ground']).toBe('place');
+    expect(m.container.querySelector('h1')?.textContent).toBe('Routines');
+    // The drawer rests folded on a place, with the same Next line.
+    expect(m.container.dataset['drawer']).toBe('folded');
+    expect(button(m.container, /^Next, in 25 minutes/)).toBeTruthy();
+  });
+
+  it('pushes Me on the current tab, which stays current', async () => {
+    const m = await mount(TUE_1005);
+    press(m.container, 'Me');
+    expect(id(m, 't-today')?.getAttribute('aria-current')).toBe('page');
+    expect(m.container.querySelector('h1')?.textContent).toBe('Me');
+    press(m.container, 'Today');
+    expect(id(m, 'b-lit')).not.toBeNull();
+  });
+
+  it('keeps "If things are bad right now" two taps from anywhere', async () => {
+    const m = await mount(TUE_0958, 'notStarted');
+    press(m.container, 'Me');
+    press(m.container, 'If things are bad right now');
+    const text = visibleText(m.container);
+    expect(text).toContain('If you are in immediate danger, call your local emergency number.');
+    expect(text).toContain('Samaritans');
+    expect(m.container.querySelector('a[href^="tel:"]')).not.toBeNull();
+    press(m.container, 'Back to Me');
+    expect(m.container.querySelector('h1')?.textContent).toBe('Me');
+  });
+
+  it('loads a scenario from About and opens on Today', async () => {
+    const m = await mount(TUE_1005);
+    press(m.container, 'Me');
+    press(m.container, 'About this prototype');
+    press(m.container, 'Load: weeks away');
+    expect(visibleText(m.container)).toContain('Nothing planned for today');
+    expect(id(m, 't-today')?.getAttribute('aria-current')).toBe('page');
+  });
+
+  it('deletes everything, after a confirm', async () => {
+    const m = await mount(TUE_1005);
+    press(m.container, 'Me');
+    press(m.container, 'About this prototype');
+    press(m.container, ABOUT.deleteAll);
+    expect(stateOf(m).tasks).toEqual([]);
+    expect(visibleText(m.container)).toContain('Nothing planned for today');
+  });
+
+  it('opens on the example day the first time, with nothing stored', async () => {
+    const m = await mount(TUE_1005, 'nothing');
+    expect(button(m.container, /^Now: Write the question\./)).toBeTruthy();
+  });
+
+  it('writes when it went away and where the person was, on hide', async () => {
+    const m = await mount(TUE_1005);
+    press(m.container, 'Tasks');
+    window.dispatchEvent(new Event('pagehide'));
+    const bench = stateOf(m).bench;
+    expect(bench.away).toEqual({ since: at(TUE_1005).toISOString() });
+    expect(bench.ui).toMatchObject({ tab: 'tasks', stack: [], at: at(TUE_1005).toISOString() });
+  });
+
+  it('comes back exactly where it was after a short time, and to Today after longer', async () => {
+    const m = await mount(TUE_1005);
+    press(m.container, 'Tasks');
+    window.dispatchEvent(new Event('pagehide'));
+    m.clock.now = new Date(at(TUE_1005).getTime() + 5 * 60_000);
+    window.dispatchEvent(new Event('pageshow'));
+    expect(id(m, 't-tasks')?.getAttribute('aria-current')).toBe('page');
+    expect(stateOf(m).bench.away).toBeUndefined();
+
+    window.dispatchEvent(new Event('pagehide'));
+    m.clock.now = new Date(at(TUE_1005).getTime() + 40 * 60_000);
+    window.dispatchEvent(new Event('pageshow'));
+    expect(id(m, 't-today')?.getAttribute('aria-current')).toBe('page');
+    expect(id(m, 'b-lit')).not.toBeNull();
+  });
+
+  it('closes a clock forgotten in the background, and opens on paused Today', async () => {
+    const m = await mount(TUE_1005);
+    window.dispatchEvent(new Event('pagehide'));
+    m.clock.now = new Date(at(TUE_1005).getTime() + 45 * 60_000);
+    window.dispatchEvent(new Event('pageshow'));
+    const text = visibleText(m.container);
+    expect(text).toContain('Paused');
+    expect(text).toContain('estimate 25');
+    expect(text).not.toMatch(/45|away|ago/);
+  });
+
+  it('turns the day at 04:00 in the hand, and leaves a watched clock running', async () => {
+    const m = await mount('2026-11-25T03:58:00', 'example');
+    expect(model.running(stateOf(m).tasks)?.title).toBe(EMAIL);
+    advance(m, 3); // 04:01
+    expect(stateOf(m).bench.day).toBe('2026-11-25');
+    expect(model.running(stateOf(m).tasks)?.title).toBe(EMAIL);
+    expect(id(m, 'b-lit')).not.toBeNull();
+  });
+});

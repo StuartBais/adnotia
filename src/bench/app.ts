@@ -1,39 +1,71 @@
-// The benchmark prototype: Today, capture, a task opened, and focus, in the
-// Bookmark Edition direction (ADR-045), running on the real task model.
+// The benchmark prototype, in the design "Lantern, with the Now capsule"
+// (design/lantern/SPEC.md, draft 6; ADR-047), running on the real task model.
 //
-// It exists to be held on a phone so the owner can decide how the phone apps are
-// built (docs/09-product-brief.md, order of work, items 2 and 3). It is not the
-// app: nothing links to it, Routines and Library are placeholders, and it keeps
-// its data under its own storage key so it cannot touch the first build's.
+// It exists to be held on a phone so the owner can decide how the phone apps
+// are built (docs/09-product-brief.md, order of work, items 2 and 3). It is
+// not the app: nothing links to it, and it keeps its data under its own
+// storage key so it cannot touch the first build's.
 //
-// Rules from the brief that it holds: one task record that every screen acts on;
-// capture reachable in one tap; a past item quietly goes back to the inbox with
-// no "overdue"; time shown as marks beside a count; the current step larger than
-// the clock; returning from capture lands on the same step, with the draft kept
-// if the person left without saving. No rewards are on, because they are off
-// until a person chooses them, and this prototype offers no way to choose yet.
+// The screen is a stack of persistent layers (plan section 8): the current
+// page, the fade behind the dock line, the stone drawer, the tabs, the dock
+// line and a live region. A layer is rebuilt only when what it shows changes,
+// judged by a cheap key; the ticker never rebuilds anything, and moves the bar,
+// the minutes and the spoken labels in place. So a tick never takes away the
+// person's focus, scroll or a tap in progress.
+//
+// Built so far (plan section 19, chunk 2): the frame, Today in every state,
+// the drawer at rest at its lip, folded and half, the capsule on the places,
+// the tabs with bare places, Me with the crisis page, and About with the
+// scenario buttons. Focus, capture, the open drawer and Undo come next; their
+// controls are in place and do nothing yet.
 
-import * as model from '../domains/tasks';
-import type { Task, When } from '../domains/tasks';
-import { formatClockTime, formatLongDate, formatShortDate, loggingDay } from '../kernel/dates';
-import type { KernelStore } from '../kernel/store';
-import { bookmark, h, tally, two } from './ui';
-
-interface Focus {
-  taskId: string;
-  /** How long the person set out to work, in minutes. */
-  minutes: number;
-  /** Minutes already worked on the task when this focus began. */
-  baseWorked: number;
-}
-
-type Tab = 'today' | 'tasks' | 'routines' | 'library';
-type Screen =
-  | { name: Tab }
-  | { name: 'about' }
-  | { name: 'task'; id: string; back: Screen }
-  | { name: 'focus' }
-  | { name: 'capture'; back: Screen };
+import { emptyDomains, type KernelStore } from '../kernel/store';
+import * as act from './actions';
+import type { ScenarioId } from './example';
+import {
+  capsuleLook,
+  capsuleMode,
+  dayBoundary,
+  drawerPositions,
+  handleLabel,
+  handleLines,
+  loadScenario,
+  migrateBench,
+  nextLine,
+  passSlots,
+  present,
+  wake,
+  type BenchDomains,
+  type BenchUi,
+  type DrawerPosition,
+  type Page,
+  type Tab,
+  type TaskList,
+  type View,
+} from './state';
+import { createTicker, type Ticker } from './clock';
+import { dock, foldedDrawer, halfDrawer, hints, tabs, type Built, type DockProps } from './frame';
+import { lampOf, todayScreen } from './screens/today';
+import {
+  BACK_TO,
+  aboutScreen,
+  crisisScreen,
+  meScreen,
+  placeScreen,
+  taskScreen,
+  ABOUT,
+} from './screens/places';
+import { h, injectSprite } from './ui';
+import {
+  dayList,
+  idleLitId,
+  presentKey,
+  presentLive,
+  presentView,
+  todayView,
+  type PresentLive,
+  type PresentView,
+} from './view';
 
 export interface BenchOptions {
   store: KernelStore;
@@ -43,1003 +75,578 @@ export interface BenchOptions {
   confirm?: (question: string) => boolean;
 }
 
-const DEFAULT_MINUTES = 25;
+/** Where the person is: the current tab, the pages pushed on it, and the Tasks list. */
+interface Nav {
+  tab: Tab;
+  stack: Page[];
+  list: TaskList;
+}
+
+const CHARCOAL = '#222624';
+const WHITE = '#FFFFFF';
+
+const TODAY: Nav = { tab: 'today', stack: [], list: 'inbox' };
 
 export function mountBench(options: BenchOptions): { destroy(): void } {
   const { store, container } = options;
   const now = options.now ?? (() => new Date());
-  const confirm = options.confirm ?? ((q: string) => window.confirm(q));
+  const confirm = options.confirm ?? ((question: string) => window.confirm(question));
 
-  let screen: Screen = { name: 'today' };
-  let shownScreen: Screen | undefined;
-  let draft = '';
-  let receipt: string | undefined;
-  let wakeLock: { release(): Promise<void> } | undefined;
+  const read = () => store.document().domains as BenchDomains;
+  const commit = (next: BenchDomains) => {
+    if (next !== read()) store.updateDomains(() => next);
+  };
 
-  // ---------------------------------------------------------------- state
+  // ---------------------------------------------------------------- boot
 
-  const tasks = (): readonly Task[] => store.document().domains.tasks;
-  const today = () => loggingDay(now());
-  const find = (id: string) => tasks().find((t) => t.id === id);
-
-  function focus(): Focus | undefined {
-    const held = store.document().domains['focus'] as Focus | undefined;
-    if (held === undefined) return undefined;
-    const task = find(held.taskId);
-    return task === undefined || task.doneAt !== undefined ? undefined : held;
-  }
-
-  /** One write: the next task list, and the focus, kept, replaced or cleared. */
-  function write(next: readonly Task[], nextFocus: Focus | undefined | 'keep' = 'keep'): void {
-    store.updateDomains((domains) => {
-      const { focus: held, ...rest } = domains;
-      const kept = nextFocus === 'keep' ? held : nextFocus;
-      return kept === undefined ? { ...rest, tasks: next } : { ...rest, tasks: next, focus: kept };
-    });
-  }
-
-  /** A day gone by: whatever was planned for it and not done goes back to the inbox. */
-  function returnPastToInbox(): void {
-    const day = today();
-    const past = tasks().filter(
-      (t) => t.doneAt === undefined && t.when.kind !== 'none' && t.when.date < day,
-    );
-    if (past.length === 0) return;
-    write(past.reduce((list, t) => model.unschedule(list, t.id), tasks() as Task[]));
-  }
-
-  const topLevel = (list: readonly Task[]) =>
-    list.filter((t) => t.parentId === undefined && t.doneAt === undefined);
-
-  function steps(id: string) {
-    const all = model.stepsOf(tasks(), id);
-    const index = all.findIndex((s) => s.doneAt === undefined);
-    return { all, current: index === -1 ? undefined : all[index], number: index + 1 };
-  }
-
-  function isRunning(id: string): boolean {
-    return model.running(tasks())?.id === id;
-  }
-
-  function minutesLeft(held: Focus): number {
-    const task = find(held.taskId);
-    if (!task) return 0;
-    return held.minutes - (model.minutesWorked(task, now()) - held.baseWorked);
-  }
-
-  // -------------------------------------------------------------- actions
-
-  function startFocus(id: string): void {
-    const held = focus();
-    if (held?.taskId === id) {
-      if (!isRunning(id)) write(model.startWork(tasks(), id, now()));
-      return go({ name: 'focus' });
-    }
-    const task = find(id);
-    if (!task) return;
-    const baseWorked = model.minutesWorked(task, now());
-    write(model.startWork(tasks(), id, now()), {
-      taskId: id,
-      minutes: task.estimateMinutes ?? DEFAULT_MINUTES,
-      baseWorked,
-    });
-    go({ name: 'focus' });
-  }
-
-  function pauseOrResume(): void {
-    const held = focus();
-    if (!held) return;
-    write(
-      isRunning(held.taskId)
-        ? model.stopWork(tasks(), held.taskId, now())
-        : model.startWork(tasks(), held.taskId, now()),
-    );
-  }
-
-  function moreTime(): void {
-    const held = focus();
-    if (!held) return;
-    write(tasks(), { ...held, minutes: held.minutes + 10 });
-  }
-
-  function stopFocus(): void {
-    const held = focus();
-    if (held) write(model.stopWork(tasks(), held.taskId, now()), undefined);
-    go({ name: 'today' });
-  }
-
-  function toggleStep(step: Task): void {
-    write(
-      step.doneAt === undefined
-        ? model.complete(tasks(), step.id, now())
-        : model.reopen(tasks(), step.id),
-    );
-  }
-
-  function finishTask(id: string): void {
-    const held = focus();
-    write(model.complete(tasks(), id, now()), held?.taskId === id ? undefined : 'keep');
-  }
-
-  function saveCapture(back: Screen): void {
-    const title = draft.trim();
-    if (title === '') return;
-    write(model.capture(tasks(), title, now()));
-    draft = '';
-    go(back);
-    receipt = `Saved to Tasks: ${title}`;
-    render();
-  }
-
-  function fillExample(): void {
-    let list = tasks() as Task[];
-    let tick = now().getTime();
-    const at = () => new Date(tick++);
-    const add = (title: string): string => {
-      list = model.capture(list, title, at());
-      return list[list.length - 1]!.id;
-    };
-    const day = today();
-    const email = add('Write the school email');
-    list = model.setEstimate(list, email, 25);
-    list = model.setNotes(list, email, 'When is the permission slip due?');
-    list = model.schedule(list, email, { kind: 'anytime', date: day });
-    for (const step of ['Find the school address', 'Write the question', 'Read it once and send'])
-      list = model.addStep(list, email, step, at());
-    const dentist = add('Call the dentist');
-    list = model.setEstimate(list, dentist, 10);
-    list = model.schedule(list, dentist, {
-      kind: 'timed',
-      date: day,
-      time: '10:30',
-      durationMinutes: 10,
-    });
-    const walk = add('Walk to the park');
-    list = model.schedule(list, walk, {
-      kind: 'timed',
-      date: day,
-      time: '11:00',
-      durationMinutes: 20,
-    });
-    const permit = add('Renew the parking permit');
-    list = model.schedule(list, permit, { kind: 'anytime', date: day });
-    add('Order printer ink');
-    write(list);
-    go({ name: 'today' });
-  }
-
-  function clearEverything(): void {
-    if (!confirm('Delete every task in this prototype? This cannot be undone.')) return;
-    write([], undefined);
-    go({ name: 'today' });
-  }
-
-  // ----------------------------------------------------------- navigation
-
-  function go(next: Screen): void {
-    screen = next;
-    receipt = undefined;
-    render();
-  }
-
-  const backLabel = (back: Screen): string =>
-    back.name === 'focus'
-      ? 'Focus'
-      : back.name === 'tasks'
-        ? 'Tasks'
-        : back.name === 'task'
-          ? 'Task'
-          : 'Today';
-
-  function topbar(left: HTMLElement, right?: HTMLElement): HTMLElement {
-    return h('div', { class: 'topbar' }, left, right ?? h('span'));
-  }
-
-  function backLink(back: Screen): HTMLElement {
-    return h(
-      'button',
-      { class: 'link', type: 'button', onclick: () => go(back) },
-      `← ${backLabel(back)}`,
-    );
-  }
-
-  function tabbar(current: Tab | undefined): HTMLElement {
-    const tab = (name: Tab, label: string) =>
-      h('button', {
-        type: 'button',
-        'aria-current': current === name ? 'page' : undefined,
-        onclick: () => go({ name }),
-        text: label,
-      });
-    return h(
-      'nav',
-      { class: 'tabbar', 'aria-label': 'Main' },
-      tab('today', 'Today'),
-      tab('tasks', 'Tasks'),
-      tab('routines', 'Routines'),
-      tab('library', 'Library'),
-    );
-  }
-
-  function captureDock(back: Screen): HTMLElement {
-    return h(
-      'div',
-      { class: 'capture-dock' },
-      h(
-        'button',
-        { class: 'primary', type: 'button', onclick: () => go({ name: 'capture', back }) },
-        h('span', { text: '+  Capture a task' }),
-        h('span', { 'aria-hidden': 'true', text: '→' }),
-      ),
-    );
-  }
-
-  const live = () =>
-    h('p', { class: receipt ? 'receipt' : 'sr-only', role: 'status' }, receipt ?? '');
-
-  // --------------------------------------------------------------- screens
-
-  function viewToday(): HTMLElement {
-    const day = today();
-    const { timed, anytime } = model.forDate(topLevel(tasks()), day);
-    const held = focus();
-    const running = held ? find(held.taskId) : undefined;
-    const empty = topLevel(tasks()).length === 0;
-
-    const nowBlock = running
-      ? (() => {
-          const s = steps(running.id);
-          const left = minutesLeft(held!);
-          const paused = !isRunning(running.id);
-          return h(
-            'section',
-            { class: 'now', 'aria-labelledby': 'now-title' },
-            s.current ? bookmark('Step', two(s.number)) : null,
-            h('div', { class: 'kicker', text: paused ? 'Paused' : 'Now running' }),
-            h(
-              'button',
-              { class: 'now-open', type: 'button', onclick: () => go({ name: 'focus' }) },
-              h('h2', { class: 'headline', id: 'now-title', text: running.title }),
-              s.current ? h('div', { class: 'now-step', text: s.current.title }) : null,
-            ),
-            h(
-              'div',
-              { class: 'now-foot' },
-              h('span', {}, timeLeftText(left, held!.minutes)),
-              h(
-                'button',
-                { class: 'link', type: 'button', onclick: () => go({ name: 'focus' }) },
-                'Open focus →',
-              ),
-            ),
-            h('div', { 'aria-hidden': 'true' }, tally(left, held!.minutes)),
-          );
-        })()
-      : null;
-
-    const rows = (list: readonly Task[], time: boolean) =>
-      list.map((t) =>
-        h(
-          'button',
-          {
-            class: 'row',
-            type: 'button',
-            onclick: () => go({ name: 'task', id: t.id, back: { name: 'today' } }),
-          },
-          time && t.when.kind === 'timed'
-            ? h('span', { class: 'time', text: formatClockTime(t.when.time) })
-            : h('span', { class: 'dash', 'aria-hidden': 'true' }),
-          h('span', { class: 'grow', text: t.title }),
-        ),
-      );
-
-    const later = timed.filter((t) => t.id !== running?.id);
-    const loose = anytime.filter((t) => t.id !== running?.id);
-
-    return h(
-      'main',
-      { class: 'screen with-tabs' },
-      topbar(
-        h(
-          'div',
-          { class: 'brand' },
-          h('span', { class: 'brand-mark', 'aria-hidden': 'true' }),
-          'Adnotia',
-        ),
-        h(
-          'button',
-          { class: 'link', type: 'button', onclick: () => go({ name: 'about' }) },
-          'About',
-        ),
-      ),
-      h(
-        'div',
-        { class: 'title-row' },
-        h('h1', { class: 'headline', tabindex: '-1', text: 'Today' }),
-        h('div', { class: 'date', text: formatLongDate(day) }),
-      ),
-      nowBlock,
-      live(),
-      later.length > 0
-        ? h('section', { class: 'section' }, h('h2', { text: 'Later today' }), rows(later, true))
-        : null,
-      loose.length > 0
-        ? h('section', { class: 'section' }, h('h2', { text: 'Anytime' }), rows(loose, false))
-        : null,
-      !running && later.length === 0 && loose.length === 0
-        ? h(
-            'div',
-            { class: 'section' },
-            h('p', {
-              class: 'quiet',
-              text: empty
-                ? 'Nothing here yet. Capture whatever is on your mind; it lands in Tasks.'
-                : 'Nothing planned for today. Anything in Tasks can be moved here.',
-            }),
-            empty
-              ? h(
-                  'button',
-                  { class: 'secondary', type: 'button', onclick: fillExample },
-                  'Fill with an example day',
-                )
-              : null,
-          )
-        : null,
-      captureDock({ name: 'today' }),
-      tabbar('today'),
-    );
-  }
-
-  function viewTasks(): HTMLElement {
-    const day = today();
-    const open = topLevel(tasks());
-    const inbox = open.filter((t) => t.when.kind === 'none');
-    const forToday = open.filter((t) => t.when.kind !== 'none' && t.when.date === day);
-    const later = open
-      .filter((t) => t.when.kind !== 'none' && t.when.date > day)
-      .sort((a, b) => dateOf(a.when).localeCompare(dateOf(b.when)));
-
-    const rows = (list: readonly Task[]) =>
-      list.map((t) =>
-        h(
-          'button',
-          {
-            class: 'row',
-            type: 'button',
-            onclick: () => go({ name: 'task', id: t.id, back: { name: 'tasks' } }),
-          },
-          h('span', { class: 'dash', 'aria-hidden': 'true' }),
-          h('span', { class: 'grow', text: t.title }),
-          h('span', { class: 'meta', text: whenText(t.when, day) }),
-        ),
-      );
-    const group = (title: string, list: readonly Task[]) =>
-      list.length > 0
-        ? h('section', { class: 'section' }, h('h2', { text: title }), rows(list))
-        : null;
-
-    return h(
-      'main',
-      { class: 'screen with-tabs' },
-      topbar(
-        h(
-          'div',
-          { class: 'brand' },
-          h('span', { class: 'brand-mark', 'aria-hidden': 'true' }),
-          'Adnotia',
-        ),
-        h(
-          'button',
-          { class: 'link', type: 'button', onclick: () => go({ name: 'about' }) },
-          'About',
-        ),
-      ),
-      h(
-        'div',
-        { class: 'title-row' },
-        h('h1', { class: 'headline', tabindex: '-1', text: 'Tasks' }),
-      ),
-      live(),
-      open.length === 0
-        ? h('p', {
-            class: 'quiet',
-            text: 'Nothing here. Whatever you capture lands here first, with no date.',
-          })
-        : null,
-      group('Inbox', inbox),
-      group('Today', forToday),
-      group('Later', later),
-      captureDock({ name: 'tasks' }),
-      tabbar('tasks'),
-    );
-  }
-
-  function viewTask(id: string, back: Screen): HTMLElement {
-    const task = find(id);
-    if (!task) {
-      screen = back;
-      return view();
-    }
-    const day = today();
-    const s = steps(id);
-    const held = focus();
-    const estimate = task.estimateMinutes;
-
-    const setEstimate = (minutes: number | undefined) =>
-      write(model.setEstimate(tasks(), id, minutes));
-    const setWhen = (when: When) => write(model.schedule(tasks(), id, when));
-
-    const nextHalfHour = (): string => {
-      const d = now();
-      const minutes = d.getHours() * 60 + d.getMinutes();
-      const rounded = Math.min(23 * 60 + 30, Math.ceil((minutes + 1) / 30) * 30);
-      return `${two(Math.floor(rounded / 60))}:${two(rounded % 60)}`;
-    };
-    const seg = (label: string, pressed: boolean, onclick: () => void) =>
-      h('button', { type: 'button', 'aria-pressed': String(pressed), onclick, text: label });
-
-    const stepItems = s.all.map((step, i) =>
-      h(
-        'li',
-        { class: step.doneAt === undefined ? 'step' : 'step done' },
-        h('span', { class: 'num', text: two(i + 1) }),
-        h('span', { class: 'title grow', text: step.title }),
-        h(
-          'button',
-          {
-            class: 'tick',
-            type: 'button',
-            'aria-pressed': String(step.doneAt !== undefined),
-            'aria-label': `Done: ${step.title}`,
-            onclick: () => toggleStep(step),
-          },
-          h('span', { 'aria-hidden': 'true', text: step.doneAt === undefined ? '' : '✓' }),
-        ),
-      ),
-    );
-
-    const addStep = h(
-      'form',
-      {
-        class: 'add-step',
-        onsubmit: (event: Event) => {
-          event.preventDefault();
-          const input = (event.currentTarget as HTMLFormElement).elements.namedItem(
-            'step',
-          ) as HTMLInputElement;
-          const title = input.value.trim();
-          if (title === '') return;
-          write(model.addStep(tasks(), id, title, now()));
-          requestAnimationFrame(() =>
-            (container.querySelector('input[name="step"]') as HTMLInputElement | null)?.focus(),
-          );
-        },
-      },
-      h('label', { class: 'sr-only', for: 'step-input', text: 'Add a step' }),
-      h('input', {
-        class: 'text',
-        id: 'step-input',
-        name: 'step',
-        placeholder: 'Add a small step',
-        autocomplete: 'off',
-        enterkeyhint: 'done',
-      }),
-      h('button', { class: 'secondary', type: 'submit', style: 'width:auto' }, 'Add'),
-    );
-
-    const isFocused = held?.taskId === id;
-    const done = task.doneAt !== undefined;
-
-    return h(
-      'main',
-      { class: 'screen' },
-      topbar(backLink(back), h('span', { class: 'kicker', text: done ? 'Done' : 'Task' })),
-      h('h1', { class: 'sr-only', tabindex: '-1', text: task.title }),
-      h('label', { class: 'sr-only', for: 'task-title', text: 'Task name' }),
-      h(
-        'textarea',
-        {
-          class: 'task-title',
-          id: 'task-title',
-          rows: '1',
-          autocomplete: 'off',
-          enterkeyhint: 'done',
-          onchange: (event: Event) => {
-            const title = (event.target as HTMLTextAreaElement).value.replace(/\s+/g, ' ').trim();
-            if (title !== '' && title !== task.title) write(model.rename(tasks(), id, title));
-          },
-          oninput: (event: Event) => fitTitle(event.target as HTMLTextAreaElement),
-          onkeydown: (event: KeyboardEvent) => {
-            // A title is one line however long; Enter finishes it.
-            if (event.key === 'Enter') {
-              event.preventDefault();
-              (event.target as HTMLTextAreaElement).blur();
-            }
-          },
-        },
-        task.title,
-      ),
-      h(
-        'div',
-        { class: 'section' },
-        h(
-          'div',
-          { class: 'field-row' },
-          h('span', { class: 'kicker', id: 'estimate-label', text: 'Estimate' }),
-          h(
-            'div',
-            { class: 'stepper', role: 'group', 'aria-labelledby': 'estimate-label' },
-            h('button', {
-              type: 'button',
-              'aria-label': 'Five minutes less',
-              text: '−',
-              onclick: () =>
-                setEstimate(estimate === undefined || estimate <= 5 ? undefined : estimate - 5),
-            }),
-            h('output', {
-              'aria-live': 'polite',
-              text: estimate === undefined ? 'None' : `${estimate} min`,
-            }),
-            h('button', {
-              type: 'button',
-              'aria-label': 'Five minutes more',
-              text: '+',
-              onclick: () => setEstimate((estimate ?? 0) + 5),
-            }),
-          ),
-        ),
-        h(
-          'div',
-          { class: 'field-row' },
-          h('span', { class: 'kicker', id: 'when-label', text: 'When' }),
-          h(
-            'div',
-            { class: 'seg', role: 'group', 'aria-labelledby': 'when-label' },
-            seg('No date', task.when.kind === 'none', () => write(model.unschedule(tasks(), id))),
-            seg('Today', task.when.kind === 'anytime' && task.when.date === day, () =>
-              setWhen({ kind: 'anytime', date: day }),
-            ),
-            seg('At a time', task.when.kind === 'timed', () =>
-              setWhen({
-                kind: 'timed',
-                date: day,
-                time: task.when.kind === 'timed' ? task.when.time : nextHalfHour(),
-                durationMinutes: estimate ?? 15,
-              }),
-            ),
-            task.when.kind === 'timed'
-              ? h('input', {
-                  class: 'time',
-                  type: 'time',
-                  'aria-label': 'Time',
-                  value: task.when.time,
-                  onchange: (event: Event) => {
-                    const time = (event.target as HTMLInputElement).value;
-                    if (task.when.kind === 'timed' && /^\d\d:\d\d$/.test(time))
-                      setWhen({ ...task.when, time });
-                  },
-                })
-              : null,
-          ),
-        ),
-        h(
-          'div',
-          { class: 'field-row' },
-          h('label', { class: 'kicker', for: 'task-note', text: 'Note' }),
-          h('input', {
-            class: 'text',
-            id: 'task-note',
-            style: 'flex:1;min-width:0',
-            value: task.notes ?? '',
-            placeholder: 'Anything to remember',
-            autocomplete: 'off',
-            onchange: (event: Event) => {
-              const note = (event.target as HTMLInputElement).value.trim();
-              write(model.setNotes(tasks(), id, note === '' ? undefined : note));
-            },
-          }),
-        ),
-      ),
-      h(
-        'section',
-        { class: 'section' },
-        h('h2', { text: 'Small steps' }),
-        s.all.length > 0 ? h('ol', { class: 'steps' }, stepItems) : null,
-        addStep,
-      ),
-      h(
-        'div',
-        { class: 'stack section' },
-        done
-          ? null
-          : h(
-              'button',
-              { class: 'primary', type: 'button', onclick: () => startFocus(id) },
-              h('span', { text: isFocused ? 'Back to focus' : 'Start focus' }),
-              h('span', { text: isFocused ? '' : `${estimate ?? DEFAULT_MINUTES} min` }),
-            ),
-        h(
-          'button',
-          {
-            class: 'secondary',
-            type: 'button',
-            onclick: () => (done ? write(model.reopen(tasks(), id)) : (finishTask(id), go(back))),
-          },
-          done ? 'Not done after all' : 'Mark done',
-        ),
-        h(
-          'button',
-          {
-            class: 'link',
-            type: 'button',
-            onclick: () => {
-              if (!confirm(`Delete "${task.title}" and its steps?`)) return;
-              const held = focus();
-              write(model.remove(tasks(), id), held?.taskId === id ? undefined : 'keep');
-              go(back);
-            },
-          },
-          'Delete this task',
-        ),
-      ),
-    );
-  }
-
-  function viewFocus(): HTMLElement {
-    const held = focus();
-    const task = held ? find(held.taskId) : undefined;
-    if (!held || !task) {
-      screen = { name: 'today' };
-      return view();
-    }
-    const s = steps(task.id);
-    const left = minutesLeft(held);
-    const paused = !isRunning(task.id);
-    const over = left <= 0;
-
-    return h(
-      'main',
-      { class: 'screen dark' },
-      topbar(backLink({ name: 'today' }), h('span', { class: 'kicker', text: 'Focus' })),
-      h(
-        'div',
-        { class: 'focus-head' },
-        h('div', { class: 'kicker', text: 'Working on' }),
-        h(
-          'button',
-          {
-            class: 'link task-name',
-            type: 'button',
-            style: 'padding:0',
-            onclick: () => go({ name: 'task', id: task.id, back: { name: 'focus' } }),
-          },
-          task.title,
-        ),
-      ),
-      h(
-        'div',
-        { class: 'focus-body' },
-        s.current
-          ? h(
-              'div',
-              { class: 'focus-place' },
-              bookmark('Step', two(s.number)),
-              h('span', { class: 'of', text: `of ${s.all.length}` }),
-            )
-          : null,
-        h('h1', {
-          class: 'headline',
-          tabindex: '-1',
-          text: s.current ? s.current.title : task.title,
-        }),
-        task.notes
-          ? h(
-              'div',
-              { class: 'note' },
-              h('div', { class: 'kicker', text: 'Your note' }),
-              `“${task.notes}”`,
-            )
-          : null,
-        s.current
-          ? h(
-              'div',
-              { class: 'section' },
-              h(
-                'button',
-                { class: 'secondary', type: 'button', onclick: () => toggleStep(s.current!) },
-                h('span', { text: 'This step is done' }),
-                h('span', { 'aria-hidden': 'true', text: '✓' }),
-              ),
-            )
-          : s.all.length > 0
-            ? h('p', { class: 'now-step', text: 'Every step is ticked.' })
-            : null,
-        live(),
-      ),
-      h(
-        'div',
-        { class: 'timer' },
-        h(
-          'div',
-          { class: 'timer-line' },
-          h('div', { class: 'kicker', text: paused ? 'Paused' : 'Timer running' }),
-          h(
-            'button',
-            { class: 'link', type: 'button', onclick: pauseOrResume },
-            paused ? 'Resume' : 'Pause',
-          ),
-        ),
-        over
-          ? h('p', { class: 'left', text: `Your ${held.minutes} minutes are up.` })
-          : h('p', { class: 'left' }, timeLeftText(left, held.minutes)),
-        h('div', { 'aria-hidden': 'true' }, tally(left, held.minutes)),
-      ),
-      h(
-        'div',
-        { class: 'stack', style: 'margin-top:16px' },
-        h(
-          'button',
-          {
-            class: 'light',
-            type: 'button',
-            onclick: () => go({ name: 'capture', back: { name: 'focus' } }),
-          },
-          h('span', { text: '+  Capture a thought' }),
-          h('span', { 'aria-hidden': 'true', text: '→' }),
-        ),
-        over
-          ? h(
-              'button',
-              { class: 'secondary', type: 'button', onclick: moreTime },
-              'Ten more minutes',
-            )
-          : null,
-        h(
-          'div',
-          { style: 'display:flex;gap:10px' },
-          h('button', { class: 'secondary', type: 'button', onclick: stopFocus }, 'Stop here'),
-          h(
-            'button',
-            {
-              class: 'secondary',
-              type: 'button',
-              onclick: () => {
-                finishTask(task.id);
-                go({ name: 'today' });
-              },
-            },
-            'Task done',
-          ),
-        ),
-      ),
-    );
-  }
-
-  function viewCapture(back: Screen): HTMLElement {
-    const fromFocus = back.name === 'focus';
-    const held = focus();
-    const placeTask = fromFocus && held ? find(held.taskId) : undefined;
-    const place = placeTask ? steps(placeTask.id) : undefined;
-
-    const form = h(
-      'form',
-      {
-        onsubmit: (event: Event) => {
-          event.preventDefault();
-          saveCapture(back);
-        },
-      },
-      h('label', { for: 'capture-input', text: 'Task name' }),
-      h('input', {
-        id: 'capture-input',
-        value: draft,
-        placeholder: 'e.g. Order printer ink',
-        autocomplete: 'off',
-        enterkeyhint: 'done',
-        oninput: (event: Event) => {
-          draft = (event.target as HTMLInputElement).value;
-        },
-      }),
-      h('p', { class: 'hint', text: 'Goes to Tasks, without a date.' }),
-      h(
-        'button',
-        { class: 'primary', type: 'submit' },
-        h('span', { text: fromFocus ? 'Save and return to focus' : 'Save' }),
-        h('span', { 'aria-hidden': 'true', text: '↵' }),
-      ),
-    );
-
-    return h(
-      'main',
-      { class: 'screen stone' },
-      topbar(backLink(back), h('span', { class: 'kicker', text: 'Quick entry' })),
-      h('h1', { class: 'headline', style: 'font-size:52px;margin-top:18px', text: 'Capture' }),
-      h('div', { class: 'slip' }, form),
-      placeTask
-        ? h(
-            'div',
-            { class: 'place' },
-            bookmark('', place?.current ? two(place.number) : '·'),
-            h(
-              'div',
-              {},
-              h('div', { class: 'kicker', text: 'Your place' }),
-              h('div', { text: place?.current?.title ?? placeTask.title }),
-            ),
-          )
-        : null,
-    );
-  }
-
-  function viewPlaceholder(name: 'routines' | 'library'): HTMLElement {
-    const title = name === 'routines' ? 'Routines' : 'Library';
-    return h(
-      'main',
-      { class: 'screen with-tabs' },
-      topbar(
-        h(
-          'div',
-          { class: 'brand' },
-          h('span', { class: 'brand-mark', 'aria-hidden': 'true' }),
-          'Adnotia',
-        ),
-        h(
-          'button',
-          { class: 'link', type: 'button', onclick: () => go({ name: 'about' }) },
-          'About',
-        ),
-      ),
-      h('div', { class: 'title-row' }, h('h1', { class: 'headline', tabindex: '-1', text: title })),
-      h('p', {
-        class: 'quiet',
-        text: 'Not in this prototype. It tests four screens: Today, capture, a task opened, and focus.',
-      }),
-      tabbar(name),
-    );
-  }
-
-  function viewAbout(): HTMLElement {
-    return h(
-      'main',
-      { class: 'screen with-tabs prose' },
-      topbar(backLink({ name: 'today' })),
-      h('h1', {
-        class: 'headline',
-        tabindex: '-1',
-        style: 'font-size:40px;margin:16px 0',
-        text: 'About this prototype',
-      }),
-      h('p', {
-        text:
-          'This is a test of how the phone app could feel, built to help decide how the real ' +
-          'one is made. It has four screens: Today, capture, a task, and focus.',
-      }),
-      h('p', {
-        text:
-          'What you enter stays on this phone, in this page only. It is kept apart from ' +
-          'anything the older version of Adnotia stored, and it is not encrypted.',
-      }),
-      h('p', {
-        text:
-          'To use it like an app, open the Share menu and choose Add to Home Screen. It then ' +
-          'opens full screen, without the browser around it.',
-      }),
-      h('h2', { text: 'Start again' }),
-      h(
-        'div',
-        { class: 'stack' },
-        topLevel(tasks()).length === 0
-          ? h(
-              'button',
-              { class: 'secondary', type: 'button', onclick: fillExample },
-              'Fill with an example day',
-            )
-          : null,
-        h(
-          'button',
-          { class: 'secondary', type: 'button', onclick: clearEverything },
-          'Delete everything',
-        ),
-      ),
-      tabbar(undefined),
-    );
-  }
-
-  function view(): HTMLElement {
-    switch (screen.name) {
-      case 'today':
-        return viewToday();
-      case 'tasks':
-        return viewTasks();
-      case 'task':
-        return viewTask(screen.id, screen.back);
-      case 'focus':
-        return viewFocus();
-      case 'capture':
-        return viewCapture(screen.back);
-      case 'about':
-        return viewAbout();
-      case 'routines':
-      case 'library':
-        return viewPlaceholder(screen.name);
+  let nav: Nav = { ...TODAY };
+  let pendingScroll: Record<string, number> | undefined;
+  {
+    const t = now();
+    const stored = store.document().domains;
+    // Nothing stored at all: the board's day, relative to now (owner question 2).
+    const firstOpen = stored['bench'] === undefined && stored.tasks.length === 0;
+    let state = migrateBench(stored, t);
+    if (firstOpen) state = loadScenario(state, 'example', t);
+    const woken = wake(state, t, { boot: true });
+    store.updateDomains(() => woken.state);
+    const ui = woken.state.bench.ui;
+    if (!firstOpen && woken.restore === 'exact' && ui) {
+      nav = { tab: ui.tab, stack: [...ui.stack], list: ui.list };
+      pendingScroll = ui.scroll;
     }
   }
 
-  // -------------------------------------------------------------- render
+  // ---------------------------------------------------------------- layers
+
+  container.classList.add('app');
+  container.replaceChildren();
+  injectSprite(container);
+  const layer = {
+    screen: h('div', { class: 'screen' }),
+    fade: h('div', { class: 'fade', 'aria-hidden': 'true', hidden: true }),
+    dock: h('div', { class: 'dock', 'data-geo': 'dock' }),
+    drawer: h('div', { class: 'drawer', 'data-geo': 'drawer' }),
+    tabs: h('div', { class: 'tabs' }),
+    live: h('div', { class: 'live', 'aria-live': 'polite' }),
+  };
+  container.append(hints());
+
+  const keys = new Map<HTMLElement, string>();
+  const patches = new Map<HTMLElement, Built['patch']>();
+  /** Rows ticked since the list was opened: they stay in place as discs. */
+  const ticked = new Set<string>();
+  let shown: { position: DrawerPosition; tab: Tab; page: string | undefined } | undefined;
+  let order = '';
+  let barRunning = false;
+  let destroyed = false;
+
+  /** A screen shorter than 740 pt, where the handle is one line (SPEC 3). */
+  function compact(): boolean {
+    const height = container.getBoundingClientRect().height;
+    return height > 0 && height < 740;
+  }
+
+  function motion(state: BenchDomains): 'full' | 'reduced' {
+    if (state.bench.settings.motion === 'reduced') return 'reduced';
+    const query =
+      typeof window.matchMedia === 'function'
+        ? window.matchMedia('(prefers-reduced-motion: reduce)')
+        : undefined;
+    return query?.matches ? 'reduced' : 'full';
+  }
+
+  /** Rebuilds a layer only when its key moved, keeping focus and scroll. */
+  function paint(target: HTMLElement, key: string, build: () => Built): void {
+    if (keys.get(target) === key) return;
+    const active = document.activeElement;
+    const focusId = active instanceof HTMLElement && target.contains(active) ? active.id : '';
+    const scroll = scrollOf(target);
+    const built = build();
+    target.replaceChildren(...built.nodes);
+    keys.set(target, key);
+    patches.set(target, built.patch);
+    for (const node of target.querySelectorAll<HTMLElement>('[data-scroll-key]')) {
+      const top = scroll[node.dataset['scrollKey'] ?? ''];
+      if (top !== undefined) node.scrollTop = top;
+    }
+    if (focusId) {
+      const again = document.getElementById(focusId);
+      if (again && target.contains(again)) again.focus();
+    }
+  }
+
+  function scrollOf(root: ParentNode): Record<string, number> {
+    const out: Record<string, number> = {};
+    for (const node of root.querySelectorAll<HTMLElement>('[data-scroll-key]')) {
+      out[node.dataset['scrollKey'] ?? ''] = node.scrollTop;
+    }
+    return out;
+  }
+
+  function viewOf(): View {
+    const top = nav.stack[nav.stack.length - 1];
+    if (top) return { kind: 'page', page: top };
+    return nav.tab === 'today' ? { kind: 'today' } : { kind: 'place' };
+  }
+
+  /** A page whose task has gone (deleted, or from an old restore) is not shown. */
+  function tidyNav(state: BenchDomains): void {
+    const ids = new Set(state.tasks.map((task) => task.id));
+    const kept = nav.stack.filter((page) => page.kind !== 'task' || ids.has(page.id));
+    if (kept.length !== nav.stack.length) nav = { ...nav, stack: kept };
+  }
+
+  // ---------------------------------------------------------------- render
 
   function render(): void {
-    const arrived = shownScreen !== screen;
-    const scroll = arrived ? 0 : window.scrollY;
-    const active = document.activeElement?.id;
-    container.replaceChildren(view());
-    shownScreen = screen;
-    window.scrollTo(0, scroll);
-    const title = container.querySelector<HTMLTextAreaElement>('#task-title');
-    if (title) fitTitle(title);
+    if (destroyed) return;
+    const state = read();
+    const t = now();
+    tidyNav(state);
+    const view = viewOf();
+    const current = present(state, t);
+    const byMinute = motion(state) === 'reduced';
+    const places = state.bench.settings.places;
 
-    if (arrived) {
-      const input = container.querySelector<HTMLInputElement>('#capture-input');
-      if (input) input.focus();
-      else container.querySelector<HTMLElement>('h1')?.focus({ preventScroll: true });
-    } else if (active) {
-      // Ids here are the prototype's own, so they need no escaping.
-      container.querySelector<HTMLElement>(`[id="${active}"]`)?.focus({ preventScroll: true });
+    // The drawer. Its open position is built next (plan section 19); until
+    // then it rests where it would fold to. Below 740 pt the half drawer would
+    // bring timed rows under capture's lane, so it rests folded there, as it
+    // does at large text sizes (SPEC 9.8); a proposal, since SPEC draws the
+    // half drawer at 844 only.
+    const rule = drawerPositions(state, t, { view, largeText: compact() });
+    const position: DrawerPosition = rule.position === 'open' ? 'folded' : rule.position;
+    const ground = view.kind === 'today' ? 'present' : 'place';
+
+    // Moving between lists clears the rows ticked in them.
+    const page = view.kind === 'page' ? JSON.stringify(view.page) : undefined;
+    if (shown && (shown.position !== position || shown.tab !== nav.tab || shown.page !== page)) {
+      ticked.clear();
     }
-    holdScreenAwake(screen.name === 'focus' && !!focus() && isRunning(focus()!.taskId));
-  }
+    shown = { position, tab: nav.tab, page };
 
-  function holdScreenAwake(on: boolean): void {
-    const nav = navigator as Navigator & {
-      wakeLock?: { request(type: 'screen'): Promise<{ release(): Promise<void> }> };
+    container.dataset['drawer'] = position;
+    container.dataset['ground'] = ground;
+    container.dataset['places'] = places;
+    container.dataset['motion'] = byMinute ? 'reduced' : 'full';
+    themeColor(ground === 'place' && places === 'white' ? WHITE : CHARCOAL);
+
+    // The present, as it is now.
+    const presentNow = presentView(state, t);
+    const live = presentNow && presentLive(presentNow, t, byMinute);
+
+    // The page.
+    const today = view.kind === 'today' ? todayView(state, t) : undefined;
+    layer.screen.className = today ? 'screen today' : 'screen';
+    if (today) layer.screen.dataset['lamp'] = lampOf(today);
+    else delete layer.screen.dataset['lamp'];
+    paint(layer.screen, screenKey(view, today), () => screen(view, today, live));
+
+    // The dock line.
+    const mode = capsuleMode(view, current, position, false);
+    const capsule =
+      today?.kind !== 'lit' && mode !== 'hidden' && presentNow && live
+        ? {
+            view: presentNow,
+            live,
+            look: capsuleLook(places, position),
+            mode,
+            onOpen: openFocus,
+          }
+        : undefined;
+    const props: DockProps = {
+      ...(today?.kind === 'lit'
+        ? {
+            present: {
+              taskId: today.present.task.id,
+              paused: today.present.kind === 'paused',
+              step: today.present.step,
+              isLast: today.present.steps.isLast,
+              onStepDone: () => run(act.stepDone, today.present.task.id),
+              onPause: () => run(act.pause, today.present.task.id),
+              onResume: () => run(act.start, today.present.task.id),
+            },
+          }
+        : {}),
+      ...(capsule ? { capsule } : {}),
+      captureOnLight:
+        (ground === 'present' && position === 'half') || (ground === 'place' && places === 'white'),
+      draftKept: state.bench.drafts.capture !== undefined && state.bench.drafts.capture.text !== '',
+      onCapture: openCapture,
     };
-    if (on && !wakeLock && nav.wakeLock) {
-      nav.wakeLock
-        .request('screen')
-        .then((lock) => {
-          wakeLock = lock;
-        })
-        .catch(() => undefined);
-    } else if (!on && wakeLock) {
-      void wakeLock.release().catch(() => undefined);
-      wakeLock = undefined;
+    paint(layer.dock, dockKey(props), () => dock(props));
+    layer.fade.hidden = !(ground === 'place' && capsule !== undefined);
+
+    // The drawer at rest.
+    if (position === 'lip') layer.drawer.setAttribute('inert', '');
+    else layer.drawer.removeAttribute('inert');
+    paint(layer.drawer, drawerKey(state, t, position, today), () =>
+      drawer(state, t, position, today),
+    );
+
+    // The tabs.
+    paint(layer.tabs, nav.tab, () => ({ nodes: tabs(nav.tab, chooseTab) }));
+
+    // Reading order: top to bottom, then the dock line, then the drawer, except
+    // on the half drawer, whose list is read before capture (SPEC 11, list 7).
+    const wanted = position === 'half' ? 'half' : 'rest';
+    if (order !== wanted) {
+      order = wanted;
+      const sequence =
+        wanted === 'half'
+          ? [layer.screen, layer.fade, layer.drawer, layer.dock, layer.tabs, layer.live]
+          : [layer.screen, layer.fade, layer.dock, layer.drawer, layer.tabs, layer.live];
+      container.append(...sequence);
     }
+
+    barRunning = current.kind === 'running' && (today?.kind === 'lit' || capsule !== undefined);
+    patchAll(live);
+    layout(position);
+    if (pendingScroll) {
+      const restore = pendingScroll;
+      pendingScroll = undefined;
+      for (const node of container.querySelectorAll<HTMLElement>('[data-scroll-key]')) {
+        const top = restore[node.dataset['scrollKey'] ?? ''];
+        if (top !== undefined) node.scrollTop = top;
+      }
+    }
+    ticker?.refresh();
   }
 
-  returnPastToInbox();
+  function patchAll(live: PresentLive | undefined): void {
+    for (const patch of patches.values()) patch?.(live);
+  }
+
+  /** The ticker's second: the bar, the minutes and the labels, in place. */
+  function patchLive(): void {
+    const state = read();
+    const t = now();
+    const presentNow = presentView(state, t);
+    patchAll(presentNow && presentLive(presentNow, t, motion(state) === 'reduced'));
+  }
+
+  // ---------------------------------------------------------------- the parts
+
+  function screenKey(view: View, today: ReturnType<typeof todayView> | undefined): string {
+    if (today) {
+      return JSON.stringify([
+        'today',
+        today.kind,
+        today.date,
+        today.kind === 'lit'
+          ? presentKey(today.present)
+          : today.kind === 'idle'
+            ? today.idle
+            : today.heading,
+      ]);
+    }
+    if (view.kind === 'page' && view.page.kind === 'task') {
+      const task = read().tasks.find((item) => item.id === (view.page as { id: string }).id);
+      return JSON.stringify(['page', view.page, nav.tab, task?.title]);
+    }
+    return JSON.stringify([view.kind, view.kind === 'page' ? view.page : nav.tab]);
+  }
+
+  function screen(
+    view: View,
+    today: ReturnType<typeof todayView> | undefined,
+    live: PresentLive | undefined,
+  ): Built {
+    if (today) {
+      return todayScreen(today, live, {
+        onMe: openMe,
+        onFocus: openFocus,
+        onSetAside: (id) => run(act.setAside, id),
+        onOpenTask: (id) => push({ kind: 'task', id }),
+        onStart: (id) => run(act.start, id),
+        onOpenInbox: () => go({ tab: 'tasks', stack: [], list: 'inbox' }),
+      });
+    }
+    const actions = {
+      onMe: openMe,
+      onBack: back,
+      onPush: push,
+      onScenario: scenario,
+      onDeleteAll: deleteAll,
+    };
+    if (view.kind === 'page') {
+      switch (view.page.kind) {
+        case 'me':
+          return meScreen(actions);
+        case 'crisis':
+          return crisisScreen(actions);
+        case 'about':
+          return aboutScreen(actions);
+        case 'task': {
+          const id = view.page.id;
+          const task = read().tasks.find((item) => item.id === id);
+          return taskScreen(task?.title ?? '', BACK_TO[nav.tab], actions);
+        }
+        default:
+          return placeScreen(nav.tab === 'today' ? 'tasks' : nav.tab, actions);
+      }
+    }
+    return placeScreen(nav.tab === 'today' ? 'tasks' : nav.tab, actions);
+  }
+
+  function dockKey(props: DockProps): string {
+    return JSON.stringify([
+      props.present
+        ? [
+            'present',
+            props.present.taskId,
+            props.present.paused,
+            props.present.step,
+            props.present.isLast,
+          ]
+        : props.capsule
+          ? [
+              'capsule',
+              presentKey(props.capsule.view),
+              props.capsule.look,
+              props.capsule.mode,
+              capsuleShape(props.capsule.view, props.capsule.live),
+            ]
+          : ['none'],
+      props.captureOnLight,
+      props.draftKept,
+    ]);
+  }
+
+  /** What changes the capsule's make-up rather than its live figures. */
+  function capsuleShape(view: PresentView, live: PresentLive): unknown[] {
+    return [view.kind === 'paused' && live.facts.usedUp];
+  }
+
+  function drawerKey(
+    state: BenchDomains,
+    t: Date,
+    position: DrawerPosition,
+    today: ReturnType<typeof todayView> | undefined,
+  ): string {
+    if (position === 'lip') return 'lip';
+    if (position === 'half') {
+      const list = dayList(state, t, { keep: ticked, ...exclusion(today) });
+      return JSON.stringify(['half', list]);
+    }
+    return JSON.stringify(['folded', nextLine(state, t)]);
+  }
+
+  function exclusion(today: ReturnType<typeof todayView> | undefined): { exclude?: string } {
+    const id = today ? idleLitId(today) : undefined;
+    return id === undefined ? {} : { exclude: id };
+  }
+
+  function drawer(
+    state: BenchDomains,
+    t: Date,
+    position: DrawerPosition,
+    today: ReturnType<typeof todayView> | undefined,
+  ): Built {
+    if (position === 'lip') return { nodes: [] };
+    if (position === 'half') {
+      return {
+        nodes: halfDrawer({
+          list: dayList(state, t, { keep: ticked, ...exclusion(today) }),
+          onOpen: openDrawer,
+          onRow: (id) => push({ kind: 'task', id }),
+          onTick: (id) => {
+            ticked.add(id);
+            run(act.tick, id);
+          },
+          onUntick: (id) => run(act.untick, id),
+        }),
+      };
+    }
+    const next = nextLine(state, t);
+    if (next.kind === 'lip') return { nodes: [] };
+    const lines = handleLines(next);
+    const [section, ...rest] = lines.line1.split(' · ');
+    return {
+      nodes: foldedDrawer({
+        section: section ?? '',
+        when: rest.length > 0 ? rest.join(' · ') : undefined,
+        time: lines.time,
+        title: lines.title,
+        label: handleLabel(next),
+        onOpen: openDrawer,
+      }),
+    };
+  }
+
+  // ---------------------------------------------------------------- measuring
+
+  /**
+   * The half drawer's top follows what is lit above it: Start's foot plus 16,
+   * or the unlit block's under rule 3, and never above y 366 on the board. At
+   * rest, the list is cut to the last whole row above the tabs' cover, so that
+   * row is the covered one (plan section 10, "Rows").
+   */
+  function layout(position: DrawerPosition): void {
+    const box = container.getBoundingClientRect();
+    if (box.height === 0) return; // not laid out: a test, or a hidden page
+    if (position === 'half') {
+      const header = layer.screen.querySelector('.hdr');
+      const saTop = header ? header.getBoundingClientRect().top - box.top - 4 : 20;
+      const least = saTop + 312;
+      const anchor = layer.screen.querySelector('[data-half-anchor]');
+      const foot = anchor ? anchor.getBoundingClientRect().bottom - box.top + 16 : least;
+      container.style.setProperty('--half-t', `${Math.max(foot, least)}px`);
+    }
+    const viewport = layer.drawer.querySelector<HTMLElement>('.viewport');
+    if (!viewport) return;
+    viewport.style.removeProperty('height');
+    const list = viewport.querySelector<HTMLElement>('.list');
+    if (!list) return;
+    const room = viewport.clientHeight;
+    let cut = 0;
+    for (const row of list.querySelectorAll<HTMLElement>('[data-row]')) {
+      const bottom = row.offsetTop + row.offsetHeight;
+      if (bottom <= room) cut = Math.max(cut, bottom);
+    }
+    if (cut > 0) viewport.style.height = `${cut}px`;
+  }
+
+  // ---------------------------------------------------------------- actions
+
+  function run(
+    change: (state: BenchDomains, id: string, at: Date) => act.Changed,
+    id: string,
+  ): void {
+    const result = change(read(), id, now());
+    commit(result.state);
+    if (result.announce) announce(result.announce);
+  }
+
+  function announce(text: string): void {
+    layer.live.textContent = text;
+  }
+
+  function go(next: Nav): void {
+    nav = next;
+    render();
+  }
+
+  function push(page: Page): void {
+    go({ ...nav, stack: [...nav.stack, page] });
+  }
+
+  function back(): void {
+    go({ ...nav, stack: nav.stack.slice(0, -1) });
+  }
+
+  /** Me is pushed on the current tab, which stays current. */
+  function openMe(): void {
+    const at = nav.stack.findIndex((page) => page.kind === 'me');
+    if (at === nav.stack.length - 1 && at !== -1) return;
+    if (at !== -1) go({ ...nav, stack: nav.stack.slice(0, at + 1) });
+    else push({ kind: 'me' });
+  }
+
+  /** A tab clears the pages pushed on the current one. */
+  function chooseTab(tab: Tab): void {
+    if (tab === nav.tab && nav.stack.length === 0) return;
+    go({ tab, stack: [], list: nav.list });
+  }
+
+  function scenario(id: ScenarioId): void {
+    commit(loadScenario(read(), id, now()));
+    ticked.clear();
+    go({ ...TODAY });
+  }
+
+  function deleteAll(): void {
+    if (!confirm(ABOUT.deleteConfirm)) return;
+    const t = now();
+    commit(migrateBench(emptyDomains(), t));
+    ticked.clear();
+    go({ ...TODAY });
+  }
+
+  // Built in the chunks that follow (plan section 19): Focus (3), capture (4)
+  // and the open drawer (the rest of 2). Their controls are where they belong.
+  function openFocus(): void {}
+  function openCapture(): void {}
+  function openDrawer(): void {}
+
+  // ---------------------------------------------------------------- the page
+
+  function themeColor(colour: string): void {
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta && meta.getAttribute('content') !== colour) meta.setAttribute('content', colour);
+  }
+
+  function uiRecord(at: Date): BenchUi {
+    return {
+      at: at.toISOString(),
+      tab: nav.tab,
+      stack: [...nav.stack],
+      list: nav.list,
+      scroll: scrollOf(container),
+    };
+  }
+
+  /** Going to the background: when, and where the person was (plan section 12). */
+  function hide(): void {
+    const t = now();
+    const state = read();
+    commit({
+      ...state,
+      bench: { ...state.bench, away: { since: t.toISOString() }, ui: uiRecord(t) },
+    });
+    void store.flush().catch(() => undefined);
+  }
+
+  /** Coming back: a forgotten clock, the day, passed slots, then where to open. */
+  function wakeUp(): void {
+    const state = read();
+    const woken = wake(state, now());
+    if (woken.restore === 'today') {
+      nav = { ...TODAY, list: nav.list };
+      ticked.clear();
+    }
+    if (woken.state !== state) commit(woken.state);
+    else render();
+  }
+
+  /** A new minute in the hand: the day may turn at 04:00, and slots may pass. */
+  function minute(): void {
+    const state = read();
+    const t = now();
+    const next = passSlots(dayBoundary(state, t, { holding: true }), t);
+    if (next !== state) commit(next);
+    else render();
+  }
+
+  // ---------------------------------------------------------------- go
+
   const unsubscribe = store.subscribe('domains', render);
-  // The clock moves while nothing else does. Only screens that show it redraw.
-  const ticker = setInterval(() => {
-    if ((screen.name === 'focus' || screen.name === 'today') && focus()) render();
-  }, 15_000);
+  let ticker: Ticker | undefined;
   render();
+  ticker = createTicker({
+    onTick: ({ minute: turned }) => (turned ? minute() : patchLive()),
+    onWake: wakeUp,
+    onHide: hide,
+    perSecond: () => barRunning && motion(read()) === 'full',
+    now: () => now().getTime(),
+  });
+  // A resize can cross the compact height, which changes where the drawer may rest.
+  const onResize = () => render();
+  window.addEventListener('resize', onResize);
+  void document.fonts?.ready.then(() => {
+    if (!destroyed) onResize();
+  });
 
   return {
     destroy() {
-      clearInterval(ticker);
+      destroyed = true;
+      ticker?.destroy();
       unsubscribe();
-      holdScreenAwake(false);
+      window.removeEventListener('resize', onResize);
       container.replaceChildren();
+      container.classList.remove('app');
+      for (const name of ['drawer', 'ground', 'places', 'motion']) delete container.dataset[name];
+      container.style.removeProperty('--half-t');
     },
   };
-}
-
-function timeLeftText(left: number, total: number): (Node | string)[] {
-  return [h('b', { text: String(Math.max(0, Math.ceil(left))) }), ` of ${total} min left`];
-}
-
-function dateOf(when: When): string {
-  return when.kind === 'none' ? '' : when.date;
-}
-
-function whenText(when: When, day: string): string {
-  if (when.kind === 'none') return '';
-  const time = when.kind === 'timed' ? formatClockTime(when.time) : '';
-  if (when.date === day) return time;
-  return [formatShortDate(when.date), time].filter(Boolean).join(' · ');
-}
-
-/** A wrapping title field as tall as its words. */
-function fitTitle(field: HTMLTextAreaElement): void {
-  field.style.height = 'auto';
-  field.style.height = `${field.scrollHeight}px`;
 }

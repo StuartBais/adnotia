@@ -130,32 +130,3 @@ export function durationTrack(minutes: number, text: string, slot?: number): HTM
   if (slot !== undefined) style['margin-right'] = `${Math.max(0, slot - length)}px`;
   return h('span', { class: 'dur' }, text, h('span', { class: 'm', 'aria-hidden': 'true', style }));
 }
-
-// ---------------------------------------------------------------- the Bookmark round
-
-// Kept only until the Bookmark screens are replaced, which use them.
-/** The notched bookmark that holds a person's step. */
-export function bookmark(label: string, value: string): HTMLElement {
-  return h(
-    'div',
-    { class: 'bookmark', 'aria-hidden': 'true' },
-    h('small', { text: label }),
-    h('b', { text: value }),
-  );
-}
-
-/**
- * Minutes as marks as well as a number: a thick mark for each minute left, a
- * low one for each gone. Above sixty minutes, one mark stands for several.
- */
-export function tally(left: number, total: number): HTMLElement {
-  const per = Math.max(1, Math.ceil(total / 60));
-  const marks = Math.ceil(total / per);
-  const remaining = Math.max(0, Math.min(marks, Math.ceil(left / per)));
-  const label = `${Math.max(0, Math.ceil(left))} of ${total} minutes left`;
-  const node = h('div', { class: 'tally', role: 'img', 'aria-label': label });
-  for (let i = 0; i < marks; i++) node.append(h('i', { class: i < remaining ? '' : 'gone' }));
-  return node;
-}
-
-export const two = (n: number): string => String(n).padStart(2, '0');
