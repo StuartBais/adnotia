@@ -189,6 +189,13 @@ someone other than its author has confirmed it, and nobody yet fills that role.
 
 ## Design
 
+**Proposed, November 2026: Lantern, with the Now capsule (ADR-047).** The owner
+set the Bookmark Edition aside after trying it, and chose this direction from
+ten (`design/explore/`). It keeps the palette below, changes the look and the
+type, and is specified in `design/lantern/SPEC.md`. When ADR-047 is accepted,
+this section is rewritten from that specification. Until then, the rest of
+this section describes ADR-045.
+
 The direction is the Bookmark Edition, in charcoal and terracotta (ADR-045).
 
 **The idea.** A printed daily edition. The running task is the headline. A
