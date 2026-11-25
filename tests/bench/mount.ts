@@ -12,6 +12,8 @@ export interface Mounted {
   container: HTMLElement;
   /** The moment the prototype is told it is. Move it, then tick. */
   clock: { now: Date };
+  /** The tap guard's clock, in ms. It only goes forward; see settle(). */
+  mono: { now: number };
   destroy(): void;
 }
 
@@ -42,11 +44,21 @@ export async function mount(
   }
   const container = document.createElement('div');
   document.body.append(container);
-  const bench = mountBench({ store, container, now: () => clock.now, confirm: () => true });
+  const mono = { now: 0 };
+  const bench = mountBench({
+    store,
+    container,
+    now: () => clock.now,
+    monotonic: () => mono.now,
+    confirm: () => true,
+  });
+  // The screen has been in the hand a while: launch's half second is over.
+  mono.now = 10_000;
   current = {
     store,
     container,
     clock,
+    mono,
     destroy() {
       bench.destroy();
       container.remove();
@@ -65,7 +77,17 @@ export function unmount(): void {
 /** Moves the clock on and lets the ticker run up to it. */
 export function advance(mounted: Mounted, minutes: number): void {
   mounted.clock.now = new Date(mounted.clock.now.getTime() + minutes * 60_000);
-  vi.advanceTimersByTime(Math.max(1000, Math.min(minutes * 60_000, 60_000)));
+  const ms = Math.max(1000, Math.min(minutes * 60_000, 60_000));
+  mounted.mono.now += ms;
+  vi.advanceTimersByTime(ms);
+}
+
+/**
+ * Lets the tap guard's clock run on by `ms` (by default, past any guard), as
+ * a person's hand takes a moment between one screen and the next tap.
+ */
+export function settle(mounted: Mounted, ms = 2000): void {
+  mounted.mono.now += ms;
 }
 
 /**

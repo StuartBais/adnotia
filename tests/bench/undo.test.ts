@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import * as model from '../../src/domains/tasks';
 import * as act from '../../src/bench/actions';
+import { TAP_GUARD } from '../../src/bench/app';
 import { EMAIL } from '../../src/bench/example';
 import { loadScenario, migrateBench, type BenchDomains } from '../../src/bench/state';
 import { emptyDomains } from '../../src/kernel/store';
@@ -12,6 +13,7 @@ import {
   outlastUndo,
   press,
   said,
+  settle,
   stateOf,
   unmount,
   visibleText,
@@ -218,6 +220,7 @@ describe('the Next line for six seconds (SPEC 9.8)', () => {
     press(m.container, /^Next|^Step done: Write the question\. Rest of today$/);
     press(m.container, 'Hide the rest of today');
     expect(nameOf(id(m, 'b-undo')!)).toBe('Undo step done: Write the question');
+    settle(m);
     press(m.container, 'Resume');
     expect(nameOf(id(m, 'b-undo')!)).toBe(`Undo resume: ${EMAIL}`);
     expect(handle(m).querySelector('.h-title')?.textContent).toBe(`${EMAIL}, step 3`);
@@ -296,5 +299,84 @@ describe('the Next line for six seconds (SPEC 9.8)', () => {
     // The ring's own disc and the Next line's pill name the same thing.
     press(m.container, /^Undo done: Order printer ink$/);
     expect(top(stateOf(m), 'Order printer ink').doneAt).toBeUndefined();
+  });
+});
+
+describe('the tap guard (SPEC 5.1; plan section 12)', () => {
+  const GREW = TAP_GUARD.morph + TAP_GUARD.afterCapsule;
+  const stepDone = (m: Mounted) => press(m.container, 'Step done: Write the question');
+  const questionDone = (m: Mounted) => stepOf(stateOf(m), 'Write the question').doneAt;
+
+  it('ignores Step done for a second after Today grows out of the capsule, by a tab', async () => {
+    const m = await mount(TUE_1005);
+    press(m.container, 'Tasks');
+    settle(m);
+    press(m.container, 'Today');
+    stepDone(m);
+    expect(questionDone(m)).toBeUndefined();
+    settle(m, GREW - 1);
+    stepDone(m);
+    expect(questionDone(m)).toBeUndefined();
+    // Nothing is said and nothing moves: the tap is simply not taken.
+    expect(m.container.querySelector('.live')?.textContent).toBe('');
+    expect(id(m, 'b-undo')).toBeNull();
+    settle(m, 1);
+    stepDone(m);
+    expect(questionDone(m)).toBeDefined();
+  });
+
+  it('does the same when the open drawer folds back into the lantern', async () => {
+    const m = await mount(TUE_1005);
+    press(m.container, /^Next, in 25 minutes/);
+    press(m.container, 'Hide the rest of today');
+    press(m.container, 'Pause');
+    expect(model.running(stateOf(m).tasks)?.title).toBe(EMAIL);
+    settle(m, GREW);
+    press(m.container, 'Pause');
+    expect(model.running(stateOf(m).tasks)).toBeUndefined();
+  });
+
+  it('and when back brings Today out from under Me', async () => {
+    const m = await mount(TUE_1320, 'pauseLeft');
+    press(m.container, 'Me');
+    settle(m);
+    press(m.container, 'Today');
+    press(m.container, 'Resume');
+    expect(model.running(stateOf(m).tasks)).toBeUndefined();
+    settle(m, GREW);
+    press(m.container, 'Resume');
+    expect(model.running(stateOf(m).tasks)?.title).toBe(EMAIL);
+  });
+
+  it('ignores them for half a second after launch', async () => {
+    const m = await mount(TUE_1005);
+    m.mono.now = 0;
+    stepDone(m);
+    expect(questionDone(m)).toBeUndefined();
+    m.mono.now = TAP_GUARD.other - 1;
+    stepDone(m);
+    expect(questionDone(m)).toBeUndefined();
+    m.mono.now = TAP_GUARD.other;
+    stepDone(m);
+    expect(questionDone(m)).toBeDefined();
+  });
+
+  it('for half a second when Today is reached another way: a scenario from About', async () => {
+    const m = await mount(TUE_1005);
+    press(m.container, 'Me');
+    press(m.container, 'About this prototype');
+    press(m.container, 'Load the example day');
+    stepDone(m);
+    expect(questionDone(m)).toBeUndefined();
+    settle(m, TAP_GUARD.other);
+    stepDone(m);
+    expect(questionDone(m)).toBeDefined();
+  });
+
+  it('never guards a change on Today itself: Start, then Step done', async () => {
+    const m = await mount(TUE_0958, 'notStarted');
+    press(m.container, 'Start');
+    press(m.container, 'Step done: Find the school address');
+    expect(stepOf(stateOf(m), 'Find the school address').doneAt).toBeDefined();
   });
 });

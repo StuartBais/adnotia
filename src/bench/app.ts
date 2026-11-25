@@ -89,6 +89,12 @@ export interface BenchOptions {
   now?: () => Date;
   /** Asked before anything is deleted. Replaceable so tests need no dialog. */
   confirm?: (question: string) => boolean;
+  /**
+   * Milliseconds on a clock that only goes forward, for the tap guard:
+   * performance.now unless a test gives its own. Kept apart from `now`, which
+   * the comparison harness fixes, so the guard runs out there as on a phone.
+   */
+  monotonic?: () => number;
 }
 
 /** Where the person is: the current tab, the pages pushed on it, and the Tasks list. */
@@ -103,6 +109,15 @@ const MINUTE_MS = 60_000;
 const WHITE = '#FFFFFF';
 
 const TODAY: Nav = { tab: 'today', stack: [], list: 'inbox' };
+
+/**
+ * The tap guard (SPEC 5.1, plan section 12). Step done, Pause and Resume sit
+ * where the capsule sits everywhere else, so on Today they ignore taps while
+ * the capsule grows into the lantern and for a second after, and for half a
+ * second after Today is reached any other way, launch included. Starting
+ * values, to try on a phone (SPEC 14).
+ */
+export const TAP_GUARD = { morph: 350, afterCapsule: 1000, other: 500 } as const;
 
 /** How long an undoable tap can be taken back (SPEC 9.8; an owner decision, SPEC 14). */
 export const UNDO_MS = 6000;
@@ -123,6 +138,7 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
   const { store, container } = options;
   const now = options.now ?? (() => new Date());
   const confirm = options.confirm ?? ((question: string) => window.confirm(question));
+  const monotonic = options.monotonic ?? (() => performance.now());
 
   const read = () => store.document().domains as BenchDomains;
   const commit = (next: BenchDomains) => {
@@ -172,6 +188,13 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
   /** Rows ticked since the list was opened: they stay in place as discs. */
   const ticked = new Set<string>();
   let shown: { position: DrawerPosition; tab: Tab; page: string | undefined } | undefined;
+  /** Taps on Step done, Pause and Resume are ignored until this moment (monotonic). */
+  let guardUntil = 0;
+  /** What the dock line's slot held, and where, at the last render. */
+  let lastSlot: 'present' | 'capsule' | 'none' | undefined;
+  let lastScene = '';
+  /** The next render follows a tap that grows the capsule back: a tab, back, or a fold. */
+  let arrival: 'morph' | 'other' = 'other';
   /** The live Undo, if a tap in the last six seconds can be taken back. */
   let undo: UndoSlot | undefined;
   /** Where the drawer rested before it was opened, so Hide returns there. */
@@ -332,9 +355,9 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
               paused: today.present.kind === 'paused',
               step: today.present.step,
               isLast: today.present.steps.isLast,
-              onStepDone: () => run(act.stepDone, today.present.task.id),
-              onPause: () => run(act.pause, today.present.task.id),
-              onResume: () => run(act.resume, today.present.task.id),
+              onStepDone: () => guarded() || run(act.stepDone, today.present.task.id),
+              onPause: () => guarded() || run(act.pause, today.present.task.id),
+              onResume: () => guarded() || run(act.resume, today.present.task.id),
             },
           }
         : {}),
@@ -346,6 +369,7 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
       draftKept: state.bench.drafts.capture !== undefined && state.bench.drafts.capture.text !== '',
       onCapture: openCapture,
     };
+    guardArrival(props, view, open);
     paint(layer.dock, dockKey(props), () => dock(props));
     layer.fade.hidden = !(ground === 'place' && capsule !== undefined && !open);
 
@@ -685,6 +709,34 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
     if (result.announce) announce(result.announce);
   }
 
+  // ---------------------------------------------------------------- the tap guard
+
+  /**
+   * When Step done and Pause come into the slot because Today was reached,
+   * not because something changed on it: after the capsule, by a tab, back or
+   * a fold, a morph and a second; otherwise, launch included, half a second.
+   */
+  function guardArrival(props: DockProps, view: View, open: boolean): void {
+    const slot = props.present ? 'present' : props.capsule ? 'capsule' : 'none';
+    const scene = `${JSON.stringify(view)} ${nav.tab} ${open ? 'open' : ''}`;
+    if (
+      slot === 'present' &&
+      (lastSlot === undefined || (scene !== lastScene && lastSlot !== 'present'))
+    ) {
+      const grew = lastSlot === 'capsule' && arrival === 'morph';
+      const length = grew ? TAP_GUARD.morph + TAP_GUARD.afterCapsule : TAP_GUARD.other;
+      guardUntil = Math.max(guardUntil, monotonic() + length);
+    }
+    lastSlot = slot;
+    lastScene = scene;
+    arrival = 'other';
+  }
+
+  /** True while a tap on Step done, Pause or Resume is ignored, with no feedback. */
+  function guarded(): boolean {
+    return monotonic() < guardUntil;
+  }
+
   // ---------------------------------------------------------------- undo
 
   /**
@@ -775,6 +827,7 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
   }
 
   function back(): void {
+    arrival = 'morph';
     go({ ...nav, stack: nav.stack.slice(0, -1) });
   }
 
@@ -792,6 +845,7 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
    * (SPEC 5.2); another tab folds it and goes there.
    */
   function chooseTab(tab: Tab): void {
+    arrival = 'morph';
     if (isOpen()) {
       foldDrawer(false);
       if (tab === nav.tab) return;
@@ -854,6 +908,7 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
     const back =
       beforeOpen?.key === key ? beforeOpen.position : key === 'running' ? 'folded' : 'half';
     beforeOpen = undefined;
+    arrival = 'morph';
     writeDrawer(state, key, back);
     const handle = toHandle ? container.querySelector<HTMLElement>('#b-handle') : null;
     if (handle) handle.focus({ preventScroll: true });
