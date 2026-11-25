@@ -223,6 +223,15 @@ export default defineConfig(({ mode }) => {
                 'assets/**/*.{js,css}',
                 '*.{svg,png,webmanifest}',
               ],
+              /*
+               * The prototype's own chunks are not the app's. `assets/**` would
+               * otherwise sweep them into the app's precache, so every phone
+               * that opened the app would download and keep the prototype too.
+               * A chunk the two share (the store) stays, because the app needs
+               * it. The first entry is Workbox's default, kept because setting
+               * this replaces it.
+               */
+              globIgnores: ['**/node_modules/**/*', 'assets/bench-*'],
               navigateFallback: 'app/index.html',
               /*
                * The reason the welcome page survives at all.

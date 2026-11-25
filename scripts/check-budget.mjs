@@ -272,6 +272,17 @@ if (existsSync(sw)) {
   console.log(
     `\nPrecached for later, gzipped: ${kb(precacheBytes)} across ${precached.length} files.`,
   );
+
+  // The app's worker keeps the app. vite.config.ts's globIgnores keeps the
+  // prototype's own chunks out of it; this is what notices if that stops.
+  const prototype = precached.filter((url) => /(^|\/)assets\/bench-/.test(url ?? ''));
+  if (prototype.length > 0) {
+    console.error(
+      `The app's service worker precaches the prototype: ${prototype.join(', ')}. ` +
+        'Every phone that opened the app would download and keep it.',
+    );
+    process.exit(1);
+  }
 }
 
 const single = resolve(root, 'dist-single/adnotia.html');
