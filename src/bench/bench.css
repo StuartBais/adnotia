@@ -1423,6 +1423,16 @@ svg.i28 {
 .prose a {
   color: var(--white);
 }
+/* A dial link is a whole target, 44 x 44 at least (SPEC 11), on the page where a
+   mis-tap costs most. It reaches 12 above and below its line and on to the right,
+   without moving the number off the line or the line off its rhythm. */
+.prose .lines a {
+  display: inline-flex;
+  align-items: center;
+  min-width: 44px;
+  min-height: 44px;
+  margin: -12px 0;
+}
 .scenarios {
   display: grid;
   gap: 8px;
