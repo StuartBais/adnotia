@@ -72,6 +72,33 @@ describe('createTicker', () => {
     expect(events).toEqual(['tick:minute', 'tick:minute']);
   });
 
+  it('by the minute, also ticks where a running task’s own minute turns', () => {
+    perSecond = false;
+    vi.setSystemTime(new Date('2026-11-24T10:05:20'));
+    // The task's minute turns at 30 seconds past each clock minute.
+    const turns = () => {
+      const at = Date.now();
+      return at - (at % 60_000) + (at % 60_000 < 30_000 ? 30_000 : 90_000);
+    };
+    start({ nextChange: turns });
+    vi.advanceTimersByTime(100_000);
+    expect(ticksAt).toEqual([
+      new Date('2026-11-24T10:05:30').getTime(),
+      new Date('2026-11-24T10:06:00').getTime(),
+      new Date('2026-11-24T10:06:30').getTime(),
+      new Date('2026-11-24T10:07:00').getTime(),
+    ]);
+    expect(events).toEqual(['tick', 'tick:minute', 'tick', 'tick:minute']);
+  });
+
+  it('ignores a next change already past, or one after the clock minute', () => {
+    perSecond = false;
+    vi.setSystemTime(new Date('2026-11-24T10:05:20'));
+    start({ nextChange: () => Date.now() - 1 });
+    vi.advanceTimersByTime(40_000);
+    expect(ticksAt).toEqual([new Date('2026-11-24T10:06:00').getTime()]);
+  });
+
   it('marks the first tick of each new minute, so minute work runs once a minute', () => {
     vi.setSystemTime(new Date('2026-11-24T10:05:58.500'));
     start();

@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import * as model from '../../src/domains/tasks';
 import { setOption } from '../../src/domains/options';
 import { EMAIL } from '../../src/bench/example';
@@ -139,6 +139,24 @@ describe('1 · Today, running (SPEC 5.1)', () => {
     expect(id(m, 'b-handle')).toBe(handle);
     expect(handle?.textContent).toContain('in 24 min');
     expect(nameOf(handle!)).toBe('Next, in 24 minutes: 10:30, Call the dentist. Rest of today');
+  });
+
+  it('under Reduce Motion, turns "N min left" on the task’s own minute', async () => {
+    // Started at 9:58:30, so its minutes turn at half past each clock minute.
+    const m = await mount('2026-11-24T10:05:30', 'example', (state) => ({
+      ...state,
+      bench: { ...state.bench, settings: { ...state.bench.settings, motion: 'reduced' } },
+    }));
+    const step = (ms: number) => {
+      m.clock.now = new Date(m.clock.now.getTime() + ms);
+      vi.advanceTimersByTime(ms);
+    };
+    expect(visibleText(m.container)).toContain('18 min left');
+    step(30_000); // 10:06:00, a clock minute: 7.5 worked
+    expect(visibleText(m.container)).toContain('18 min left');
+    step(30_000); // 10:06:30: 8 worked
+    expect(visibleText(m.container)).toContain('17 min left');
+    expect(nameOf(id(m, 'b-lit')!)).toContain('17 of 25 minutes left');
   });
 
   it('over the estimate: the outline, the minutes so far, and the estimate in words', async () => {

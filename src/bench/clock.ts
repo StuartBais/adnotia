@@ -4,7 +4,9 @@
 //
 // Ticks land on whole seconds while a bar is on screen and motion is full, and
 // on whole minutes otherwise, each scheduled with one setTimeout at the next
-// boundary rather than a setInterval that drifts. A minute tick always runs
+// boundary rather than a setInterval that drifts. By the minute, a tick also
+// lands where a running task's own minute turns, which is when its figure and
+// its stepped bar change. A minute tick always runs
 // while the page is visible, for "in N min", "free until", passed slots and the
 // 04:00 boundary. Ticking stops while the page is hidden. Every value the app
 // shows is worked out from the time and the stored timestamps, so a tick that
@@ -27,6 +29,13 @@ export interface TickerOptions {
   onHide(): void;
   /** Whether a tick a second is worth it now: a bar on screen, motion full. */
   perSecond(): boolean;
+  /**
+   * When ticking by the minute: the next moment, in ms since the epoch, that
+   * something shown changes other than on a clock minute. A running task's
+   * "18 min left" turns on its own minute, which can fall anywhere in a clock
+   * minute, so without this the figure could lag by up to 59 seconds.
+   */
+  nextChange?(): number | undefined;
   /** Milliseconds since the epoch. Injected so tests never read the real clock. */
   now?: () => number;
   doc?: Document;
@@ -65,9 +74,14 @@ export function createTicker(options: TickerOptions): Ticker {
   function schedule(): void {
     stop();
     if (destroyed || doc.visibilityState === 'hidden') return;
+    const at = now();
     const unit = options.perSecond() ? SECOND : MINUTE;
-    const delay = unit - (now() % unit);
-    timer = setTimeout(tick, delay === 0 ? unit : delay);
+    let delay = unit - (at % unit);
+    if (unit === MINUTE) {
+      const change = options.nextChange?.();
+      if (change !== undefined && change > at && change - at < delay) delay = change - at;
+    }
+    timer = setTimeout(tick, delay);
   }
 
   function tick(): void {

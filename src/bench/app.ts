@@ -34,6 +34,7 @@ import {
   nextLine,
   passSlots,
   present,
+  timeFacts,
   wake,
   type BenchDomains,
   type BenchUi,
@@ -85,6 +86,7 @@ interface Nav {
 }
 
 const CHARCOAL = '#222624';
+const MINUTE_MS = 60_000;
 const WHITE = '#FFFFFF';
 
 const TODAY: Nav = { tab: 'today', stack: [], list: 'inbox' };
@@ -650,6 +652,18 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
     else render();
   }
 
+  /**
+   * Where a running task's own minute next turns: "18 min left" becomes
+   * "17 min left", and under Reduce Motion the bar steps with it (SPEC 10).
+   */
+  function sessionMinute(): number | undefined {
+    const t = now();
+    const current = present(read(), t);
+    if (current.kind !== 'running') return undefined;
+    const worked = Math.round(timeFacts(current.task, t).worked * MINUTE_MS);
+    return t.getTime() + (MINUTE_MS - (worked % MINUTE_MS));
+  }
+
   /** A new minute in the hand: the day may turn at 04:00, and slots may pass. */
   function minute(): void {
     const state = read();
@@ -669,6 +683,7 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
     onWake: wakeUp,
     onHide: hide,
     perSecond: () => barRunning && motion(read()) === 'full',
+    nextChange: sessionMinute,
     now: () => now().getTime(),
   });
   // A resize can cross the compact height, which changes where the drawer may rest.
