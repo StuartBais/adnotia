@@ -628,6 +628,18 @@ describe("Focus's foot follows the same rows (SPEC 5.4)", () => {
     );
   });
 
+  it('names the first anytime item when no booked item is left', () => {
+    const state = scene('example', TUE_1005);
+    const unbooked = ['Call the dentist', 'Walk to the park', 'Ring the bank'].reduce(
+      (tasks, title) => model.unschedule(tasks, byTitle(tasks, title).id),
+      state.tasks as readonly Task[],
+    );
+    expect(focusFoot(line(nextLine(withTasks(state, unbooked), TUE_1005)))).toEqual({
+      text: 'Anytime today · Renew the parking permit',
+      label: 'Anytime today: Renew the parking permit',
+    });
+  });
+
   it('names the passed call in paused Focus at 13:20, not 14:00', () => {
     const foot = focusFoot(line(nextLine(scene('pauseLeft', TUE_1320), TUE_1320)));
     expect(foot).toEqual({
@@ -950,6 +962,72 @@ describe('slots that pass unstarted (SPEC 9.8)', () => {
   it('change nothing the second time', () => {
     const once = passSlots(scene('notStarted', TUE_0958), at('2026-11-24T11:30:00'));
     expect(passSlots(once, at('2026-11-24T11:30:00'))).toBe(once);
+  });
+});
+
+describe('slots in the small hours', () => {
+  /** The board's day at 9:58, with the bank call moved to `time` for `minutes`. */
+  const bankAt = (time: string, minutes: number): BenchDomains => {
+    const state = scene('notStarted', TUE_0958);
+    return withTasks(
+      state,
+      model.schedule(state.tasks, idOf(state, 'Ring the bank'), {
+        kind: 'timed',
+        date: '2026-11-24',
+        time,
+        durationMinutes: minutes,
+      }),
+    );
+  };
+  const bank = (state: BenchDomains) => byTitle(state.tasks, 'Ring the bank');
+
+  it('a slot that crosses midnight is under way until it ends, on its own day', () => {
+    const state = bankAt('23:50', 20);
+    expect(line(nextLine(state, at('2026-11-24T23:45:00')))).toMatchObject({
+      row: 'soon',
+      title: 'Ring the bank',
+      inMinutes: 5,
+    });
+    const underway = line(nextLine(state, at('2026-11-25T00:05:00')));
+    expect(handleLines(underway)).toEqual({
+      line1: 'Next · until 0:10',
+      time: '23:50',
+      title: 'Ring the bank',
+    });
+    expect(idleLantern(state, at('2026-11-25T00:05:00'))).toMatchObject({
+      rule: 1,
+      underway: true,
+      end: at('2026-11-25T00:10:00'),
+    });
+  });
+
+  it('a slot that crosses midnight passes when it ends, after midnight', () => {
+    const state = bankAt('23:50', 20);
+    expect(bank(passSlots(state, at('2026-11-25T00:09:00'))).when.kind).toBe('timed');
+    const passed = passSlots(state, at('2026-11-25T00:10:00'));
+    expect(bank(passed).when).toEqual({ kind: 'anytime', date: '2026-11-24' });
+    expect(passed.bench.passed.at(-1)).toBe(bank(passed).id);
+  });
+
+  it('a time booked before 04:00 is in the night after its day, last in Later today', () => {
+    const state = bankAt('02:30', 15);
+    const rest = restOfToday(state, TUE_0958);
+    expect(rest.later.map((t) => t.when.time)).toEqual(['10:30', '11:00', '02:30']);
+    expect(passSlots(state, at('2026-11-24T23:00:00')).bench.passed).not.toContain(bank(state).id);
+    // With everything else done, it is next, three and a half hours on.
+    const quiet = allDoneBut(state, ['Ring the bank'], TUE_0958);
+    const late = line(nextLine(quiet, at('2026-11-24T23:00:00')));
+    expect(handleLines(late)).toEqual({
+      line1: 'Next · in 3 h 30 min',
+      time: '2:30',
+      title: 'Ring the bank',
+    });
+    expect(idleLantern(quiet, at('2026-11-24T23:00:00'))).toMatchObject({
+      rule: 3,
+      at: at('2026-11-25T02:30:00'),
+    });
+    const passed = passSlots(state, at('2026-11-25T02:45:00'));
+    expect(bank(passed).when).toEqual({ kind: 'anytime', date: '2026-11-24' });
   });
 });
 
