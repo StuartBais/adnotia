@@ -1,0 +1,369 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; style-src 'unsafe-inline'; img-src 'self'; connect-src 'none'; base-uri 'none'; form-action 'none'"
+    />
+    <link rel="icon" href="data:," />
+    <title>Ten directions · Adnotia phone app</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        background: #e4e6e2;
+        color: #222624;
+      }
+      body {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: clamp(16px, 4vw, 48px);
+        font:
+          17px/1.45 -apple-system,
+          BlinkMacSystemFont,
+          'Segoe UI',
+          Roboto,
+          sans-serif;
+      }
+      h1 {
+        font-size: clamp(32px, 6vw, 52px);
+        line-height: 1.05;
+        letter-spacing: -0.02em;
+        margin: 0 0 12px;
+      }
+      .lede {
+        max-width: 46em;
+        margin: 0 0 40px;
+        color: #595c5b;
+      }
+      article {
+        margin: 0 0 56px;
+      }
+      article header {
+        display: flex;
+        gap: 16px;
+        align-items: flex-start;
+        margin-bottom: 16px;
+      }
+      .rank {
+        flex: none;
+        width: 44px;
+        height: 44px;
+        border-radius: 22px;
+        background: #222624;
+        color: #fff;
+        display: grid;
+        place-items: center;
+        font-weight: 700;
+        margin: 0;
+      }
+      h2 {
+        margin: 0;
+        font-size: 26px;
+        letter-spacing: -0.015em;
+      }
+      .idea {
+        margin: 4px 0 8px;
+        max-width: 46em;
+      }
+      .meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin: 0;
+        font-size: 14px;
+      }
+      .meta span {
+        background: #fff;
+        border-radius: 999px;
+        padding: 3px 10px;
+      }
+      img {
+        display: block;
+        width: 100%;
+        height: auto;
+        border-radius: 16px;
+      }
+      a:focus-visible {
+        outline: 3px solid #222624;
+        outline-offset: 4px;
+        border-radius: 18px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Ten directions for the phone app</h1>
+      <p class="lede">
+        Drawn in November 2026 after the Bookmark Edition was set aside. Each direction shows the
+        same three screens with the same content: Today, a task opened, and focus. They are in order
+        of their average score from three judges, which is a first sort and not a verdict. Tap a
+        board to open it. README.md says how they were made, JUDGING.md has every judge's notes, and
+        RESEARCH.md has what the research found.
+      </p>
+      <article>
+        <header>
+          <p class="rank">1</p>
+          <div>
+            <h2>Lantern</h2>
+            <p class="idea">
+              A dark charcoal canvas lit by one sentence. The app opens on the current step alone,
+              in very large white type, with a single terracotta bar burning down beneath it. The
+              rest of the day waits folded in a light drawer at the bottom edge.
+            </p>
+            <p class="meta">
+              <span>Your charcoal and terracotta</span>
+              <span>Modern 9</span>
+              <span>Intuitive 8</span>
+              <span>Distinct 6</span>
+              <span>Average 7.7</span>
+            </p>
+          </div>
+        </header>
+        <a href="lantern.html"
+          ><img
+            src="shots/lantern.png"
+            alt="The Lantern board: Today, a task opened, and focus, on three phones."
+            loading="lazy"
+        /></a>
+      </article>
+      <article>
+        <header>
+          <p class="rank">2</p>
+          <div>
+            <h2>Level</h2>
+            <p class="idea">
+              The screen is the timer. Behind the running task, a pool-blue plane fills the display
+              and drops like a water level as the minutes pass. The minutes are written on the
+              waterline, and the step sits above it in huge condensed type.
+            </p>
+            <p class="meta">
+              <span>Its own colours</span>
+              <span>Modern 7</span>
+              <span>Intuitive 5</span>
+              <span>Distinct 9</span>
+              <span>Average 7</span>
+            </p>
+          </div>
+        </header>
+        <a href="level.html"
+          ><img
+            src="shots/level.png"
+            alt="The Level board: Today, a task opened, and focus, on three phones."
+            loading="lazy"
+        /></a>
+      </article>
+      <article>
+        <header>
+          <p class="rank">3</p>
+          <div>
+            <h2>Deck</h2>
+            <p class="idea">
+              The day is a hand of cards. The running task is the top card, full width with its
+              timer bar; the next cards fan out beneath it showing only their edges and times; and
+              &#x27;not now&#x27; slides a card to the back of the deck.
+            </p>
+            <p class="meta">
+              <span>Its own colours</span>
+              <span>Modern 8</span>
+              <span>Intuitive 6</span>
+              <span>Distinct 6</span>
+              <span>Average 6.7</span>
+            </p>
+          </div>
+        </header>
+        <a href="deck.html"
+          ><img
+            src="shots/deck.png"
+            alt="The Deck board: Today, a task opened, and focus, on three phones."
+            loading="lazy"
+        /></a>
+      </article>
+      <article>
+        <header>
+          <p class="rank">4</p>
+          <div>
+            <h2>Roundels</h2>
+            <p class="idea">
+              Every task is a roundel: a white disc holding a drawn line object, inside a ring that
+              is its duration. The running roundel sits large at the top of Today, and its ring
+              empties as you work.
+            </p>
+            <p class="meta">
+              <span>Its own colours</span>
+              <span>Modern 6</span>
+              <span>Intuitive 7</span>
+              <span>Distinct 7</span>
+              <span>Average 6.7</span>
+            </p>
+          </div>
+        </header>
+        <a href="roundels.html"
+          ><img
+            src="shots/roundels.png"
+            alt="The Roundels board: Today, a task opened, and focus, on three phones."
+            loading="lazy"
+        /></a>
+      </article>
+      <article>
+        <header>
+          <p class="rank">5</p>
+          <div>
+            <h2>Glasshouse</h2>
+            <p class="idea">
+              White content runs edge to edge under a floating glass layer. The running task rides
+              in a glass &#x27;Now&#x27; capsule docked above the four-tab bar on every screen, so
+              the present moment is always one thumb away.
+            </p>
+            <p class="meta">
+              <span>Your charcoal and terracotta</span>
+              <span>Modern 7</span>
+              <span>Intuitive 9</span>
+              <span>Distinct 2</span>
+              <span>Average 6</span>
+            </p>
+          </div>
+        </header>
+        <a href="glasshouse.html"
+          ><img
+            src="shots/glasshouse.png"
+            alt="The Glasshouse board: Today, a task opened, and focus, on three phones."
+            loading="lazy"
+        /></a>
+      </article>
+      <article>
+        <header>
+          <p class="rank">6</p>
+          <div>
+            <h2>Quarters</h2>
+            <p class="idea">
+              The day is four bold bands of colour — Morning, Midday, Afternoon and Evening — and
+              the app opens in the band you are in, so the screen&#x27;s colour says where you are
+              in the day.
+            </p>
+            <p class="meta">
+              <span>Its own colours</span>
+              <span>Modern 6</span>
+              <span>Intuitive 5</span>
+              <span>Distinct 7</span>
+              <span>Average 6</span>
+            </p>
+          </div>
+        </header>
+        <a href="quarters.html"
+          ><img
+            src="shots/quarters.png"
+            alt="The Quarters board: Today, a task opened, and focus, on three phones."
+            loading="lazy"
+        /></a>
+      </article>
+      <article>
+        <header>
+          <p class="rank">7</p>
+          <div>
+            <h2>Strata</h2>
+            <p class="idea">
+              Today is one column where length is time. Each timed item is a capsule as tall as its
+              duration, and the running one is the only filled shape, its terracotta draining down
+              to a charcoal now-line.
+            </p>
+            <p class="meta">
+              <span>Your charcoal and terracotta</span>
+              <span>Modern 5</span>
+              <span>Intuitive 7</span>
+              <span>Distinct 5</span>
+              <span>Average 5.7</span>
+            </p>
+          </div>
+        </header>
+        <a href="strata.html"
+          ><img
+            src="shots/strata.png"
+            alt="The Strata board: Today, a task opened, and focus, on three phones."
+            loading="lazy"
+        /></a>
+      </article>
+      <article>
+        <header>
+          <p class="rank">8</p>
+          <div>
+            <h2>Halo</h2>
+            <p class="idea">
+              The day is a clock face. Scheduled items sit as charcoal arcs around the rim of a
+              stone dial, the running task is a terracotta band shrinking from the current time, and
+              the current step is written in the middle.
+            </p>
+            <p class="meta">
+              <span>Your charcoal and terracotta</span>
+              <span>Modern 5</span>
+              <span>Intuitive 4</span>
+              <span>Distinct 8</span>
+              <span>Average 5.7</span>
+            </p>
+          </div>
+        </header>
+        <a href="halo.html"
+          ><img
+            src="shots/halo.png"
+            alt="The Halo board: Today, a task opened, and focus, on three phones."
+            loading="lazy"
+        /></a>
+      </article>
+      <article>
+        <header>
+          <p class="rank">9</p>
+          <div>
+            <h2>Nightline</h2>
+            <p class="idea">
+              A dark departures board for your day. Each item is one line: time, name, length. The
+              running line lifts into a wide band with a live mint bar, and every status is said in
+              plain words, such as &#x27;until 10:23&#x27; and &#x27;next in 25 min&#x27;.
+            </p>
+            <p class="meta">
+              <span>Its own colours</span>
+              <span>Modern 4</span>
+              <span>Intuitive 8</span>
+              <span>Distinct 3</span>
+              <span>Average 5</span>
+            </p>
+          </div>
+        </header>
+        <a href="nightline.html"
+          ><img
+            src="shots/nightline.png"
+            alt="The Nightline board: Today, a task opened, and focus, on three phones."
+            loading="lazy"
+        /></a>
+      </article>
+      <article>
+        <header>
+          <p class="rank">10</p>
+          <div>
+            <h2>Springform</h2>
+            <p class="idea">
+              A Material 3 Expressive day where shape is the second voice. The running task is the
+              one big cobalt container, each step changes silhouette when its state changes, and the
+              thing to press is always the largest button on the screen.
+            </p>
+            <p class="meta">
+              <span>Its own colours</span>
+              <span>Modern 5</span>
+              <span>Intuitive 6</span>
+              <span>Distinct 2</span>
+              <span>Average 4.3</span>
+            </p>
+          </div>
+        </header>
+        <a href="springform.html"
+          ><img
+            src="shots/springform.png"
+            alt="The Springform board: Today, a task opened, and focus, on three phones."
+            loading="lazy"
+        /></a>
+      </article>
+    </main>
+  </body>
+</html>

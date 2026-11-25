@@ -1,0 +1,1628 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Halo · Adnotia phone direction</title>
+    <!--
+  Typeface: Albert Sans (variable, wght 100–900), SIL Open Font License, from Google Fonts.
+  It is the only face drawn. The app would bundle the font file; the link below is for this
+  static mock-up only. Figures are set tabular wherever a time or a count appears.
+
+  Geometry. Clock angle θ is measured from 12, clockwise; a point at radius r is
+  (r·sin θ, −r·cos θ). On the Today face one hour is 30° and one minute 0.5°.
+    finished 7:30–8:15 = 225–247.5°   9:00–9:15 = 270–277.5°
+    now 10:05 = 302.5°   running band ends 10:23 = 311.5°
+    dentist 10:30–10:40 = 315–320°   park 11:00–11:20 = 330–340°
+  The band is the outer 24 pt of the 320 pt face (r 136–160); arcs are centred on r 148.
+  The running band is a filled sector across the whole band with a 2 pt charcoal edge.
+  Scheduled arcs are 12 wide with round caps; each cap adds 6 pt (2.32°) to both ends, so
+  the path is shortened by that much and the drawn length is the real duration. Finished
+  arcs are 12 wide inside a 15 wide charcoal stroke, shortened the same way.
+  On the Focus and Task rings the circle is 25 minutes; 18 remaining = 259.2°, drawn as the
+  same kind of sector, clockwise from now at the top.
+-->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Albert+Sans:wght@100..900&display=swap"
+    />
+    <style>
+      :root {
+        /* Owner palette */
+        --charcoal: #222624; /* text, ticks, notch, scheduled arcs: 15.3:1 on white, 13.4:1 on stone, 11.8:1 on the shaded band */
+        --white: #ffffff; /* the page and the clear 180 pt centre of the dial */
+        --terra: #f28c5e; /* the running band's fill and the capture circle; charcoal on it 6.3:1 */
+        --stone: #eef0ec; /* the dial face, ring tracks and grouped sections; the rest of the half-day is shaded on it with charcoal at 7% */
+        --sage: #dfe9e0; /* finished, always with a charcoal check and the word Done */
+        --muted: #595c5b; /* labels: 6.8:1 on white, 5.9:1 on stone */
+
+        /* Presentation only: the board around the phones */
+        --canvas: #e2e5e0;
+        --bezel: #141615;
+
+        --font: 'Albert Sans', system-ui, sans-serif;
+        --gutter: 16px;
+        --section-r: 24px;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+      }
+      body {
+        background: var(--canvas);
+        color: var(--charcoal);
+        font-family: var(--font);
+        -webkit-font-smoothing: antialiased;
+        text-rendering: optimizeLegibility;
+      }
+      button,
+      a {
+        font: inherit;
+        color: inherit;
+      }
+      button {
+        border: 0;
+        background: none;
+        padding: 0;
+        margin: 0;
+        cursor: pointer;
+        text-align: inherit;
+      }
+      a {
+        text-decoration: none;
+      }
+      h1,
+      h2,
+      h3,
+      p,
+      ul,
+      ol,
+      dl,
+      dd,
+      dt,
+      figure {
+        margin: 0;
+        padding: 0;
+      }
+      ul,
+      ol {
+        list-style: none;
+      }
+      .num {
+        font-variant-numeric: tabular-nums;
+      }
+      .vh {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        white-space: nowrap;
+      }
+
+      svg.i {
+        width: 24px;
+        height: 24px;
+        flex: none;
+        display: block;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 1.75;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+      svg.i22 {
+        width: 22px;
+        height: 22px;
+      }
+      svg.i20 {
+        width: 20px;
+        height: 20px;
+        stroke-width: 1.95;
+      }
+      svg.i18 {
+        width: 18px;
+        height: 18px;
+        stroke-width: 2.15;
+      }
+      svg.i16 {
+        width: 16px;
+        height: 16px;
+        stroke-width: 2.4;
+      }
+
+      /* ───────────── Board ───────────── */
+      .board {
+        width: 1312px;
+        margin: 0 auto;
+        padding: 56px 0 72px;
+      }
+      .intro {
+        display: grid;
+        grid-template-columns: 1fr 360px;
+        gap: 64px;
+        align-items: end;
+        margin-bottom: 44px;
+      }
+      .eyebrow-board {
+        font-size: 13px;
+        line-height: 16px;
+        font-weight: 650;
+        letter-spacing: 0.02em;
+        color: #4d504f;
+        margin-bottom: 14px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .eyebrow-board .halo-mark {
+        width: 22px;
+        height: 22px;
+      }
+      .intro h1 {
+        font-size: 64px;
+        line-height: 64px;
+        font-weight: 800;
+        letter-spacing: -0.035em;
+        margin-bottom: 16px;
+      }
+      .intro .idea {
+        font-size: 20px;
+        line-height: 28px;
+        font-weight: 450;
+        max-width: 780px;
+        letter-spacing: -0.005em;
+      }
+      .spec {
+        font-size: 13px;
+        line-height: 18px;
+        color: #4d504f;
+      }
+      .spec dt {
+        font-weight: 700;
+        color: var(--charcoal);
+        margin-bottom: 6px;
+      }
+      .spec dd + dt {
+        margin-top: 16px;
+      }
+      .swatches {
+        display: flex;
+        gap: 8px;
+      }
+      .sw {
+        display: grid;
+        justify-items: center;
+        gap: 6px;
+        width: 54px;
+        font-size: 11px;
+        line-height: 13px;
+        font-weight: 600;
+        color: #4d504f;
+        text-align: center;
+      }
+      .sw i {
+        display: block;
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        box-shadow: inset 0 0 0 1px rgba(34, 38, 36, 0.12);
+      }
+
+      .phones {
+        display: flex;
+        gap: 41px;
+        align-items: flex-start;
+      }
+      figure.shot {
+        width: 410px;
+      }
+      figcaption {
+        margin-top: 22px;
+        padding: 0 12px;
+      }
+      figcaption b {
+        display: flex;
+        align-items: baseline;
+        gap: 10px;
+        font-size: 17px;
+        line-height: 22px;
+        font-weight: 750;
+        letter-spacing: -0.01em;
+      }
+      figcaption b span {
+        font-size: 13px;
+        font-weight: 650;
+        color: #4d504f;
+        font-variant-numeric: tabular-nums;
+      }
+      figcaption p {
+        margin-top: 6px;
+        font-size: 14px;
+        line-height: 20px;
+        color: #3f4241;
+        max-width: 380px;
+      }
+
+      /* ───────────── Phone ───────────── */
+      .phone {
+        width: 410px;
+        padding: 10px;
+        border-radius: 60px;
+        background: var(--bezel);
+        box-shadow:
+          inset 0 0 0 1.5px #2c302e,
+          0 40px 70px -30px rgba(20, 24, 22, 0.45),
+          0 14px 28px -14px rgba(20, 24, 22, 0.3);
+      }
+      .screen {
+        position: relative;
+        width: 390px;
+        height: 844px;
+        border-radius: 50px;
+        overflow: hidden;
+        background: var(--white);
+      }
+      .island {
+        position: absolute;
+        top: 11px;
+        left: 50%;
+        width: 124px;
+        height: 36px;
+        margin-left: -62px;
+        background: #000;
+        border-radius: 20px;
+        z-index: 5;
+      }
+      .status {
+        height: 54px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 4px 30px 0 44px;
+        font-size: 16px;
+        font-weight: 650;
+        letter-spacing: -0.01em;
+      }
+      .status .sys {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .home {
+        position: absolute;
+        bottom: 8px;
+        left: 50%;
+        width: 134px;
+        height: 5px;
+        margin-left: -67px;
+        border-radius: 3px;
+        background: var(--charcoal);
+      }
+
+      /* ───────────── Shared parts ───────────── */
+      .group {
+        margin: 0 var(--gutter);
+        background: var(--stone);
+        border-radius: var(--section-r);
+        padding: 4px 16px 6px;
+      }
+      .group h3 {
+        font-size: 13px;
+        line-height: 16px;
+        font-weight: 650;
+        color: var(--muted);
+        padding: 10px 0 2px;
+        letter-spacing: 0.005em;
+      }
+
+      .round {
+        width: 44px;
+        height: 44px;
+        border-radius: 22px;
+        background: var(--stone);
+        display: grid;
+        place-items: center;
+        flex: none;
+      }
+
+      .capture {
+        width: 56px;
+        height: 56px;
+        border-radius: 28px;
+        flex: none;
+        background: var(--terra);
+        color: var(--charcoal);
+        display: grid;
+        place-items: center;
+        box-shadow:
+          0 10px 22px -8px rgba(34, 38, 36, 0.38),
+          0 2px 5px rgba(34, 38, 36, 0.14);
+      }
+      .capture svg {
+        width: 26px;
+        height: 26px;
+        stroke-width: 2.25;
+      }
+
+      .btn {
+        height: 56px;
+        border-radius: 28px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 9px;
+        font-size: 17px;
+        line-height: 22px;
+        font-weight: 700;
+        letter-spacing: -0.01em;
+        padding: 0 22px;
+        white-space: nowrap;
+      }
+      .btn.primary {
+        background: var(--charcoal);
+        color: var(--white);
+      }
+      .btn.quiet {
+        background: var(--stone);
+        color: var(--charcoal);
+      }
+      .btn.short {
+        height: 48px;
+        border-radius: 24px;
+        font-size: 16px;
+      }
+
+      .bottom {
+        position: absolute;
+        left: var(--gutter);
+        right: var(--gutter);
+        bottom: 28px;
+        display: flex;
+        gap: 10px;
+        align-items: center;
+      }
+
+      /* ───────────── 1 · Today ───────────── */
+      .top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 var(--gutter) 0 20px;
+        margin-top: 6px;
+        height: 44px;
+      }
+      .top h2 {
+        display: flex;
+        align-items: baseline;
+        gap: 10px;
+      }
+      .top .title {
+        font-size: 28px;
+        line-height: 34px;
+        font-weight: 750;
+        letter-spacing: -0.025em;
+      }
+      .top .date {
+        font-size: 15px;
+        line-height: 20px;
+        font-weight: 550;
+        color: var(--muted);
+        letter-spacing: -0.005em;
+      }
+      .me {
+        font-size: 15px;
+        font-weight: 750;
+        letter-spacing: -0.01em;
+      }
+
+      .dial {
+        position: relative;
+        width: 320px;
+        height: 320px;
+        margin: 22px auto 0;
+      }
+      .dial svg.face {
+        position: absolute;
+        inset: 0;
+        overflow: visible;
+      }
+      .lens {
+        position: absolute;
+        left: 70px;
+        top: 70px;
+        width: 180px;
+        height: 180px;
+        border-radius: 50%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+      }
+      .lens .ctx {
+        font-size: 13px;
+        line-height: 16px;
+        font-weight: 550;
+        color: var(--muted);
+      }
+      .lens .step {
+        font-size: 22px;
+        line-height: 27px;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        margin: 6px 0 9px;
+        width: 150px;
+      }
+      .lens .left {
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+        font-size: 17px;
+        line-height: 22px;
+        font-weight: 700;
+        letter-spacing: -0.01em;
+        padding-left: 8px;
+      }
+
+      .today .group {
+        margin-top: 10px;
+      }
+      .today .dial + .group {
+        margin-top: 16px;
+      }
+      .sched li + li,
+      .anytime li + li {
+        margin-top: 0;
+      }
+      .srow {
+        display: grid;
+        grid-template-columns: 46px 32px 1fr auto;
+        align-items: center;
+        column-gap: 12px;
+        height: 50px;
+      }
+      .srow .t {
+        font-size: 15px;
+        line-height: 20px;
+        font-weight: 650;
+        font-variant-numeric: tabular-nums;
+        letter-spacing: -0.01em;
+      }
+      .chip {
+        width: 32px;
+        height: 32px;
+        border-radius: 16px;
+        background: var(--charcoal);
+        color: var(--white);
+        display: grid;
+        place-items: center;
+      }
+      .srow .name,
+      .arow .name {
+        font-size: 17px;
+        line-height: 22px;
+        font-weight: 600;
+        letter-spacing: -0.012em;
+      }
+      .srow .dur {
+        font-size: 15px;
+        line-height: 20px;
+        font-weight: 550;
+        color: var(--muted);
+        font-variant-numeric: tabular-nums;
+      }
+
+      .arow {
+        display: grid;
+        grid-template-columns: 44px 1fr;
+        align-items: center;
+        column-gap: 2px;
+        height: 50px;
+        margin-left: -8px;
+      }
+      .tick {
+        width: 44px;
+        height: 44px;
+        display: grid;
+        place-items: center;
+      }
+      .tick i {
+        width: 26px;
+        height: 26px;
+        border-radius: 13px;
+        box-shadow: inset 0 0 0 1.75px var(--charcoal);
+      }
+
+      .tabs {
+        flex: 1;
+        height: 56px;
+        border-radius: 28px;
+        background: var(--white);
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        padding: 4px;
+        box-shadow:
+          0 10px 26px -8px rgba(34, 38, 36, 0.22),
+          0 1px 4px rgba(34, 38, 36, 0.1);
+      }
+      .tab {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 2px;
+        border-radius: 24px;
+        font-size: 11.5px;
+        line-height: 14px;
+        font-weight: 650;
+        color: var(--muted);
+        letter-spacing: 0.005em;
+      }
+      .tab[aria-current='page'] {
+        background: var(--sage);
+        color: var(--charcoal);
+      }
+      .fade {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        height: 104px;
+        background: linear-gradient(rgba(255, 255, 255, 0), #fff 40%);
+        pointer-events: none;
+      }
+
+      /* ───────────── 2 · Task ───────────── */
+      .nav {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 var(--gutter);
+        margin-top: 6px;
+        height: 44px;
+      }
+      .back {
+        height: 44px;
+        border-radius: 22px;
+        background: var(--stone);
+        display: inline-flex;
+        align-items: center;
+        gap: 2px;
+        padding: 0 16px 0 10px;
+        font-size: 15px;
+        font-weight: 650;
+        letter-spacing: -0.01em;
+      }
+      .hero {
+        display: grid;
+        grid-template-columns: 120px 1fr;
+        column-gap: 18px;
+        align-items: center;
+        padding: 0 var(--gutter) 0 20px;
+        margin-top: 22px;
+      }
+      .ring {
+        position: relative;
+        width: 120px;
+        height: 120px;
+      }
+      .ring svg {
+        position: absolute;
+        inset: 0;
+        overflow: visible;
+      }
+      .ring .c {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+      }
+      .ring .c b {
+        font-size: 30px;
+        line-height: 30px;
+        font-weight: 750;
+        letter-spacing: -0.03em;
+        font-variant-numeric: tabular-nums;
+      }
+      .ring .c span {
+        font-size: 12px;
+        line-height: 15px;
+        font-weight: 600;
+        color: var(--muted);
+        margin-top: 2px;
+      }
+      .hero h2 {
+        font-size: 26px;
+        line-height: 30px;
+        font-weight: 750;
+        letter-spacing: -0.025em;
+        text-wrap: balance;
+      }
+      .hero p {
+        margin-top: 8px;
+        font-size: 15px;
+        line-height: 20px;
+        font-weight: 550;
+        color: var(--muted);
+        font-variant-numeric: tabular-nums;
+      }
+
+      .facts {
+        margin: 24px var(--gutter) 0;
+        display: grid;
+        grid-template-columns: 1.1fr 1fr 1fr;
+        background: var(--stone);
+        border-radius: var(--section-r);
+        padding: 14px 4px;
+      }
+      .facts div {
+        padding: 0 14px;
+      }
+      .facts div + div {
+        box-shadow: inset 1px 0 0 rgba(34, 38, 36, 0.1);
+      }
+      .facts dt {
+        font-size: 13px;
+        line-height: 16px;
+        font-weight: 600;
+        color: var(--muted);
+      }
+      .facts dd {
+        margin-top: 3px;
+        font-size: 17px;
+        line-height: 22px;
+        font-weight: 700;
+        letter-spacing: -0.012em;
+        font-variant-numeric: tabular-nums;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .task .group {
+        margin-top: 14px;
+      }
+      .steps {
+        position: relative;
+      }
+      .steps li {
+        display: grid;
+        grid-template-columns: 28px 1fr auto;
+        align-items: center;
+        column-gap: 14px;
+        height: 58px;
+        position: relative;
+      }
+      .steps li:not(:last-child)::after {
+        content: '';
+        position: absolute;
+        left: 13px;
+        top: 43px;
+        height: 30px;
+        width: 2px;
+        border-radius: 1px;
+        background: #c9cec7;
+      }
+      .dot {
+        width: 28px;
+        height: 28px;
+        border-radius: 14px;
+        display: grid;
+        place-items: center;
+        position: relative;
+        z-index: 1;
+      }
+      .dot.done {
+        background: var(--sage);
+        box-shadow: inset 0 0 0 1.5px rgba(34, 38, 36, 0.18);
+      }
+      .dot.now {
+        background: var(--white);
+        box-shadow: inset 0 0 0 3px var(--charcoal);
+      }
+      .dot.now::before {
+        content: '';
+        width: 10px;
+        height: 10px;
+        border-radius: 5px;
+        background: var(--terra);
+        box-shadow: 0 0 0 1.5px var(--charcoal);
+      }
+      .dot.next {
+        background: var(--stone);
+        box-shadow: inset 0 0 0 1.5px var(--charcoal);
+      }
+      .steps .s {
+        font-size: 17px;
+        line-height: 22px;
+        font-weight: 600;
+        letter-spacing: -0.012em;
+      }
+      .steps .done-row .s {
+        color: var(--muted);
+      }
+      .steps .now-row .s {
+        font-weight: 750;
+      }
+      .state {
+        font-size: 13px;
+        line-height: 16px;
+        font-weight: 650;
+        color: var(--muted);
+      }
+      .state.now {
+        color: var(--charcoal);
+        background: var(--terra);
+        padding: 4px 10px;
+        border-radius: 12px;
+        font-weight: 750;
+      }
+
+      .note {
+        display: grid;
+        grid-template-columns: 20px 1fr;
+        column-gap: 12px;
+        padding: 14px 16px 16px;
+      }
+      .note .lbl {
+        font-size: 13px;
+        line-height: 16px;
+        font-weight: 650;
+        color: var(--muted);
+        margin-bottom: 4px;
+      }
+      .note .txt {
+        font-size: 17px;
+        line-height: 23px;
+        font-weight: 550;
+        letter-spacing: -0.01em;
+      }
+      .note svg {
+        margin-top: -2px;
+        color: var(--muted);
+      }
+
+      .row-a {
+        position: absolute;
+        left: var(--gutter);
+        right: var(--gutter);
+        bottom: 94px;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+      .row-a.single {
+        grid-template-columns: 1fr;
+      }
+      .row-a .btn {
+        width: 100%;
+      }
+      .task .bottom .primary {
+        flex: 1;
+      }
+
+      /* ───────────── 3 · Focus ───────────── */
+      .nav .ttl {
+        font-size: 15px;
+        line-height: 20px;
+        font-weight: 650;
+        color: var(--muted);
+        letter-spacing: -0.005em;
+      }
+      .nav .spacer {
+        width: 44px;
+      }
+      .fdial {
+        position: relative;
+        width: 340px;
+        height: 340px;
+        margin: 16px auto 0;
+      }
+      .fdial svg {
+        position: absolute;
+        inset: 0;
+        overflow: visible;
+      }
+      .fdial .c {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        width: 230px;
+        margin: -50px 0 0 -115px;
+        text-align: center;
+      }
+      .fdial .k {
+        font-size: 13px;
+        line-height: 16px;
+        font-weight: 600;
+        color: var(--muted);
+        font-variant-numeric: tabular-nums;
+      }
+      .fdial h2 {
+        margin-top: 8px;
+        font-size: 30px;
+        line-height: 36px;
+        font-weight: 750;
+        letter-spacing: -0.028em;
+      }
+      .remain {
+        margin-top: 22px;
+        text-align: center;
+        font-size: 20px;
+        line-height: 26px;
+        font-weight: 600;
+        letter-spacing: -0.015em;
+        font-variant-numeric: tabular-nums;
+      }
+      .remain b {
+        font-weight: 750;
+      }
+      .remain span {
+        color: var(--muted);
+        font-weight: 550;
+      }
+      .around {
+        margin: 18px var(--gutter) 0;
+        padding: 0 16px;
+      }
+      .around li {
+        display: grid;
+        grid-template-columns: 20px 44px 1fr;
+        align-items: center;
+        column-gap: 10px;
+        height: 30px;
+        font-size: 17px;
+        line-height: 22px;
+        color: var(--muted);
+        font-weight: 500;
+        letter-spacing: -0.01em;
+      }
+      .around .k2 {
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--muted);
+      }
+      .mini {
+        width: 20px;
+        height: 20px;
+        border-radius: 10px;
+        display: grid;
+        place-items: center;
+      }
+      .mini.done {
+        background: var(--sage);
+        box-shadow: inset 0 0 0 1px rgba(34, 38, 36, 0.18);
+      }
+      .mini.next {
+        box-shadow: inset 0 0 0 1.5px var(--charcoal);
+      }
+      .focus .note {
+        margin-top: 16px;
+      }
+      .focus .bottom .primary {
+        flex: 1;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Icon set: 24 grid, 1.75 stroke, round caps and joins. -->
+    <svg width="0" height="0" style="position: absolute" aria-hidden="true">
+      <defs>
+        <symbol id="i-dial" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="8.25" />
+          <circle
+            cx="12"
+            cy="12"
+            r="8.25"
+            pathLength="360"
+            stroke-dasharray="95 265"
+            transform="rotate(-90 12 12)"
+            stroke-width="4"
+            stroke-linecap="butt"
+          />
+          <path d="M12 1.5v5.5" />
+        </symbol>
+        <symbol id="i-tasks" viewBox="0 0 24 24">
+          <path d="M10.5 7h9M10.5 12h9M10.5 17h9" />
+          <path d="m4 7 1.5 1.5L8 6" />
+          <circle cx="5.75" cy="12" r="1.5" />
+          <circle cx="5.75" cy="17" r="1.5" />
+        </symbol>
+        <symbol id="i-routines" viewBox="0 0 24 24">
+          <path d="M4.5 11.5A7.5 7.5 0 0 1 17.3 6.7L19.5 9" />
+          <path d="M19.5 4.5V9H15" />
+          <path d="M19.5 12.5a7.5 7.5 0 0 1-12.8 4.8L4.5 15" />
+          <path d="M4.5 19.5V15H9" />
+        </symbol>
+        <symbol id="i-library" viewBox="0 0 24 24">
+          <path
+            d="M12 6.5c-1.8-1.4-4.3-2-7.5-2v13c3.2 0 5.7.6 7.5 2 1.8-1.4 4.3-2 7.5-2v-13c-3.2 0-5.7.6-7.5 2z"
+          />
+          <path d="M12 6.5v13" />
+        </symbol>
+        <symbol id="i-phone" viewBox="0 0 24 24">
+          <path
+            d="M6.4 3.75h2.4c.4 0 .75.27.86.65l1 3.5c.1.36-.03.75-.33.98l-1.9 1.45a11.6 11.6 0 0 0 5.24 5.24l1.45-1.9c.23-.3.62-.43.98-.33l3.5 1c.38.11.65.46.65.86v2.4c0 1.1-.9 2-2 2C11.18 19.6 4.4 12.82 4.4 5.75c0-1.1.9-2 2-2z"
+          />
+        </symbol>
+        <symbol id="i-tree" viewBox="0 0 24 24">
+          <path d="M12 21v-8.5" />
+          <path d="m12 15.5-3-2.5" />
+          <path d="M8.2 16.2a4.6 4.6 0 0 1-1.1-8.3 5 5 0 0 1 9.8 0 4.6 4.6 0 0 1-1.1 8.3z" />
+          <path d="M8.5 21h7" />
+        </symbol>
+        <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" /></symbol>
+        <symbol id="i-chev-left" viewBox="0 0 24 24"><path d="M14.5 5.5 8 12l6.5 6.5" /></symbol>
+        <symbol id="i-chev-right" viewBox="0 0 24 24"><path d="m9.5 5.5 6.5 6.5-6.5 6.5" /></symbol>
+        <symbol id="i-chev-down" viewBox="0 0 24 24"><path d="M5.5 9 12 15.5 18.5 9" /></symbol>
+        <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5" /></symbol>
+        <symbol id="i-play" viewBox="0 0 24 24">
+          <path
+            d="M8 5.6v12.8c0 .78.85 1.26 1.52.86l10.4-6.4a1 1 0 0 0 0-1.72L9.52 4.74C8.85 4.34 8 4.82 8 5.6z"
+            fill="currentColor"
+            stroke="none"
+          />
+        </symbol>
+        <symbol id="i-pause" viewBox="0 0 24 24">
+          <rect x="6.5" y="5" width="3.5" height="14" rx="1.2" fill="currentColor" stroke="none" />
+          <rect x="14" y="5" width="3.5" height="14" rx="1.2" fill="currentColor" stroke="none" />
+        </symbol>
+        <symbol id="i-note" viewBox="0 0 24 24">
+          <path d="M5.5 4.5h13v9.5l-5 5.5h-8z" />
+          <path d="M13.5 19.5V14h5" />
+          <path d="M8.5 9h7M8.5 12.5h3.5" />
+        </symbol>
+        <symbol id="i-later" viewBox="0 0 24 24">
+          <path d="M20 12a8 8 0 1 1-2.34-5.66" />
+          <path d="M20 4.5V9h-4.5" />
+          <path d="M12 8v4.25l2.75 1.75" />
+        </symbol>
+        <symbol id="i-cal" viewBox="0 0 24 24">
+          <rect x="4" y="5.5" width="16" height="14.5" rx="3" />
+          <path d="M4 10h16M8.5 3.5v3.5M15.5 3.5v3.5" />
+        </symbol>
+        <symbol id="i-clock" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="8.25" />
+          <path d="M12 7.5V12l3 2" />
+        </symbol>
+      </defs>
+    </svg>
+
+    <!-- Status bar icons are shared by all three screens -->
+    <template id="noop"></template>
+
+    <main class="board">
+      <header class="intro">
+        <div>
+          <p class="eyebrow-board">
+            <svg class="halo-mark" viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="12" r="10" fill="#FFFFFF" />
+              <circle
+                cx="12"
+                cy="12"
+                r="7.6"
+                fill="none"
+                stroke="#F28C5E"
+                stroke-width="3.2"
+                pathLength="360"
+                stroke-dasharray="120 240"
+                transform="rotate(-90 12 12)"
+              />
+              <path d="M12 1.5v5" stroke="#222624" stroke-width="2" stroke-linecap="round" />
+            </svg>
+            Adnotia · a phone direction
+          </p>
+          <h1>Halo</h1>
+          <p class="idea">
+            The day is a clock face. Scheduled items sit as charcoal arcs around the rim of a stone
+            dial, the running task is a terracotta band shrinking from the current time, and the
+            current step is written in the middle.
+          </p>
+        </div>
+        <dl class="spec">
+          <dt>Palette</dt>
+          <dd>
+            <div class="swatches">
+              <span class="sw"><i style="background: #222624"></i>Charcoal</span>
+              <span class="sw"><i style="background: #ffffff"></i>White</span>
+              <span class="sw"><i style="background: #f28c5e"></i>Terra&shy;cotta</span>
+              <span class="sw"><i style="background: #eef0ec"></i>Stone</span>
+              <span class="sw"><i style="background: #dfe9e0"></i>Sage</span>
+              <span class="sw"><i style="background: #595c5b"></i>Muted</span>
+            </div>
+          </dd>
+          <dt>Type</dt>
+          <dd>Albert Sans, variable 100–900, OFL. One face; tabular figures for every time.</dd>
+        </dl>
+      </header>
+
+      <div class="phones">
+        <!-- ═════════════ 1 · TODAY ═════════════ -->
+        <figure class="shot">
+          <div class="phone">
+            <div class="screen today">
+              <div class="island" aria-hidden="true"></div>
+              <div class="status" aria-hidden="true">
+                <span class="num">10:05</span>
+                <span class="sys">
+                  <svg width="18" height="12" viewBox="0 0 18 12">
+                    <rect x="0" y="8" width="3" height="4" rx="1" fill="#222624" />
+                    <rect x="5" y="5.5" width="3" height="6.5" rx="1" fill="#222624" />
+                    <rect x="10" y="3" width="3" height="9" rx="1" fill="#222624" />
+                    <rect x="15" y="0" width="3" height="12" rx="1" fill="#222624" />
+                  </svg>
+                  <svg width="16" height="12" viewBox="0 0 16 12">
+                    <path d="M8 11.2 5.6 8.8a3.4 3.4 0 0 1 4.8 0z" fill="#222624" />
+                    <path
+                      d="M3.4 6.6a6.5 6.5 0 0 1 9.2 0M1.2 4.4a9.6 9.6 0 0 1 13.6 0"
+                      fill="none"
+                      stroke="#222624"
+                      stroke-width="1.6"
+                      stroke-linecap="round"
+                    />
+                  </svg>
+                  <svg width="27" height="13" viewBox="0 0 27 13">
+                    <rect
+                      x="0.6"
+                      y="0.6"
+                      width="22.8"
+                      height="11.8"
+                      rx="3.6"
+                      fill="none"
+                      stroke="#222624"
+                      stroke-opacity=".4"
+                      stroke-width="1.2"
+                    />
+                    <rect x="2.4" y="2.4" width="15.5" height="8.2" rx="2.2" fill="#222624" />
+                    <path
+                      d="M25 4.4v4.2c.8-.3 1.4-1.1 1.4-2.1s-.6-1.8-1.4-2.1z"
+                      fill="#222624"
+                      fill-opacity=".45"
+                    />
+                  </svg>
+                </span>
+              </div>
+
+              <header class="top">
+                <h2>
+                  <span class="title">Today</span> <span class="date">Tuesday 24 November</span>
+                </h2>
+                <a class="round me" href="#me" aria-label="Me: settings, medication and family"
+                  >Me</a
+                >
+              </header>
+
+              <div class="dial">
+                <svg
+                  class="face"
+                  viewBox="-160 -160 320 320"
+                  width="320"
+                  height="320"
+                  role="img"
+                  aria-label="The morning as a 12-hour clock face. Done: 7:30 to 8:15, and 9:00 to 9:15. Now 10:05, running until 10:23. Later: Call the dentist at 10:30, Walk to the park at 11:00."
+                >
+                  <!-- the face -->
+                  <circle r="160" fill="#EEF0EC" />
+                  <!-- the band is the outer 24 pt of the face (r 136–160). From now to 12 it is
+                       shaded, charcoal at 7%: what is left of this half of the day. -->
+                  <path
+                    d="M-134.94 -85.97A160 160 0 0 1 0 -160L0 -136A136 136 0 0 0 -114.7 -73.07Z"
+                    fill="#222624"
+                    fill-opacity="0.07"
+                  />
+                  <!-- hour ticks, 8 pt long, 12 pt inside the band -->
+                  <g stroke="#222624" stroke-width="2" stroke-linecap="round">
+                    <line y1="-116" y2="-124" />
+                    <line y1="-116" y2="-124" transform="rotate(30)" />
+                    <line y1="-116" y2="-124" transform="rotate(60)" />
+                    <line y1="-116" y2="-124" transform="rotate(90)" />
+                    <line y1="-116" y2="-124" transform="rotate(120)" />
+                    <line y1="-116" y2="-124" transform="rotate(150)" />
+                    <line y1="-116" y2="-124" transform="rotate(180)" />
+                    <line y1="-116" y2="-124" transform="rotate(210)" />
+                    <line y1="-116" y2="-124" transform="rotate(240)" />
+                    <line y1="-116" y2="-124" transform="rotate(270)" />
+                    <line y1="-116" y2="-124" transform="rotate(300)" />
+                    <line y1="-116" y2="-124" transform="rotate(330)" />
+                  </g>
+                  <g
+                    font-family="Albert Sans, sans-serif"
+                    font-size="13"
+                    font-weight="650"
+                    fill="#595C5B"
+                    text-anchor="middle"
+                    dominant-baseline="central"
+                    style="font-variant-numeric: tabular-nums"
+                  >
+                    <text y="-104">12</text>
+                    <text x="104">3</text>
+                    <text y="104">6</text>
+                    <text x="-104">9</text>
+                  </g>
+                  <!-- the clear centre: 180 pt -->
+                  <circle r="90" fill="#FFFFFF" />
+                  <!-- finished: 7:30–8:15 and 9:00–9:15. Sage inside a 1.5 pt charcoal edge, with a
+                       charcoal check at the midpoint, so done never rests on the sage alone. -->
+                  <g fill="none" stroke-linecap="round">
+                    <g stroke="#222624" stroke-width="15">
+                      <path d="M-109.82 99.22A148 148 0 0 1 -133.69 63.49" />
+                      <path d="M-147.81 -7.5A148 148 0 0 1 -147.52 -11.86" />
+                    </g>
+                    <g stroke="#DFE9E0" stroke-width="12">
+                      <path d="M-109.82 99.22A148 148 0 0 1 -133.69 63.49" />
+                      <path d="M-147.81 -7.5A148 148 0 0 1 -147.52 -11.86" />
+                    </g>
+                    <g stroke="#222624" stroke-width="2" stroke-linejoin="round">
+                      <path d="M-3.2 .1-1 2.3 3.3-2.1" transform="translate(-123.06 82.22)" />
+                      <path d="M-3.2 .1-1 2.3 3.3-2.1" transform="translate(-147.68 -9.68)" />
+                    </g>
+                  </g>
+                  <!-- scheduled: 10:30–10:40 and 11:00–11:20, 12 wide. Each round cap (6 pt =
+                       2.32° at r 148) is taken off the path, so the drawn length is the duration. -->
+                  <g fill="none" stroke="#222624" stroke-width="12" stroke-linecap="round">
+                    <path d="M-100.32 -108.81A148 148 0 0 1 -99.65 -109.43" />
+                    <path d="M-68.74 -131.07A148 148 0 0 1 -56.21 -136.91" />
+                  </g>
+                  <!-- running: 10:05 to 10:23 across the full band. Its 2 pt charcoal edge, not the
+                       fill, carries the 3:1 against stone. -->
+                  <path
+                    d="M-134.94 -85.97A160 160 0 0 1 -119.83 -106.02L-101.86 -90.12A136 136 0 0 0 -114.7 -73.07Z"
+                    fill="#F28C5E"
+                    stroke="#222624"
+                    stroke-width="2"
+                    stroke-linejoin="round"
+                  />
+                  <!-- now: 10:05, 4 pt across the band and 4 pt past it either side -->
+                  <line
+                    y1="-132"
+                    y2="-164"
+                    stroke="#222624"
+                    stroke-width="4"
+                    stroke-linecap="round"
+                    transform="rotate(302.5)"
+                  />
+                  <!-- glyph chips just outside the rim, at each scheduled arc's midpoint -->
+                  <g transform="translate(-117.55 -128.29)">
+                    <circle r="10" fill="#222624" />
+                    <use
+                      href="#i-phone"
+                      x="-6.5"
+                      y="-6.5"
+                      width="13"
+                      height="13"
+                      fill="none"
+                      stroke="#FFFFFF"
+                      stroke-width="2.9"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
+                  </g>
+                  <g transform="translate(-73.54 -157.7)">
+                    <circle r="10" fill="#222624" />
+                    <use
+                      href="#i-tree"
+                      x="-6.5"
+                      y="-6.5"
+                      width="13"
+                      height="13"
+                      fill="none"
+                      stroke="#FFFFFF"
+                      stroke-width="2.9"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
+                  </g>
+                </svg>
+                <a
+                  class="lens"
+                  href="#focus"
+                  aria-label="Running now: Write the question. School email, step 2 of 3. 18 minutes left, ends 10:23. Open focus."
+                >
+                  <span class="ctx">School email</span>
+                  <span class="step">Write the question</span>
+                  <span class="left num"
+                    >18 min left
+                    <svg class="i i16" aria-hidden="true"><use href="#i-chev-right" /></svg
+                  ></span>
+                </a>
+              </div>
+
+              <section class="group" aria-labelledby="later-h">
+                <h3 id="later-h">Later</h3>
+                <ul class="sched">
+                  <li>
+                    <a class="srow" href="#dentist">
+                      <span class="t">10:30</span>
+                      <span class="chip" aria-hidden="true"
+                        ><svg class="i i18"><use href="#i-phone" /></svg
+                      ></span>
+                      <span class="name">Call the dentist</span>
+                      <span class="dur">10 min</span>
+                    </a>
+                  </li>
+                  <li>
+                    <a class="srow" href="#park">
+                      <span class="t">11:00</span>
+                      <span class="chip" aria-hidden="true"
+                        ><svg class="i i18"><use href="#i-tree" /></svg
+                      ></span>
+                      <span class="name">Walk to the park</span>
+                      <span class="dur">20 min</span>
+                    </a>
+                  </li>
+                </ul>
+              </section>
+
+              <section class="group anytime" aria-labelledby="any-h">
+                <h3 id="any-h">Anytime</h3>
+                <ul>
+                  <li class="arow">
+                    <button
+                      class="tick"
+                      type="button"
+                      role="checkbox"
+                      aria-checked="false"
+                      aria-label="Done: Renew the parking permit"
+                    >
+                      <i></i>
+                    </button>
+                    <a class="name" href="#permit">Renew the parking permit</a>
+                  </li>
+                  <li class="arow">
+                    <button
+                      class="tick"
+                      type="button"
+                      role="checkbox"
+                      aria-checked="false"
+                      aria-label="Done: Order printer ink"
+                    >
+                      <i></i>
+                    </button>
+                    <a class="name" href="#ink">Order printer ink</a>
+                  </li>
+                </ul>
+              </section>
+
+              <div class="fade" aria-hidden="true"></div>
+              <div class="bottom">
+                <nav class="tabs" aria-label="Main">
+                  <a class="tab" href="#today" aria-current="page"
+                    ><svg class="i i22" aria-hidden="true"><use href="#i-dial" /></svg>Today</a
+                  >
+                  <a class="tab" href="#tasks"
+                    ><svg class="i i22" aria-hidden="true"><use href="#i-tasks" /></svg>Tasks</a
+                  >
+                  <a class="tab" href="#routines"
+                    ><svg class="i i22" aria-hidden="true"><use href="#i-routines" /></svg
+                    >Routines</a
+                  >
+                  <a class="tab" href="#library"
+                    ><svg class="i i22" aria-hidden="true"><use href="#i-library" /></svg>Library</a
+                  >
+                </nav>
+                <button class="capture" type="button" aria-label="Capture">
+                  <svg class="i" aria-hidden="true"><use href="#i-plus" /></svg>
+                </button>
+              </div>
+              <div class="home" aria-hidden="true"></div>
+            </div>
+          </div>
+          <figcaption>
+            <b><span>01</span>Today</b>
+            <p>
+              The morning on a 12-hour face. The shaded rim is what is left of it: the band runs
+              from the 10:05 notch to 10:23, appointments wait by their glyphs, finished ones are
+              sage with a check.
+            </p>
+          </figcaption>
+        </figure>
+
+        <!-- ═════════════ 2 · TASK ═════════════ -->
+        <figure class="shot">
+          <div class="phone">
+            <div class="screen task">
+              <div class="island" aria-hidden="true"></div>
+              <div class="status" aria-hidden="true">
+                <span class="num">10:05</span>
+                <span class="sys">
+                  <svg width="18" height="12" viewBox="0 0 18 12">
+                    <rect x="0" y="8" width="3" height="4" rx="1" fill="#222624" />
+                    <rect x="5" y="5.5" width="3" height="6.5" rx="1" fill="#222624" />
+                    <rect x="10" y="3" width="3" height="9" rx="1" fill="#222624" />
+                    <rect x="15" y="0" width="3" height="12" rx="1" fill="#222624" />
+                  </svg>
+                  <svg width="16" height="12" viewBox="0 0 16 12">
+                    <path d="M8 11.2 5.6 8.8a3.4 3.4 0 0 1 4.8 0z" fill="#222624" />
+                    <path
+                      d="M3.4 6.6a6.5 6.5 0 0 1 9.2 0M1.2 4.4a9.6 9.6 0 0 1 13.6 0"
+                      fill="none"
+                      stroke="#222624"
+                      stroke-width="1.6"
+                      stroke-linecap="round"
+                    />
+                  </svg>
+                  <svg width="27" height="13" viewBox="0 0 27 13">
+                    <rect
+                      x="0.6"
+                      y="0.6"
+                      width="22.8"
+                      height="11.8"
+                      rx="3.6"
+                      fill="none"
+                      stroke="#222624"
+                      stroke-opacity=".4"
+                      stroke-width="1.2"
+                    />
+                    <rect x="2.4" y="2.4" width="15.5" height="8.2" rx="2.2" fill="#222624" />
+                    <path
+                      d="M25 4.4v4.2c.8-.3 1.4-1.1 1.4-2.1s-.6-1.8-1.4-2.1z"
+                      fill="#222624"
+                      fill-opacity=".45"
+                    />
+                  </svg>
+                </span>
+              </div>
+
+              <div class="nav">
+                <a class="back" href="#today"
+                  ><svg class="i i22" aria-hidden="true"><use href="#i-chev-left" /></svg>Today</a
+                >
+              </div>
+
+              <div class="hero">
+                <div class="ring" role="img" aria-label="18 of 25 minutes left; 7 minutes worked">
+                  <svg viewBox="-60 -60 120 120" width="120" height="120" aria-hidden="true">
+                    <circle r="52" fill="none" stroke="#EEF0EC" stroke-width="14" />
+                    <path
+                      d="M0 -59A59 59 0 1 1 -57.95 11.06L-44.2 8.43A45 45 0 1 0 0 -45Z"
+                      fill="#F28C5E"
+                      stroke="#222624"
+                      stroke-width="2"
+                      stroke-linejoin="round"
+                    />
+                    <line
+                      y1="-41"
+                      y2="-63"
+                      stroke="#222624"
+                      stroke-width="3.5"
+                      stroke-linecap="round"
+                    />
+                  </svg>
+                  <div class="c" aria-hidden="true"><b>18</b><span>min left</span></div>
+                </div>
+                <div>
+                  <h2>Write the school email</h2>
+                  <p>Step 2 of 3 · ends 10:23</p>
+                </div>
+              </div>
+
+              <dl class="facts">
+                <div>
+                  <dt>When</dt>
+                  <dd>
+                    <svg class="i i18" aria-hidden="true"><use href="#i-cal" /></svg>Today
+                  </dd>
+                </div>
+                <div>
+                  <dt>Estimate</dt>
+                  <dd>25 min</dd>
+                </div>
+                <div>
+                  <dt>So far</dt>
+                  <dd>7 min</dd>
+                </div>
+              </dl>
+
+              <section class="group" aria-labelledby="steps-h">
+                <h3 id="steps-h">Steps</h3>
+                <ol class="steps">
+                  <li class="done-row">
+                    <span class="dot done" aria-hidden="true"
+                      ><svg class="i i16"><use href="#i-check" /></svg
+                    ></span>
+                    <span class="s">Find the school address</span>
+                    <span class="state">Done</span>
+                  </li>
+                  <li class="now-row">
+                    <span class="dot now" aria-hidden="true"></span>
+                    <span class="s">Write the question</span>
+                    <span class="state now">Now</span>
+                  </li>
+                  <li>
+                    <span class="dot next" aria-hidden="true"></span>
+                    <span class="s">Read it once and send</span>
+                    <span></span>
+                  </li>
+                </ol>
+              </section>
+
+              <section class="group note" aria-label="Note">
+                <svg class="i i20" aria-hidden="true"><use href="#i-note" /></svg>
+                <div>
+                  <p class="lbl">Note</p>
+                  <p class="txt">When is the permission slip due?</p>
+                </div>
+              </section>
+
+              <div class="row-a single">
+                <button class="btn quiet short" type="button">
+                  <svg class="i i20" aria-hidden="true"><use href="#i-later" /></svg>Move to later
+                </button>
+              </div>
+              <div class="bottom">
+                <button class="btn primary" type="button">
+                  <svg class="i i20" aria-hidden="true"><use href="#i-play" /></svg>Back to it
+                </button>
+                <button class="capture" type="button" aria-label="Capture">
+                  <svg class="i" aria-hidden="true"><use href="#i-plus" /></svg>
+                </button>
+              </div>
+              <div class="home" aria-hidden="true"></div>
+            </div>
+          </div>
+          <figcaption>
+            <b><span>02</span>Task opened</b>
+            <p>
+              The task's own 25 minutes as a ring with the same notch: 18 left in terracotta, 7
+              worked in stone. Steps use the same marks as the dial.
+            </p>
+          </figcaption>
+        </figure>
+
+        <!-- ═════════════ 3 · FOCUS ═════════════ -->
+        <figure class="shot">
+          <div class="phone">
+            <div class="screen focus">
+              <div class="island" aria-hidden="true"></div>
+              <div class="status" aria-hidden="true">
+                <span class="num">10:05</span>
+                <span class="sys">
+                  <svg width="18" height="12" viewBox="0 0 18 12">
+                    <rect x="0" y="8" width="3" height="4" rx="1" fill="#222624" />
+                    <rect x="5" y="5.5" width="3" height="6.5" rx="1" fill="#222624" />
+                    <rect x="10" y="3" width="3" height="9" rx="1" fill="#222624" />
+                    <rect x="15" y="0" width="3" height="12" rx="1" fill="#222624" />
+                  </svg>
+                  <svg width="16" height="12" viewBox="0 0 16 12">
+                    <path d="M8 11.2 5.6 8.8a3.4 3.4 0 0 1 4.8 0z" fill="#222624" />
+                    <path
+                      d="M3.4 6.6a6.5 6.5 0 0 1 9.2 0M1.2 4.4a9.6 9.6 0 0 1 13.6 0"
+                      fill="none"
+                      stroke="#222624"
+                      stroke-width="1.6"
+                      stroke-linecap="round"
+                    />
+                  </svg>
+                  <svg width="27" height="13" viewBox="0 0 27 13">
+                    <rect
+                      x="0.6"
+                      y="0.6"
+                      width="22.8"
+                      height="11.8"
+                      rx="3.6"
+                      fill="none"
+                      stroke="#222624"
+                      stroke-opacity=".4"
+                      stroke-width="1.2"
+                    />
+                    <rect x="2.4" y="2.4" width="15.5" height="8.2" rx="2.2" fill="#222624" />
+                    <path
+                      d="M25 4.4v4.2c.8-.3 1.4-1.1 1.4-2.1s-.6-1.8-1.4-2.1z"
+                      fill="#222624"
+                      fill-opacity=".45"
+                    />
+                  </svg>
+                </span>
+              </div>
+
+              <div class="nav">
+                <a class="round" href="#today" aria-label="Back to Today"
+                  ><svg class="i i22" aria-hidden="true"><use href="#i-chev-down" /></svg
+                ></a>
+                <p class="ttl">Write the school email</p>
+                <span class="spacer" aria-hidden="true"></span>
+              </div>
+
+              <div class="fdial">
+                <svg
+                  viewBox="-170 -170 340 340"
+                  width="340"
+                  height="340"
+                  role="img"
+                  aria-label="A 25-minute ring: 18 minutes left in terracotta, 7 minutes worked in stone"
+                >
+                  <!-- track: 25 minutes, the same 24 pt band as the Today dial -->
+                  <circle r="150" fill="none" stroke="#EEF0EC" stroke-width="24" />
+                  <!-- remaining: 18 of 25 minutes = 259.2°, clockwise from now at the top -->
+                  <path
+                    d="M0 -162A162 162 0 1 1 -159.13 30.36L-135.56 25.86A138 138 0 1 0 0 -138Z"
+                    fill="#F28C5E"
+                    stroke="#222624"
+                    stroke-width="2"
+                    stroke-linejoin="round"
+                  />
+                  <!-- five-minute ticks, 12 pt inside the band as on the Today dial -->
+                  <g stroke="#222624" stroke-width="2" stroke-linecap="round">
+                    <line y1="-118" y2="-126" transform="rotate(72)" />
+                    <line y1="-118" y2="-126" transform="rotate(144)" />
+                    <line y1="-118" y2="-126" transform="rotate(216)" />
+                    <line y1="-118" y2="-126" transform="rotate(288)" />
+                  </g>
+                  <!-- now -->
+                  <line
+                    y1="-134"
+                    y2="-166"
+                    stroke="#222624"
+                    stroke-width="4"
+                    stroke-linecap="round"
+                  />
+                </svg>
+                <div class="c">
+                  <p class="k">Step 2 of 3</p>
+                  <h2>Write the question</h2>
+                </div>
+              </div>
+
+              <p class="remain"><b>18 min left</b> <span>of 25 · ends 10:23</span></p>
+
+              <ul class="around">
+                <li>
+                  <span class="mini done" aria-hidden="true"
+                    ><svg class="i" style="width: 12px; height: 12px; stroke-width: 3">
+                      <use href="#i-check" /></svg></span
+                  ><span class="k2">Done</span><span>Find the school address</span>
+                </li>
+                <li>
+                  <span class="mini next" aria-hidden="true"></span><span class="k2">Next</span
+                  ><span>Read it once and send</span>
+                </li>
+              </ul>
+
+              <section class="group note" aria-label="Note">
+                <svg class="i i20" aria-hidden="true"><use href="#i-note" /></svg>
+                <div>
+                  <p class="lbl">Note</p>
+                  <p class="txt">When is the permission slip due?</p>
+                </div>
+              </section>
+
+              <div class="row-a">
+                <button class="btn quiet short num" type="button">
+                  <svg class="i i20" aria-hidden="true"><use href="#i-plus" /></svg>5 min
+                </button>
+                <button class="btn quiet short" type="button">
+                  <svg class="i i20" aria-hidden="true"><use href="#i-pause" /></svg>Pause
+                </button>
+              </div>
+              <div class="bottom">
+                <button class="btn primary" type="button">
+                  <svg class="i i20" aria-hidden="true"><use href="#i-check" /></svg>Step done
+                </button>
+                <button class="capture" type="button" aria-label="Capture a thought">
+                  <svg class="i" aria-hidden="true"><use href="#i-plus" /></svg>
+                </button>
+              </div>
+              <div class="home" aria-hidden="true"></div>
+            </div>
+          </div>
+          <figcaption>
+            <b><span>03</span>Focus</b>
+            <p>
+              The dial becomes a 25-minute face in the same 24 pt band, with now at the top. The
+              step is the largest type on the screen; the thin ring and the minutes frame it.
+            </p>
+          </figcaption>
+        </figure>
+      </div>
+    </main>
+  </body>
+</html>

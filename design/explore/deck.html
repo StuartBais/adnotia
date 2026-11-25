@@ -1,0 +1,1700 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Deck · Adnotia phone direction</title>
+    <!--
+  Typefaces, both SIL Open Font License, both from Google Fonts for this static mock-up only;
+  the app would bundle the files:
+    Funnel Display (variable, wght 300–800): screen titles, card titles, the Focus step.
+    Funnel Sans (variable, wght 300–800): everything else. Its figures are tabular by default
+    (checked: "1111" and "0000" set to the same advance at 700), so the timer does not jitter.
+
+  Geometry. Phone screen 390 × 844. Cards span the width minus 16 pt each side (358) with
+  28 pt corners. Each card behind the top one is 4% narrower and 14 pt lower at its top, and
+  shows a 52 pt edge below the card in front:
+    top card    358 wide, 124–468 (344 tall)
+    second card 344 wide, 138–520
+    third card  330 wide, 152–572
+  The edges line their content up on one column (x 50 to 338) however narrow the card, so
+  the times and titles of the next cards read as a list.
+  The timer bar fills with what is left: 18 of 25 minutes = 72%. Notches every five minutes.
+  The same unit appears on the edges: one block per five minutes beside the number.
+  The clock on every screen reads 10:05, so "18 min left" ends at 10:23am.
+  The Focus step is set at 44/48 rather than the 34/40 in the type scale: it is the one
+  place the scale is overridden, so the step is beyond doubt the largest thing on screen.
+
+  Contrast (WCAG, computed):
+    frost #F3F4F6 on graphite #18191D 15.96   pewter #A4A9B4 on graphite 7.45
+    frost on capsule #24262B 13.76            pewter on capsule 6.43
+    ink #141518 on lagoon 10.45, bluebell 10.51, sand 12.94, pistachio 13.18
+    ink on lagoon with an ink-10% wash 8.64   ink at 80% on lagoon 6.74
+    ink on frost 16.59
+-->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Funnel+Display:wght@300..800&family=Funnel+Sans:wght@300..800&display=swap"
+    />
+    <style>
+      :root {
+        --graphite: #18191d;
+        --frost: #f3f4f6;
+        --pewter: #a4a9b4;
+        --capsule: #24262b;
+        --ink: #141518;
+        --lagoon: #7ed3c6;
+        --pistachio: #c8e68e;
+        --bluebell: #a8c7f0;
+        --sand: #ebd7b0;
+
+        /* the board around the phones, not the app */
+        --board: #e3e4e7;
+        --board-ink: #141518;
+        --board-muted: #4a4e56;
+        --bezel: #0b0c0e;
+
+        --display: 'Funnel Display', 'Funnel Sans', system-ui, sans-serif;
+        --sans: 'Funnel Sans', system-ui, sans-serif;
+        --card-r: 28px;
+        --card-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+      }
+      body {
+        background: var(--board);
+        color: var(--board-ink);
+        font-family: var(--sans);
+        -webkit-font-smoothing: antialiased;
+        text-rendering: optimizeLegibility;
+        font-variant-numeric: tabular-nums;
+      }
+      button,
+      a {
+        font: inherit;
+        color: inherit;
+      }
+      button {
+        border: 0;
+        background: none;
+        padding: 0;
+        margin: 0;
+        cursor: pointer;
+        text-align: inherit;
+      }
+      a {
+        text-decoration: none;
+      }
+      h1,
+      h2,
+      h3,
+      p,
+      ol,
+      ul,
+      figure,
+      dl,
+      dd {
+        margin: 0;
+        padding: 0;
+      }
+      ol,
+      ul {
+        list-style: none;
+      }
+      svg {
+        display: block;
+        flex: none;
+        stroke-width: 2;
+      }
+      /* Line icons are drawn on a 24 grid and the glyphs on a 56 grid. The stroke is set here
+         rather than in each symbol so that every icon renders at 2 px whatever size it is
+         drawn at: 24 × 2 ÷ size. */
+      svg[width='18'] {
+        stroke-width: 2.667;
+      }
+      svg[width='20'] {
+        stroke-width: 2.4;
+      }
+      svg[width='22'] {
+        stroke-width: 2.182;
+      }
+      svg[width='26'] {
+        stroke-width: 1.846;
+      }
+      .vh {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        white-space: nowrap;
+      }
+      :focus-visible {
+        outline: 3px solid var(--frost);
+        outline-offset: 2px;
+      }
+      .card :focus-visible,
+      .sheet :focus-visible {
+        outline-color: var(--ink);
+      }
+
+      /* ---------- the board ---------- */
+      .board {
+        width: 1400px;
+        padding: 52px 41px 60px;
+        margin: 0 auto;
+      }
+      .board-head {
+        display: grid;
+        grid-template-columns: 1fr 520px;
+        gap: 48px;
+        align-items: end;
+        margin-bottom: 40px;
+      }
+      .kicker {
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--board-muted);
+      }
+      .board-head h1 {
+        font-family: var(--display);
+        font-weight: 800;
+        font-size: 64px;
+        line-height: 64px;
+        letter-spacing: -0.03em;
+        margin: 10px 0 14px;
+      }
+      .idea {
+        font-size: 20px;
+        line-height: 28px;
+        font-weight: 500;
+        max-width: 640px;
+        color: #2a2d33;
+      }
+      .specs {
+        display: grid;
+        grid-template-columns: 76px 1fr;
+        row-gap: 12px;
+        column-gap: 16px;
+        font-size: 14px;
+        line-height: 20px;
+        color: var(--board-muted);
+      }
+      .specs dt {
+        font-weight: 700;
+        color: var(--board-ink);
+      }
+      .swatches {
+        display: flex;
+        gap: 22px;
+        align-items: center;
+        margin-bottom: 6px;
+      }
+      .sw {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        white-space: nowrap;
+      }
+      .sw i:last-of-type {
+        margin-right: 6px;
+      }
+      .sw i {
+        width: 18px;
+        height: 18px;
+        border-radius: 6px;
+        display: block;
+        box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.12);
+      }
+
+      .phones {
+        display: flex;
+        gap: 44px;
+        justify-content: center;
+      }
+      .shot {
+        width: 410px;
+      }
+      .phone {
+        width: 410px;
+        height: 864px;
+        padding: 10px;
+        border-radius: 58px;
+        background: var(--bezel);
+        box-shadow:
+          inset 0 0 0 1px #2c2e33,
+          0 1px 0 rgba(255, 255, 255, 0.6),
+          0 30px 60px -20px rgba(20, 21, 24, 0.45),
+          0 12px 24px -12px rgba(20, 21, 24, 0.3);
+      }
+      .screen {
+        position: relative;
+        width: 390px;
+        height: 844px;
+        border-radius: 48px;
+        overflow: hidden;
+        background: var(--graphite);
+        color: var(--frost);
+      }
+      .shot figcaption {
+        margin-top: 26px;
+        padding: 0 8px;
+      }
+      .cap-title {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-family: var(--display);
+        font-weight: 700;
+        font-size: 19px;
+        line-height: 24px;
+      }
+      .cap-title b {
+        width: 26px;
+        height: 26px;
+        border-radius: 50%;
+        background: var(--board-ink);
+        color: var(--board);
+        display: grid;
+        place-items: center;
+        font: 700 13px/1 var(--sans);
+      }
+      .cap-text {
+        margin-top: 8px;
+        font-size: 14px;
+        line-height: 21px;
+        color: var(--board-muted);
+      }
+
+      /* ---------- system chrome ---------- */
+      .status {
+        position: absolute;
+        inset: 0 0 auto 0;
+        height: 54px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 4px 30px 0 40px;
+        font-weight: 600;
+        font-size: 16.5px;
+        letter-spacing: -0.01em;
+        z-index: 20;
+      }
+      .island {
+        position: absolute;
+        top: 11px;
+        left: 50%;
+        width: 124px;
+        height: 36px;
+        margin-left: -62px;
+        border-radius: 20px;
+        background: #000;
+      }
+      .status-icons {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .home-bar {
+        position: absolute;
+        bottom: 8px;
+        left: 50%;
+        width: 136px;
+        height: 5px;
+        margin-left: -68px;
+        border-radius: 3px;
+        background: var(--frost);
+        z-index: 30;
+      }
+      .on-card .home-bar {
+        background: var(--ink);
+      }
+
+      /* ---------- shared pieces ---------- */
+      .ink {
+        color: var(--ink);
+      }
+      .c-lagoon {
+        background: var(--lagoon);
+        --face: var(--lagoon);
+      }
+      .c-bluebell {
+        background: var(--bluebell);
+        --face: var(--bluebell);
+      }
+      .c-pistachio {
+        background: var(--pistachio);
+        --face: var(--pistachio);
+      }
+      .c-sand {
+        background: var(--sand);
+        --face: var(--sand);
+      }
+
+      .card {
+        border-radius: var(--card-r);
+        color: var(--ink);
+        box-shadow:
+          inset 0 1px 0 rgba(255, 255, 255, 0.38),
+          var(--card-shadow);
+      }
+
+      .round {
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+      }
+      .round.wash {
+        background: rgba(20, 21, 24, 0.1);
+        color: var(--ink);
+      }
+      .round.solid {
+        background: var(--ink);
+        color: var(--face);
+      }
+
+      .pill {
+        height: 52px;
+        border-radius: 26px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        font-weight: 600;
+        font-size: 17px;
+        letter-spacing: -0.005em;
+        padding: 0 22px;
+      }
+      .pill.ink {
+        background: var(--ink);
+        color: var(--face);
+      }
+      .pill.wash {
+        background: rgba(20, 21, 24, 0.12);
+        color: var(--ink);
+      }
+      .pill.frost {
+        background: var(--frost);
+        color: var(--ink);
+      }
+      .pill.dark {
+        background: var(--capsule);
+        color: var(--frost);
+      }
+
+      .timebar {
+        position: relative;
+        height: 12px;
+        border-radius: 6px;
+        background: rgba(20, 21, 24, 0.18);
+        overflow: hidden;
+      }
+      .timebar .fill {
+        position: absolute;
+        inset: 0 auto 0 0;
+        border-radius: 6px;
+        background: var(--ink);
+      }
+      .timebar .notch {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        margin-left: -1px;
+        background: var(--face);
+      }
+      .time-row {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        margin-bottom: 10px;
+      }
+      .time-left {
+        font-weight: 700;
+        font-size: 20px;
+        line-height: 24px;
+        letter-spacing: -0.01em;
+      }
+      .time-end {
+        font-weight: 500;
+        font-size: 14px;
+        line-height: 18px;
+        color: rgba(20, 21, 24, 0.8);
+      }
+
+      .eyebrow {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 600;
+        font-size: 14px;
+        line-height: 18px;
+      }
+      .live-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--ink);
+        box-shadow: 0 0 0 3px rgba(20, 21, 24, 0.14);
+      }
+
+      /* ---------- 1 · Today ---------- */
+      .today-head {
+        position: absolute;
+        top: 60px;
+        left: 24px;
+        right: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .screen-title {
+        font-family: var(--display);
+        font-weight: 800;
+        font-size: 30px;
+        line-height: 34px;
+        letter-spacing: -0.025em;
+      }
+      .screen-date {
+        margin-top: 2px;
+        font-size: 15px;
+        line-height: 20px;
+        font-weight: 500;
+        color: var(--pewter);
+      }
+      .me {
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        background: var(--capsule);
+        color: var(--frost);
+        display: grid;
+        place-items: center;
+        font-weight: 700;
+        font-size: 15px;
+        letter-spacing: -0.01em;
+        box-shadow: inset 0 0 0 1px rgba(243, 244, 246, 0.06);
+      }
+
+      .deck {
+        position: absolute;
+        top: 124px;
+        left: 0;
+        right: 0;
+        height: 448px;
+      }
+      .deck > li {
+        position: absolute;
+      }
+      .deck .top {
+        top: 0;
+        left: 16px;
+        right: 16px;
+        height: 344px;
+        z-index: 3;
+        padding: 22px;
+        display: flex;
+        flex-direction: column;
+      }
+      .deck .second {
+        top: 14px;
+        left: 23px;
+        right: 23px;
+        height: 382px;
+        z-index: 2;
+      }
+      .deck .third {
+        top: 28px;
+        left: 30px;
+        right: 30px;
+        height: 420px;
+        z-index: 1;
+      }
+
+      .top .eyebrow {
+        margin-top: 18px;
+      }
+      .card-title {
+        font-family: var(--display);
+        font-weight: 700;
+        font-size: 26px;
+        line-height: 30px;
+        letter-spacing: -0.02em;
+        margin-top: 6px;
+      }
+      .card-title a::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        border-radius: var(--card-r);
+      }
+      .top .pill {
+        position: relative;
+        z-index: 1;
+      }
+      .step-line {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 4px;
+        font-size: 17px;
+        line-height: 22px;
+        font-weight: 500;
+      }
+      .top-foot {
+        margin-top: auto;
+      }
+      .card-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 18px;
+      }
+      .card-actions .pill {
+        padding: 0 16px;
+        gap: 8px;
+      }
+      .card-actions .ink {
+        flex: 1.3;
+      }
+      .card-actions .wash {
+        flex: 1;
+      }
+
+      .edge {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        height: 52px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 0 22px 0 20px;
+      }
+      .second .edge {
+        padding: 0 29px 0 27px;
+      }
+      .edge-time {
+        font-weight: 700;
+        font-size: 15px;
+        line-height: 20px;
+        min-width: 62px;
+      }
+      .edge-title {
+        flex: 1;
+        font-weight: 600;
+        font-size: 17px;
+        line-height: 22px;
+        letter-spacing: -0.005em;
+      }
+      .edge-dur {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 4px;
+        padding-top: 9px;
+        font-weight: 500;
+        font-size: 14px;
+        line-height: 18px;
+        color: rgba(20, 21, 24, 0.8);
+      }
+      /* one block for every five minutes, the same unit as the notches in the timer bar */
+      .blocks {
+        display: flex;
+        gap: 2px;
+      }
+      .blocks i {
+        width: 8px;
+        height: 5px;
+        border-radius: 2px;
+        background: var(--ink);
+      }
+      .edge-link {
+        position: absolute;
+        inset: 0;
+        border-radius: 0 0 var(--card-r) var(--card-r);
+      }
+
+      .anytime {
+        position: absolute;
+        top: 598px;
+        left: 24px;
+        right: 16px;
+      }
+      .section-label {
+        font-weight: 600;
+        font-size: 14px;
+        line-height: 18px;
+        color: var(--pewter);
+      }
+      .any-list {
+        margin-top: 6px;
+      }
+      .any-row {
+        display: flex;
+        align-items: center;
+        height: 56px;
+        gap: 6px;
+        margin-left: -9px;
+      }
+      .any-row + .any-row .any-text {
+        box-shadow: inset 0 1px 0 rgba(243, 244, 246, 0.08);
+      }
+      .tick {
+        width: 44px;
+        height: 44px;
+        display: grid;
+        place-items: center;
+      }
+      .tick span {
+        width: 26px;
+        height: 26px;
+        border-radius: 50%;
+        box-shadow: inset 0 0 0 2px var(--frost);
+      }
+      .any-text {
+        flex: 1;
+        height: 56px;
+        display: flex;
+        align-items: center;
+        font-weight: 500;
+        font-size: 17px;
+        line-height: 22px;
+      }
+
+      .scrim {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        height: 110px;
+        background: linear-gradient(to bottom, rgba(24, 25, 29, 0), var(--graphite) 55%);
+        z-index: 9;
+      }
+      .dock {
+        position: absolute;
+        left: 16px;
+        right: 16px;
+        bottom: 24px;
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        z-index: 10;
+      }
+      .tabbar {
+        flex: 1;
+        height: 62px;
+        border-radius: 31px;
+        padding: 5px;
+        background: var(--capsule);
+        display: flex;
+        box-shadow:
+          inset 0 0 0 1px rgba(243, 244, 246, 0.06),
+          0 10px 24px rgba(0, 0, 0, 0.35);
+      }
+      .tab {
+        flex: 1;
+        border-radius: 26px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 3px;
+        color: var(--pewter);
+        font-weight: 600;
+        font-size: 12px;
+        line-height: 14px;
+      }
+      .tab[aria-current='page'] {
+        background: rgba(243, 244, 246, 0.1);
+        color: var(--frost);
+      }
+      .capture {
+        width: 62px;
+        height: 62px;
+        border-radius: 50%;
+        background: var(--frost);
+        color: var(--ink);
+        display: grid;
+        place-items: center;
+        flex: none;
+        box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
+      }
+
+      /* ---------- 2 · Task opened ---------- */
+      .behind {
+        position: absolute;
+        top: 46px;
+        left: 26px;
+        right: 26px;
+        height: 40px;
+        border-radius: 24px 24px 0 0;
+        background: #232529;
+      }
+      .sheet {
+        position: absolute;
+        top: 56px;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        border-radius: var(--card-r) var(--card-r) 0 0;
+        padding: 12px 20px 0;
+        color: var(--ink);
+        box-shadow: 0 -8px 28px rgba(0, 0, 0, 0.35);
+      }
+      .grabber {
+        position: absolute;
+        top: 6px;
+        left: 50%;
+        width: 36px;
+        height: 5px;
+        margin-left: -18px;
+        border-radius: 3px;
+        background: rgba(20, 21, 24, 0.25);
+      }
+      .sheet-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 4px;
+      }
+      .back {
+        height: 44px;
+        border-radius: 22px;
+        padding: 0 16px 0 10px;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-weight: 600;
+        font-size: 16px;
+        background: rgba(20, 21, 24, 0.1);
+      }
+      .sheet .glyph {
+        margin-top: 22px;
+      }
+      .sheet-title {
+        font-family: var(--display);
+        font-weight: 800;
+        font-size: 30px;
+        line-height: 34px;
+        letter-spacing: -0.028em;
+        margin-top: 14px;
+        text-wrap: balance;
+      }
+      .facts {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        margin-top: 10px;
+        font-weight: 500;
+        font-size: 15px;
+        line-height: 20px;
+      }
+      .facts span {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .sheet .timer {
+        margin-top: 26px;
+      }
+      .sub-label {
+        font-weight: 600;
+        font-size: 14px;
+        line-height: 18px;
+        margin-top: 30px;
+      }
+      .steps {
+        margin-top: 10px;
+        display: grid;
+        gap: 8px;
+      }
+      .strip {
+        height: 60px;
+        border-radius: 18px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 0 18px 0 14px;
+        background: rgba(20, 21, 24, 0.08);
+        font-weight: 500;
+        font-size: 17px;
+        line-height: 22px;
+      }
+      .strip .label {
+        flex: 1;
+      }
+      .strip .state {
+        font-weight: 600;
+        font-size: 14px;
+      }
+      .strip.now {
+        background: var(--ink);
+        color: var(--face);
+        font-weight: 600;
+      }
+      .strip.now .state {
+        font-weight: 700;
+      }
+      .bullet {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        font-weight: 700;
+        font-size: 14px;
+        flex: none;
+      }
+      .bullet.done {
+        background: var(--ink);
+        color: var(--face);
+      }
+      .bullet.now {
+        box-shadow: inset 0 0 0 2px var(--face);
+        color: var(--face);
+      }
+      .bullet.later {
+        box-shadow: inset 0 0 0 2px var(--ink);
+      }
+      .note {
+        margin-top: 22px;
+        border-radius: 20px;
+        padding: 14px 16px 16px;
+        background: rgba(20, 21, 24, 0.1);
+      }
+      .note-label {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-weight: 600;
+        font-size: 14px;
+        line-height: 18px;
+      }
+      .note-text {
+        margin-top: 6px;
+        font-weight: 500;
+        font-size: 17px;
+        line-height: 22px;
+      }
+      .sheet-actions {
+        position: absolute;
+        left: 20px;
+        right: 20px;
+        bottom: 34px;
+        display: flex;
+        gap: 10px;
+      }
+      .sheet-actions .pill {
+        height: 56px;
+        border-radius: 28px;
+      }
+      .sheet-actions .ink {
+        flex: 1.45;
+      }
+      .sheet-actions .wash {
+        flex: 1;
+      }
+
+      /* ---------- 3 · Focus ---------- */
+      .focus-top {
+        position: absolute;
+        top: 56px;
+        left: 16px;
+        right: 16px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .end {
+        height: 48px;
+        border-radius: 24px;
+        padding: 0 18px 0 14px;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: var(--capsule);
+        color: var(--frost);
+        font-weight: 600;
+        font-size: 15px;
+        box-shadow: inset 0 0 0 1px rgba(243, 244, 246, 0.06);
+      }
+      .focus-top .capture {
+        width: 48px;
+        height: 48px;
+      }
+      .focus-card {
+        position: absolute;
+        top: 122px;
+        left: 16px;
+        right: 16px;
+        bottom: 104px;
+        padding: 24px 24px 26px;
+        display: flex;
+        flex-direction: column;
+      }
+      .focus-meta {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 500;
+        font-size: 15px;
+        line-height: 20px;
+      }
+      .focus-meta .of {
+        margin-left: auto;
+        font-weight: 700;
+        font-size: 14px;
+      }
+      .progress {
+        display: flex;
+        gap: 6px;
+        margin-top: 16px;
+      }
+      .progress i {
+        flex: 1;
+        height: 8px;
+        border-radius: 4px;
+        background: rgba(20, 21, 24, 0.18);
+      }
+      /* done is filled, now is outlined, later is a faint track: shape, not only colour */
+      .progress i.on {
+        background: var(--ink);
+      }
+      .progress i.cur {
+        background: none;
+        box-shadow: inset 0 0 0 2px var(--ink);
+      }
+      .focus-card .eyebrow {
+        margin-top: 64px;
+      }
+      .focus-step {
+        font-family: var(--display);
+        font-weight: 800;
+        font-size: 44px;
+        line-height: 48px;
+        letter-spacing: -0.032em;
+        margin-top: 10px;
+      }
+      .around {
+        margin-top: 26px;
+        display: grid;
+        gap: 12px;
+      }
+      .around li {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 500;
+        font-size: 17px;
+        line-height: 22px;
+      }
+      .around b {
+        font-weight: 700;
+      }
+      .focus-card .note {
+        margin-top: 28px;
+      }
+      .focus-card .timer {
+        margin-top: auto;
+      }
+      .focus-actions {
+        position: absolute;
+        left: 16px;
+        right: 16px;
+        bottom: 34px;
+        display: flex;
+        gap: 8px;
+      }
+      .focus-actions .pill {
+        height: 56px;
+        border-radius: 28px;
+        padding: 0 18px;
+        gap: 8px;
+      }
+      .focus-actions .frost {
+        flex: 1;
+      }
+      .focus-actions .dark {
+        flex: none;
+        box-shadow: inset 0 0 0 1px rgba(243, 244, 246, 0.06);
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Icon set. Line icons on a 24 grid, glyphs on a 56 grid, round caps and joins. The stroke
+         is set in CSS so that every one renders at 2 pt whatever its size. Stop is the one
+         filled shape, because an outlined square reads as an empty checkbox. -->
+    <svg width="0" height="0" style="position: absolute" aria-hidden="true">
+      <defs>
+        <symbol
+          id="g-envelope"
+          viewBox="0 0 56 56"
+          fill="none"
+          stroke="currentColor"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path d="M15 27.7V9a3 3 0 0 1 3-3h20a3 3 0 0 1 3 3v18.7" />
+          <path d="M21 13h14M21 19h9" />
+          <path d="M7 22v23a5 5 0 0 0 5 5h32a5 5 0 0 0 5-5V22" />
+          <path d="M7 22l21 15 21-15" />
+          <path d="M7 49l15-12.5M49 49L34 36.5" />
+        </symbol>
+        <symbol
+          id="i-envelope"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <rect x="3" y="5" width="18" height="14" rx="3" />
+          <path d="M4 7.5l8 6 8-6" />
+        </symbol>
+        <symbol
+          id="i-phone"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path
+            d="M6.5 3h2.6a1.5 1.5 0 0 1 1.45 1.1l.8 3a1.5 1.5 0 0 1-.42 1.48L9.6 9.9a12 12 0 0 0 4.5 4.5l1.32-1.33a1.5 1.5 0 0 1 1.48-.42l3 .8A1.5 1.5 0 0 1 21 14.9v2.6a2.5 2.5 0 0 1-2.5 2.5A15.5 15.5 0 0 1 4 5.5 2.5 2.5 0 0 1 6.5 3z"
+          />
+        </symbol>
+        <symbol
+          id="i-tree"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path
+            d="M12 2.5a5 5 0 0 1 4.9 6 4 4 0 0 1-1.9 7.5H9a4 4 0 0 1-1.9-7.5 5 5 0 0 1 4.9-6z"
+          />
+          <path d="M12 16v5.5M12 12.5l-2.5-2M7.5 21.5h9" />
+        </symbol>
+        <symbol
+          id="i-plus"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-linecap="round"
+        >
+          <path d="M12 5v14M5 12h14" />
+        </symbol>
+        <symbol
+          id="i-check"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path d="M5 12.5l4.5 4.5L19 7.5" />
+        </symbol>
+        <symbol
+          id="i-chevron-left"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path d="M14.5 6l-6 6 6 6" />
+        </symbol>
+        <symbol
+          id="i-pause"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-linecap="round"
+        >
+          <path d="M9 6v12M15 6v12" />
+        </symbol>
+        <symbol
+          id="i-focus"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path
+            d="M4 9V6.5A2.5 2.5 0 0 1 6.5 4H9M15 4h2.5A2.5 2.5 0 0 1 20 6.5V9M20 15v2.5a2.5 2.5 0 0 1-2.5 2.5H15M9 20H6.5A2.5 2.5 0 0 1 4 17.5V15"
+          />
+          <rect x="8.5" y="9.5" width="7" height="5" rx="1.5" />
+        </symbol>
+        <symbol id="i-stop" viewBox="0 0 24 24" fill="currentColor">
+          <rect x="6.5" y="6.5" width="11" height="11" rx="2.5" />
+        </symbol>
+        <symbol
+          id="i-to-back"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path d="M5 4.5h14M5 9h14M12 12.5v8M8.5 17l3.5 3.5 3.5-3.5" />
+        </symbol>
+        <symbol
+          id="i-turn"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path d="M6 4v7a3 3 0 0 0 3 3h10M15 10l4 4-4 4" />
+        </symbol>
+        <symbol
+          id="i-next"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path d="M5 12h14M13 6l6 6-6 6" />
+        </symbol>
+        <symbol
+          id="i-note"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path d="M5 4h14a1 1 0 0 1 1 1v9l-6 6H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z" />
+          <path d="M14 20v-5a1 1 0 0 1 1-1h5" />
+        </symbol>
+        <symbol
+          id="i-calendar"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <rect x="3.5" y="5" width="17" height="15.5" rx="3" />
+          <path d="M3.5 10h17M8 3v4M16 3v4" />
+        </symbol>
+        <symbol
+          id="i-clock"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <circle cx="12" cy="12" r="8.5" />
+          <path d="M12 7.5V12l3 2" />
+        </symbol>
+        <symbol
+          id="i-today"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <rect x="3.5" y="9" width="17" height="12" rx="3" />
+          <path d="M6 5.5h12M8.5 2.5h7" />
+        </symbol>
+        <symbol
+          id="i-tasks"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path d="M3.5 6.5l1.5 1.5 3-3M3.5 16.5l1.5 1.5 3-3M11.5 7h9M11.5 17h9" />
+        </symbol>
+        <symbol
+          id="i-routines"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path
+            d="M17 3l3 3-3 3M4 11V9.5A3.5 3.5 0 0 1 7.5 6H20M7 21l-3-3 3-3M20 13v1.5a3.5 3.5 0 0 1-3.5 3.5H4"
+          />
+        </symbol>
+        <symbol
+          id="i-library"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path
+            d="M12 6.5C10.5 5 8 4.5 3.5 4.5v14c4.5 0 7 .5 8.5 2 1.5-1.5 4-2 8.5-2v-14c-4.5 0-7 .5-8.5 2z"
+          />
+          <path d="M12 6.5v14" />
+        </symbol>
+        <symbol id="s-signal" viewBox="0 0 18 12" fill="currentColor">
+          <rect x="0" y="8" width="3" height="4" rx="1" />
+          <rect x="5" y="5.5" width="3" height="6.5" rx="1" />
+          <rect x="10" y="3" width="3" height="9" rx="1" />
+          <rect x="15" y="0" width="3" height="12" rx="1" />
+        </symbol>
+        <symbol id="s-wifi" viewBox="0 0 16 12" fill="currentColor">
+          <path
+            d="M8 2.4c2.3 0 4.4.9 6 2.4l1.1-1.1A10 10 0 0 0 8 .8 10 10 0 0 0 .9 3.7L2 4.8a8.4 8.4 0 0 1 6-2.4zm0 3.3c1.4 0 2.7.5 3.7 1.4l1.1-1.1A6.9 6.9 0 0 0 8 4.1 6.9 6.9 0 0 0 3.2 6l1.1 1.1c1-.9 2.3-1.4 3.7-1.4zM8 9a2 2 0 0 0-1.4.6L8 11l1.4-1.4A2 2 0 0 0 8 9z"
+          />
+        </symbol>
+        <symbol id="s-battery" viewBox="0 0 27 13" fill="none">
+          <rect
+            x="0.5"
+            y="0.5"
+            width="23"
+            height="12"
+            rx="3.5"
+            stroke="currentColor"
+            opacity="0.4"
+          />
+          <rect x="2" y="2" width="16" height="9" rx="2" fill="currentColor" />
+          <path d="M25 4.5v4a2 2 0 0 0 0-4z" fill="currentColor" opacity="0.45" />
+        </symbol>
+      </defs>
+    </svg>
+
+    <div class="board">
+      <header class="board-head">
+        <div>
+          <p class="kicker">Adnotia · phone direction</p>
+          <h1>Deck</h1>
+          <p class="idea">
+            The day is a hand of cards. The running task is the top card, the next ones fan out
+            beneath it in the order of the day, and “Not now” slides a card to the back of the deck.
+          </p>
+        </div>
+        <dl class="specs">
+          <dt>Type</dt>
+          <dd>
+            Funnel Display for titles and the step, Funnel Sans for everything else. Both OFL,
+            bundled.
+          </dd>
+          <dt>Colour</dt>
+          <dd>
+            <div class="swatches">
+              <span class="sw"
+                ><i style="background: #18191d"></i><i style="background: #24262b"></i
+                ><i style="background: #a4a9b4"></i><i style="background: #f3f4f6"></i>Ground</span
+              >
+              <span class="sw"
+                ><i style="background: #7ed3c6"></i><i style="background: #a8c7f0"></i
+                ><i style="background: #c8e68e"></i><i style="background: #ebd7b0"></i>Cards, with
+                ink #141518</span
+              >
+            </div>
+            A card’s colour only tells cards apart, like a folder’s. The glyph, title and time say
+            what it is.
+          </dd>
+          <dt>Motion</dt>
+          <dd>
+            Cards travel on a spring, with a light haptic as one lifts and a firm one as it settles.
+            Colour never springs. Reduce Motion cuts cards into place.
+          </dd>
+        </dl>
+      </header>
+
+      <main class="phones">
+        <!-- 1 · Today -->
+        <figure class="shot">
+          <div class="phone">
+            <div class="screen" aria-label="Today screen">
+              <div class="status" aria-hidden="true">
+                <span>10:05</span>
+                <span class="island"></span>
+                <span class="status-icons">
+                  <svg width="18" height="12"><use href="#s-signal" /></svg>
+                  <svg width="16" height="12"><use href="#s-wifi" /></svg>
+                  <svg width="27" height="13"><use href="#s-battery" /></svg>
+                </span>
+              </div>
+
+              <header class="today-head">
+                <div>
+                  <h2 class="screen-title">Today</h2>
+                  <p class="screen-date">Tuesday 24 November</p>
+                </div>
+                <a class="me" href="#me" aria-label="Me: settings, Medication, Family">Me</a>
+              </header>
+
+              <ol class="deck" aria-label="Today’s deck, in the order of the day">
+                <li class="card top c-lagoon">
+                  <svg width="56" height="56" aria-hidden="true"><use href="#g-envelope" /></svg>
+                  <p class="eyebrow">
+                    <span class="live-dot" aria-hidden="true"></span>Now · step 2 of 3
+                  </p>
+                  <h3 class="card-title"><a href="#task">Write the school email</a></h3>
+                  <p class="step-line">
+                    <svg width="18" height="18" aria-hidden="true"><use href="#i-turn" /></svg>
+                    Write the question
+                  </p>
+                  <div class="top-foot">
+                    <div class="time-row">
+                      <span class="time-left">18 min left</span>
+                      <span class="time-end">ends 10:23am</span>
+                    </div>
+                    <div
+                      class="timebar"
+                      role="meter"
+                      aria-valuemin="0"
+                      aria-valuemax="25"
+                      aria-valuenow="18"
+                      aria-label="18 of 25 minutes left"
+                    >
+                      <span class="fill" style="width: 72%"></span>
+                      <span class="notch" style="left: 20%"></span>
+                      <span class="notch" style="left: 40%"></span>
+                      <span class="notch" style="left: 60%"></span>
+                      <span class="notch" style="left: 80%"></span>
+                    </div>
+                    <div class="card-actions">
+                      <button class="pill ink" type="button">
+                        <svg width="20" height="20" aria-hidden="true"><use href="#i-check" /></svg>
+                        Step done
+                      </button>
+                      <button class="pill wash" type="button">
+                        <svg width="20" height="20" aria-hidden="true">
+                          <use href="#i-to-back" />
+                        </svg>
+                        Not now
+                      </button>
+                    </div>
+                  </div>
+                </li>
+                <li class="card second c-bluebell">
+                  <div class="edge">
+                    <svg width="22" height="22" aria-hidden="true"><use href="#i-phone" /></svg>
+                    <span class="edge-time">10:30am</span>
+                    <span class="edge-title">Call the dentist</span>
+                    <span class="edge-dur"
+                      >10 min<span class="blocks" aria-hidden="true"><i></i><i></i></span
+                    ></span>
+                    <a
+                      class="edge-link"
+                      href="#dentist"
+                      aria-label="Call the dentist, 10:30am, 10 minutes"
+                    ></a>
+                  </div>
+                </li>
+                <li class="card third c-pistachio">
+                  <div class="edge">
+                    <svg width="22" height="22" aria-hidden="true"><use href="#i-tree" /></svg>
+                    <span class="edge-time">11:00am</span>
+                    <span class="edge-title">Walk to the park</span>
+                    <span class="edge-dur"
+                      >20 min<span class="blocks" aria-hidden="true"
+                        ><i></i><i></i><i></i><i></i></span
+                    ></span>
+                    <a
+                      class="edge-link"
+                      href="#park"
+                      aria-label="Walk to the park, 11:00am, 20 minutes"
+                    ></a>
+                  </div>
+                </li>
+              </ol>
+
+              <section class="anytime" aria-labelledby="any-h">
+                <h3 class="section-label" id="any-h">Anytime today</h3>
+                <ul class="any-list">
+                  <li class="any-row">
+                    <button
+                      class="tick"
+                      type="button"
+                      aria-label="Mark Renew the parking permit done"
+                    >
+                      <span></span>
+                    </button>
+                    <a class="any-text" href="#permit">Renew the parking permit</a>
+                  </li>
+                  <li class="any-row">
+                    <button class="tick" type="button" aria-label="Mark Order printer ink done">
+                      <span></span>
+                    </button>
+                    <a class="any-text" href="#ink">Order printer ink</a>
+                  </li>
+                </ul>
+              </section>
+
+              <div class="scrim" aria-hidden="true"></div>
+              <div class="dock">
+                <nav class="tabbar" aria-label="Main">
+                  <a class="tab" href="#today" aria-current="page"
+                    ><svg width="22" height="22" aria-hidden="true"><use href="#i-today" /></svg
+                    >Today</a
+                  >
+                  <a class="tab" href="#tasks"
+                    ><svg width="22" height="22" aria-hidden="true"><use href="#i-tasks" /></svg
+                    >Tasks</a
+                  >
+                  <a class="tab" href="#routines"
+                    ><svg width="22" height="22" aria-hidden="true"><use href="#i-routines" /></svg
+                    >Routines</a
+                  >
+                  <a class="tab" href="#library"
+                    ><svg width="22" height="22" aria-hidden="true"><use href="#i-library" /></svg
+                    >Library</a
+                  >
+                </nav>
+                <button class="capture" type="button" aria-label="Capture a thought">
+                  <svg width="26" height="26" aria-hidden="true"><use href="#i-plus" /></svg>
+                </button>
+              </div>
+              <span class="home-bar" aria-hidden="true"></span>
+            </div>
+          </div>
+          <figcaption>
+            <p class="cap-title"><b>1</b>Today</p>
+            <p class="cap-text">
+              The top card is now; tap it to open it. Step done and Not now are buttons as well as
+              swipes. Behind it, each card shows its time, title and length in five-minute blocks.
+            </p>
+          </figcaption>
+        </figure>
+
+        <!-- 2 · Task opened -->
+        <figure class="shot">
+          <div class="phone">
+            <div class="screen" aria-label="Task screen: Write the school email">
+              <div class="status" aria-hidden="true">
+                <span>10:05</span>
+                <span class="island"></span>
+                <span class="status-icons">
+                  <svg width="18" height="12"><use href="#s-signal" /></svg>
+                  <svg width="16" height="12"><use href="#s-wifi" /></svg>
+                  <svg width="27" height="13"><use href="#s-battery" /></svg>
+                </span>
+              </div>
+              <div class="behind" aria-hidden="true"></div>
+
+              <article class="sheet c-lagoon">
+                <span class="grabber" aria-hidden="true"></span>
+                <div class="sheet-bar">
+                  <a class="back" href="#today">
+                    <svg width="22" height="22" aria-hidden="true">
+                      <use href="#i-chevron-left" />
+                    </svg>
+                    Today
+                  </a>
+                  <button class="round solid" type="button" aria-label="Capture a thought">
+                    <svg width="22" height="22" aria-hidden="true"><use href="#i-plus" /></svg>
+                  </button>
+                </div>
+
+                <svg class="glyph" width="56" height="56" aria-hidden="true">
+                  <use href="#g-envelope" />
+                </svg>
+                <h2 class="sheet-title">Write the school email</h2>
+                <p class="facts">
+                  <span
+                    ><svg width="18" height="18" aria-hidden="true"><use href="#i-calendar" /></svg
+                    >Today</span
+                  >
+                  <span
+                    ><svg width="18" height="18" aria-hidden="true"><use href="#i-clock" /></svg>25
+                    min · 7 so far</span
+                  >
+                </p>
+
+                <div class="timer">
+                  <div class="time-row">
+                    <span class="time-left">18 min left</span>
+                    <span class="time-end">ends 10:23am</span>
+                  </div>
+                  <div
+                    class="timebar"
+                    role="meter"
+                    aria-valuemin="0"
+                    aria-valuemax="25"
+                    aria-valuenow="18"
+                    aria-label="18 of 25 minutes left"
+                  >
+                    <span class="fill" style="width: 72%"></span>
+                    <span class="notch" style="left: 20%"></span>
+                    <span class="notch" style="left: 40%"></span>
+                    <span class="notch" style="left: 60%"></span>
+                    <span class="notch" style="left: 80%"></span>
+                  </div>
+                </div>
+
+                <h3 class="sub-label">Steps</h3>
+                <ol class="steps">
+                  <li class="strip">
+                    <span class="bullet done" aria-hidden="true"
+                      ><svg width="18" height="18"><use href="#i-check" /></svg
+                    ></span>
+                    <span class="label">Find the school address</span>
+                    <span class="state">Done</span>
+                  </li>
+                  <li class="strip now" aria-current="step">
+                    <span class="bullet now" aria-hidden="true">2</span>
+                    <span class="label">Write the question</span>
+                    <span class="state">Now</span>
+                  </li>
+                  <li class="strip">
+                    <span class="bullet later" aria-hidden="true">3</span>
+                    <span class="label">Read it once and send</span>
+                  </li>
+                </ol>
+
+                <div class="note">
+                  <p class="note-label">
+                    <svg width="18" height="18" aria-hidden="true"><use href="#i-note" /></svg>Note
+                  </p>
+                  <p class="note-text">When is the permission slip due?</p>
+                </div>
+
+                <div class="sheet-actions">
+                  <a class="pill ink" href="#focus">
+                    <svg width="20" height="20" aria-hidden="true"><use href="#i-focus" /></svg>
+                    Back to it
+                  </a>
+                  <button class="pill wash" type="button">
+                    <svg width="20" height="20" aria-hidden="true"><use href="#i-to-back" /></svg>
+                    Not now
+                  </button>
+                </div>
+              </article>
+              <span class="home-bar" style="background: var(--ink)" aria-hidden="true"></span>
+            </div>
+          </div>
+          <figcaption>
+            <p class="cap-title"><b>2</b>Task opened</p>
+            <p class="cap-text">
+              The top card grows into a sheet in its own colour. Back to it returns to focus; Not
+              now sends the card to the back of the deck, under the others.
+            </p>
+          </figcaption>
+        </figure>
+
+        <!-- 3 · Focus -->
+        <figure class="shot">
+          <div class="phone">
+            <div class="screen" aria-label="Focus screen">
+              <div class="status" aria-hidden="true">
+                <span>10:05</span>
+                <span class="island"></span>
+                <span class="status-icons">
+                  <svg width="18" height="12"><use href="#s-signal" /></svg>
+                  <svg width="16" height="12"><use href="#s-wifi" /></svg>
+                  <svg width="27" height="13"><use href="#s-battery" /></svg>
+                </span>
+              </div>
+
+              <div class="focus-top">
+                <button class="end" type="button">
+                  <svg width="20" height="20" aria-hidden="true"><use href="#i-stop" /></svg>
+                  End focus
+                </button>
+                <button class="capture" type="button" aria-label="Capture a thought">
+                  <svg width="26" height="26" aria-hidden="true"><use href="#i-plus" /></svg>
+                </button>
+              </div>
+
+              <article
+                class="card focus-card c-lagoon"
+                aria-label="Write the school email, step 2 of 3"
+              >
+                <p class="focus-meta">
+                  <svg width="22" height="22" aria-hidden="true"><use href="#i-envelope" /></svg>
+                  Write the school email
+                  <span class="of">Step 2 of 3</span>
+                </p>
+                <div class="progress" aria-hidden="true">
+                  <i class="on"></i><i class="cur"></i><i></i>
+                </div>
+
+                <p class="eyebrow"><span class="live-dot" aria-hidden="true"></span>Now</p>
+                <h2 class="focus-step">Write the question</h2>
+
+                <ul class="around">
+                  <li>
+                    <svg width="20" height="20" aria-hidden="true"><use href="#i-check" /></svg
+                    ><span><b>Done:</b> Find the school address</span>
+                  </li>
+                  <li>
+                    <svg width="20" height="20" aria-hidden="true"><use href="#i-next" /></svg
+                    ><span><b>Next:</b> Read it once and send</span>
+                  </li>
+                </ul>
+
+                <div class="note">
+                  <p class="note-label">
+                    <svg width="18" height="18" aria-hidden="true"><use href="#i-note" /></svg>Note
+                  </p>
+                  <p class="note-text">When is the permission slip due?</p>
+                </div>
+
+                <div class="timer">
+                  <div class="time-row">
+                    <span class="time-left">18 min left</span>
+                    <span class="time-end">of 25 · ends 10:23am</span>
+                  </div>
+                  <div
+                    class="timebar"
+                    role="meter"
+                    aria-valuemin="0"
+                    aria-valuemax="25"
+                    aria-valuenow="18"
+                    aria-label="18 of 25 minutes left"
+                  >
+                    <span class="fill" style="width: 72%"></span>
+                    <span class="notch" style="left: 20%"></span>
+                    <span class="notch" style="left: 40%"></span>
+                    <span class="notch" style="left: 60%"></span>
+                    <span class="notch" style="left: 80%"></span>
+                  </div>
+                </div>
+              </article>
+
+              <div class="focus-actions">
+                <button class="pill frost" type="button">
+                  <svg width="20" height="20" aria-hidden="true"><use href="#i-check" /></svg>
+                  Step done
+                </button>
+                <button class="pill dark" type="button">+5 min</button>
+                <button class="pill dark" type="button">
+                  <svg width="20" height="20" aria-hidden="true"><use href="#i-pause" /></svg>
+                  Pause
+                </button>
+              </div>
+              <span class="home-bar" aria-hidden="true"></span>
+            </div>
+          </div>
+          <figcaption>
+            <p class="cap-title"><b>3</b>Focus</p>
+            <p class="cap-text">
+              One card stands alone. The step is the largest thing on screen; the clock sits at the
+              card’s foot as a bar and a number. Capture stays top right.
+            </p>
+          </figcaption>
+        </figure>
+      </main>
+    </div>
+  </body>
+</html>

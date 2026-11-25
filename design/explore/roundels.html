@@ -1,0 +1,2062 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Roundels · Adnotia phone direction</title>
+    <!--
+  Typeface: Rubik (variable, wght 300–900), SIL Open Font License, from Google Fonts.
+  It is the only face drawn. The app would bundle the font file; the link below is for this
+  static mock-up only. Figures are set tabular everywhere.
+
+  Palette (this direction's own, no other hue):
+    Porcelain #F3F6F8 ground · White #FFFFFF discs · Slate #1F2A33 drawings, text, primary buttons
+    Secondary #52606B · Pine #1E6B52 rings, selected tab, capture · Pine mist #DCEFE6 halo and fills
+    Slate on porcelain 13.5:1 · white on slate 14.6:1 · secondary on porcelain 6.0:1, on white 6.4:1
+    white on pine 6.4:1 · pine on porcelain 5.9:1, on white 6.4:1 · pine on mist 5.3:1
+
+  Ring geometry. Every ring is a circle with pathLength 100, rotated -90° so it starts at
+  twelve o'clock and runs clockwise. A dash of n is n% of the circle. Round caps add half the
+  stroke to each end, so each dash is shortened by one stroke width (in path units) and moved
+  forward by half of one, and the drawn arc is the real quantity.
+    Running, 18 of 25 min left = 72% remaining. It drains clockwise: the empty part grows from
+    twelve, so the pine arc runs from 100.8° round to 360°. The empty part is white.
+    Upcoming, a share of an hour: 10 min = 1/6 of a ring, 20 min = 1/3, on a faint full hour.
+  Sizes: hero 132 disc, 5 gap, 10 ring, 200 halo. Rows 72, with 52 discs, 2 gap, 4 rings.
+  Task header 76 disc, 7 ring. Focus clock 42 disc, 5 ring. A running roundel always sits on
+  its mist halo; nothing else does.
+
+  Pictograms: one 24-unit grid, round caps and joins, one mist fill. stroke-width is set on
+  each use so the drawn stroke is 2 px in rows and slightly heavier only where the drawing is
+  very large (hero 2.6 px, task header 2.3 px).
+-->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Rubik:wght@300..900&display=swap"
+    />
+    <style>
+      :root {
+        --porcelain: #f3f6f8;
+        --white: #ffffff;
+        --slate: #1f2a33;
+        --secondary: #52606b;
+        --pine: #1e6b52;
+        --mist: #dcefe6;
+        --track: rgba(31, 42, 51, 0.2);
+        --track-soft: rgba(31, 42, 51, 0.08);
+        --lift: 0 1px 1.5px rgba(31, 42, 51, 0.1), 0 4px 14px rgba(31, 42, 51, 0.07);
+        --float: 0 1px 2px rgba(31, 42, 51, 0.08), 0 12px 32px rgba(31, 42, 51, 0.13);
+
+        /* Presentation only: the board around the phones */
+        --canvas: #dfe4e8;
+        --bezel: #10161b;
+      }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        background: var(--canvas);
+        color: var(--slate);
+        font-family: 'Rubik', system-ui, sans-serif;
+        font-variant-numeric: tabular-nums;
+        -webkit-font-smoothing: antialiased;
+      }
+      button,
+      a {
+        font: inherit;
+        color: inherit;
+        text-decoration: none;
+      }
+      button {
+        border: 0;
+        background: none;
+        cursor: pointer;
+      }
+      ol,
+      ul {
+        list-style: none;
+      }
+      svg {
+        display: block;
+      }
+
+      /* ---------- Board ---------- */
+      .board {
+        width: 1314px;
+        margin: 0 auto;
+        padding: 52px 0 72px;
+      }
+      .masthead {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        gap: 48px;
+        margin-bottom: 40px;
+      }
+      .eyebrow {
+        font-size: 14px;
+        line-height: 20px;
+        font-weight: 500;
+        color: var(--secondary);
+      }
+      .masthead h1 {
+        font-size: 46px;
+        line-height: 52px;
+        font-weight: 700;
+        letter-spacing: -0.025em;
+        margin-top: 6px;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+      }
+      .idea {
+        font-size: 18px;
+        line-height: 27px;
+        color: var(--secondary);
+        max-width: 836px;
+        margin-top: 10px;
+        text-wrap: pretty;
+      }
+      .idea strong {
+        color: var(--slate);
+        font-weight: 500;
+      }
+      .specs {
+        flex: none;
+        width: 420px;
+        font-size: 13px;
+        line-height: 18px;
+        color: var(--secondary);
+      }
+      .specs dt {
+        font-weight: 600;
+        color: var(--slate);
+        margin-top: 12px;
+      }
+      .specs dt:first-child {
+        margin-top: 0;
+      }
+      .swatches {
+        display: flex;
+        gap: 14px;
+        margin-top: 6px;
+      }
+      .swatches li {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        width: 58px;
+        text-align: center;
+      }
+      .swatches i {
+        width: 26px;
+        height: 26px;
+        border-radius: 50%;
+        box-shadow: inset 0 0 0 1px rgba(31, 42, 51, 0.14);
+      }
+      .swatches b {
+        font-weight: 500;
+        color: var(--slate);
+        font-size: 12px;
+        line-height: 14px;
+      }
+      .swatches span {
+        font-size: 11px;
+        line-height: 13px;
+      }
+
+      .row3 {
+        display: grid;
+        grid-template-columns: repeat(3, 414px);
+        gap: 36px;
+      }
+      .caption {
+        margin-top: 18px;
+        display: flex;
+        gap: 10px;
+        align-items: baseline;
+      }
+      .caption b {
+        white-space: nowrap;
+        font-size: 15px;
+        line-height: 20px;
+        font-weight: 600;
+      }
+      .caption span {
+        font-size: 13px;
+        line-height: 18px;
+        color: var(--secondary);
+      }
+      .caption .n {
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        background: var(--slate);
+        color: var(--white);
+        font-size: 12px;
+        font-weight: 600;
+        display: inline-grid;
+        place-items: center;
+        align-self: center;
+        flex: none;
+      }
+
+      /* ---------- Phone ---------- */
+      .phone {
+        width: 414px;
+        height: 868px;
+        border-radius: 66px;
+        background: var(--bezel);
+        padding: 12px;
+        box-shadow:
+          0 0 0 1px #2a3239 inset,
+          0 40px 70px -30px rgba(16, 22, 27, 0.45),
+          0 8px 20px -8px rgba(16, 22, 27, 0.25);
+      }
+      .screen {
+        position: relative;
+        width: 390px;
+        height: 844px;
+        border-radius: 54px;
+        overflow: hidden;
+        background: var(--porcelain);
+      }
+      .status {
+        position: absolute;
+        inset: 0 0 auto 0;
+        height: 54px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 2px 30px 0 44px;
+        z-index: 6;
+        color: var(--slate);
+      }
+      .status .clock {
+        font-size: 17px;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+      }
+      .status .sys {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .island {
+        position: absolute;
+        top: 11px;
+        left: 50%;
+        width: 124px;
+        height: 36px;
+        margin-left: -62px;
+        border-radius: 20px;
+        background: #090c0f;
+        z-index: 7;
+      }
+      .home {
+        position: absolute;
+        bottom: 8px;
+        left: 50%;
+        width: 136px;
+        height: 5px;
+        margin-left: -68px;
+        border-radius: 3px;
+        background: var(--slate);
+        z-index: 8;
+      }
+
+      /* ---------- Roundels ---------- */
+      .rd {
+        position: relative;
+        display: inline-grid;
+        place-items: center;
+        flex: none;
+      }
+      .rd > .ring {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        overflow: visible;
+      }
+      .ring circle,
+      .ring path {
+        fill: none;
+      }
+      .ring .trk {
+        stroke: var(--track-soft);
+      }
+      .ring .arc {
+        stroke: var(--pine);
+        stroke-linecap: round;
+      }
+      .disc {
+        position: relative;
+        border-radius: 50%;
+        background: var(--white);
+        box-shadow: var(--lift);
+        display: grid;
+        place-items: center;
+      }
+      /* List roundel: a 52 disc, a 2 gap, a 4 ring (r 30 in a 64 box) */
+      .rd52 {
+        width: 64px;
+        height: 64px;
+      }
+      .rd52 .disc {
+        width: 52px;
+        height: 52px;
+      }
+      .rd52 .pic {
+        width: 28px;
+        height: 28px;
+        stroke-width: 1.72;
+      }
+      .rd52 .ring circle,
+      .rd52 .ring path {
+        stroke-width: 4;
+      }
+      .pic {
+        overflow: visible;
+      }
+      /* Running: the roundel sits on its mist halo wherever it appears.
+         The empty part of a running ring is white, the same material as the disc. */
+      .rd.run {
+        border-radius: 50%;
+        background: var(--mist);
+        box-shadow: 0 0 0 var(--halo, 8px) var(--mist);
+      }
+      .rd.run .ring .trk {
+        stroke: var(--white);
+      }
+      .badge {
+        position: absolute;
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        background: var(--slate);
+        color: var(--white);
+        box-shadow: 0 0 0 2.5px var(--porcelain);
+        display: grid;
+        place-items: center;
+        /* four o'clock on the disc edge: centre (32, 32), r 26, 120° → (54.5, 45) */
+        left: calc(54.5px - 11px);
+        top: calc(45px - 11px);
+      }
+
+      /* ---------- Shared type ---------- */
+      .t17 {
+        font-size: 17px;
+        line-height: 22px;
+        font-weight: 600;
+        letter-spacing: -0.005em;
+      }
+      .meta {
+        font-size: 14px;
+        line-height: 18px;
+        color: var(--secondary);
+      }
+      .fig {
+        font-size: 15px;
+        line-height: 18px;
+        font-weight: 600;
+        color: var(--pine);
+      }
+      .sec-h {
+        font-size: 17px;
+        line-height: 22px;
+        font-weight: 700;
+        letter-spacing: -0.01em;
+      }
+
+      /* ---------- Controls ---------- */
+      .capsule {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 9px;
+        border-radius: 999px;
+        font-size: 17px;
+        line-height: 22px;
+        font-weight: 600;
+        letter-spacing: -0.005em;
+        white-space: nowrap;
+      }
+      .capsule.dark {
+        background: var(--slate);
+        color: var(--white);
+      }
+      .capsule.light {
+        background: var(--white);
+        color: var(--slate);
+        box-shadow: var(--lift);
+      }
+      .capsule.small {
+        height: 44px;
+        padding: 0 16px;
+        font-size: 15px;
+        line-height: 20px;
+        gap: 6px;
+      }
+      .capsule svg {
+        flex: none;
+      }
+      .capture {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background: var(--pine);
+        color: var(--white);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 1px;
+        font-size: 11px;
+        line-height: 12px;
+        font-weight: 600;
+        letter-spacing: -0.005em;
+        box-shadow:
+          0 1px 2px rgba(31, 42, 51, 0.12),
+          0 10px 24px rgba(30, 107, 82, 0.28);
+        flex: none;
+      }
+      .capture svg {
+        width: 20px;
+        height: 20px;
+        margin-top: -1px;
+      }
+      /* The bottom row is one grammar on every screen: capsules, then the capture
+         circle in exactly the same place (16 from the right, 18 from the bottom). */
+      .bottom {
+        position: absolute;
+        left: 16px;
+        right: 16px;
+        bottom: 18px;
+        height: 60px;
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        z-index: 4;
+      }
+
+      /* ---------- 1 · Today ---------- */
+      .today .hdr {
+        position: absolute;
+        top: 54px;
+        left: 20px;
+        right: 20px;
+        height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .today .hdr .ttl {
+        display: flex;
+        align-items: baseline;
+        gap: 10px;
+      }
+      .today .hdr h2 {
+        font-size: 30px;
+        line-height: 36px;
+        font-weight: 700;
+        letter-spacing: -0.022em;
+      }
+      .today .hdr .date {
+        font-size: 15px;
+        line-height: 20px;
+        color: var(--secondary);
+      }
+      .me {
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        background: var(--white);
+        box-shadow: var(--lift);
+        display: grid;
+        place-items: center;
+        color: var(--slate);
+      }
+      .hero {
+        position: absolute;
+        top: 110px;
+        left: 0;
+        right: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+      }
+      /* Hero: a 132 disc, a 5 gap, a 10 ring (r 76 in a 162 box), on a 200 halo */
+      .halo {
+        width: 200px;
+        height: 200px;
+        border-radius: 50%;
+        background: var(--mist);
+        display: grid;
+        place-items: center;
+      }
+      .rdHero {
+        width: 162px;
+        height: 162px;
+      }
+      .rdHero .disc {
+        width: 132px;
+        height: 132px;
+        box-shadow:
+          0 1px 2px rgba(31, 42, 51, 0.1),
+          0 10px 24px rgba(30, 107, 82, 0.18);
+      }
+      .rdHero .pic {
+        width: 66px;
+        height: 66px;
+        stroke-width: 0.95;
+      }
+      .rdHero .ring .trk {
+        stroke: var(--white);
+      }
+      .hero .title {
+        font-size: 20px;
+        line-height: 26px;
+        font-weight: 600;
+        letter-spacing: -0.012em;
+        margin-top: 12px;
+      }
+      .hero .step {
+        font-size: 15px;
+        line-height: 20px;
+        color: var(--secondary);
+        margin-top: 2px;
+      }
+      .hero .step b {
+        font-weight: 500;
+        color: var(--slate);
+      }
+      .hero .left {
+        font-size: 17px;
+        line-height: 22px;
+        color: var(--secondary);
+        margin-top: 4px;
+      }
+      .hero .left b {
+        font-weight: 600;
+        color: var(--pine);
+      }
+      .hero .capsule {
+        height: 52px;
+        padding: 0 26px 0 22px;
+        margin-top: 12px;
+      }
+      .list {
+        position: absolute;
+        left: 20px;
+        right: 20px;
+      }
+      .list .sec-h {
+        margin-bottom: 2px;
+      }
+      /* Rows are 72: the roundel, then the text on porcelain. No cards, no rules. */
+      .item {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        height: 72px;
+      }
+      .item .txt {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+      }
+      .item .sub {
+        display: flex;
+        align-items: baseline;
+        gap: 4px;
+      }
+      .edge {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        height: 84px;
+        background: linear-gradient(
+          to bottom,
+          rgba(243, 246, 248, 0),
+          rgba(243, 246, 248, 0.94) 46%,
+          var(--porcelain)
+        );
+        z-index: 3;
+        pointer-events: none;
+      }
+      .tabs {
+        flex: 1;
+        height: 60px;
+        border-radius: 30px;
+        background: var(--white);
+        box-shadow: var(--float);
+        display: flex;
+        padding: 4px;
+      }
+      .tab {
+        flex: 1;
+        border-radius: 26px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 3px;
+        font-size: 11px;
+        line-height: 13px;
+        font-weight: 500;
+        color: var(--secondary);
+      }
+      .tab svg {
+        color: var(--slate);
+      }
+      .tab[aria-current='page'] {
+        background: var(--pine);
+        color: var(--white);
+        font-weight: 600;
+      }
+      .tab[aria-current='page'] svg {
+        color: var(--white);
+      }
+
+      /* ---------- 2 · Task ---------- */
+      .navbar {
+        position: absolute;
+        top: 56px;
+        left: 16px;
+        right: 16px;
+        display: flex;
+        justify-content: space-between;
+      }
+      .navbar .back {
+        padding-left: 10px;
+      }
+      /* The halo, not the ring, sits on the 20 content edge */
+      .thead {
+        position: absolute;
+        top: 124px;
+        left: 30px;
+        right: 20px;
+        display: flex;
+        gap: 26px;
+        align-items: flex-start;
+      }
+      /* Task header: a 76 disc, a 3 gap, a 7 ring (r 44.5 in a 96 box) */
+      .rd96 {
+        width: 96px;
+        height: 96px;
+        --halo: 10px;
+      }
+      .rd96 .disc {
+        width: 76px;
+        height: 76px;
+      }
+      .rd96 .pic {
+        width: 40px;
+        height: 40px;
+        stroke-width: 1.38;
+      }
+      .rd96 .ring circle {
+        stroke-width: 7;
+      }
+      .thead h2 {
+        font-size: 26px;
+        line-height: 31px;
+        font-weight: 700;
+        letter-spacing: -0.022em;
+        text-wrap: balance;
+        margin-top: -2px;
+      }
+      .thead .facts {
+        margin-top: 8px;
+        font-size: 14px;
+        line-height: 20px;
+        color: var(--secondary);
+      }
+      .thead .facts .fig {
+        font-size: 14px;
+        line-height: 20px;
+      }
+      .thead .pick {
+        margin-top: 8px;
+        font-size: 14px;
+        line-height: 20px;
+        color: var(--secondary);
+      }
+      .thead .pick a {
+        color: var(--slate);
+        font-weight: 600;
+        text-decoration: underline;
+        text-decoration-thickness: 1.5px;
+        text-underline-offset: 3px;
+        display: inline-block;
+        padding: 12px 4px;
+        margin: -12px -4px;
+      }
+      .block {
+        position: absolute;
+        left: 20px;
+        right: 20px;
+      }
+      .block .hrow {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        margin-bottom: 6px;
+      }
+      .steps {
+        position: relative;
+      }
+      .steps::before {
+        content: '';
+        position: absolute;
+        left: 31px;
+        top: 30px;
+        bottom: 30px;
+        width: 2px;
+        border-radius: 1px;
+        background: var(--slate);
+      }
+      /* Dots centre on 52, like the note's disc below, and text starts at 98 */
+      .steps li {
+        position: relative;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        height: 60px;
+      }
+      .steps .dot,
+      .addstep .dot {
+        margin: 0 18px;
+      }
+      .dot {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        flex: none;
+        display: grid;
+        place-items: center;
+        position: relative;
+      }
+      .dot.done {
+        background: var(--slate);
+        color: var(--white);
+      }
+      .dot.now {
+        background: var(--white);
+        box-shadow:
+          inset 0 0 0 3px var(--pine),
+          0 0 0 7px var(--mist);
+      }
+      .dot.now::after {
+        content: '';
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: var(--pine);
+      }
+      .dot.next {
+        background: var(--porcelain);
+        box-shadow: inset 0 0 0 2px var(--slate);
+      }
+      .dot.add {
+        background: var(--porcelain);
+        color: var(--secondary);
+        border: 2px dashed rgba(82, 96, 107, 0.7);
+      }
+      .steps .st {
+        font-size: 17px;
+        line-height: 22px;
+        font-weight: 400;
+      }
+      .steps .now-row .st {
+        font-weight: 600;
+      }
+      .steps .sm {
+        font-size: 14px;
+        line-height: 18px;
+        color: var(--secondary);
+        margin-top: 1px;
+      }
+      .steps .now-row .sm {
+        color: var(--pine);
+        font-weight: 600;
+      }
+      .addstep {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        height: 52px;
+        font-size: 17px;
+        line-height: 22px;
+        font-weight: 500;
+        color: var(--secondary);
+      }
+      .noterow {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        height: 72px;
+      }
+      .noterow .q {
+        font-size: 17px;
+        line-height: 22px;
+      }
+      .actions .capsule {
+        height: 56px;
+      }
+      .actions .dark {
+        flex: 1.3;
+      }
+      .actions .light {
+        flex: 1;
+      }
+
+      /* ---------- 3 · Focus ---------- */
+      .ftop {
+        position: absolute;
+        top: 66px;
+        left: 26px;
+        right: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .ftop .clockbox {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+      }
+      /* Focus clock: a 42 disc, a 2 gap, a 5 ring (r 25.5 in a 56 box) */
+      .rd56 {
+        width: 56px;
+        height: 56px;
+        --halo: 6px;
+      }
+      .rd56 .disc {
+        width: 42px;
+        height: 42px;
+      }
+      .rd56 .pic {
+        width: 24px;
+        height: 24px;
+        stroke-width: 2;
+      }
+      .rd56 .ring circle {
+        stroke-width: 5;
+      }
+      .ftop .l1 {
+        font-size: 17px;
+        line-height: 22px;
+        font-weight: 600;
+        color: var(--pine);
+      }
+      .ftop .l2 {
+        font-size: 14px;
+        line-height: 18px;
+        color: var(--secondary);
+        margin-top: 1px;
+      }
+      .fmain {
+        position: absolute;
+        top: 262px;
+        left: 20px;
+        right: 20px;
+      }
+      .progress {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 15px;
+        line-height: 20px;
+        color: var(--secondary);
+      }
+      .pips {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+      }
+      .pips i {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+      }
+      .pips .p-done {
+        background: var(--slate);
+      }
+      .pips .p-now {
+        background: var(--pine);
+        box-shadow: 0 0 0 3px var(--mist);
+      }
+      .pips .p-next {
+        box-shadow: inset 0 0 0 1.5px var(--slate);
+      }
+      .fmain h2 {
+        font-size: 32px;
+        line-height: 38px;
+        font-weight: 700;
+        letter-spacing: -0.024em;
+        margin-top: 14px;
+      }
+      .around {
+        margin-top: 26px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      .around li {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 17px;
+        line-height: 22px;
+        color: var(--secondary);
+      }
+      .around .k {
+        font-weight: 600;
+      }
+      .mini {
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        flex: none;
+        display: grid;
+        place-items: center;
+      }
+      .mini.done {
+        background: var(--slate);
+        color: var(--white);
+      }
+      .mini.next {
+        box-shadow: inset 0 0 0 2px var(--slate);
+      }
+      /* Space, not a rule, separates the note from the step */
+      .fnote {
+        margin-top: 40px;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+      }
+      .fnote .q {
+        font-size: 17px;
+        line-height: 22px;
+      }
+      .fpair {
+        position: absolute;
+        left: 16px;
+        right: 16px;
+        bottom: 90px;
+        display: flex;
+        gap: 10px;
+      }
+      .fpair .capsule {
+        flex: 1;
+        height: 52px;
+      }
+      .fctl .dark {
+        flex: 1;
+        height: 56px;
+      }
+
+      /* ---------- System strip ---------- */
+      .strip {
+        margin-top: 44px;
+        padding-top: 28px;
+        border-top: 1px solid rgba(31, 42, 51, 0.12);
+      }
+      .strip h3 {
+        font-size: 15px;
+        line-height: 20px;
+        font-weight: 600;
+      }
+      .strip p {
+        font-size: 13px;
+        line-height: 18px;
+        color: var(--secondary);
+        margin-top: 2px;
+      }
+      .set {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 18px;
+      }
+      .set li {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        text-align: center;
+      }
+      .set .lab {
+        font-size: 12px;
+        line-height: 15px;
+        color: var(--secondary);
+      }
+      .set .lab b {
+        display: block;
+        font-size: 13px;
+        line-height: 16px;
+        font-weight: 600;
+        color: var(--slate);
+      }
+      .set.pics {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        row-gap: 14px;
+      }
+      .states li {
+        width: 80px;
+      }
+      .states .run {
+        --halo: 5px;
+      }
+      .states .lab {
+        margin-top: 4px;
+      }
+      .dotonly {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: var(--slate);
+      }
+      .la {
+        margin-top: 18px;
+        background: var(--slate);
+        color: var(--white);
+        border-radius: 28px;
+        padding: 16px 20px 16px 16px;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+      }
+      /* Live Activity: a 40 disc, a 2 gap, a 4 ring (r 24 in a 52 box) */
+      .rdLA {
+        width: 52px;
+        height: 52px;
+      }
+      .rdLA .ring circle {
+        stroke-width: 4;
+      }
+      .rdLA .disc {
+        width: 40px;
+        height: 40px;
+        box-shadow: none;
+      }
+      .rdLA .pic {
+        width: 22px;
+        height: 22px;
+        stroke-width: 2.18;
+      }
+      .la .ring .trk {
+        stroke: rgba(255, 255, 255, 0.18);
+      }
+      .la .ring .arc {
+        stroke: var(--mist);
+      }
+      .la .mid {
+        flex: 1;
+        min-width: 0;
+      }
+      .la .mid b {
+        display: block;
+        font-size: 17px;
+        line-height: 22px;
+        font-weight: 600;
+      }
+      .la .mid span,
+      .la .end span {
+        font-size: 13px;
+        line-height: 18px;
+        color: rgba(255, 255, 255, 0.74);
+      }
+      .la .end {
+        text-align: right;
+      }
+      .la .end b {
+        display: block;
+        font-size: 22px;
+        line-height: 26px;
+        font-weight: 600;
+        color: var(--mist);
+      }
+      .di {
+        margin-top: 12px;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+      }
+      .di .pill {
+        width: 214px;
+        height: 37px;
+        border-radius: 20px;
+        background: #090c0f;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 14px 0 8px;
+        color: var(--mist);
+        font-size: 14px;
+        font-weight: 600;
+      }
+      .di .lab {
+        font-size: 12px;
+        line-height: 15px;
+        color: var(--secondary);
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Pictograms and interface glyphs -->
+    <svg width="0" height="0" style="position: absolute" aria-hidden="true" focusable="false">
+      <defs>
+        <!-- Pictograms: slate stroke, round caps and joins, one mist fill -->
+        <symbol id="p-envelope" viewBox="0 0 24 24">
+          <g fill="none" stroke="#1F2A33" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2.75" y="5.5" width="18.5" height="13.25" rx="2.4" fill="#DCEFE6" />
+            <path d="M3.4 7.2 12 13.3l8.6-6.1" />
+          </g>
+        </symbol>
+        <symbol id="p-phone" viewBox="0 0 24 24">
+          <g fill="none" stroke="#1F2A33" stroke-linecap="round" stroke-linejoin="round">
+            <path
+              fill="#DCEFE6"
+              d="M20.6 16.3v2.6a1.9 1.9 0 0 1-2.1 1.9 18.4 18.4 0 0 1-8-2.9 18.1 18.1 0 0 1-5.6-5.6 18.4 18.4 0 0 1-2.9-8A1.9 1.9 0 0 1 3.9 2.2h2.6a1.9 1.9 0 0 1 1.9 1.6c.1.9.3 1.7.6 2.5a1.9 1.9 0 0 1-.4 2L7.5 9.4a15 15 0 0 0 5.6 5.6l1.1-1.1a1.9 1.9 0 0 1 2-.4c.8.3 1.6.5 2.5.6a1.9 1.9 0 0 1 1.9 2.2z"
+            />
+            <path d="M15 3.4a6.3 6.3 0 0 1 5.6 5.6" />
+          </g>
+        </symbol>
+        <symbol id="p-tree" viewBox="0 0 24 24">
+          <g fill="none" stroke="#1F2A33" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="9.4" r="6.4" fill="#DCEFE6" />
+            <path d="M12 21v-9.2M12 14.2l-2.6-2.6M12 12.6l2.2-2.2M6.8 21h10.4" />
+          </g>
+        </symbol>
+        <symbol id="p-ticket" viewBox="0 0 24 24">
+          <g fill="none" stroke="#1F2A33" stroke-linecap="round" stroke-linejoin="round">
+            <path
+              fill="#DCEFE6"
+              d="M4.2 6.5h15.6q1.3 0 1.3 1.3v2.4a1.8 1.8 0 0 0 0 3.6v2.4q0 1.3-1.3 1.3H4.2q-1.3 0-1.3-1.3v-2.4a1.8 1.8 0 0 0 0-3.6V7.8q0-1.3 1.3-1.3z"
+            />
+            <path d="M15.6 8.9v6.2" stroke-dasharray="0 3.1" />
+            <path d="M6.8 12h4.6" />
+          </g>
+        </symbol>
+        <symbol id="p-ink" viewBox="0 0 24 24">
+          <g fill="none" stroke="#1F2A33" stroke-linecap="round" stroke-linejoin="round">
+            <path
+              fill="#DCEFE6"
+              d="M12 2.9S5.6 10.1 5.6 14.6a6.4 6.4 0 0 0 12.8 0C18.4 10.1 12 2.9 12 2.9z"
+            />
+            <path d="M8.9 14.9a3.1 3.1 0 0 0 2.7 3" />
+          </g>
+        </symbol>
+        <symbol id="p-note" viewBox="0 0 24 24">
+          <g fill="none" stroke="#1F2A33" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="4.75" y="4.5" width="14.5" height="17" rx="2.2" fill="#DCEFE6" />
+            <path d="M8.5 10.2h7M8.5 13.6h7M8.5 17h4M9 2.8v3.4M12 2.8v3.4M15 2.8v3.4" />
+          </g>
+        </symbol>
+        <symbol id="p-shirt" viewBox="0 0 24 24">
+          <g fill="none" stroke="#1F2A33" stroke-linecap="round" stroke-linejoin="round">
+            <path
+              fill="#DCEFE6"
+              d="M8.6 3.6 3.4 6.1l1.5 4.4 2.6-.9v10.3a.9.9 0 0 0 .9.9h7.2a.9.9 0 0 0 .9-.9V9.6l2.6.9 1.5-4.4-5.2-2.5A4.2 4.2 0 0 1 8.6 3.6z"
+            />
+          </g>
+        </symbol>
+        <symbol id="g-me" viewBox="0 0 24 24">
+          <g
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.9"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <circle cx="12" cy="8.4" r="3.9" />
+            <path d="M4.9 20.2a7.1 7.1 0 0 1 14.2 0" />
+          </g>
+        </symbol>
+
+        <!-- Interface glyphs: currentColor -->
+        <symbol id="g-today" viewBox="0 0 24 24">
+          <g
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.9"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <circle cx="12" cy="12" r="8.6" />
+            <path d="M12 3.4a8.6 8.6 0 0 1 8.6 8.6" stroke-width="3.4" />
+            <circle cx="12" cy="12" r="2.6" fill="currentColor" stroke="none" />
+          </g>
+        </symbol>
+        <symbol id="g-tasks" viewBox="0 0 24 24">
+          <g fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round">
+            <circle cx="5" cy="6.5" r="1.7" fill="currentColor" stroke="none" />
+            <circle cx="5" cy="12" r="1.7" fill="currentColor" stroke="none" />
+            <circle cx="5" cy="17.5" r="1.7" fill="currentColor" stroke="none" />
+            <path d="M9.6 6.5h10.6M9.6 12h10.6M9.6 17.5h7" />
+          </g>
+        </symbol>
+        <symbol id="g-routines" viewBox="0 0 24 24">
+          <g
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.9"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M3.6 12a8.4 8.4 0 0 1 14.6-5.7L20.4 8.5M20.4 3.8v4.7h-4.7" />
+            <path d="M20.4 12a8.4 8.4 0 0 1-14.6 5.7L3.6 15.5M3.6 20.2v-4.7h4.7" />
+          </g>
+        </symbol>
+        <symbol id="g-library" viewBox="0 0 24 24">
+          <g
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.9"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M2.8 5h5.8A3.4 3.4 0 0 1 12 8.4v11.4a2.6 2.6 0 0 0-2.6-2.6H2.8z" />
+            <path d="M21.2 5h-5.8A3.4 3.4 0 0 0 12 8.4v11.4a2.6 2.6 0 0 1 2.6-2.6h6.6z" />
+          </g>
+        </symbol>
+        <symbol id="g-plus" viewBox="0 0 24 24">
+          <path
+            d="M12 5v14M5 12h14"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.4"
+            stroke-linecap="round"
+          />
+        </symbol>
+        <symbol id="g-plus-thin" viewBox="0 0 24 24">
+          <path
+            d="M12 6.5v11M6.5 12h11"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+          />
+        </symbol>
+        <symbol id="g-back" viewBox="0 0 24 24">
+          <path
+            d="M14.8 5.5 8.3 12l6.5 6.5"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </symbol>
+        <symbol id="g-down" viewBox="0 0 24 24">
+          <path
+            d="M6 9.2 12 15.2l6-6"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </symbol>
+        <symbol id="g-play" viewBox="0 0 24 24">
+          <path
+            d="M8 5.9v12.2a1 1 0 0 0 1.5.9l9.5-6.1a1 1 0 0 0 0-1.8L9.5 5a1 1 0 0 0-1.5.9z"
+            fill="currentColor"
+          />
+        </symbol>
+        <symbol id="g-pause" viewBox="0 0 24 24">
+          <rect x="6.5" y="5" width="3.8" height="14" rx="1.3" fill="currentColor" />
+          <rect x="13.7" y="5" width="3.8" height="14" rx="1.3" fill="currentColor" />
+        </symbol>
+        <symbol id="g-check" viewBox="0 0 24 24">
+          <path
+            d="M5.5 12.6 9.9 17 18.5 7.8"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.6"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </symbol>
+        <symbol id="g-calendar" viewBox="0 0 24 24">
+          <g
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.9"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <rect x="3.5" y="5" width="17" height="15.5" rx="3" />
+            <path d="M3.5 10h17M8 3v4M16 3v4" />
+          </g>
+        </symbol>
+      </defs>
+    </svg>
+
+    <main class="board">
+      <header class="masthead">
+        <div>
+          <p class="eyebrow">Adnotia · phone app · design direction</p>
+          <h1>
+            <svg width="40" height="40" viewBox="0 0 40 40" aria-hidden="true">
+              <circle cx="20" cy="20" r="20" fill="#DCEFE6" />
+              <circle cx="20" cy="20" r="14" fill="none" stroke="#fff" stroke-width="4" />
+              <circle
+                cx="20"
+                cy="20"
+                r="14"
+                fill="none"
+                stroke="#1E6B52"
+                stroke-width="4"
+                stroke-linecap="round"
+                pathLength="100"
+                stroke-dasharray="67.45 100"
+                stroke-dashoffset="-30.27"
+                transform="rotate(-90 20 20)"
+              />
+              <circle cx="20" cy="20" r="10.5" fill="#fff" />
+            </svg>
+            Roundels
+          </h1>
+          <p class="idea">
+            <strong
+              >Every task is a roundel: a white disc holding a drawn line object, inside a ring that
+              is its duration.</strong
+            >
+            The running roundel sits large at the top of Today, and its ring empties as you work.
+          </p>
+        </div>
+        <dl class="specs">
+          <dt>Type</dt>
+          <dd>
+            Rubik, variable 300–900, SIL Open Font License, bundled. Its softened corners match the
+            discs.
+          </dd>
+          <dt>Colour, this direction's own</dt>
+          <dd>
+            <ul class="swatches">
+              <li><i style="background: #f3f6f8"></i><b>Porcelain</b><span>#F3F6F8</span></li>
+              <li><i style="background: #ffffff"></i><b>White</b><span>#FFFFFF</span></li>
+              <li><i style="background: #1f2a33"></i><b>Slate</b><span>#1F2A33</span></li>
+              <li><i style="background: #52606b"></i><b>Secondary</b><span>#52606B</span></li>
+              <li><i style="background: #1e6b52"></i><b>Pine</b><span>#1E6B52</span></li>
+              <li><i style="background: #dcefe6"></i><b>Pine mist</b><span>#DCEFE6</span></li>
+            </ul>
+          </dd>
+        </dl>
+      </header>
+
+      <div class="row3">
+        <!-- ================= 1 · TODAY ================= -->
+        <section aria-label="Screen 1: Today">
+          <div class="phone">
+            <div class="screen today">
+              <div class="island" aria-hidden="true"></div>
+              <div class="status" aria-hidden="true">
+                <span class="clock">10:05</span>
+                <span class="sys">
+                  <svg width="18" height="12" viewBox="0 0 18 12" fill="#1F2A33">
+                    <rect x="0" y="8" width="3" height="4" rx="1" />
+                    <rect x="5" y="5.5" width="3" height="6.5" rx="1" />
+                    <rect x="10" y="3" width="3" height="9" rx="1" />
+                    <rect x="15" y="0" width="3" height="12" rx="1" />
+                  </svg>
+                  <svg width="16" height="12" viewBox="0 0 16 12" fill="#1F2A33">
+                    <path
+                      d="M8 11.6 5.7 9.2a3.3 3.3 0 0 1 4.6 0zM3.1 6.6a7 7 0 0 1 9.8 0l-1.4 1.4a5 5 0 0 0-7 0zM.4 3.9a10.8 10.8 0 0 1 15.2 0l-1.4 1.4a8.8 8.8 0 0 0-12.4 0z"
+                    />
+                  </svg>
+                  <svg width="27" height="13" viewBox="0 0 27 13">
+                    <rect
+                      x=".5"
+                      y=".5"
+                      width="23"
+                      height="12"
+                      rx="3.6"
+                      fill="none"
+                      stroke="#1F2A33"
+                      stroke-opacity=".4"
+                    />
+                    <rect x="2" y="2" width="17" height="9" rx="2.2" fill="#1F2A33" />
+                    <path d="M25 4.6v3.8a2 2 0 0 0 0-3.8z" fill="#1F2A33" fill-opacity=".45" />
+                  </svg>
+                </span>
+              </div>
+
+              <div class="hdr">
+                <div class="ttl">
+                  <h2>Today</h2>
+                  <span class="date">Tuesday 24 November</span>
+                </div>
+                <a class="me" href="#me" aria-label="Me: settings, Medication and Family"
+                  ><svg width="22" height="22" aria-hidden="true"><use href="#g-me" /></svg
+                ></a>
+              </div>
+
+              <div class="hero">
+                <a
+                  class="halo"
+                  href="#focus"
+                  aria-label="Write the school email, running. 18 of 25 minutes left."
+                >
+                  <span class="rd rdHero">
+                    <svg class="ring" viewBox="0 0 162 162" aria-hidden="true">
+                      <circle class="trk" cx="81" cy="81" r="76" stroke-width="10" />
+                      <circle
+                        class="arc"
+                        cx="81"
+                        cy="81"
+                        r="76"
+                        stroke-width="10"
+                        pathLength="100"
+                        stroke-dasharray="69.91 100"
+                        stroke-dashoffset="-29.05"
+                        transform="rotate(-90 81 81)"
+                      />
+                    </svg>
+                    <span class="disc">
+                      <svg class="pic" viewBox="0 0 24 24" aria-hidden="true">
+                        <use href="#p-envelope" />
+                      </svg>
+                    </span>
+                  </span>
+                </a>
+                <p class="title">Write the school email</p>
+                <p class="step">Step 2 of 3 · <b>Write the question</b></p>
+                <p class="left"><b>18 min left</b> · ends 10:23</p>
+                <a class="capsule dark" href="#focus">
+                  <svg width="18" height="18" aria-hidden="true"><use href="#g-play" /></svg>
+                  Back to it
+                </a>
+              </div>
+
+              <div class="list" style="top: 484px">
+                <h3 class="sec-h">Later today</h3>
+                <a class="item" href="#task-dentist">
+                  <span class="rd rd52" aria-hidden="true">
+                    <svg class="ring" viewBox="0 0 64 64">
+                      <circle class="trk" cx="32" cy="32" r="30" />
+                      <circle
+                        class="arc"
+                        cx="32"
+                        cy="32"
+                        r="30"
+                        pathLength="100"
+                        stroke-dasharray="14.54 100"
+                        stroke-dashoffset="-1.06"
+                        transform="rotate(-90 32 32)"
+                      />
+                    </svg>
+                    <span class="disc"
+                      ><svg class="pic" viewBox="0 0 24 24"><use href="#p-phone" /></svg
+                    ></span>
+                  </span>
+                  <span class="txt">
+                    <span class="t17">Call the dentist</span>
+                    <span class="sub"
+                      ><span class="fig">10 min</span><span class="meta">· at 10:30</span></span
+                    >
+                  </span>
+                </a>
+                <a class="item" href="#task-park">
+                  <span class="rd rd52" aria-hidden="true">
+                    <svg class="ring" viewBox="0 0 64 64">
+                      <circle class="trk" cx="32" cy="32" r="30" />
+                      <circle
+                        class="arc"
+                        cx="32"
+                        cy="32"
+                        r="30"
+                        pathLength="100"
+                        stroke-dasharray="31.21 100"
+                        stroke-dashoffset="-1.06"
+                        transform="rotate(-90 32 32)"
+                      />
+                    </svg>
+                    <span class="disc"
+                      ><svg class="pic" viewBox="0 0 24 24"><use href="#p-tree" /></svg
+                    ></span>
+                  </span>
+                  <span class="txt">
+                    <span class="t17">Walk to the park</span>
+                    <span class="sub"
+                      ><span class="fig">20 min</span><span class="meta">· at 11:00</span></span
+                    >
+                  </span>
+                </a>
+              </div>
+
+              <div class="list" style="top: 666px">
+                <h3 class="sec-h">Anytime</h3>
+                <a class="item" href="#task-permit">
+                  <span class="rd rd52" aria-hidden="true">
+                    <span class="disc"
+                      ><svg class="pic" viewBox="0 0 24 24"><use href="#p-ticket" /></svg
+                    ></span>
+                  </span>
+                  <span class="t17">Renew the parking permit</span>
+                </a>
+                <a class="item" href="#task-ink">
+                  <span class="rd rd52" aria-hidden="true">
+                    <span class="disc"
+                      ><svg class="pic" viewBox="0 0 24 24"><use href="#p-ink" /></svg
+                    ></span>
+                  </span>
+                  <span class="t17">Order printer ink</span>
+                </a>
+              </div>
+
+              <div class="edge" aria-hidden="true"></div>
+              <div class="bottom dock">
+                <nav class="tabs" aria-label="Main">
+                  <a class="tab" href="#today" aria-current="page"
+                    ><svg width="22" height="22" aria-hidden="true"><use href="#g-today" /></svg
+                    >Today</a
+                  >
+                  <a class="tab" href="#tasks"
+                    ><svg width="22" height="22" aria-hidden="true"><use href="#g-tasks" /></svg
+                    >Tasks</a
+                  >
+                  <a class="tab" href="#routines"
+                    ><svg width="22" height="22" aria-hidden="true"><use href="#g-routines" /></svg
+                    >Routines</a
+                  >
+                  <a class="tab" href="#library"
+                    ><svg width="22" height="22" aria-hidden="true"><use href="#g-library" /></svg
+                    >Library</a
+                  >
+                </nav>
+                <button class="capture" type="button" aria-label="Capture a task or a thought">
+                  <svg width="22" height="22" aria-hidden="true"><use href="#g-plus" /></svg>
+                  Capture
+                </button>
+              </div>
+              <div class="home" aria-hidden="true"></div>
+            </div>
+          </div>
+          <p class="caption">
+            <span class="n">1</span><b>Today</b
+            ><span
+              >The running roundel is the one thing now. Rings below draw each length as a share of
+              an hour.</span
+            >
+          </p>
+        </section>
+
+        <!-- ================= 2 · TASK ================= -->
+        <section aria-label="Screen 2: Task opened">
+          <div class="phone">
+            <div class="screen task">
+              <div class="island" aria-hidden="true"></div>
+              <div class="status" aria-hidden="true">
+                <span class="clock">10:05</span>
+                <span class="sys">
+                  <svg width="18" height="12" viewBox="0 0 18 12" fill="#1F2A33">
+                    <rect x="0" y="8" width="3" height="4" rx="1" />
+                    <rect x="5" y="5.5" width="3" height="6.5" rx="1" />
+                    <rect x="10" y="3" width="3" height="9" rx="1" />
+                    <rect x="15" y="0" width="3" height="12" rx="1" />
+                  </svg>
+                  <svg width="16" height="12" viewBox="0 0 16 12" fill="#1F2A33">
+                    <path
+                      d="M8 11.6 5.7 9.2a3.3 3.3 0 0 1 4.6 0zM3.1 6.6a7 7 0 0 1 9.8 0l-1.4 1.4a5 5 0 0 0-7 0zM.4 3.9a10.8 10.8 0 0 1 15.2 0l-1.4 1.4a8.8 8.8 0 0 0-12.4 0z"
+                    />
+                  </svg>
+                  <svg width="27" height="13" viewBox="0 0 27 13">
+                    <rect
+                      x=".5"
+                      y=".5"
+                      width="23"
+                      height="12"
+                      rx="3.6"
+                      fill="none"
+                      stroke="#1F2A33"
+                      stroke-opacity=".4"
+                    />
+                    <rect x="2" y="2" width="17" height="9" rx="2.2" fill="#1F2A33" />
+                    <path d="M25 4.6v3.8a2 2 0 0 0 0-3.8z" fill="#1F2A33" fill-opacity=".45" />
+                  </svg>
+                </span>
+              </div>
+
+              <div class="navbar">
+                <a class="capsule light small back" href="#today"
+                  ><svg width="20" height="20" aria-hidden="true"><use href="#g-back" /></svg
+                  >Today</a
+                >
+                <button class="capsule light small" type="button">Edit</button>
+              </div>
+
+              <div class="thead">
+                <span
+                  class="rd rd96 run"
+                  role="img"
+                  aria-label="Envelope picture. Running, 18 of 25 minutes left."
+                >
+                  <svg class="ring" viewBox="0 0 96 96" aria-hidden="true">
+                    <circle class="trk" cx="48" cy="48" r="44.5" />
+                    <circle
+                      class="arc"
+                      cx="48"
+                      cy="48"
+                      r="44.5"
+                      pathLength="100"
+                      stroke-dasharray="69.5 100"
+                      stroke-dashoffset="-29.25"
+                      transform="rotate(-90 48 48)"
+                    />
+                  </svg>
+                  <span class="disc"
+                    ><svg class="pic" viewBox="0 0 24 24" aria-hidden="true">
+                      <use href="#p-envelope" /></svg
+                  ></span>
+                </span>
+                <div>
+                  <h2>Write the school email</h2>
+                  <p class="facts">
+                    Today · 25 min estimate · 7 so far<br /><span class="fig">18 min left</span> ·
+                    ends 10:23
+                  </p>
+                  <p class="pick">Picture: envelope · <a href="#picture">Change</a></p>
+                </div>
+              </div>
+
+              <div class="block" style="top: 290px">
+                <div class="hrow">
+                  <h3 class="sec-h">Steps</h3>
+                  <span class="meta">Step 2 of 3</span>
+                </div>
+                <ol class="steps">
+                  <li>
+                    <span class="dot done" aria-hidden="true"
+                      ><svg width="16" height="16"><use href="#g-check" /></svg
+                    ></span>
+                    <div>
+                      <p class="st">Find the school address</p>
+                      <p class="sm">Done</p>
+                    </div>
+                  </li>
+                  <li class="now-row" aria-current="step">
+                    <span class="dot now" aria-hidden="true"></span>
+                    <div>
+                      <p class="st">Write the question</p>
+                      <p class="sm">Now</p>
+                    </div>
+                  </li>
+                  <li>
+                    <span class="dot next" aria-hidden="true"></span>
+                    <div><p class="st">Read it once and send</p></div>
+                  </li>
+                </ol>
+                <button class="addstep" type="button">
+                  <span class="dot add" aria-hidden="true"
+                    ><svg width="16" height="16"><use href="#g-plus-thin" /></svg
+                  ></span>
+                  Add a step
+                </button>
+              </div>
+
+              <div class="block" style="top: 574px">
+                <h3 class="sec-h">Note</h3>
+                <a class="noterow" href="#note">
+                  <span class="rd rd52" aria-hidden="true">
+                    <span class="disc"
+                      ><svg class="pic" viewBox="0 0 24 24"><use href="#p-note" /></svg
+                    ></span>
+                  </span>
+                  <span class="q">When is the permission slip due?</span>
+                </a>
+              </div>
+
+              <div class="bottom actions">
+                <a class="capsule dark" href="#focus"
+                  ><svg width="18" height="18" aria-hidden="true"><use href="#g-play" /></svg>Back
+                  to it</a
+                >
+                <button class="capsule light" type="button">Not today</button>
+                <button class="capture" type="button" aria-label="Capture a task or a thought">
+                  <svg width="22" height="22" aria-hidden="true"><use href="#g-plus" /></svg>
+                  Capture
+                </button>
+              </div>
+              <div class="home" aria-hidden="true"></div>
+            </div>
+          </div>
+          <p class="caption">
+            <span class="n">2</span><b>Task opened</b
+            ><span
+              >Steps hang on one thread. The current step wears the running roundel's mist halo.
+              Capture is in the same place on every screen.</span
+            >
+          </p>
+        </section>
+
+        <!-- ================= 3 · FOCUS ================= -->
+        <section aria-label="Screen 3: Focus">
+          <div class="phone">
+            <div class="screen focus">
+              <div class="island" aria-hidden="true"></div>
+              <div class="status" aria-hidden="true">
+                <span class="clock">10:05</span>
+                <span class="sys">
+                  <svg width="18" height="12" viewBox="0 0 18 12" fill="#1F2A33">
+                    <rect x="0" y="8" width="3" height="4" rx="1" />
+                    <rect x="5" y="5.5" width="3" height="6.5" rx="1" />
+                    <rect x="10" y="3" width="3" height="9" rx="1" />
+                    <rect x="15" y="0" width="3" height="12" rx="1" />
+                  </svg>
+                  <svg width="16" height="12" viewBox="0 0 16 12" fill="#1F2A33">
+                    <path
+                      d="M8 11.6 5.7 9.2a3.3 3.3 0 0 1 4.6 0zM3.1 6.6a7 7 0 0 1 9.8 0l-1.4 1.4a5 5 0 0 0-7 0zM.4 3.9a10.8 10.8 0 0 1 15.2 0l-1.4 1.4a8.8 8.8 0 0 0-12.4 0z"
+                    />
+                  </svg>
+                  <svg width="27" height="13" viewBox="0 0 27 13">
+                    <rect
+                      x=".5"
+                      y=".5"
+                      width="23"
+                      height="12"
+                      rx="3.6"
+                      fill="none"
+                      stroke="#1F2A33"
+                      stroke-opacity=".4"
+                    />
+                    <rect x="2" y="2" width="17" height="9" rx="2.2" fill="#1F2A33" />
+                    <path d="M25 4.6v3.8a2 2 0 0 0 0-3.8z" fill="#1F2A33" fill-opacity=".45" />
+                  </svg>
+                </span>
+              </div>
+
+              <div class="ftop">
+                <div class="clockbox">
+                  <span
+                    class="rd rd56 run"
+                    role="img"
+                    aria-label="Envelope picture. Running, 18 of 25 minutes left."
+                  >
+                    <svg class="ring" viewBox="0 0 56 56" aria-hidden="true">
+                      <circle class="trk" cx="28" cy="28" r="25.5" />
+                      <circle
+                        class="arc"
+                        cx="28"
+                        cy="28"
+                        r="25.5"
+                        pathLength="100"
+                        stroke-dasharray="68.88 100"
+                        stroke-dashoffset="-29.56"
+                        transform="rotate(-90 28 28)"
+                      />
+                    </svg>
+                    <span class="disc"
+                      ><svg class="pic" viewBox="0 0 24 24" aria-hidden="true">
+                        <use href="#p-envelope" /></svg
+                    ></span>
+                  </span>
+                  <div>
+                    <p class="l1">18 of 25 min left</p>
+                    <p class="l2">ends 10:23</p>
+                  </div>
+                </div>
+                <a class="capsule light small" href="#today"
+                  ><svg width="20" height="20" aria-hidden="true"><use href="#g-down" /></svg
+                  >Today</a
+                >
+              </div>
+
+              <div class="fmain">
+                <p class="progress">
+                  <span class="pips" aria-hidden="true"
+                    ><i class="p-done"></i><i class="p-now"></i><i class="p-next"></i
+                  ></span>
+                  Step 2 of 3 · Write the school email
+                </p>
+                <h2>Write the question</h2>
+                <ul class="around">
+                  <li>
+                    <span class="mini done" aria-hidden="true"
+                      ><svg width="13" height="13"><use href="#g-check" /></svg></span
+                    ><span><span class="k">Done:</span> Find the school address</span>
+                  </li>
+                  <li>
+                    <span class="mini next" aria-hidden="true"></span
+                    ><span><span class="k">Next:</span> Read it once and send</span>
+                  </li>
+                </ul>
+                <a class="fnote" href="#note">
+                  <span class="rd rd52" aria-hidden="true">
+                    <span class="disc"
+                      ><svg class="pic" viewBox="0 0 24 24"><use href="#p-note" /></svg
+                    ></span>
+                  </span>
+                  <span>
+                    <span class="q">When is the permission slip due?</span><br />
+                    <span class="meta">Note on this task</span>
+                  </span>
+                </a>
+              </div>
+
+              <div class="fpair">
+                <button class="capsule light" type="button">
+                  <svg width="18" height="18" aria-hidden="true"><use href="#g-pause" /></svg>Pause
+                </button>
+                <button class="capsule light" type="button">+5 min</button>
+              </div>
+              <div class="bottom fctl">
+                <button class="capsule dark" type="button">
+                  <svg width="20" height="20" aria-hidden="true"><use href="#g-check" /></svg>Step
+                  done
+                </button>
+                <button
+                  class="capture"
+                  type="button"
+                  aria-label="Capture a thought without leaving focus"
+                >
+                  <svg width="22" height="22" aria-hidden="true"><use href="#g-plus" /></svg>
+                  Capture
+                </button>
+              </div>
+              <div class="home" aria-hidden="true"></div>
+            </div>
+          </div>
+          <p class="caption">
+            <span class="n">3</span><b>Focus</b
+            ><span
+              >The step is the largest thing on the screen. The clock is present, small, and beside
+              its words.</span
+            >
+          </p>
+        </section>
+      </div>
+
+      <!-- ================= System strip ================= -->
+      <div class="row3 strip">
+        <section aria-label="The pictogram set">
+          <h3>One picture per task, picked from its words</h3>
+          <p>
+            About 60 on-device pictograms in one stroke. The person can change any of them, and no
+            match gets a plain dot.
+          </p>
+          <ul class="set pics">
+            <li>
+              <span class="rd rd52"
+                ><span class="disc"
+                  ><svg class="pic" viewBox="0 0 24 24" aria-hidden="true">
+                    <use href="#p-envelope" /></svg></span></span
+              ><span class="lab">email</span>
+            </li>
+            <li>
+              <span class="rd rd52"
+                ><span class="disc"
+                  ><svg class="pic" viewBox="0 0 24 24" aria-hidden="true">
+                    <use href="#p-phone" /></svg></span></span
+              ><span class="lab">call</span>
+            </li>
+            <li>
+              <span class="rd rd52"
+                ><span class="disc"
+                  ><svg class="pic" viewBox="0 0 24 24" aria-hidden="true">
+                    <use href="#p-tree" /></svg></span></span
+              ><span class="lab">walk, park</span>
+            </li>
+            <li>
+              <span class="rd rd52"
+                ><span class="disc"
+                  ><svg class="pic" viewBox="0 0 24 24" aria-hidden="true">
+                    <use href="#p-ticket" /></svg></span></span
+              ><span class="lab">permit</span>
+            </li>
+            <li>
+              <span class="rd rd52"
+                ><span class="disc"
+                  ><svg class="pic" viewBox="0 0 24 24" aria-hidden="true">
+                    <use href="#p-ink" /></svg></span></span
+              ><span class="lab">ink</span>
+            </li>
+            <li>
+              <span class="rd rd52"
+                ><span class="disc"
+                  ><svg class="pic" viewBox="0 0 24 24" aria-hidden="true">
+                    <use href="#p-note" /></svg></span></span
+              ><span class="lab">note</span>
+            </li>
+            <li>
+              <span class="rd rd52"
+                ><span class="disc"
+                  ><svg class="pic" viewBox="0 0 24 24" aria-hidden="true">
+                    <use href="#p-shirt" /></svg></span></span
+              ><span class="lab">laundry</span>
+            </li>
+            <li>
+              <span class="rd rd52"
+                ><span class="disc"><span class="dotonly"></span></span></span
+              ><span class="lab">no match</span>
+            </li>
+          </ul>
+        </section>
+
+        <section aria-label="State is drawn as shape">
+          <h3>State is drawn as shape, never as colour alone</h3>
+          <p>
+            Each state also carries its words: “10 min”, “18 min left”, “Paused”, “Done”. Only a
+            running roundel sits on a halo.
+          </p>
+          <ul class="set states">
+            <li>
+              <span class="rd rd52" aria-hidden="true">
+                <svg class="ring" viewBox="0 0 64 64">
+                  <circle class="trk" cx="32" cy="32" r="30" />
+                  <circle
+                    class="arc"
+                    cx="32"
+                    cy="32"
+                    r="30"
+                    pathLength="100"
+                    stroke-dasharray="31.21 100"
+                    stroke-dashoffset="-1.06"
+                    transform="rotate(-90 32 32)"
+                  />
+                </svg>
+                <span class="disc"
+                  ><svg class="pic" viewBox="0 0 24 24"><use href="#p-tree" /></svg
+                ></span>
+              </span>
+              <span class="lab"><b>Upcoming</b>its length</span>
+            </li>
+            <li>
+              <span class="rd rd52 run" aria-hidden="true">
+                <svg class="ring" viewBox="0 0 64 64">
+                  <circle class="trk" cx="32" cy="32" r="30" />
+                  <circle
+                    class="arc"
+                    cx="32"
+                    cy="32"
+                    r="30"
+                    pathLength="100"
+                    stroke-dasharray="69.88 100"
+                    stroke-dashoffset="-29.06"
+                    transform="rotate(-90 32 32)"
+                  />
+                </svg>
+                <span class="disc"
+                  ><svg class="pic" viewBox="0 0 24 24"><use href="#p-envelope" /></svg
+                ></span>
+              </span>
+              <span class="lab"><b>Running</b>ring drains</span>
+            </li>
+            <li>
+              <span class="rd rd52" aria-hidden="true">
+                <span class="disc"
+                  ><svg class="pic" viewBox="0 0 24 24"><use href="#p-ticket" /></svg
+                ></span>
+              </span>
+              <span class="lab"><b>Untimed</b>no ring</span>
+            </li>
+            <li>
+              <span class="rd rd52" aria-hidden="true">
+                <svg class="ring" viewBox="0 0 64 64">
+                  <circle class="trk" cx="32" cy="32" r="30" />
+                  <path
+                    class="arc"
+                    d="M61.47 37.62A30 30 0 1 1 32 2"
+                    style="stroke-linecap: butt"
+                    stroke-dasharray="6 3.7"
+                  />
+                </svg>
+                <span class="disc"
+                  ><svg class="pic" viewBox="0 0 24 24"><use href="#p-envelope" /></svg
+                ></span>
+              </span>
+              <span class="lab"><b>Paused</b>dashed ring</span>
+            </li>
+            <li>
+              <span class="rd rd52" aria-hidden="true">
+                <span class="disc"
+                  ><svg class="pic" viewBox="0 0 24 24"><use href="#p-phone" /></svg
+                ></span>
+                <span class="badge"
+                  ><svg width="12" height="12"><use href="#g-check" /></svg
+                ></span>
+              </span>
+              <span class="lab"><b>Done</b>check at four</span>
+            </li>
+          </ul>
+        </section>
+
+        <section aria-label="Live Activity">
+          <h3>The running roundel leaves the app with you</h3>
+          <p>
+            Lock screen Live Activity and the Dynamic Island draw the same ring, beside the same
+            words.
+          </p>
+          <div
+            class="la"
+            role="img"
+            aria-label="Live Activity: Write the question, step 2 of 3 of Write the school email, 18 minutes left, ends 10:23."
+          >
+            <span class="rd rdLA" aria-hidden="true">
+              <svg class="ring" viewBox="0 0 52 52">
+                <circle class="trk" cx="26" cy="26" r="24" />
+                <circle
+                  class="arc"
+                  cx="26"
+                  cy="26"
+                  r="24"
+                  pathLength="100"
+                  stroke-dasharray="69.35 100"
+                  stroke-dashoffset="-29.33"
+                  transform="rotate(-90 26 26)"
+                />
+              </svg>
+              <span class="disc"
+                ><svg class="pic" viewBox="0 0 24 24"><use href="#p-envelope" /></svg
+              ></span>
+            </span>
+            <span class="mid"
+              ><b>Write the question</b><span>Step 2 of 3 · School email</span></span
+            >
+            <span class="end"><b>18 min</b><span>left · ends 10:23</span></span>
+          </div>
+          <div class="di">
+            <span class="pill" role="img" aria-label="Dynamic Island: 18 minutes left">
+              <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true">
+                <circle
+                  cx="12"
+                  cy="12"
+                  r="9.5"
+                  fill="none"
+                  stroke="rgba(255,255,255,.2)"
+                  stroke-width="3"
+                />
+                <circle
+                  cx="12"
+                  cy="12"
+                  r="9.5"
+                  fill="none"
+                  stroke="#DCEFE6"
+                  stroke-width="3"
+                  stroke-linecap="round"
+                  pathLength="100"
+                  stroke-dasharray="67 100"
+                  stroke-dashoffset="-30.5"
+                  transform="rotate(-90 12 12)"
+                />
+              </svg>
+              <span>18 min</span>
+            </span>
+            <span class="lab">Dynamic Island, compact</span>
+          </div>
+        </section>
+      </div>
+    </main>
+  </body>
+</html>

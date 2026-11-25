@@ -1,0 +1,1601 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Quarters · Adnotia phone direction</title>
+    <!--
+  Typeface: Onest (variable, wght 100–900), SIL Open Font License, from Google Fonts.
+  It is the only face drawn. Its tabular figures (tnum) give the 1 a full-width cell, which
+  opens a visible hole in "15:30" and "18" at these sizes, so times are set in its proportional
+  figures and given fixed-width boxes where they stack or count down (.num).
+  The app would bundle the font file; the link below is for this static mock-up only.
+-->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Onest:wght@100..900&display=swap"
+    />
+    <style>
+      :root {
+        /* Day-part grounds and their inks. Ratios are text on ground. */
+        --mist: #dce9f5;
+        --mist-ink: #13283d; /* 12.2:1 */
+        --mist-mute: #3e5468; /* 6.4:1 */
+        --mint: #cdefd9;
+        --mint-ink: #0f3321; /* 11.2:1 */
+        --mint-mute: #365744; /* 6.5:1 */
+        --apricot: #ffd9b8;
+        --apricot-ink: #3a1e08; /* 11.6:1 */
+        --apricot-mute: #6a4325; /* 6.5:1 */
+        --dusk: #2e3a6b;
+        --dusk-ink: #f1f3fb; /* 9.8:1 */
+        --dusk-mute: #c2c9e8; /* 6.6:1 */
+
+        /* The running slab, controls and chrome */
+        --slab: #ffffff;
+        --ink: #12161c; /* 18.2:1 on white */
+        --slab-mute: #4f5662; /* 7.4:1 on white */
+
+        /* Presentation board only */
+        --canvas: #e9e8e4;
+        --canvas-ink: #1b1d20;
+        --canvas-mute: #55585c;
+        --bezel: #0c0e11;
+
+        --font: 'Onest', system-ui, sans-serif;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+      }
+      body {
+        background: var(--canvas);
+        color: var(--canvas-ink);
+        font-family: var(--font);
+        font-weight: 450;
+        -webkit-font-smoothing: antialiased;
+        text-rendering: optimizeLegibility;
+      }
+      h1,
+      h2,
+      h3,
+      p,
+      ul,
+      ol,
+      figure {
+        margin: 0;
+        padding: 0;
+      }
+      ul,
+      ol {
+        list-style: none;
+      }
+      button {
+        font: inherit;
+        color: inherit;
+        background: none;
+        border: 0;
+        padding: 0;
+        margin: 0;
+        cursor: pointer;
+      }
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+      .num {
+        font-variant-numeric: proportional-nums;
+      }
+      .vh {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        white-space: nowrap;
+      }
+      svg {
+        display: block;
+        flex: none;
+      }
+      /* Icons: one rendered stroke whatever the icon's size, so a 18 px note icon and a
+         28 px plus read as one family. Widths below are screen pixels. */
+      .ic {
+        width: 24px;
+        height: 24px;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+      .ic * {
+        vector-effect: non-scaling-stroke;
+      }
+
+      /* ───────────────────────── Board ───────────────────────── */
+      .board {
+        width: 1318px;
+        margin: 0 auto;
+        padding: 60px 0 56px;
+      }
+      .intro {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 48px;
+        margin-bottom: 48px;
+      }
+      .kicker {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--canvas-mute);
+        letter-spacing: 0.01em;
+      }
+      .intro h1 {
+        font-size: 64px;
+        line-height: 1;
+        font-weight: 800;
+        letter-spacing: -0.035em;
+        margin: 10px 0 16px;
+      }
+      .idea {
+        font-size: 19px;
+        line-height: 28px;
+        max-width: 560px;
+        color: #2c2f33;
+      }
+
+      .legend {
+        display: grid;
+        grid-template-columns: repeat(4, 152px);
+        gap: 8px;
+      }
+      .legend li {
+        --g: var(--lg);
+        color: var(--li);
+        background: var(--lg);
+        border-radius: 18px;
+        padding: 14px 14px 13px;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        min-height: 118px;
+      }
+      .legend .sun {
+        width: 36px;
+        height: 36px;
+        margin: -4px 0 auto -3px;
+      }
+      .legend b {
+        font-size: 18px;
+        line-height: 22px;
+        font-weight: 800;
+        letter-spacing: -0.015em;
+        margin-top: 14px;
+      }
+      .legend span {
+        font-size: 13px;
+        line-height: 17px;
+        font-weight: 500;
+        color: var(--lm);
+      }
+      .lg-morning {
+        --lg: var(--mist);
+        --li: var(--mist-ink);
+        --lm: var(--mist-mute);
+      }
+      .lg-midday {
+        --lg: var(--mint);
+        --li: var(--mint-ink);
+        --lm: var(--mint-mute);
+      }
+      .lg-afternoon {
+        --lg: var(--apricot);
+        --li: var(--apricot-ink);
+        --lm: var(--apricot-mute);
+      }
+      .lg-evening {
+        --lg: var(--dusk);
+        --li: var(--dusk-ink);
+        --lm: var(--dusk-mute);
+      }
+
+      .phones {
+        display: flex;
+        justify-content: space-between;
+      }
+      .device {
+        width: 410px;
+        flex: none;
+      }
+      .device figcaption {
+        margin-top: 22px;
+        padding-left: 6px;
+        font-size: 15px;
+        line-height: 21px;
+        color: var(--canvas-mute);
+        font-weight: 500;
+      }
+      .device figcaption b {
+        color: var(--canvas-ink);
+        font-weight: 700;
+        margin-right: 6px;
+      }
+      .phone {
+        width: 410px;
+        padding: 10px;
+        border-radius: 60px;
+        background: var(--bezel);
+        box-shadow:
+          0 0 0 1px #2b2f35 inset,
+          0 40px 70px -36px rgba(20, 24, 30, 0.45),
+          0 12px 24px -16px rgba(20, 24, 30, 0.3);
+      }
+      .foot {
+        margin-top: 44px;
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 44px;
+        font-size: 14px;
+        line-height: 21px;
+        color: var(--canvas-mute);
+      }
+      .foot b {
+        color: var(--canvas-ink);
+        font-weight: 700;
+        display: block;
+        margin-bottom: 4px;
+      }
+
+      /* ───────────────────────── Screen basics ───────────────────────── */
+      .screen {
+        position: relative;
+        width: 390px;
+        height: 844px;
+        overflow: hidden;
+        border-radius: 50px;
+        --g: var(--mist);
+        --i: var(--mist-ink);
+        --m: var(--mist-mute);
+        background: var(--g);
+        color: var(--i);
+        font-size: 17px;
+        line-height: 24px;
+      }
+      .morning {
+        --g: var(--mist);
+        --i: var(--mist-ink);
+        --m: var(--mist-mute);
+      }
+      .midday {
+        --g: var(--mint);
+        --i: var(--mint-ink);
+        --m: var(--mint-mute);
+      }
+      .afternoon {
+        --g: var(--apricot);
+        --i: var(--apricot-ink);
+        --m: var(--apricot-mute);
+      }
+      .evening {
+        --g: var(--dusk);
+        --i: var(--dusk-ink);
+        --m: var(--dusk-mute);
+      }
+
+      .status {
+        position: absolute;
+        inset: 0 0 auto;
+        height: 54px;
+        z-index: 6;
+        color: var(--sc, var(--i));
+        pointer-events: none;
+      }
+      .status time {
+        position: absolute;
+        left: 0;
+        width: 140px;
+        top: 17px;
+        text-align: center;
+        font-size: 17px;
+        line-height: 22px;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+      }
+      .status .island {
+        position: absolute;
+        top: 11px;
+        left: 50%;
+        width: 124px;
+        height: 36px;
+        margin-left: -62px;
+        border-radius: 20px;
+        background: #000;
+      }
+      .status .sys {
+        position: absolute;
+        right: 0;
+        width: 140px;
+        top: 21px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 6px;
+      }
+      .status .sys svg {
+        fill: currentColor;
+      }
+      .home-ind {
+        position: absolute;
+        bottom: 8px;
+        left: 50%;
+        width: 136px;
+        height: 5px;
+        margin-left: -68px;
+        border-radius: 3px;
+        background: var(--hi, var(--i));
+        z-index: 6;
+      }
+
+      /* Sun-position glyph: horizon, dotted path of the sun, and where it is now */
+      .sun {
+        width: 28px;
+        height: 28px;
+        color: inherit;
+      }
+      .sun .arc {
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 1.9;
+        stroke-linecap: round;
+        stroke-dasharray: 0 3.15;
+      }
+      .sun .hz {
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 2;
+        stroke-linecap: round;
+      }
+      .sun .body {
+        fill: currentColor;
+        stroke: var(--g);
+        stroke-width: 2.2;
+      }
+      .sun .cut {
+        fill: var(--g);
+      }
+
+      /* Tick circle: 24 visible, 44 to touch */
+      .tick {
+        width: 44px;
+        height: 44px;
+        margin: -10px;
+        display: grid;
+        place-items: center;
+        flex: none;
+        border-radius: 50%;
+      }
+      .tick::before {
+        content: '';
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        box-shadow: inset 0 0 0 2px currentColor;
+      }
+
+      /* Dock: floating tab bar or action row, with capture always in the same place */
+      .dock {
+        position: absolute;
+        left: 16px;
+        right: 16px;
+        bottom: 30px;
+        height: 64px;
+        display: flex;
+        gap: 10px;
+        z-index: 5;
+      }
+      .capture {
+        width: 64px;
+        height: 64px;
+        flex: none;
+        border-radius: 50%;
+        background: #fff;
+        color: var(--ink);
+        box-shadow: inset 0 0 0 2px var(--ink);
+        display: grid;
+        place-items: center;
+      }
+      .capture .ic {
+        width: 28px;
+        height: 28px;
+        stroke-width: 2.5;
+      }
+      .tabs {
+        flex: 1;
+        display: flex;
+        gap: 2px;
+        padding: 6px;
+        border-radius: 32px;
+        background: var(--ink);
+        color: #fff;
+      }
+      .tabs a {
+        flex: 1;
+        border-radius: 26px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 3px;
+        font-size: 12px;
+        line-height: 14px;
+        font-weight: 600;
+        letter-spacing: 0.005em;
+      }
+      .tabs a .ic {
+        width: 22px;
+        height: 22px;
+        stroke-width: 1.8;
+      }
+      /* The ink capsule is 1.7:1 against dusk; a hairline keeps its edge on the dark band */
+      .dock.on-dark .tabs {
+        box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.2);
+      }
+      .tabs a[aria-current='page'] {
+        background: #fff;
+        color: var(--ink);
+      }
+      .tabs .fill {
+        fill: currentColor;
+        stroke: none;
+      }
+
+      .cap {
+        height: 64px;
+        border-radius: 32px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 9px;
+        font-size: 17px;
+        line-height: 22px;
+        font-weight: 650;
+        letter-spacing: -0.005em;
+        padding: 0 20px;
+        white-space: nowrap;
+      }
+      .cap--ink {
+        background: var(--ink);
+        color: #fff;
+      }
+      /* Secondary actions are a tint of the band's ink, so white stays the running slab's */
+      .cap--tint {
+        background: color-mix(in srgb, var(--i) 10%, transparent);
+        color: var(--i);
+      }
+      .cap .ic {
+        width: 22px;
+        height: 22px;
+      }
+      .cap .solid {
+        fill: currentColor;
+        stroke: currentColor;
+        stroke-width: 1.5;
+      }
+
+      /* Time blocks: one block is five minutes; ink is time still ahead */
+      .blocks {
+        display: flex;
+        gap: 3px;
+        height: var(--bh, 10px);
+      }
+      .blocks i {
+        flex: 1;
+        border-radius: calc(var(--bh, 10px) / 2.5);
+        background: var(--track);
+        position: relative;
+        overflow: hidden;
+      }
+      .blocks i::after {
+        content: '';
+        position: absolute;
+        inset: 0 0 0 auto;
+        width: var(--f, 0%);
+        background: var(--fill);
+      }
+      .blocks i.full {
+        --f: 100%;
+      }
+
+      /* ───────────────────────── 1 · Today ───────────────────────── */
+      .anytime {
+        position: relative;
+        z-index: 2;
+        background: #fff;
+        color: var(--ink);
+        padding: 58px 20px 10px;
+        border-radius: 0 0 26px 26px;
+      }
+      .anytime h2 {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+        line-height: 18px;
+        font-weight: 700;
+        color: var(--slab-mute);
+        margin-bottom: 2px;
+      }
+      .anytime h2 .ic {
+        width: 18px;
+        height: 18px;
+        stroke-width: 1.8;
+      }
+      .anytime li {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        height: 44px;
+        font-size: 16px;
+        line-height: 22px;
+        font-weight: 500;
+      }
+
+      .band {
+        position: relative;
+        padding: 0 20px;
+        background: var(--g);
+        color: var(--i);
+      }
+      .band-now {
+        padding-top: 16px;
+        padding-bottom: 14px;
+      }
+      .band-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+      }
+      .band-head .date {
+        font-size: 15px;
+        line-height: 20px;
+        font-weight: 600;
+        letter-spacing: -0.005em;
+      }
+      .band-name {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-top: 2px;
+      }
+      .band-name .sun {
+        width: 32px;
+        height: 32px;
+        margin-left: -2px;
+      }
+      .band-name h2,
+      .band-name h1 {
+        font-size: 34px;
+        line-height: 38px;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+      }
+      .band-name .hours {
+        font-size: 14px;
+        line-height: 18px;
+        font-weight: 500;
+        color: var(--m);
+        align-self: flex-end;
+        margin: 0 0 5px 2px;
+      }
+      .me {
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        margin-top: 6px;
+        background: color-mix(in srgb, var(--i) 9%, transparent);
+        font-size: 15px;
+        font-weight: 700;
+        letter-spacing: -0.01em;
+      }
+      .sentence {
+        margin-top: 8px;
+        font-size: 17px;
+        line-height: 24px;
+        font-weight: 450;
+      }
+
+      .slab {
+        background: var(--slab);
+        color: var(--ink);
+        border-radius: 24px;
+        padding: 18px 20px 20px;
+        margin-top: 16px;
+      }
+      .slab .now {
+        font-size: 14px;
+        line-height: 18px;
+        font-weight: 600;
+        color: var(--slab-mute);
+        display: flex;
+        align-items: center;
+        gap: 7px;
+      }
+      .slab .now .pulse {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--ink);
+      }
+      .slab h3 {
+        margin-top: 8px;
+        font-size: 22px;
+        line-height: 28px;
+        font-weight: 700;
+        letter-spacing: -0.015em;
+      }
+      .slab .step {
+        margin-top: 4px;
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        font-size: 17px;
+        line-height: 24px;
+      }
+      .cur {
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        box-shadow: inset 0 0 0 2px currentColor;
+        display: grid;
+        place-items: center;
+        flex: none;
+      }
+      .cur::after {
+        content: '';
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: currentColor;
+      }
+      .slab .blocks {
+        --track: var(--g);
+        --fill: var(--i);
+        margin-top: 18px;
+      }
+      .slab-foot {
+        margin-top: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .slab-foot .left {
+        display: flex;
+        flex-direction: column;
+      }
+      .slab-foot .big {
+        font-size: 20px;
+        line-height: 24px;
+        font-weight: 700;
+        letter-spacing: -0.01em;
+      }
+      .slab-foot .ends {
+        font-size: 14px;
+        line-height: 18px;
+        font-weight: 500;
+        color: var(--slab-mute);
+        margin-top: 2px;
+      }
+      .open {
+        height: 44px;
+        padding: 0 16px 0 20px;
+        border-radius: 22px;
+        background: var(--ink);
+        color: #fff;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 16px;
+        font-weight: 650;
+      }
+      .open .ic {
+        width: 20px;
+        height: 20px;
+      }
+
+      .rows {
+        margin-top: 10px;
+      }
+      .rows li {
+        height: 60px;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+      }
+      .rows .t {
+        width: 48px;
+        font-size: 15px;
+        line-height: 20px;
+        font-weight: 650;
+      }
+      /* A row's title is its link, and it fills the row so the target is the row's height */
+      .anytime li a,
+      .rows .title {
+        flex: 1;
+        align-self: stretch;
+        display: flex;
+        align-items: center;
+      }
+      .rows .title {
+        font-size: 17px;
+        line-height: 22px;
+        font-weight: 500;
+      }
+      .rows .dur {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+        line-height: 16px;
+        font-weight: 500;
+        color: var(--m);
+      }
+      .mini {
+        display: flex;
+        gap: 2px;
+      }
+      .mini i {
+        width: 7px;
+        height: 7px;
+        border-radius: 2px;
+        background: var(--i);
+      }
+
+      .band-next {
+        padding-top: 22px;
+        height: 400px;
+      }
+      .band-next .sentence {
+        color: var(--i);
+        margin-top: 4px;
+      }
+
+      /* ───────────────────────── 2 · Task ───────────────────────── */
+      .topbar {
+        position: absolute;
+        top: 58px;
+        left: 20px;
+        right: 20px;
+        height: 44px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .iconbtn {
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        flex: none;
+        background: color-mix(in srgb, var(--i) 9%, transparent);
+      }
+      .context {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 15px;
+        line-height: 20px;
+        font-weight: 600;
+      }
+      .context .sun {
+        width: 26px;
+        height: 26px;
+        margin: -2px 0 0 -2px;
+      }
+      .context .m {
+        color: var(--m);
+        font-weight: 500;
+      }
+
+      .task {
+        position: absolute;
+        top: 146px;
+        left: 20px;
+        right: 20px;
+      }
+      .task h1 {
+        font-size: 30px;
+        line-height: 36px;
+        font-weight: 800;
+        letter-spacing: -0.022em;
+      }
+      .task .meta {
+        margin-top: 6px;
+        font-size: 15px;
+        line-height: 20px;
+        font-weight: 500;
+        color: var(--m);
+      }
+      .task .blocks {
+        --track: color-mix(in srgb, var(--i) 14%, transparent);
+        --fill: var(--i);
+        --bh: 12px;
+        margin-top: 18px;
+      }
+      .ends-row {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 8px;
+        font-size: 14px;
+        line-height: 18px;
+        font-weight: 500;
+        color: var(--m);
+      }
+      .ends-row b {
+        color: var(--i);
+        font-weight: 700;
+      }
+
+      .section-label {
+        margin-top: 42px;
+        font-size: 15px;
+        line-height: 20px;
+        font-weight: 700;
+        display: flex;
+        justify-content: space-between;
+      }
+      .section-label span {
+        color: var(--m);
+        font-weight: 500;
+      }
+      .steps {
+        margin-top: 8px;
+        position: relative;
+      }
+      .steps li {
+        height: 60px;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        position: relative;
+      }
+      .steps li.is-now {
+        background: #fff;
+        color: var(--ink);
+        border-radius: 22px;
+        height: 68px;
+        margin: 2px -12px;
+        padding: 0 12px;
+      }
+      .mark {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        flex: none;
+        display: grid;
+        place-items: center;
+        box-shadow: inset 0 0 0 2px currentColor;
+      }
+      .mark--done {
+        background: var(--i);
+        box-shadow: none;
+        color: var(--g);
+      }
+      .mark--done .ic {
+        width: 16px;
+        height: 16px;
+        stroke-width: 2.2;
+      }
+      .mark--now::after {
+        content: '';
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: currentColor;
+      }
+      .steps .s {
+        flex: 1;
+        font-size: 17px;
+        line-height: 22px;
+        font-weight: 500;
+      }
+      .steps .is-done .s {
+        color: var(--m);
+      }
+      .steps .is-now .s {
+        font-weight: 700;
+      }
+      .steps .tag {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--m);
+      }
+      .steps .now-tag {
+        height: 28px;
+        padding: 0 11px;
+        border-radius: 14px;
+        background: var(--ink);
+        color: #fff;
+        font-size: 13px;
+        line-height: 28px;
+        font-weight: 700;
+        letter-spacing: 0.01em;
+      }
+
+      .note-row {
+        margin-top: 32px;
+        display: flex;
+        gap: 14px;
+        align-items: flex-start;
+      }
+      .note-row .ic {
+        margin-top: 1px;
+        stroke-width: 1.8;
+      }
+      .note-row .lbl {
+        font-size: 14px;
+        line-height: 18px;
+        font-weight: 600;
+        color: var(--m);
+      }
+      .note-row p {
+        font-size: 17px;
+        line-height: 24px;
+        margin-top: 2px;
+      }
+
+      .dock .cap--ink {
+        flex: 1;
+        min-width: 0;
+      }
+      .dock .cap--tint {
+        flex: none;
+        padding: 0 24px;
+      }
+
+      /* ───────────────────────── 3 · Focus ───────────────────────── */
+      .focus-top {
+        position: absolute;
+        top: 58px;
+        left: 20px;
+        right: 20px;
+        height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .focus {
+        position: absolute;
+        top: 132px;
+        left: 20px;
+        right: 20px;
+      }
+      .stepno {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: 15px;
+        line-height: 20px;
+        font-weight: 700;
+      }
+      .pips {
+        display: flex;
+        gap: 4px;
+      }
+      .pips i {
+        width: 22px;
+        height: 6px;
+        border-radius: 3px;
+        background: var(--i);
+      }
+      .pips i.next {
+        background: color-mix(in srgb, var(--i) 18%, transparent);
+      }
+
+      /* On Focus the running slab carries the step: the one white shape is the one thing now */
+      .focus-slab {
+        margin-top: 14px;
+        min-height: 292px;
+        display: flex;
+        flex-direction: column;
+        background: var(--slab);
+        color: var(--ink);
+        border-radius: 24px;
+        padding: 20px 22px 22px;
+      }
+      .focus-slab .of {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        font-size: 14px;
+        line-height: 18px;
+        font-weight: 600;
+        color: var(--slab-mute);
+      }
+      .focus-slab .of .pulse {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--ink);
+      }
+      .focus-slab h1 {
+        margin: auto 0;
+        padding: 16px 0;
+        font-size: 34px;
+        line-height: 40px;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+      }
+      .next-line {
+        margin-top: 14px;
+        font-size: 17px;
+        line-height: 24px;
+        color: var(--slab-mute);
+      }
+      .next-line b {
+        color: var(--ink);
+        font-weight: 650;
+      }
+      .focus .note-row {
+        margin-top: 26px;
+      }
+
+      .timer {
+        position: absolute;
+        left: 20px;
+        right: 20px;
+        bottom: 120px;
+      }
+      .timer .big {
+        font-size: 22px;
+        line-height: 28px;
+        font-weight: 700;
+        letter-spacing: -0.012em;
+      }
+      .timer .big span {
+        font-weight: 500;
+        color: var(--m);
+      }
+      .timer .blocks {
+        --track: color-mix(in srgb, var(--i) 14%, transparent);
+        --fill: var(--i);
+        --bh: 16px;
+        margin-top: 12px;
+      }
+      .timer .ends-row {
+        margin-top: 8px;
+      }
+      .timer-ctl {
+        display: flex;
+        gap: 10px;
+        margin-top: 18px;
+      }
+      .timer-ctl .cap {
+        height: 52px;
+        border-radius: 26px;
+        flex: 1;
+        font-size: 16px;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="board">
+      <header class="intro">
+        <div>
+          <p class="kicker">Adnotia · a direction for the phone app</p>
+          <h1>Quarters</h1>
+          <p class="idea">
+            The day is four bold bands of colour — Morning, Midday, Afternoon and Evening — and the
+            app opens in the band you are in, so the screen’s colour says where you are in the day.
+          </p>
+        </div>
+        <ul class="legend" aria-label="The four bands of the day">
+          <li class="lg-morning">
+            <svg class="sun" viewBox="0 0 28 28" aria-hidden="true">
+              <path class="arc" d="M5 21a9 9 0 0 1 18 0" />
+              <path class="hz" d="M2.5 21h23" />
+              <circle class="body" cx="6.2" cy="16.5" r="4" />
+            </svg>
+            <b>Morning</b><span class="num">until 12:00</span><span>Mist, ink 12.2:1</span>
+          </li>
+          <li class="lg-midday">
+            <svg class="sun" viewBox="0 0 28 28" aria-hidden="true">
+              <path class="arc" d="M5 21a9 9 0 0 1 18 0" />
+              <path class="hz" d="M2.5 21h23" />
+              <circle class="body" cx="14" cy="12" r="4" />
+            </svg>
+            <b>Midday</b><span class="num">12:00 to 14:00</span><span>Mint, ink 11.2:1</span>
+          </li>
+          <li class="lg-afternoon">
+            <svg class="sun" viewBox="0 0 28 28" aria-hidden="true">
+              <path class="arc" d="M5 21a9 9 0 0 1 18 0" />
+              <path class="hz" d="M2.5 21h23" />
+              <circle class="body" cx="21.8" cy="16.5" r="4" />
+            </svg>
+            <b>Afternoon</b><span class="num">14:00 to 18:00</span><span>Apricot, ink 11.6:1</span>
+          </li>
+          <li class="lg-evening">
+            <svg class="sun" viewBox="0 0 28 28" aria-hidden="true">
+              <path class="arc" d="M5 21a9 9 0 0 1 18 0" />
+              <path class="hz" d="M2.5 21h23" />
+              <circle class="body" cx="14" cy="11.5" r="4.4" />
+              <circle class="cut" cx="16.6" cy="9.6" r="3.7" />
+            </svg>
+            <b>Evening</b><span class="num">from 18:00</span><span>Dusk, ink 9.8:1</span>
+          </li>
+        </ul>
+      </header>
+
+      <div class="phones">
+        <!-- ───────────── 1 · Today ───────────── -->
+        <figure class="device">
+          <div class="phone">
+            <section class="screen afternoon" aria-label="Today, Tuesday 24 November">
+              <div class="status" style="--sc: var(--ink)" aria-hidden="true">
+                <time class="num">15:05</time><span class="island"></span>
+                <span class="sys">
+                  <svg width="18" height="12" viewBox="0 0 18 12">
+                    <rect x="0" y="8" width="3" height="4" rx="1" />
+                    <rect x="5" y="5.5" width="3" height="6.5" rx="1" />
+                    <rect x="10" y="3" width="3" height="9" rx="1" />
+                    <rect x="15" y="0" width="3" height="12" rx="1" />
+                  </svg>
+                  <svg width="17" height="12" viewBox="0 0 17 12">
+                    <path
+                      d="M8.5 2.3c2.4 0 4.6.9 6.3 2.4l1.2-1.3A11 11 0 0 0 8.5.5 11 11 0 0 0 1 3.4l1.2 1.3a9.3 9.3 0 0 1 6.3-2.4Zm0 3.4c1.5 0 2.9.6 4 1.5l1.2-1.3a7.6 7.6 0 0 0-10.4 0l1.2 1.3c1.1-.9 2.5-1.5 4-1.5Zm0 3.4c.6 0 1.2.2 1.6.6L8.5 11.5 6.9 9.7c.4-.4 1-.6 1.6-.6Z"
+                    />
+                  </svg>
+                  <svg width="27" height="13" viewBox="0 0 27 13">
+                    <rect
+                      x="0.5"
+                      y="0.5"
+                      width="23"
+                      height="12"
+                      rx="3.8"
+                      fill="none"
+                      stroke="currentColor"
+                      opacity=".4"
+                    />
+                    <rect x="2" y="2" width="16" height="9" rx="2.2" />
+                    <path d="M25 4.6v3.8a2 2 0 0 0 0-3.8Z" opacity=".45" />
+                  </svg>
+                </span>
+              </div>
+
+              <section class="anytime" aria-labelledby="any-h">
+                <h2 id="any-h">
+                  <svg class="ic" viewBox="0 0 24 24" aria-hidden="true">
+                    <path
+                      d="M6.2 15.8a3.8 3.8 0 1 1 0-7.6c3 0 5.6 7.6 11.6 7.6a3.8 3.8 0 1 0 0-7.6c-6 0-8.6 7.6-11.6 7.6Z"
+                    />
+                  </svg>
+                  Anytime today
+                </h2>
+                <ul>
+                  <li>
+                    <button class="tick" aria-label="Mark Renew the parking permit done"></button
+                    ><a href="#task">Renew the parking permit</a>
+                  </li>
+                  <li>
+                    <button class="tick" aria-label="Mark Order printer ink done"></button
+                    ><a href="#task">Order printer ink</a>
+                  </li>
+                </ul>
+              </section>
+
+              <section class="band band-now afternoon" aria-labelledby="a-h">
+                <div class="band-head">
+                  <div>
+                    <p class="date">Tuesday 24 November</p>
+                    <div class="band-name">
+                      <svg class="sun" viewBox="0 0 28 28" aria-hidden="true">
+                        <path class="arc" d="M5 21a9 9 0 0 1 18 0" />
+                        <path class="hz" d="M2.5 21h23" />
+                        <circle class="body" cx="21.8" cy="16.5" r="4" />
+                      </svg>
+                      <h1 id="a-h">Afternoon</h1>
+                      <span class="hours num">until 18:00</span>
+                    </div>
+                  </div>
+                  <a class="me" href="#me" aria-label="Me: settings, medication and family">Me</a>
+                </div>
+                <p class="sentence">One thing running and a call at 15:30.</p>
+
+                <article class="slab" aria-label="Running now">
+                  <p class="now"><span class="pulse" aria-hidden="true"></span>Now · step 2 of 3</p>
+                  <h3>Write the school email</h3>
+                  <p class="step"><span class="cur" aria-hidden="true"></span>Write the question</p>
+                  <div
+                    class="blocks"
+                    role="meter"
+                    aria-label="Time left"
+                    aria-valuemin="0"
+                    aria-valuemax="25"
+                    aria-valuenow="18"
+                    aria-valuetext="18 of 25 minutes left"
+                  >
+                    <i></i><i style="--f: 60%"></i><i class="full"></i><i class="full"></i
+                    ><i class="full"></i>
+                  </div>
+                  <div class="slab-foot">
+                    <p class="left">
+                      <span class="big">18 min left</span><span class="ends num">ends 15:23</span>
+                    </p>
+                    <a class="open" href="#focus"
+                      >Open
+                      <svg class="ic" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M5 12h13M13 6.5l5.5 5.5-5.5 5.5" />
+                      </svg>
+                    </a>
+                  </div>
+                </article>
+
+                <ul class="rows" aria-label="Later this afternoon">
+                  <li>
+                    <button class="tick" aria-label="Mark Call the dentist done"></button>
+                    <span class="t num">15:30</span>
+                    <a class="title" href="#task">Call the dentist</a>
+                    <span class="dur num"
+                      ><span class="mini" aria-hidden="true"><i></i><i></i></span>10 min</span
+                    >
+                  </li>
+                  <li>
+                    <button class="tick" aria-label="Mark Walk to the park done"></button>
+                    <span class="t num">16:00</span>
+                    <a class="title" href="#task">Walk to the park</a>
+                    <span class="dur num"
+                      ><span class="mini" aria-hidden="true"><i></i><i></i><i></i><i></i></span>20
+                      min</span
+                    >
+                  </li>
+                </ul>
+              </section>
+
+              <section class="band band-next evening" aria-labelledby="e-h">
+                <div class="band-name">
+                  <svg class="sun" viewBox="0 0 28 28" aria-hidden="true">
+                    <path class="arc" d="M5 21a9 9 0 0 1 18 0" />
+                    <path class="hz" d="M2.5 21h23" />
+                    <circle class="body" cx="14" cy="11.5" r="4.4" />
+                    <circle class="cut" cx="16.6" cy="9.6" r="3.7" />
+                  </svg>
+                  <h2 id="e-h">Evening</h2>
+                  <span class="hours num">from 18:00</span>
+                </div>
+                <p class="sentence">Nothing planned.</p>
+              </section>
+
+              <nav class="dock on-dark" aria-label="Main">
+                <div class="tabs">
+                  <a href="#today" aria-current="page">
+                    <svg class="ic" viewBox="0 0 24 24" aria-hidden="true">
+                      <circle cx="12" cy="12" r="8.5" />
+                      <path d="M12 3.5v17M3.5 12h17" />
+                      <path class="fill" d="M12 12V3.5A8.5 8.5 0 0 0 3.5 12Z" /></svg
+                    >Today
+                  </a>
+                  <a href="#tasks">
+                    <svg class="ic" viewBox="0 0 24 24" aria-hidden="true">
+                      <rect x="4" y="4" width="16" height="16" rx="5" />
+                      <path d="M8.6 12.3l2.4 2.4 4.5-4.8" /></svg
+                    >Tasks
+                  </a>
+                  <a href="#routines">
+                    <svg class="ic" viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M4.5 11.5a7.5 7.5 0 0 1 13-5.1l1.8 1.9" />
+                      <path d="M19.5 3.8v4.6h-4.6" />
+                      <path d="M19.5 12.5a7.5 7.5 0 0 1-13 5.1l-1.8-1.9" />
+                      <path d="M4.5 20.2v-4.6h4.6" /></svg
+                    >Routines
+                  </a>
+                  <a href="#library">
+                    <svg class="ic" viewBox="0 0 24 24" aria-hidden="true">
+                      <path
+                        d="M12 6.6C10 5.1 7 4.6 3.5 5.1v13c3.5-.5 6.5 0 8.5 1.5 2-1.5 5-2 8.5-1.5v-13c-3.5-.5-6.5 0-8.5 1.5Z"
+                      />
+                      <path d="M12 6.6v13" /></svg
+                    >Library
+                  </a>
+                </div>
+                <button class="capture" aria-label="Capture a task or a thought">
+                  <svg class="ic" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M12 5v14M5 12h14" />
+                  </svg>
+                </button>
+              </nav>
+              <span class="home-ind" style="--hi: var(--dusk-ink)" aria-hidden="true"></span>
+            </section>
+          </div>
+          <figcaption>
+            <b>Today, 15:05</b>Opens in the band you are in: Afternoon, with Evening waiting below.
+            The white slab is the one thing running.
+          </figcaption>
+        </figure>
+
+        <!-- ───────────── 2 · Task opened ───────────── -->
+        <figure class="device">
+          <div class="phone">
+            <section class="screen afternoon" aria-label="Task: Write the school email">
+              <div class="status" aria-hidden="true">
+                <time class="num">15:05</time><span class="island"></span>
+                <span class="sys">
+                  <svg width="18" height="12" viewBox="0 0 18 12">
+                    <rect x="0" y="8" width="3" height="4" rx="1" />
+                    <rect x="5" y="5.5" width="3" height="6.5" rx="1" />
+                    <rect x="10" y="3" width="3" height="9" rx="1" />
+                    <rect x="15" y="0" width="3" height="12" rx="1" />
+                  </svg>
+                  <svg width="17" height="12" viewBox="0 0 17 12">
+                    <path
+                      d="M8.5 2.3c2.4 0 4.6.9 6.3 2.4l1.2-1.3A11 11 0 0 0 8.5.5 11 11 0 0 0 1 3.4l1.2 1.3a9.3 9.3 0 0 1 6.3-2.4Zm0 3.4c1.5 0 2.9.6 4 1.5l1.2-1.3a7.6 7.6 0 0 0-10.4 0l1.2 1.3c1.1-.9 2.5-1.5 4-1.5Zm0 3.4c.6 0 1.2.2 1.6.6L8.5 11.5 6.9 9.7c.4-.4 1-.6 1.6-.6Z"
+                    />
+                  </svg>
+                  <svg width="27" height="13" viewBox="0 0 27 13">
+                    <rect
+                      x="0.5"
+                      y="0.5"
+                      width="23"
+                      height="12"
+                      rx="3.8"
+                      fill="none"
+                      stroke="currentColor"
+                      opacity=".4"
+                    />
+                    <rect x="2" y="2" width="16" height="9" rx="2.2" />
+                    <path d="M25 4.6v3.8a2 2 0 0 0 0-3.8Z" opacity=".45" />
+                  </svg>
+                </span>
+              </div>
+
+              <header class="topbar">
+                <a class="iconbtn" href="#today" aria-label="Back to Today">
+                  <svg class="ic" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M14.5 5.5 8 12l6.5 6.5" />
+                  </svg>
+                </a>
+                <p class="context">
+                  <svg class="sun" viewBox="0 0 28 28" aria-hidden="true">
+                    <path class="arc" d="M5 21a9 9 0 0 1 18 0" />
+                    <path class="hz" d="M2.5 21h23" />
+                    <circle class="body" cx="21.8" cy="16.5" r="4" />
+                  </svg>
+                  Afternoon <span class="m num">· until 18:00</span>
+                </p>
+              </header>
+
+              <div class="task">
+                <h1>Write the school email</h1>
+                <p class="meta num">Today · estimate 25 min · started 14:58</p>
+                <div
+                  class="blocks"
+                  role="meter"
+                  aria-label="Time left"
+                  aria-valuemin="0"
+                  aria-valuemax="25"
+                  aria-valuenow="18"
+                  aria-valuetext="18 of 25 minutes left"
+                >
+                  <i></i><i style="--f: 60%"></i><i class="full"></i><i class="full"></i
+                  ><i class="full"></i>
+                </div>
+                <p class="ends-row num">
+                  <span>7 min in</span><span><b>18 min left</b> · ends 15:23</span>
+                </p>
+
+                <h2 class="section-label">Steps <span>2 of 3</span></h2>
+                <ol class="steps">
+                  <li class="is-done">
+                    <span class="mark mark--done" aria-hidden="true"
+                      ><svg class="ic" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg
+                    ></span>
+                    <span class="s">Find the school address</span><span class="tag">Done</span>
+                  </li>
+                  <li class="is-now">
+                    <span class="mark mark--now" aria-hidden="true"></span>
+                    <span class="s">Write the question</span><span class="now-tag">Now</span>
+                  </li>
+                  <li>
+                    <span class="mark" aria-hidden="true"></span>
+                    <span class="s">Read it once and send</span>
+                  </li>
+                </ol>
+
+                <div class="note-row">
+                  <svg class="ic" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M6 3.5h8.5L19 8v12.5H6Z" />
+                    <path d="M14 3.5V8h5" />
+                    <path d="M9 12.5h7M9 16.5h4.5" />
+                  </svg>
+                  <div>
+                    <p class="lbl">Note</p>
+                    <p>When is the permission slip due?</p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="dock">
+                <a class="cap cap--ink" href="#focus">
+                  <svg class="ic" viewBox="0 0 24 24" aria-hidden="true">
+                    <path
+                      class="solid"
+                      d="M8 5.8v12.4a.8.8 0 0 0 1.2.7l9.6-6.2a.8.8 0 0 0 0-1.4L9.2 5.1a.8.8 0 0 0-1.2.7Z"
+                    />
+                  </svg>
+                  Back to it
+                </a>
+                <button class="cap cap--tint" aria-label="Later: move this out of now">
+                  Later
+                </button>
+                <button class="capture" aria-label="Capture a task or a thought">
+                  <svg class="ic" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M12 5v14M5 12h14" />
+                  </svg>
+                </button>
+              </div>
+              <span class="home-ind" aria-hidden="true"></span>
+            </section>
+          </div>
+          <figcaption>
+            <b>A task</b>It takes its band as its ground. The step in white is the one running; one
+            way back in.
+          </figcaption>
+        </figure>
+
+        <!-- ───────────── 3 · Focus ───────────── -->
+        <figure class="device">
+          <div class="phone">
+            <section class="screen afternoon" aria-label="Focus: Write the school email">
+              <div class="status" aria-hidden="true">
+                <time class="num">15:05</time><span class="island"></span>
+                <span class="sys">
+                  <svg width="18" height="12" viewBox="0 0 18 12">
+                    <rect x="0" y="8" width="3" height="4" rx="1" />
+                    <rect x="5" y="5.5" width="3" height="6.5" rx="1" />
+                    <rect x="10" y="3" width="3" height="9" rx="1" />
+                    <rect x="15" y="0" width="3" height="12" rx="1" />
+                  </svg>
+                  <svg width="17" height="12" viewBox="0 0 17 12">
+                    <path
+                      d="M8.5 2.3c2.4 0 4.6.9 6.3 2.4l1.2-1.3A11 11 0 0 0 8.5.5 11 11 0 0 0 1 3.4l1.2 1.3a9.3 9.3 0 0 1 6.3-2.4Zm0 3.4c1.5 0 2.9.6 4 1.5l1.2-1.3a7.6 7.6 0 0 0-10.4 0l1.2 1.3c1.1-.9 2.5-1.5 4-1.5Zm0 3.4c.6 0 1.2.2 1.6.6L8.5 11.5 6.9 9.7c.4-.4 1-.6 1.6-.6Z"
+                    />
+                  </svg>
+                  <svg width="27" height="13" viewBox="0 0 27 13">
+                    <rect
+                      x="0.5"
+                      y="0.5"
+                      width="23"
+                      height="12"
+                      rx="3.8"
+                      fill="none"
+                      stroke="currentColor"
+                      opacity=".4"
+                    />
+                    <rect x="2" y="2" width="16" height="9" rx="2.2" />
+                    <path d="M25 4.6v3.8a2 2 0 0 0 0-3.8Z" opacity=".45" />
+                  </svg>
+                </span>
+              </div>
+
+              <header class="focus-top">
+                <p class="context">
+                  <svg class="sun" viewBox="0 0 28 28" aria-hidden="true">
+                    <path class="arc" d="M5 21a9 9 0 0 1 18 0" />
+                    <path class="hz" d="M2.5 21h23" />
+                    <circle class="body" cx="21.8" cy="16.5" r="4" />
+                  </svg>
+                  Afternoon <span class="m num">· until 18:00</span>
+                </p>
+                <a class="iconbtn" href="#task" aria-label="Close focus">
+                  <svg class="ic" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M6.5 6.5l11 11M17.5 6.5l-11 11" />
+                  </svg>
+                </a>
+              </header>
+
+              <div class="focus">
+                <p class="stepno">
+                  Step 2 of 3
+                  <span class="pips" aria-hidden="true"><i></i><i></i><i class="next"></i></span>
+                </p>
+                <article class="focus-slab" aria-label="The step you are on">
+                  <p class="of">
+                    <span class="pulse" aria-hidden="true"></span>Write the school email
+                  </p>
+                  <h1>Write the question</h1>
+                  <p class="next-line"><b>Next:</b> Read it once and send</p>
+                </article>
+
+                <div class="note-row">
+                  <svg class="ic" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M6 3.5h8.5L19 8v12.5H6Z" />
+                    <path d="M14 3.5V8h5" />
+                    <path d="M9 12.5h7M9 16.5h4.5" />
+                  </svg>
+                  <div>
+                    <p class="lbl">Note</p>
+                    <p>When is the permission slip due?</p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="timer">
+                <p class="big">18 min left <span class="num">· ends 15:23</span></p>
+                <div
+                  class="blocks"
+                  role="meter"
+                  aria-label="Time left"
+                  aria-valuemin="0"
+                  aria-valuemax="25"
+                  aria-valuenow="18"
+                  aria-valuetext="18 of 25 minutes left"
+                >
+                  <i></i><i style="--f: 60%"></i><i class="full"></i><i class="full"></i
+                  ><i class="full"></i>
+                </div>
+                <p class="ends-row num"><span>7 min in</span><span>of 25 min</span></p>
+                <div class="timer-ctl">
+                  <button class="cap cap--tint" aria-label="Add 5 minutes">
+                    <svg class="ic" viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M12 6v12M6 12h12" /></svg
+                    >5 min
+                  </button>
+                  <button class="cap cap--tint">
+                    <svg class="ic" viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M9 6v12M15 6v12" /></svg
+                    >Pause
+                  </button>
+                </div>
+              </div>
+
+              <div class="dock">
+                <button class="cap cap--ink" style="flex: 1">
+                  <svg class="ic" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M5 12.5l4.5 4.5L19 7.5" />
+                  </svg>
+                  Step done
+                </button>
+                <button class="capture" aria-label="Capture a thought without leaving focus">
+                  <svg class="ic" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M12 5v14M5 12h14" />
+                  </svg>
+                </button>
+              </div>
+              <span class="home-ind" aria-hidden="true"></span>
+            </section>
+          </div>
+          <figcaption>
+            <b>Focus</b>The step sits on the white slab and is the largest thing on the screen. Time
+            sits below it, in blocks of five minutes.
+          </figcaption>
+        </figure>
+      </div>
+
+      <footer class="foot">
+        <p>
+          <b>Colour is content</b>The band is the ground; controls stay ink on every band, and white
+          belongs to the one thing running and to capture. Each band is named in words and carries a
+          sun-position glyph, so its colour is never the only cue.
+        </p>
+        <p>
+          <b>Two scales of time</b>The band says roughly when. Inside it, blocks of five minutes
+          show what is left, ink for time still ahead, beside the number and the clock time it ends.
+        </p>
+        <p>
+          <b>Type</b>Onest, variable 100–900, bundled. Bands 34/38 at 800, the focus step 34/40 at
+          800, body 17/24 at 450, meta 14/18 at 500. Proportional figures; row times sit in a fixed
+          column.
+        </p>
+      </footer>
+    </main>
+  </body>
+</html>
