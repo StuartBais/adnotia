@@ -44,6 +44,16 @@
 /app/index.html
   Cache-Control: no-cache
 
+# The benchmark prototype is held on a phone to be judged. A copy cached at the
+# edge would show the owner yesterday's build and look like a change that had
+# not landed, so it is never cached there either. See ADR-009.
+
+/bench/
+  Cache-Control: no-cache
+
+/bench/index.html
+  Cache-Control: no-cache
+
 /sw.js
   Cache-Control: no-cache
 
