@@ -27,7 +27,7 @@
 
 import { readFileSync, existsSync, statSync } from 'node:fs';
 import { gzipSync } from 'node:zlib';
-import { resolve, dirname, join } from 'node:path';
+import { resolve, dirname, join, sep } from 'node:path';
 
 const root = resolve(import.meta.dirname, '..');
 const dist = resolve(root, 'dist');
@@ -274,12 +274,27 @@ if (existsSync(sw)) {
   );
 
   // The app's worker keeps the app. vite.config.ts's globIgnores keeps the
-  // prototype's own chunks out of it; this is what notices if that stops.
-  const prototype = precached.filter((url) => /(^|\/)assets\/bench-/.test(url ?? ''));
+  // prototype's own chunks out of it, by name; this is what notices if that
+  // stops. It goes by what the pages ask for as well as by name: any built
+  // file the prototype's page asks for and the app's does not is the
+  // prototype's, whatever it is called, so a chunk split off under another
+  // name, or its font if fonts were ever swept in, is caught too. A chunk the
+  // two share stays, and files at the root (the icon, the manifest) are the
+  // site's own.
+  const assets = join(dist, 'assets') + sep;
+  const benchOnly = new Set(
+    [...benchSeen, ...fontsSeen].filter((path) => path.startsWith(assets) && !seen.has(path)),
+  );
+  const prototype = precached.filter(
+    (url) =>
+      /(^|\/)assets\/bench-/.test(url ?? '') ||
+      benchOnly.has(join(dist, (url ?? '').replace(/^\.?\//, ''))),
+  );
   if (prototype.length > 0) {
     console.error(
       `The app's service worker precaches the prototype: ${prototype.join(', ')}. ` +
-        'Every phone that opened the app would download and keep it.',
+        'Every phone that opened the app would download and keep it. Keep it out with ' +
+        "globIgnores in vite.config.ts's workbox options.",
     );
     process.exit(1);
   }
