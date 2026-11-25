@@ -13,6 +13,7 @@ import {
   nameOf,
   press,
   readingOrder,
+  said,
   stateOf,
   unmount,
   visibleText,
@@ -157,13 +158,11 @@ describe('1 · Today, running (SPEC 5.1)', () => {
   it('says Done on the last step, and for a task with no steps', async () => {
     const m = await mount(TUE_1005);
     press(m.container, 'Step done: Write the question');
-    expect(m.container.querySelector('.live')?.textContent).toBe(
-      'Step done. Now: Read it once and send',
-    );
+    expect(said(m)).toBe('Step done. Now: Read it once and send');
     expect(id(m, 'b-stepdone')?.textContent).toBe('Done');
     expect(visibleText(m.container)).toContain('step 3 of 3');
     press(m.container, /^Done: Read it once and send$/);
-    expect(m.container.querySelector('.live')?.textContent).toBe('Done: Write the school email');
+    expect(said(m)).toBe('Done: Write the school email');
     expect(emailOf(stateOf(m)).doneAt).toBeDefined();
     // Nothing runs now: the canvas is unlit.
     expect(visibleText(m.container)).toContain('Nothing running');
@@ -172,12 +171,22 @@ describe('1 · Today, running (SPEC 5.1)', () => {
   it('pauses and resumes on the spot, saying so', async () => {
     const m = await mount(TUE_1005);
     press(m.container, 'Pause');
-    expect(m.container.querySelector('.live')?.textContent).toBe('Paused');
+    expect(said(m)).toBe('Paused');
     expect(model.running(stateOf(m).tasks)).toBeUndefined();
     expect(visibleText(m.container)).toContain('Paused');
     press(m.container, 'Resume');
     expect(model.running(stateOf(m).tasks)?.title).toBe(EMAIL);
     expect(id(m, 'b-pause')?.textContent).toBe('Pause');
+  });
+
+  it('says Paused again on a second pause, emptying the live region first', async () => {
+    const m = await mount(TUE_1005);
+    press(m.container, 'Pause');
+    expect(said(m)).toBe('Paused');
+    press(m.container, 'Resume');
+    press(m.container, 'Pause');
+    expect(m.container.querySelector('.live')?.textContent).toBe('');
+    expect(said(m)).toBe('Paused');
   });
 
   it('keeps focus on the spot through Pause and Resume', async () => {
@@ -379,7 +388,7 @@ describe('7 · Nothing running (SPEC 5.7)', () => {
   it('ticks a ring in place, and the disc takes it back', async () => {
     const m = await mount(TUE_0958, 'notStarted');
     press(m.container, 'Mark done: Renew the parking permit');
-    expect(m.container.querySelector('.live')?.textContent).toBe('Done: Renew the parking permit');
+    expect(said(m)).toBe('Done: Renew the parking permit');
     expect(titled(stateOf(m), 'Renew the parking permit').doneAt).toBeDefined();
     // Still in the list, where it was, as a disc that un-ticks it.
     const disc = button(m.container, 'Undo done: Renew the parking permit');

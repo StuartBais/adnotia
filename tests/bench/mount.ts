@@ -3,7 +3,7 @@
 
 import { vi } from 'vitest';
 import { createStore, memoryStorageAdapter, type KernelStore } from '../../src/kernel/store';
-import { mountBench } from '../../src/bench/app';
+import { ANNOUNCE_AFTER, mountBench } from '../../src/bench/app';
 import type { ScenarioId } from '../../src/bench/example';
 import { loadScenario, migrateBench, type BenchDomains } from '../../src/bench/state';
 
@@ -66,6 +66,15 @@ export function unmount(): void {
 export function advance(mounted: Mounted, minutes: number): void {
   mounted.clock.now = new Date(mounted.clock.now.getTime() + minutes * 60_000);
   vi.advanceTimersByTime(Math.max(1000, Math.min(minutes * 60_000, 60_000)));
+}
+
+/**
+ * What the live region says once it has spoken: it is emptied on each
+ * announcement and filled a moment later, so a repeat is read again.
+ */
+export function said(mounted: Mounted): string {
+  vi.advanceTimersByTime(ANNOUNCE_AFTER);
+  return mounted.container.querySelector('.live')?.textContent ?? '';
 }
 
 const state = (mounted: Mounted) => mounted.store.document().domains as BenchDomains;

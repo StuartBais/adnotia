@@ -87,6 +87,9 @@ const WHITE = '#FFFFFF';
 
 const TODAY: Nav = { tab: 'today', stack: [], list: 'inbox' };
 
+/** How long the live region stays empty before it says something (ms). */
+export const ANNOUNCE_AFTER = 100;
+
 export function mountBench(options: BenchOptions): { destroy(): void } {
   const { store, container } = options;
   const now = options.now ?? (() => new Date());
@@ -140,6 +143,7 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
   let order = '';
   let barRunning = false;
   let destroyed = false;
+  let announcing: ReturnType<typeof setTimeout> | undefined;
 
   /** A screen shorter than 740 pt, where the handle is one line (SPEC 3). */
   function compact(): boolean {
@@ -525,8 +529,18 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
     if (result.announce) announce(result.announce);
   }
 
+  /**
+   * Says `text` through the live region. The region is emptied first and
+   * filled a moment later, so the same words twice in a row (Pause, Resume,
+   * Pause) are a change a screen reader reads again, not text left as it was.
+   */
   function announce(text: string): void {
-    layer.live.textContent = text;
+    if (announcing !== undefined) clearTimeout(announcing);
+    layer.live.textContent = '';
+    announcing = setTimeout(() => {
+      announcing = undefined;
+      if (!destroyed) layer.live.textContent = text;
+    }, ANNOUNCE_AFTER);
   }
 
   function go(next: Nav): void {
@@ -647,6 +661,7 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
   return {
     destroy() {
       destroyed = true;
+      if (announcing !== undefined) clearTimeout(announcing);
       ticker?.destroy();
       unsubscribe();
       window.removeEventListener('resize', onResize);
