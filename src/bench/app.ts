@@ -851,6 +851,9 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
       if (tab === nav.tab) return;
     }
     if (tab === nav.tab && nav.stack.length === 0) return;
+    // The fold rendered the place it folded over, which used the arrival up;
+    // Today, if that is where this goes, still grows out of the capsule.
+    arrival = 'morph';
     go({ tab, stack: [], list: nav.list });
   }
 

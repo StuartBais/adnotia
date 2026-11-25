@@ -336,6 +336,22 @@ describe('the tap guard (SPEC 5.1; plan section 12)', () => {
     expect(model.running(stateOf(m).tasks)).toBeUndefined();
   });
 
+  it('and when the Today tab folds the open drawer over a place', async () => {
+    const m = await mount(TUE_1005);
+    press(m.container, 'Tasks');
+    settle(m);
+    press(m.container, /^Next, in 25 minutes/);
+    expect(m.container.dataset['drawer']).toBe('open');
+    press(m.container, 'Today');
+    expect(m.container.dataset['drawer']).toBe('folded');
+    settle(m, TAP_GUARD.other + 1);
+    stepDone(m);
+    expect(questionDone(m)).toBeUndefined();
+    settle(m, GREW - TAP_GUARD.other - 1);
+    stepDone(m);
+    expect(questionDone(m)).toBeDefined();
+  });
+
   it('and when back brings Today out from under Me', async () => {
     const m = await mount(TUE_1320, 'pauseLeft');
     press(m.container, 'Me');
