@@ -391,8 +391,8 @@ export function restOfToday(
 ): RestOfToday {
   const today = loggingDay(now);
   const keep = options.keep ?? new Set<string>();
-  const now_ = present(state, now);
-  const presentId = options.includePresent || now_.kind === 'none' ? undefined : now_.task.id;
+  const current = present(state, now);
+  const presentId = options.includePresent || current.kind === 'none' ? undefined : current.task.id;
 
   const listed = state.tasks.filter(
     (task) =>
@@ -899,8 +899,8 @@ export function dayBoundary(state: BenchDomains, now: Date): BenchDomains {
  */
 export function passSlots(state: BenchDomains, now: Date): BenchDomains {
   const today = loggingDay(now);
-  const now_ = present(state, now);
-  const presentId = now_.kind === 'none' ? undefined : now_.task.id;
+  const current = present(state, now);
+  const presentId = current.kind === 'none' ? undefined : current.task.id;
   const due = state.tasks
     .filter(isTimed)
     .filter(
