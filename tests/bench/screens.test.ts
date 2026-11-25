@@ -1102,6 +1102,28 @@ describe('back, by Safari’s edge swipe or the back button (plan section 8)', (
     expect(document.activeElement).toBe(id(again, 'b-handle'));
   });
 
+  it('hands the open drawer’s entry to the page a row or Me opens from it', async () => {
+    const m = await mount(TUE_1005);
+    press(m.container, HANDLE);
+    expect(historyDepth()).toBe(1);
+    const moves = [vi.spyOn(history, 'go'), vi.spyOn(history, 'pushState')];
+    press(m.container, 'Me');
+    expect(screenTitle(m)).toBe('Me');
+    press(m.container, HANDLE);
+    press(m.container, '10:30, Call the dentist, in 25 minutes, 10 minutes');
+    expect(screenTitle(m)).toBe('Call the dentist');
+    expect(historyDepth()).toBe(2);
+    // Opening the drawer over Me pushed once; nothing went back to be pushed again.
+    expect(moves[0]).not.toHaveBeenCalled();
+    expect(moves[1]).toHaveBeenCalledTimes(1);
+    for (const move of moves) move.mockRestore();
+
+    goBack();
+    expect(screenTitle(m)).toBe('Me');
+    goBack();
+    expect(id(m, 'b-lit')).not.toBeNull();
+  });
+
   it('closes every level when a jump back lands past the reload', async () => {
     const m = await mount(TUE_1005);
     press(m.container, 'Me');

@@ -614,10 +614,11 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
       // it lights is listed here too.
       const opened = openDrawerNodes({
         list: dayList(state, t, { keep: ticked, inLine: true }),
-        onMe: () => {
-          foldDrawer(false);
-          openMe();
-        },
+        onMe: () =>
+          together(() => {
+            foldDrawer(false);
+            openMe();
+          }),
         ...rows,
       });
       return {
@@ -845,22 +846,26 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
    * (SPEC 5.2); another tab folds it and goes there.
    */
   function chooseTab(tab: Tab): void {
-    arrival = 'morph';
-    if (isOpen()) {
-      foldDrawer(false);
-      if (tab === nav.tab) return;
-    }
-    if (tab === nav.tab && nav.stack.length === 0) return;
-    // The fold rendered the place it folded over, which used the arrival up;
-    // Today, if that is where this goes, still grows out of the capsule.
-    arrival = 'morph';
-    go({ tab, stack: [], list: nav.list });
+    together(() => {
+      arrival = 'morph';
+      if (isOpen()) {
+        foldDrawer(false);
+        if (tab === nav.tab) return;
+      }
+      if (tab === nav.tab && nav.stack.length === 0) return;
+      // The fold rendered the place it folded over, which used the arrival up;
+      // Today, if that is where this goes, still grows out of the capsule.
+      arrival = 'morph';
+      go({ tab, stack: [], list: nav.list });
+    });
   }
 
   /** A row in the day's list opens its task; from the open drawer, folding it. */
   function openTask(id: string): void {
-    if (isOpen()) foldDrawer(false);
-    push({ kind: 'task', id });
+    together(() => {
+      if (isOpen()) foldDrawer(false);
+      push({ kind: 'task', id });
+    });
   }
 
   // ---------------------------------------------------------------- the drawer
@@ -980,15 +985,15 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
   let entries = 0;
   /** History moves made here whose popstate is still to come. */
   let quiet = 0;
-  /** Closing levels for a popstate: one sync once they are all closed. */
-  let popping = false;
+  /** Levels closing and opening as one move: history follows once, after. */
+  let holding = false;
 
   function levels(): number {
     return nav.stack.length + (isOpen() ? 1 : 0);
   }
 
   function syncHistory(): void {
-    if (popping || destroyed) return;
+    if (holding || destroyed) return;
     const want = levels();
     if (want > entries) {
       for (let depth = entries + 1; depth <= want; depth++) {
@@ -1012,9 +1017,8 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
       // will find it. Any move still to land is relative to here now.
       history.replaceState({ bench: mark, depth: 0 }, '');
       quiet = 0;
-      closeLevels(levels());
       entries = 0;
-      syncHistory();
+      closeLevels(levels());
       return;
     }
     if (quiet > 0) {
@@ -1028,17 +1032,31 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
     const close = entries - state.depth;
     entries = state.depth;
     closeLevels(close);
-    syncHistory();
   }
 
   /** Closes up to `count` levels from the top, with no history moves of their own. */
   function closeLevels(count: number): void {
-    popping = true;
-    try {
+    together(() => {
       while (count-- > 0 && levels() > 0) closeTop();
+    });
+  }
+
+  /**
+   * Runs `change` with history held, then brings history level with it once.
+   * A row or Me in the open drawer folds it and pushes a page: the drawer's
+   * entry becomes the page's. Going back for the fold, which lands later, and
+   * pushing for the page, which does not wait, would leave their order to
+   * the browser.
+   */
+  function together(change: () => void): void {
+    if (holding) return change();
+    holding = true;
+    try {
+      change();
     } finally {
-      popping = false;
+      holding = false;
     }
+    syncHistory();
   }
 
   /** The open drawer folds; otherwise the top page goes. */
