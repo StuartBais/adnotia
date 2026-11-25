@@ -124,7 +124,9 @@ export function dock(props: DockProps): Built {
             {
               class: 'pill dock-pill pause resume white',
               type: 'button',
-              id: 'b-resume',
+              // One spot that changes its word (SPEC 5.7c), so one id: a
+              // rebuild after Pause or Resume gives focus back to it.
+              id: 'b-pause',
               onclick: props.present.onResume,
             },
             icon('play', 20),
@@ -324,7 +326,8 @@ export function dayListNodes(
                   {
                     class: 'disc',
                     type: 'button',
-                    id: `d-${row.id}`,
+                    // The ring's id: ticking or un-ticking keeps focus on the spot.
+                    id: `k-${row.id}`,
                     'aria-label': say.undoDone(row.title),
                     onclick: () => props.onUntick(row.id),
                   },

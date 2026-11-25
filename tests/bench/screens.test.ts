@@ -177,7 +177,16 @@ describe('1 · Today, running (SPEC 5.1)', () => {
     expect(visibleText(m.container)).toContain('Paused');
     press(m.container, 'Resume');
     expect(model.running(stateOf(m).tasks)?.title).toBe(EMAIL);
-    expect(id(m, 'b-pause')).not.toBeNull();
+    expect(id(m, 'b-pause')?.textContent).toBe('Pause');
+  });
+
+  it('keeps focus on the spot through Pause and Resume', async () => {
+    const m = await mount(TUE_1005);
+    button(m.container, 'Pause').focus();
+    press(m.container, 'Pause');
+    expect(document.activeElement).toBe(button(m.container, 'Resume'));
+    press(m.container, 'Resume');
+    expect(document.activeElement).toBe(button(m.container, 'Pause'));
   });
 });
 
@@ -206,9 +215,11 @@ describe('7c · Paused (SPEC 5.7c)', () => {
     const m = await mount(TUE_1320, 'pauseLeft');
     expect(nameOf(id(m, 'b-aside')!)).toBe(ASIDE);
     expect(id(m, 'b-aside')?.closest('.lit-block')).toBeNull();
-    expect(id(m, 'b-resume')?.textContent).toBe('Resume');
+    // Resume stands in Pause's spot: one control that changes its word.
+    expect(id(m, 'b-pause')?.textContent).toBe('Resume');
+    expect(nameOf(id(m, 'b-pause')!)).toBe('Resume');
     expect(id(m, 'b-stepdone')?.className).toContain('ash');
-    expect(id(m, 'b-pause')).toBeNull();
+    expect(() => button(m.container, 'Pause')).toThrow();
   });
 
   it('names the passed call on the Next line, under Anytime today, unmarked', async () => {
@@ -371,6 +382,15 @@ describe('7 · Nothing running (SPEC 5.7)', () => {
     disc.click();
     expect(titled(stateOf(m), 'Renew the parking permit').doneAt).toBeUndefined();
     expect(button(m.container, 'Mark done: Renew the parking permit')).toBeTruthy();
+  });
+
+  it('keeps focus on the spot as a ring is ticked and its disc un-ticks it', async () => {
+    const m = await mount(TUE_0958, 'notStarted');
+    button(m.container, 'Mark done: Renew the parking permit').focus();
+    press(m.container, 'Mark done: Renew the parking permit');
+    expect(document.activeElement).toBe(button(m.container, 'Undo done: Renew the parking permit'));
+    press(m.container, 'Undo done: Renew the parking permit');
+    expect(document.activeElement).toBe(button(m.container, 'Mark done: Renew the parking permit'));
   });
 
   it('lists what got done today only when that reward is on', async () => {
