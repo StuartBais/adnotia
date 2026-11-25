@@ -1495,6 +1495,14 @@ svg.i28 {
   .hpill {
     box-shadow: inset 0 0 0 1px var(--ash);
   }
+  /* Only the ash-20 pills on charcoal (SPEC 10). On white and on stone Me and
+     the back pill are tints, where ash would measure 2.2 and 1.9. */
+  .app[data-places='white'][data-ground='place'] .screen .me,
+  .app[data-places='white'][data-ground='place'] .screen .hpill,
+  .drawer .me,
+  .drawer .hpill {
+    box-shadow: none;
+  }
 }
 
 @media (prefers-reduced-transparency: reduce) {
