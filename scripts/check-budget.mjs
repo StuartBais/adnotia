@@ -59,6 +59,17 @@ const WELCOME_BUDGET = 100 * 1024;
 const IMAGE_BUDGET = 200 * 1024;
 
 /**
+ * The benchmark prototype at /bench/, budgeted as the app is.
+ *
+ * It is the page the owner holds on a phone to decide how the phone apps get
+ * built, so how fast it opens is part of what is being judged. It bundles its
+ * typeface (ADR-047), which is the largest thing it loads: a woff2 is already
+ * compressed and gains nothing from gzip, so fonts are counted as served rather
+ * than gzipped, which is what a phone actually downloads.
+ */
+const BENCH_BUDGET = 150 * 1024;
+
+/**
  * The single file is not in that budget — it is one document with everything
  * inlined, which is the whole point of it, and ADR-003 accepts the size. It is
  * printed so a jump in it is visible, and held well clear of the limits mail
@@ -166,6 +177,90 @@ if (existsSync(welcome)) {
   console.log(`Its pictures, as served (budget ${kb(IMAGE_BUDGET)}): ${kb(imageTotal)}`);
 }
 
+/**
+ * The prototype: its document, everything it asks for, and every font its
+ * stylesheets name.
+ *
+ * Two ways a font can go wrong without anything else noticing, and both fail
+ * here. A font the CSS names and the build has not got is text falling back to
+ * the system face on the phone, which is the one place the typeface is being
+ * judged. And a font inlined as a data: URI is refused outright by the page's
+ * `font-src 'self'`, so it would cost bytes and never be used. Vite inlines
+ * assets under its 4 kB limit, so a small enough subset would do exactly that.
+ */
+const benchIndex = join(dist, 'bench', 'index.html');
+if (!existsSync(benchIndex)) {
+  console.error(
+    'No dist/bench/index.html. vite.config.ts builds the prototype as an input of the PWA ' +
+      'build; if it has gone on purpose, take its section out of this script too.',
+  );
+  process.exit(1);
+}
+
+const benchHtml = readFileSync(benchIndex, 'utf8');
+const benchParts = [{ name: 'bench/index.html', bytes: gz(Buffer.from(benchHtml)) }];
+const benchSeen = new Set();
+const fontsSeen = new Set();
+
+/** A reference as written in a file served from `from`, resolved to a path in dist/. */
+function inDist(reference, from) {
+  const clean = reference.split(/[?#]/)[0];
+  return clean.startsWith('/') ? join(dist, clean) : join(dirname(from), clean);
+}
+
+for (const match of [
+  ...benchHtml.matchAll(/<script[^>]+src="([^"]+)"/g),
+  ...benchHtml.matchAll(/<link[^>]+href="([^"]+)"/g),
+]) {
+  const reference = match[1] ?? '';
+  if (reference.startsWith('data:')) continue;
+  if (/^(https?:)?\/\//.test(reference)) {
+    console.error(`Remote reference in dist/bench/index.html: ${reference}`);
+    process.exit(1);
+  }
+  const path = inDist(reference, benchIndex);
+  if (benchSeen.has(path)) continue;
+  benchSeen.add(path);
+  if (!existsSync(path)) {
+    console.error(`dist/bench/index.html references a file that is not in the build: ${reference}`);
+    process.exit(1);
+  }
+  const bytes = readFileSync(path);
+  benchParts.push({ name: path.slice(dist.length + 1), bytes: gz(bytes) });
+
+  if (!path.endsWith('.css')) continue;
+  for (const font of bytes.toString('utf8').matchAll(/url\(\s*["']?([^"')]+)["']?\s*\)/g)) {
+    const url = font[1] ?? '';
+    if (/^data:(?:font\/|application\/(?:x-)?font)/i.test(url)) {
+      console.error(
+        `${path.slice(dist.length + 1)} inlines a font as a data: URI, which the page's ` +
+          "font-src 'self' refuses. It has to ship as a file: see build.assetsInlineLimit.",
+      );
+      process.exit(1);
+    }
+    if (!/\.(?:woff2?|ttf|otf)$/i.test(url.split(/[?#]/)[0])) continue;
+    const fontPath = inDist(url, path);
+    if (fontsSeen.has(fontPath)) continue;
+    fontsSeen.add(fontPath);
+    if (!existsSync(fontPath)) {
+      console.error(`${path.slice(dist.length + 1)} names a font that is not in the build: ${url}`);
+      process.exit(1);
+    }
+    // As served: a woff2 is compressed already.
+    benchParts.push({
+      name: `${fontPath.slice(dist.length + 1)} (as served)`,
+      bytes: statSync(fontPath).size,
+    });
+  }
+}
+
+const benchTotal = benchParts.reduce((sum, part) => sum + part.bytes, 0);
+console.log(`\nThe prototype at /bench/, gzipped, fonts as served (budget ${kb(BENCH_BUDGET)}):`);
+for (const part of benchParts.sort((a, b) => b.bytes - a.bytes)) {
+  console.log(`  ${part.name.padEnd(48)} ${kb(part.bytes).padStart(9)}`);
+}
+console.log(`  ${'total'.padEnd(48)} ${kb(benchTotal).padStart(9)}`);
+
 // Reported, not budgeted. See the note at the top.
 const sw = join(dist, 'sw.js');
 if (existsSync(sw)) {
@@ -200,6 +295,14 @@ if (welcomeTotal > WELCOME_BUDGET) {
     `\nThe welcome page is over its ${kb(WELCOME_BUDGET)} budget by ` +
       `${kb(welcomeTotal - WELCOME_BUDGET)}. It is an introduction, loaded by somebody with ` +
       'no reason yet to wait for it.',
+  );
+  process.exit(1);
+}
+
+if (benchTotal > BENCH_BUDGET) {
+  console.error(
+    `\nThe prototype is over its ${kb(BENCH_BUDGET)} budget by ${kb(benchTotal - BENCH_BUDGET)}. ` +
+      'Its typeface is the largest part of it; a subset is smaller, a second face is not.',
   );
   process.exit(1);
 }
