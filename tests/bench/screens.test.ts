@@ -132,6 +132,15 @@ describe('1 · Today, running (SPEC 5.1)', () => {
     expect(fill.style.getPropertyValue('--p')).not.toBe(before);
   });
 
+  it('moves "in N min" on the Next line in place, without rebuilding the handle', async () => {
+    const m = await mount(TUE_1005);
+    const handle = id(m, 'b-handle');
+    advance(m, 1);
+    expect(id(m, 'b-handle')).toBe(handle);
+    expect(handle?.textContent).toContain('in 24 min');
+    expect(nameOf(handle!)).toBe('Next, in 24 minutes: 10:30, Call the dentist. Rest of today');
+  });
+
   it('over the estimate: the outline, the minutes so far, and the estimate in words', async () => {
     const m = await mount(TUE_1005);
     advance(m, 20); // 27 minutes worked of 25
@@ -502,6 +511,22 @@ describe('7 · Nothing running (SPEC 5.7)', () => {
     );
     expect(readingOrder(m.container)).toContain('Nothing running, starts at 10:30, in 10 minutes');
     expect(id(m, 'b-start')).not.toBeNull();
+  });
+
+  it('moves the unlit lantern’s minutes in place, without rebuilding it', async () => {
+    const m = await mount(TUE_0958, 'notStarted');
+    const block = id(m, 'b-idle');
+    advance(m, 1); // 9:59, rule 2
+    expect(id(m, 'b-idle')).toBe(block);
+    expect(visibleText(m.container)).toContain('would end about 10:24');
+    expect(nameOf(block!)).toContain('would end about 10:24');
+    advance(m, 21); // 10:20, rule 1
+    const booked = id(m, 'b-idle');
+    expect(visibleText(m.container)).toContain('starts at 10:30, in 10 min');
+    advance(m, 1);
+    expect(id(m, 'b-idle')).toBe(booked);
+    expect(visibleText(m.container)).toContain('starts at 10:30, in 9 min');
+    expect(readingOrder(m.container)).toContain('Nothing running, starts at 10:30, in 9 minutes');
   });
 
   it('rule 1, its slot under way: booked now, until it ends (a proposal)', async () => {

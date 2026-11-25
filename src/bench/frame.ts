@@ -185,19 +185,20 @@ export interface FoldedProps {
   onOpen: () => void;
 }
 
-export function foldedDrawer(props: FoldedProps): Node[] {
+/** The folded handle, and a way to move its "in N min" and its label in place. */
+export interface Folded {
+  nodes: Node[];
+  /** Whether line 1 has a "when" is fixed when it is built; its words are not. */
+  set(next: Pick<FoldedProps, 'when' | 'label'>): void;
+}
+
+export function foldedDrawer(props: FoldedProps): Folded {
+  const when = h('span', { class: 'h-when', text: props.when });
   const line1 = h(
     'span',
     { class: 'h-l1 t-label' },
     h('span', { class: 'h-sec', text: props.section }),
-    ...(props.when === undefined
-      ? []
-      : [
-          ' ',
-          h('span', { class: 'sep', text: '·' }),
-          ' ',
-          h('span', { class: 'h-when', text: props.when }),
-        ]),
+    ...(props.when === undefined ? [] : [' ', h('span', { class: 'sep', text: '·' }), ' ', when]),
   );
   const line2 = h(
     'span',
@@ -226,7 +227,15 @@ export function foldedDrawer(props: FoldedProps): Node[] {
     more,
   );
   for (const part of [line1, line2, more]) part.setAttribute('aria-hidden', 'true');
-  return [h('span', { class: 'grab', 'aria-hidden': 'true' }), handle];
+  return {
+    nodes: [h('span', { class: 'grab', 'aria-hidden': 'true' }), handle],
+    set(next) {
+      if (next.when !== undefined && when.textContent !== next.when) when.textContent = next.when;
+      if (handle.getAttribute('aria-label') !== next.label) {
+        handle.setAttribute('aria-label', next.label);
+      }
+    },
+  };
 }
 
 export interface HalfProps {

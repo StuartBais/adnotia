@@ -38,6 +38,7 @@ import {
   type BenchDomains,
   type BenchUi,
   type DrawerPosition,
+  type NextLine,
   type Page,
   type Tab,
   type TaskList,
@@ -58,6 +59,7 @@ import {
 import { h, injectSprite } from './ui';
 import {
   dayList,
+  idleKey,
   idleLitId,
   presentKey,
   presentLive,
@@ -340,7 +342,7 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
         today.kind === 'lit'
           ? presentKey(today.present)
           : today.kind === 'idle'
-            ? today.idle
+            ? idleKey(today.idle)
             : today.heading,
       ]);
     }
@@ -357,14 +359,19 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
     live: PresentLive | undefined,
   ): Built {
     if (today) {
-      return todayScreen(today, live, {
-        onMe: openMe,
-        onFocus: openFocus,
-        onSetAside: (id) => run(act.setAside, id),
-        onOpenTask: (id) => push({ kind: 'task', id }),
-        onStart: (id) => run(act.start, id),
-        onOpenInbox: () => go({ tab: 'tasks', stack: [], list: 'inbox' }),
-      });
+      return todayScreen(
+        today,
+        live,
+        {
+          onMe: openMe,
+          onFocus: openFocus,
+          onSetAside: (id) => run(act.setAside, id),
+          onOpenTask: (id) => push({ kind: 'task', id }),
+          onStart: (id) => run(act.start, id),
+          onOpenInbox: () => go({ tab: 'tasks', stack: [], list: 'inbox' }),
+        },
+        () => todayView(read(), now()),
+      );
     }
     const actions = {
       onMe: openMe,
@@ -433,7 +440,11 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
       const list = dayList(state, t, { keep: ticked, ...exclusion(today) });
       return JSON.stringify(['half', list]);
     }
-    return JSON.stringify(['folded', nextLine(state, t)]);
+    // "in N min" follows the clock and is moved in place; whether it is there is not.
+    const next = nextLine(state, t);
+    const shape =
+      next.kind === 'line' ? { ...next, inMinutes: next.inMinutes !== undefined } : next;
+    return JSON.stringify(['folded', shape]);
   }
 
   function exclusion(today: ReturnType<typeof todayView> | undefined): { exclude?: string } {
@@ -464,17 +475,26 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
     }
     const next = nextLine(state, t);
     if (next.kind === 'lip') return { nodes: [] };
+    const folded = foldedDrawer({ ...handleWords(next), onOpen: openDrawer });
+    return {
+      nodes: folded.nodes,
+      // The ticker's minute: "in 25 min" becomes "in 24 min" where it stands.
+      patch() {
+        const again = nextLine(read(), now());
+        if (again.kind === 'line') folded.set(handleWords(again));
+      },
+    };
+  }
+
+  function handleWords(next: NextLine) {
     const lines = handleLines(next);
     const [section, ...rest] = lines.line1.split(' · ');
     return {
-      nodes: foldedDrawer({
-        section: section ?? '',
-        when: rest.length > 0 ? rest.join(' · ') : undefined,
-        time: lines.time,
-        title: lines.title,
-        label: handleLabel(next),
-        onOpen: openDrawer,
-      }),
+      section: section ?? '',
+      when: rest.length > 0 ? rest.join(' · ') : undefined,
+      time: lines.time,
+      title: lines.title,
+      label: handleLabel(next),
     };
   }
 

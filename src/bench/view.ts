@@ -235,6 +235,23 @@ function idleView(idle: Exclude<IdleLantern, { rule: 4 }>): IdleView {
   }
 }
 
+/**
+ * The unlit lantern's make-up, for a key. Its status, spoken status, meta
+ * line and label follow the clock ("in 10 min", "would end about 10:23"), so
+ * only whether each is there is part of the key; their words move in place.
+ */
+export const idleKey = (idle: IdleView): unknown[] => [
+  idle.rule,
+  idle.label,
+  idle.sentence,
+  idle.startsWith,
+  idle.under,
+  idle.taskId,
+  idle.start,
+  idle.status !== undefined,
+  idle.meta !== undefined,
+];
+
 /** The task the idle lantern lights, which the half drawer leaves out. */
 export function idleLitId(view: TodayView): string | undefined {
   return view.kind === 'idle' ? view.idle.taskId : undefined;

@@ -29,10 +29,16 @@ export interface TodayActions {
 export const lampOf = (view: TodayView): 'lit' | 'idle' | 'planned' =>
   view.kind === 'lit' ? 'lit' : view.kind;
 
+/**
+ * `current` gives Today as it is at the moment of a tick, so the unlit
+ * lantern's minutes ("in 10 min", "would end about 10:23") move in place
+ * rather than the screen being rebuilt under a screen reader's cursor.
+ */
 export function todayScreen(
   view: TodayView,
   live: PresentLive | undefined,
   actions: TodayActions,
+  current?: () => TodayView,
 ): Built {
   const header = h(
     'header',
@@ -45,8 +51,16 @@ export function todayScreen(
       const built = lantern(view.present, live!, actions);
       return { nodes: [header, ...built.nodes], ...(built.patch ? { patch: built.patch } : {}) };
     }
-    case 'idle':
-      return { nodes: [header, idleBlock(view.idle, actions)] };
+    case 'idle': {
+      const block = idleBlock(view.idle, actions);
+      return {
+        nodes: [header, block.el],
+        patch() {
+          const now = current?.();
+          if (now?.kind === 'idle') block.set(now.idle);
+        },
+      };
+    }
     case 'planned':
       return { nodes: [header, planned(view.heading, actions)] };
   }
@@ -169,7 +183,16 @@ function lantern(view: PresentView, live: PresentLive, actions: TodayActions): B
 
 // ---------------------------------------------------------------- nothing running
 
-function idleBlock(idle: IdleView, actions: TodayActions): HTMLElement {
+/**
+ * The unlit lantern. What it is made of is fixed when it is built (see
+ * idleKey); its words that follow the clock are moved in place by `set`.
+ */
+function idleBlock(
+  idle: IdleView,
+  actions: TodayActions,
+): { el: HTMLElement; set(idle: IdleView): void } {
+  const when = h('span', { class: 'idle-when' });
+  const whenSpoken = spoken('');
   const status = h(
     'p',
     { class: 'idle-status', 'data-geo': 'status' },
@@ -177,10 +200,11 @@ function idleBlock(idle: IdleView, actions: TodayActions): HTMLElement {
       'span',
       { 'aria-hidden': 'true' },
       h('b', { text: T.nothingRunning }),
-      ...(idle.status === undefined ? [] : [' ', sep(), ' ', idle.status]),
+      ...(idle.status === undefined ? [] : [' ', sep(), ' ', when]),
     ),
-    spoken(idle.statusSpoken),
+    whenSpoken,
   );
+  const meta = idle.meta === undefined ? null : h('span', { class: 'meta t-meta' });
   const block = h(
     'button',
     {
@@ -197,12 +221,27 @@ function idleBlock(idle: IdleView, actions: TodayActions): HTMLElement {
     idle.startsWith === undefined
       ? null
       : h('span', { class: 'after t-row' }, h('b', { text: T.startsWith }), ' ', idle.startsWith),
-    idle.meta === undefined ? null : h('span', { class: 'meta t-meta' }, ...dottedNodes(idle.meta)),
+    meta,
     idle.under === undefined ? null : h('span', { class: 'under t-row', text: idle.under }),
   );
   for (const child of block.children) child.setAttribute('aria-hidden', 'true');
 
-  return h(
+  const set = (next: IdleView) => {
+    if (next.status !== undefined && when.textContent !== next.status) {
+      when.textContent = next.status;
+    }
+    if (whenSpoken.textContent !== next.statusSpoken) whenSpoken.textContent = next.statusSpoken;
+    if (meta && next.meta !== undefined && meta.dataset['words'] !== next.meta) {
+      meta.dataset['words'] = next.meta;
+      meta.replaceChildren(...dottedNodes(next.meta));
+    }
+    if (block.getAttribute('aria-label') !== next.blockLabel) {
+      block.setAttribute('aria-label', next.blockLabel);
+    }
+  };
+  set(idle);
+
+  const el = h(
     'div',
     { class: 'idle' },
     status,
@@ -223,6 +262,7 @@ function idleBlock(idle: IdleView, actions: TodayActions): HTMLElement {
         )
       : null,
   );
+  return { el, set };
 }
 
 // ---------------------------------------------------------------- nothing planned
