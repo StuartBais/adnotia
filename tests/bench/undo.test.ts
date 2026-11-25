@@ -12,6 +12,7 @@ import {
   nameOf,
   outlastUndo,
   press,
+  readText,
   said,
   settle,
   stateOf,
@@ -403,5 +404,142 @@ describe('the tap guard (SPEC 5.1; plan section 12)', () => {
     press(m.container, 'Start');
     press(m.container, 'Step done: Find the school address');
     expect(stepOf(stateOf(m), 'Find the school address').doneAt).toBeDefined();
+  });
+
+  it('for half a second as Focus opens from the lit block, in the same places', async () => {
+    const m = await mount(TUE_1005);
+    press(m.container, /^Now: Write the question\. Step 2 of 3/);
+    stepDone(m);
+    expect(questionDone(m)).toBeUndefined();
+    settle(m, TAP_GUARD.other - 1);
+    stepDone(m);
+    expect(questionDone(m)).toBeUndefined();
+    settle(m, 1);
+    stepDone(m);
+    expect(questionDone(m)).toBeDefined();
+  });
+
+  it('for a morph and a second as Focus grows out of the capsule', async () => {
+    const m = await mount(TUE_1005);
+    press(m.container, 'Tasks');
+    settle(m);
+    press(m.container, /^Now: Write the question, step 2 of 3/);
+    press(m.container, 'Pause');
+    expect(model.running(stateOf(m).tasks)?.title).toBe(EMAIL);
+    settle(m, GREW - 1);
+    press(m.container, 'Pause');
+    expect(model.running(stateOf(m).tasks)?.title).toBe(EMAIL);
+    settle(m, 1);
+    press(m.container, 'Pause');
+    expect(model.running(stateOf(m).tasks)).toBeUndefined();
+    // Resume, in Pause's place, is not guarded by the change on the spot.
+    press(m.container, 'Resume');
+    expect(model.running(stateOf(m).tasks)?.title).toBe(EMAIL);
+  });
+
+  it('and for a morph and a second from the open drawer’s capsule, over Today', async () => {
+    const m = await mount(TUE_1005);
+    press(m.container, /^Next, in 25 minutes/);
+    settle(m);
+    press(m.container, /^Now: Write the question, step 2 of 3/);
+    settle(m, GREW - 1);
+    stepDone(m);
+    expect(questionDone(m)).toBeUndefined();
+    settle(m, 1);
+    stepDone(m);
+    expect(questionDone(m)).toBeDefined();
+  });
+
+  it('for half a second when "⌄ Today" folds Focus back into the lantern', async () => {
+    const m = await mount(TUE_1005);
+    press(m.container, /^Now: Write the question\. Step 2 of 3/);
+    settle(m);
+    press(m.container, 'Back to Today');
+    stepDone(m);
+    expect(questionDone(m)).toBeUndefined();
+    settle(m, TAP_GUARD.other);
+    stepDone(m);
+    expect(questionDone(m)).toBeDefined();
+  });
+});
+
+describe('Undo on Focus’s foot (SPEC 5.4)', () => {
+  const LIT = /^Now: Write the question\. Step 2 of 3/;
+  const foot = (m: Mounted) => m.container.querySelector<HTMLElement>('.ffoot .ff-line')!;
+  const handle = (m: Mounted) => id(m, 'b-handle')!;
+
+  async function focused(local = TUE_1005, scenario: 'example' | 'pauseLeft' = 'example') {
+    const m = await mount(local, scenario);
+    press(m.container, scenario === 'example' ? LIT : /^Paused: Write the question\./);
+    settle(m);
+    return m;
+  }
+
+  it('reads the tap’s words for six seconds, with Undo at its right, then the later line', async () => {
+    const m = await focused();
+    press(m.container, 'Step done: Write the question');
+    expect(foot(m).classList.contains('with-undo')).toBe(true);
+    expect(readText(foot(m))).toBe('Step done: Write the question');
+    const undo = id(m, 'b-undo')!;
+    expect(undo.closest('.ffoot')).not.toBeNull();
+    expect(nameOf(undo)).toBe('Undo step done: Write the question');
+    vi.advanceTimersByTime(5999);
+    expect(id(m, 'b-undo')).toBe(undo);
+    vi.advanceTimersByTime(1);
+    expect(id(m, 'b-undo')).toBeNull();
+    expect(readText(foot(m))).toBe('Later today: 10:30, Call the dentist, in 25 minutes');
+  });
+
+  it('takes the step back, says so, and puts focus on the foot where the pill was', async () => {
+    const m = await focused();
+    press(m.container, 'Step done: Write the question');
+    said(m);
+    id(m, 'b-undo')!.click();
+    expect(said(m)).toBe('Undone. Now: Write the question');
+    expect(stepOf(stateOf(m), 'Write the question').doneAt).toBeUndefined();
+    expect(id(m, 'f-step')?.textContent).toContain('Write the question');
+    expect(document.activeElement).toBe(foot(m));
+    expect(m.container.dataset['focus']).toBe('open');
+  });
+
+  it('stays while the pill has focus, as on the Next line', async () => {
+    const m = await focused();
+    press(m.container, 'Step done: Write the question');
+    const undo = id(m, 'b-undo')!;
+    undo.focus();
+    outlastUndo();
+    expect(id(m, 'b-undo')).toBe(undo);
+    undo.blur();
+    await Promise.resolve();
+    expect(id(m, 'b-undo')).toBeNull();
+  });
+
+  it('moves to the Next line when Focus closes within the six seconds', async () => {
+    const m = await focused();
+    press(m.container, 'Step done: Write the question');
+    press(m.container, 'Back to Today');
+    expect(m.container.dataset['focus']).toBeUndefined();
+    expect(handle(m).querySelector('.h-l1')?.textContent).toBe('Step done');
+    expect(m.container.querySelectorAll('#b-undo')).toHaveLength(1);
+    expect(id(m, 'b-undo')?.closest('.drawer')).not.toBeNull();
+  });
+
+  it('ends when the disc takes the same step back', async () => {
+    const m = await focused();
+    press(m.container, 'Step done: Write the question');
+    id(m, 'f-disc')!.click();
+    expect(stepOf(stateOf(m), 'Write the question').doneAt).toBeUndefined();
+    expect(id(m, 'b-undo')).toBeNull();
+    expect(readText(foot(m))).toBe('Later today: 10:30, Call the dentist, in 25 minutes');
+  });
+
+  it('after Resume pauses it again, and Focus stays', async () => {
+    const m = await focused(TUE_1320, 'pauseLeft');
+    press(m.container, 'Resume');
+    expect(readText(foot(m))).toBe(`Resumed: ${EMAIL}, step 2`);
+    press(m.container, `Undo resume: ${EMAIL}`);
+    expect(said(m)).toBe('Undone. Paused: Write the question');
+    expect(model.running(stateOf(m).tasks)).toBeUndefined();
+    expect(m.container.dataset['focus']).toBe('open');
   });
 });

@@ -609,6 +609,21 @@ export function handleLabel(next: NextLine): string {
  * read as "Later today: 10:30, Call the dentist, in 25 minutes".
  */
 export function focusFoot(next: NextLine): { text: string; label: string } {
+  const parts = focusFootParts(next);
+  return { text: dotted(parts.head, parts.item, parts.when), label: parts.label };
+}
+
+/**
+ * The foot's three parts as drawn: the heading, the item, and its "in" or
+ * "until". A long title is cut inside the item, and the "in" part keeps its
+ * place after it (SPEC 5.4).
+ */
+export function focusFootParts(next: NextLine): {
+  head: string;
+  item: string;
+  when: string | undefined;
+  label: string;
+} {
   const head =
     next.row === 'soon' || next.row === 'underway' || next.row === 'next'
       ? T.laterToday
@@ -618,7 +633,9 @@ export function focusFoot(next: NextLine): { text: string; label: string } {
   const spokenItem = time === undefined ? next.title : `${time}, ${next.title}`;
   const when = whenSpoken(next);
   return {
-    text: dotted(head, item, whenWords(next)),
+    head,
+    item,
+    when: whenWords(next),
     label: `${head}: ${spokenItem}${when === undefined ? '' : `, ${when}`}`,
   };
 }

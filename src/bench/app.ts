@@ -13,11 +13,12 @@
 // the minutes and the spoken labels in place. So a tick never takes away the
 // person's focus, scroll or a tap in progress.
 //
-// Built so far (plan section 19, chunk 2): the frame, Today in every state,
-// the drawer at rest at its lip, folded and half and open by tap, the capsule
-// on the places and the open drawer, the tabs with bare places, Me with the
-// crisis page, and About with the scenario buttons. Focus and capture come
-// next; their controls are in place and do nothing yet.
+// Built so far (plan section 19, chunks 2 and 3): the frame, Today in every
+// state, the drawer at rest at its lip, folded and half and open by tap, the
+// capsule on the places and the open drawer, the tabs with bare places, Me
+// with the crisis page, About with the scenario buttons, and Focus, a layer
+// over the current tab with its own history entry. Capture comes next; its
+// disc is in place and does nothing yet.
 
 import { emptyDomains, type KernelStore } from '../kernel/store';
 import * as act from './actions';
@@ -68,6 +69,7 @@ import {
   ABOUT,
 } from './screens/places';
 import { settingsScreen, type SettingsView } from './screens/settings';
+import { focusFoot, focusKey, focusScreen, type FocusActions } from './screens/focus';
 import { ANNOUNCE, T } from './strings';
 import { h, injectSprite } from './ui';
 import { resolve as rewardOptions, setOption } from '../domains/options';
@@ -148,6 +150,8 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
   // ---------------------------------------------------------------- boot
 
   let nav: Nav = { ...TODAY };
+  /** Focus is open over the current tab and its pages (plan section 8). */
+  let focusOpen = false;
   let pendingScroll: Record<string, number> | undefined;
   {
     const t = now();
@@ -162,6 +166,7 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
     if (!firstOpen && woken.restore === 'exact' && ui) {
       nav = { tab: ui.tab, stack: [...ui.stack], list: ui.list };
       pendingScroll = ui.scroll;
+      focusOpen = ui.focus !== undefined && present(woken.state, t).kind !== 'none';
     }
   }
 
@@ -179,6 +184,11 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
     // the capsule and capture on the cover (SPEC 11, list 2).
     foot: h('div', { class: 'foot' }),
     tabs: h('div', { class: 'tabs' }),
+    // Focus, over everything but the dock line (SPEC 5.4), in two layers: what
+    // is above the dock line, read before it, and the foot, read after it
+    // (SPEC 11, list 4).
+    focus: h('div', { class: 'focus', hidden: true }),
+    focusFoot: h('div', { class: 'ffoot', hidden: true }),
     live: h('div', { class: 'live', 'aria-live': 'polite' }),
   };
   container.append(hints());
@@ -200,6 +210,8 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
   /** Where the drawer rested before it was opened, so Hide returns there. */
   let beforeOpen: { key: 'running' | 'idle'; position: 'half' | 'folded' } | undefined;
   let order = '';
+  /** Whether the Focus layer was shown at the last render. */
+  let focusShown = false;
   let barRunning = false;
   let destroyed = false;
   let announcing: ReturnType<typeof setTimeout> | undefined;
@@ -286,6 +298,12 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
     tidyNav(state);
     const view = viewOf();
     const current = present(state, t);
+    // Focus goes with the present: after Done, Set aside, or the day's end, it
+    // folds back to where it was opened, as "⌄ Today" would.
+    if (focusOpen && current.kind === 'none') focusOpen = false;
+    const wasFocus = focusShown;
+    const showFocus = focusOpen;
+    focusShown = showFocus;
     const byMinute = motion(state) === 'reduced';
     const places = state.bench.settings.places;
 
@@ -315,7 +333,9 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
     container.dataset['ground'] = ground;
     container.dataset['places'] = places;
     container.dataset['motion'] = byMinute ? 'reduced' : 'full';
-    themeColor(ground === 'place' && places === 'white' ? WHITE : CHARCOAL);
+    if (showFocus) container.dataset['focus'] = 'open';
+    else delete container.dataset['focus'];
+    themeColor(!showFocus && ground === 'place' && places === 'white' ? WHITE : CHARCOAL);
 
     // The present, as it is now.
     const presentNow = presentView(state, t);
@@ -327,16 +347,39 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
     if (today) layer.screen.dataset['lamp'] = lampOf(today);
     else delete layer.screen.dataset['lamp'];
     paint(layer.screen, screenKey(view, today), () => screen(view, today, live));
-    // The open drawer covers the screen: what is under it is not read or reached.
+    // The open drawer covers the screen, and Focus covers everything but the
+    // dock line: what is under either is not read or reached.
     for (const under of [layer.screen, layer.fade]) {
-      if (open) under.setAttribute('inert', '');
+      if (open || showFocus) under.setAttribute('inert', '');
+      else under.removeAttribute('inert');
+    }
+    for (const under of [layer.foot, layer.tabs]) {
+      if (showFocus) under.setAttribute('inert', '');
       else under.removeAttribute('inert');
     }
 
+    // Focus, the capsule opened all the way (SPEC 5.4).
+    if (showFocus && presentNow && live) {
+      showLayers();
+      const back = BACK_TO[nav.tab];
+      paint(layer.focus, JSON.stringify(['focus', ...focusKey(presentNow, back)]), () =>
+        focusScreen(presentNow, live, back, focusActions(presentNow)),
+      );
+      paint(layer.focusFoot, footKey(state, t), () => footOf(state, t));
+    } else if (wasFocus) {
+      clearLayers();
+    }
+
     // The dock line. On the open drawer the lantern has folded into the
-    // capsule, which sits on the cover with capture (SPEC 5.2).
-    const mode = capsuleMode(view, current, position, false);
+    // capsule, which sits on the cover with capture (SPEC 5.2). In Focus it
+    // holds Today's buttons in Today's places (SPEC 3).
+    const mode = capsuleMode(showFocus ? { kind: 'focus' } : view, current, position, false);
     const lit = today?.kind === 'lit' && !open;
+    const onDock = showFocus
+      ? presentNow
+      : lit && today?.kind === 'lit'
+        ? today.present
+        : undefined;
     const capsule =
       !lit && mode !== 'hidden' && presentNow && live
         ? {
@@ -344,37 +387,26 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
             live,
             look: capsuleLook(places, position),
             mode,
-            onOpen: openFocus,
+            onOpen: () => openFocus('capsule'),
           }
         : undefined;
     const props: DockProps = {
-      ...(lit && today?.kind === 'lit'
-        ? {
-            present: {
-              taskId: today.present.task.id,
-              paused: today.present.kind === 'paused',
-              step: today.present.step,
-              isLast: today.present.steps.isLast,
-              onStepDone: () => guarded() || run(act.stepDone, today.present.task.id),
-              onPause: () => guarded() || run(act.pause, today.present.task.id),
-              onResume: () => guarded() || run(act.resume, today.present.task.id),
-            },
-          }
-        : {}),
+      ...(onDock ? { present: presentButtons(onDock) } : {}),
       ...(capsule ? { capsule } : {}),
       captureOnLight:
-        open ||
-        (ground === 'present' && position === 'half') ||
-        (ground === 'place' && places === 'white'),
+        !showFocus &&
+        (open ||
+          (ground === 'present' && position === 'half') ||
+          (ground === 'place' && places === 'white')),
       draftKept: state.bench.drafts.capture !== undefined && state.bench.drafts.capture.text !== '',
       onCapture: openCapture,
     };
-    guardArrival(props, view, open);
+    guardArrival(props, view, open, showFocus);
     paint(layer.dock, dockKey(props), () => dock(props));
     layer.fade.hidden = !(ground === 'place' && capsule !== undefined && !open);
 
     // The drawer, and Hide at its foot when it is open.
-    if (position === 'lip') layer.drawer.setAttribute('inert', '');
+    if (position === 'lip' || showFocus) layer.drawer.setAttribute('inert', '');
     else layer.drawer.removeAttribute('inert');
     paint(layer.drawer, drawerKey(state, t, position, today), () =>
       drawer(state, t, position, today),
@@ -393,14 +425,26 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
     if (order === '') {
       container.append(
         ...(wanted === 'list-first'
-          ? [layer.screen, layer.fade, layer.drawer, layer.dock, layer.foot, layer.tabs, layer.live]
+          ? [
+              layer.screen,
+              layer.fade,
+              layer.focus,
+              layer.drawer,
+              layer.dock,
+              layer.foot,
+              layer.tabs,
+              layer.focusFoot,
+              layer.live,
+            ]
           : [
               layer.screen,
               layer.fade,
+              layer.focus,
               layer.dock,
               layer.drawer,
               layer.foot,
               layer.tabs,
+              layer.focusFoot,
               layer.live,
             ]),
       );
@@ -417,9 +461,17 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
     }
     order = wanted;
 
-    barRunning = current.kind === 'running' && (today?.kind === 'lit' || capsule !== undefined);
+    barRunning =
+      current.kind === 'running' && (today?.kind === 'lit' || capsule !== undefined || showFocus);
     patchAll(live);
     layout(position);
+    // Focus has closed and what had focus went with it: back where it was
+    // opened, on the capsule if it is there, otherwise the screen's own block.
+    if (wasFocus && !showFocus && focusIn(layer.focus, layer.focusFoot)) {
+      const capsuleButton = layer.dock.querySelector<HTMLElement>('#b-capsule');
+      if (capsuleButton) capsuleButton.focus({ preventScroll: true });
+      else landFocus();
+    }
     if (pendingScroll) {
       const restore = pendingScroll;
       pendingScroll = undefined;
@@ -480,7 +532,7 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
         live,
         {
           onMe: openMe,
-          onFocus: openFocus,
+          onFocus: () => openFocus('lantern'),
           onSetAside: (id) => run(act.setAside, id),
           onOpenTask: (id) => push({ kind: 'task', id }),
           onStart: (id) => run(act.start, id),
@@ -574,10 +626,19 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
       return JSON.stringify(['open', { ...list, later }]);
     }
     // "in N min" follows the clock and is moved in place; whether it is there is not.
-    const next = nextLine(state, t, undo?.undo.lines);
-    const shape =
-      next.kind === 'line' ? { ...next, inMinutes: next.inMinutes !== undefined } : next;
-    return JSON.stringify(['folded', shape, undo?.undo.name]);
+    const held = lineUndo();
+    const next = nextLine(state, t, held?.undo.lines);
+    return JSON.stringify(['folded', lineShape(next), held?.undo.name]);
+  }
+
+  /** A Next line or foot as built: whether "in N min" is there, not its figure. */
+  function lineShape(next: ReturnType<typeof nextLine>): unknown {
+    return next.kind === 'line' ? { ...next, inMinutes: next.inMinutes !== undefined } : next;
+  }
+
+  /** The Undo the Next line carries: none while Focus is over it, whose foot has it. */
+  function lineUndo(): UndoSlot | undefined {
+    return focusShown ? undefined : undo;
   }
 
   function exclusion(today: ReturnType<typeof todayView> | undefined): { exclude?: string } {
@@ -628,13 +689,14 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
         },
       };
     }
-    const lines = undo?.undo.lines;
+    const held = lineUndo();
+    const lines = held?.undo.lines;
     const next = nextLine(state, t, lines);
     if (next.kind === 'lip') return { nodes: [] };
     const folded = foldedDrawer({
       ...handleWords(next),
       onOpen: openDrawer,
-      ...(undo ? { undo: { name: undo.undo.name, onUndo: takeBack } } : {}),
+      ...(held ? { undo: { name: held.undo.name, onUndo: takeBack } } : {}),
     });
     return {
       nodes: folded.nodes,
@@ -656,6 +718,128 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
       title: lines.title,
       label: handleLabel(next),
     };
+  }
+
+  // ---------------------------------------------------------------- Focus
+
+  /** Step done, Pause and Resume on the dock line: Today's, and Focus's the same. */
+  function presentButtons(view: PresentView): NonNullable<DockProps['present']> {
+    const id = view.task.id;
+    return {
+      taskId: id,
+      paused: view.kind === 'paused',
+      step: view.step,
+      isLast: view.steps.isLast,
+      onStepDone: () => guarded() || run(act.stepDone, id),
+      onPause: () => guarded() || run(act.pause, id),
+      onResume: () => guarded() || run(act.resume, id),
+    };
+  }
+
+  function focusActions(view: PresentView): FocusActions {
+    const id = view.task.id;
+    return {
+      onBack: closeFocus,
+      // Me is pushed on the current tab, under Focus, which folds away: help
+      // stays two taps from anywhere, and the capsule is one tap back.
+      onMe: () =>
+        together(() => {
+          closeFocus();
+          openMe();
+        }),
+      onReopenStep: (stepId) => {
+        // The disc takes back the Step done the foot offers to: one way back.
+        const before = read();
+        if (undo?.undo.step === stepId) dropUndo();
+        run(act.reopenStep, stepId);
+        if (read() === before) render();
+      },
+      onAddFive: () => run(act.addFive, id),
+      onSetAside: () => run(act.setAside, id),
+    };
+  }
+
+  function footKey(state: BenchDomains, t: Date): string {
+    const next = nextLine(state, t, undo?.undo.lines);
+    return JSON.stringify(['foot', lineShape(next), undo?.undo.name]);
+  }
+
+  /** Focus's foot: the Next line's rows on one line, and its six-second Undo. */
+  function footOf(state: BenchDomains, t: Date): Built {
+    const lines = undo?.undo.lines;
+    const next = nextLine(state, t, lines);
+    if (next.kind === 'lip') return { nodes: [] };
+    const built = focusFoot({
+      next,
+      ...(undo ? { undo: { name: undo.undo.name, onUndo: takeBack } } : {}),
+    });
+    return {
+      nodes: built.nodes,
+      patch() {
+        const again = nextLine(read(), now(), lines);
+        if (again.kind === 'line') built.set(again);
+      },
+    };
+  }
+
+  /**
+   * Focus opens over the current tab and whatever is pushed on it, from the
+   * lit block on Today or from the capsule anywhere; from the open drawer, the
+   * drawer folds and its history entry becomes Focus's. Focus lands on the
+   * step (SPEC 11). Grown out of the capsule, Step done and Pause wait out the
+   * morph and a second before they take a tap (SPEC 5.1).
+   */
+  function openFocus(from: 'lantern' | 'capsule'): void {
+    if (focusOpen || !presentView(read(), now())) return;
+    together(() => {
+      if (isOpen()) foldDrawer(false);
+      focusOpen = true;
+      // Set after the fold, whose render used up the arrival.
+      if (from === 'capsule') arrival = 'morph';
+      render();
+    });
+    container.querySelector<HTMLElement>('#f-step')?.focus({ preventScroll: true });
+  }
+
+  /** "⌄ Today", or back: Focus folds into the screen it was opened from. The clock keeps running. */
+  function closeFocus(): void {
+    if (!focusOpen) return;
+    focusOpen = false;
+    arrival = 'morph';
+    render();
+  }
+
+  /**
+   * Focus has closed: read by nothing and reached by nothing at once, its ids
+   * gone so the Next line's Undo is the one #b-undo. Its nodes stay until the
+   * render that closed it is over, so where focus was can still be found.
+   */
+  function clearLayers(): void {
+    for (const part of [layer.focus, layer.focusFoot]) {
+      part.setAttribute('inert', '');
+      keys.delete(part);
+      patches.delete(part);
+      for (const node of part.querySelectorAll('[id]')) node.removeAttribute('id');
+    }
+    queueMicrotask(() => {
+      if (focusShown || destroyed) return;
+      for (const part of [layer.focus, layer.focusFoot]) {
+        paint(part, '', () => ({ nodes: [] }));
+        part.hidden = true;
+      }
+    });
+  }
+
+  function showLayers(): void {
+    for (const part of [layer.focus, layer.focusFoot]) {
+      part.removeAttribute('inert');
+      part.hidden = false;
+    }
+  }
+
+  function focusIn(...parts: HTMLElement[]): boolean {
+    const active = document.activeElement;
+    return active !== null && parts.some((part) => part.contains(active));
   }
 
   // ---------------------------------------------------------------- measuring
@@ -713,16 +897,20 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
   // ---------------------------------------------------------------- the tap guard
 
   /**
-   * When Step done and Pause come into the slot because Today was reached,
-   * not because something changed on it: after the capsule, by a tab, back or
-   * a fold, a morph and a second; otherwise, launch included, half a second.
+   * When Step done and Pause come into the slot because Today or Focus was
+   * reached, not because something changed on it: grown out of the capsule
+   * (by a tab, back, a fold, or the capsule itself), a morph and a second;
+   * otherwise, launch and between Today and Focus included, half a second.
    */
-  function guardArrival(props: DockProps, view: View, open: boolean): void {
+  function guardArrival(props: DockProps, view: View, open: boolean, focus: boolean): void {
     const slot = props.present ? 'present' : props.capsule ? 'capsule' : 'none';
-    const scene = `${JSON.stringify(view)} ${nav.tab} ${open ? 'open' : ''}`;
+    const scene = focus ? 'focus' : `${JSON.stringify(view)} ${nav.tab} ${open ? 'open' : ''}`;
+    // Today and Focus hold the buttons in the same places, so going from one
+    // to the other is an arrival though the slot never empties.
+    const across = scene !== lastScene && (scene === 'focus' || lastScene === 'focus');
     if (
       slot === 'present' &&
-      (lastSlot === undefined || (scene !== lastScene && lastSlot !== 'present'))
+      (lastSlot === undefined || (scene !== lastScene && (lastSlot !== 'present' || across)))
     ) {
       const grew = lastSlot === 'capsule' && arrival === 'morph';
       const length = grew ? TAP_GUARD.morph + TAP_GUARD.afterCapsule : TAP_GUARD.other;
@@ -789,8 +977,11 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
     if (read() === before) render();
     const view = presentView(read(), t);
     announce(ANNOUNCE.undoneThen(view ? `${view.lead}: ${view.step}` : T.nothingRunning));
-    const handle = container.querySelector<HTMLElement>('#b-handle');
-    if (handle) handle.focus({ preventScroll: true });
+    // Where the pill was: Focus's foot, or the handle.
+    const spot = focusShown
+      ? layer.focusFoot.querySelector<HTMLElement>('#f-foot')
+      : container.querySelector<HTMLElement>('#b-handle');
+    if (spot) spot.focus({ preventScroll: true });
     else landFocus();
   }
 
@@ -951,6 +1142,7 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
 
   function scenario(id: ScenarioId): void {
     dropUndo();
+    focusOpen = false;
     commit(loadScenario(read(), id, now()));
     ticked.clear();
     go({ ...TODAY });
@@ -959,22 +1151,23 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
   function deleteAll(): void {
     if (!confirm(ABOUT.deleteConfirm)) return;
     dropUndo();
+    focusOpen = false;
     const t = now();
     commit(migrateBench(emptyDomains(), t));
     ticked.clear();
     go({ ...TODAY });
   }
 
-  // Built in the chunks that follow (plan section 19): Focus (3) and capture
-  // (4). Their controls are where they belong.
-  function openFocus(): void {}
+  // Built in the chunk that follows (plan section 19): capture (4). Its disc
+  // is where it belongs.
   function openCapture(): void {}
 
   // ---------------------------------------------------------------- history
 
   /**
    * One history entry for each level above the tab (plan section 8): every
-   * page pushed on the current tab, then the open drawer on top. So Safari's
+   * page pushed on the current tab, then Focus or the open drawer on top
+   * (Focus folds the drawer as it opens, so never both). So Safari's
    * edge swipe and the back button close the top level, as Android's back
    * does (SPEC 11). A level closed by a control here (a back pill, Hide, a
    * tab) takes its entries back with it, quietly. Entries are marked with
@@ -990,7 +1183,7 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
   let holding = false;
 
   function levels(): number {
-    return nav.stack.length + (isOpen() ? 1 : 0);
+    return nav.stack.length + (focusOpen ? 1 : 0) + (isOpen() ? 1 : 0);
   }
 
   function syncHistory(): void {
@@ -1060,9 +1253,10 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
     syncHistory();
   }
 
-  /** The open drawer folds; otherwise the top page goes. */
+  /** Focus closes; otherwise the open drawer folds; otherwise the top page goes. */
   function closeTop(): void {
-    if (isOpen()) foldDrawer(true);
+    if (focusOpen) closeFocus();
+    else if (isOpen()) foldDrawer(true);
     else if (nav.stack.length > 0) back();
   }
 
@@ -1078,6 +1272,7 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
       at: at.toISOString(),
       tab: nav.tab,
       stack: [...nav.stack],
+      ...(focusOpen ? { focus: { returnTo: nav.tab } } : {}),
       list: nav.list,
       scroll: scrollOf(container),
     };
@@ -1101,6 +1296,7 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
     const woken = wake(state, now());
     if (woken.restore === 'today') {
       nav = { ...TODAY, list: nav.list };
+      focusOpen = false;
       ticked.clear();
     }
     if (woken.state !== state) commit(woken.state);
@@ -1163,7 +1359,7 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
       window.removeEventListener('popstate', onPopState);
       container.replaceChildren();
       container.classList.remove('app');
-      for (const name of ['drawer', 'ground', 'places', 'motion', 'more']) {
+      for (const name of ['drawer', 'ground', 'places', 'motion', 'more', 'focus']) {
         delete container.dataset[name];
       }
       container.style.removeProperty('--half-t');

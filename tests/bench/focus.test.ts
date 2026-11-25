@@ -50,9 +50,21 @@ describe('the focus ring', () => {
       '.tabs',
       '.capture.on-light',
       ".app[data-places='white'][data-ground='place'] .screen",
-      ".app[data-places='white'][data-ground='place'] .dock",
+      ".app[data-places='white'][data-ground='place']:not([data-focus]) .dock",
     ]) {
       expect(ringOf(light), light).toBe('var(--charcoal)');
+    }
+  });
+
+  it('stays white on the dock line in Focus, which is charcoal over a white place too', () => {
+    const dock = rules.filter((rule) =>
+      rule.selectors.some((s) => s.endsWith(' .dock') && /--ring:/.test(rule.body)),
+    );
+    for (const rule of dock) {
+      const white = rule.selectors.filter(
+        (s) => s.includes("data-places='white'") && s.endsWith(' .dock'),
+      );
+      for (const selector of white) expect(selector).toContain(':not([data-focus])');
     }
   });
 });

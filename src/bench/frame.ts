@@ -23,6 +23,7 @@ export const HINT_IDS = {
   rest: 'hint-rest',
   me: 'hint-me',
   inbox: 'hint-inbox',
+  timer: 'hint-timer',
 } as const;
 
 export function hints(): HTMLElement {
@@ -34,6 +35,7 @@ export function hints(): HTMLElement {
     h('span', { id: HINT_IDS.rest, text: HINT.showsRestOfToday }),
     h('span', { id: HINT_IDS.me, text: HINT.me }),
     h('span', { id: HINT_IDS.inbox, text: HINT.opensNewest }),
+    h('span', { id: HINT_IDS.timer, text: HINT.timerKeepsRunning }),
   );
 }
 

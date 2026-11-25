@@ -165,6 +165,11 @@ export function readingOrder(container: HTMLElement): string[] {
       out.push(nameOf(node));
       return;
     }
+    // The bar where it is read alone, in Focus: a meter, by its name (SPEC 11).
+    if (node.matches('[role="meter"]')) {
+      out.push(nameOf(node));
+      return;
+    }
     if (node.matches('h1, h2, h3, p, li[aria-label]')) {
       const text = node.matches('li[aria-label]') ? nameOf(node) : readText(node);
       if (text) out.push(text);
@@ -187,7 +192,8 @@ export function controls(container: HTMLElement): HTMLElement[] {
  * The main choices on a screen (SPEC 3 "Counting the five choices"): the
  * frame is not counted (the tabs, Me, a back control, "⋯" and the drawer's
  * handle, which on the open drawer is Hide), and a list counts once however
- * many rows it has.
+ * many rows it has. The six-second Undo, on the Next line or Focus's foot, is
+ * counted as frame (SPEC 5.4).
  */
 export function choices(container: HTMLElement): number {
   let lists = 0;
@@ -195,7 +201,7 @@ export function choices(container: HTMLElement): number {
   let count = 0;
   for (const node of controls(container)) {
     if (node.closest('nav') || node.classList.contains('me')) continue;
-    if (['b-handle', 'b-hide', 'b-back'].includes(node.id)) continue;
+    if (['b-handle', 'b-hide', 'b-back', 'f-back', 'b-undo'].includes(node.id)) continue;
     const list = node.closest('.list');
     if (list) {
       if (!seen.has(list)) {

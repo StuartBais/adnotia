@@ -200,7 +200,8 @@ export interface SpokenNow {
 
 const leadOf = (now: SpokenNow): string => now.lead ?? (now.paused ? T.paused : T.now);
 
-function minutesSpoken(minutes: SpokenMinutes): string {
+/** The clock in words: "18 of 25 minutes left, ends 10:23", "27 minutes so far, estimate 25". */
+export function minutesSpoken(minutes: SpokenMinutes): string {
   switch (minutes.kind) {
     case 'left': {
       const left = say.meterValue(minutes.left, minutes.estimate);

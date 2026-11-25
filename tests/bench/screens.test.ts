@@ -15,8 +15,10 @@ import {
   mount,
   nameOf,
   press,
+  readText,
   readingOrder,
   said,
+  settle,
   stateOf,
   unmount,
   visibleText,
@@ -1374,5 +1376,429 @@ describe('the frame (SPEC 3)', () => {
     expect(stateOf(m).bench.day).toBe('2026-11-25');
     expect(model.running(stateOf(m).tasks)?.title).toBe(EMAIL);
     expect(id(m, 'b-lit')).not.toBeNull();
+  });
+});
+
+describe('4 · Focus (SPEC 5.4)', () => {
+  const LIT = /^Now: Write the question\. Step 2 of 3/;
+  const CAPSULE = /^Now: Write the question, step 2 of 3/;
+  const FOOT = 'Later today: 10:30, Call the dentist, in 25 minutes';
+  const ASIDE = 'Set aside Write the school email. It keeps its place at step 2.';
+  const layerOf = (m: Mounted) => m.container.querySelector<HTMLElement>('.focus')!;
+  const footOf = (m: Mounted) => m.container.querySelector<HTMLElement>('.ffoot')!;
+  const screenTitle = (m: Mounted) => m.container.querySelector('.screen h1')?.textContent;
+
+  async function focused(local = TUE_1005, scenario: 'example' | 'pauseLeft' = 'example') {
+    const m = await mount(local, scenario);
+    press(m.container, scenario === 'example' ? LIT : /^Paused: Write the question\./);
+    return m;
+  }
+
+  it('opens from the lit block over Today, with no tabs and no drawer, and lands on the step', async () => {
+    const m = await focused();
+    expect(m.container.dataset['focus']).toBe('open');
+    expect(layerOf(m).hidden).toBe(false);
+    const step = id(m, 'f-step')!;
+    expect(document.activeElement).toBe(step);
+    expect(step.getAttribute('tabindex')).toBe('-1');
+    for (const under of ['.screen', '.drawer', '.tabs', '.fade']) {
+      expect(m.container.querySelector(under)?.hasAttribute('inert'), under).toBe(true);
+    }
+    // Focus is the capsule opened all the way: it never shows the capsule.
+    expect(m.container.querySelector('.capsule')).toBeNull();
+    expect(
+      document.querySelector('meta[name="theme-color"]')?.getAttribute('content') ?? '#222624',
+    ).toBe('#222624');
+    // Today is not changed under it.
+    expect(id(m, 't-today')?.getAttribute('aria-current')).toBe('page');
+  });
+
+  it('says what it is in ash above the step, the bar edge to edge, +5 min beside the minutes', async () => {
+    const m = await focused();
+    const layer = layerOf(m);
+    expect(layer.querySelector('.fctx')?.textContent).toContain('Focus');
+    expect(readText(layer.querySelector('.fctx')!)).toBe(
+      'Focus, Write the school email, step 2 of 3',
+    );
+    expect(layer.querySelector('.fdone-t')?.textContent).toBe('Find the school address');
+    expect(id(m, 'f-step')?.textContent).toContain('Write the question');
+    expect(layer.querySelector('.fafter')?.textContent).toBe('After this: Read it once and send');
+    const bar = layer.querySelector('.bar')!;
+    expect(bar.className).toBe('bar bar-focus is-burn');
+    expect(bar.getAttribute('role')).toBe('meter');
+    expect(nameOf(bar)).toBe('Time left');
+    expect(bar.getAttribute('aria-valuetext')).toBe('18 of 25 minutes left');
+    expect(bar.getAttribute('aria-valuenow')).toBe('18');
+    expect(bar.getAttribute('aria-valuemax')).toBe('25');
+    const minutes = layer.querySelector('.fmins')!;
+    expect(minutes.querySelector('strong')?.textContent).toBe('18 min left');
+    expect(minutes.querySelector('.rest')?.textContent).toBe('of 25 · ends 10:23');
+    expect(id(m, 'f-five')?.textContent).toBe('+5 min');
+    expect(nameOf(id(m, 'f-five')!)).toBe('Add 5 minutes');
+    expect(layer.querySelector('.fnote')?.textContent).toContain(
+      'When is the permission slip due?',
+    );
+    // The step is the one white heading; the context line is not white.
+    expect(layer.querySelectorAll('h1, h2')).toHaveLength(2);
+  });
+
+  it('keeps Today’s three on the dock line, in Today’s places', async () => {
+    const m = await focused();
+    expect(nameOf(id(m, 'b-stepdone')!)).toBe('Step done: Write the question');
+    expect(id(m, 'b-stepdone')?.className).toContain('white');
+    expect(nameOf(id(m, 'b-pause')!)).toBe('Pause');
+    expect(id(m, 'b-capture')?.classList.contains('on-light')).toBe(false);
+  });
+
+  it('sets the foot under the hairline in the Next line’s words, as text, with "Later today"', async () => {
+    const m = await focused();
+    const foot = footOf(m);
+    expect(foot.querySelector('.hair')).not.toBeNull();
+    const line = foot.querySelector('.ff-line')!;
+    expect(line.tagName).toBe('P');
+    expect(line.textContent).toContain('Later today');
+    expect(line.textContent).toContain('10:30 Call the dentist');
+    expect(line.textContent).toContain('in 25 min');
+    expect(line.textContent).not.toContain('Next');
+    expect(readText(line)).toBe(FOOT);
+    expect(foot.querySelector('button')).toBeNull();
+  });
+
+  it('offers five choices, and reads them in SPEC 11’s order', async () => {
+    const m = await focused();
+    expect(choices(m.container)).toBe(5);
+    expect(readingOrder(m.container)).toEqual([
+      'Back to Today',
+      'Me',
+      'Focus, Write the school email, step 2 of 3',
+      'Undo step done: Find the school address',
+      'Now: Write the question',
+      'After this: Read it once and send',
+      'Time left',
+      '18 of 25 minutes left, ends 10:23',
+      'Add 5 minutes',
+      'Note: When is the permission slip due?',
+      'Step done: Write the question',
+      'Pause',
+      'Capture',
+      FOOT,
+    ]);
+    expect(hintOf(button(m.container, 'Back to Today'))).toBe('The timer keeps running.');
+  });
+
+  it('moves the bar, the minutes and the foot in place as time passes', async () => {
+    const m = await focused();
+    const step = id(m, 'f-step');
+    const fill = layerOf(m).querySelector<HTMLElement>('.bar')!;
+    const before = fill.style.getPropertyValue('--p');
+    advance(m, 1);
+    expect(id(m, 'f-step')).toBe(step);
+    expect(fill.style.getPropertyValue('--p')).not.toBe(before);
+    expect(layerOf(m).querySelector('.fmins strong')?.textContent).toBe('17 min left');
+    expect(fill.getAttribute('aria-valuetext')).toBe('17 of 25 minutes left');
+    expect(readText(footOf(m).querySelector('.ff-line')!)).toBe(
+      'Later today: 10:30, Call the dentist, in 24 minutes',
+    );
+  });
+
+  it('turns into the used-up form in place: "27 min so far" over "estimate 25", the outline', async () => {
+    const m = await focused();
+    advance(m, 20);
+    const layer = layerOf(m);
+    expect(layer.querySelector('.fmins strong')?.textContent).toBe('27 min so far');
+    expect(layer.querySelector('.fmins .rest')?.textContent).toBe('estimate 25');
+    expect(layer.querySelector('.bar')?.className).toBe('bar bar-focus is-over');
+    expect(layer.querySelector('.bar')?.getAttribute('aria-valuetext')).toBe(
+      '27 minutes so far, estimate 25',
+    );
+    expect(visibleText(m.container)).not.toMatch(/\b0 min left/);
+  });
+
+  it('+5 min adds five to the estimate, and says what the bar now reads', async () => {
+    const m = await focused();
+    press(m.container, 'Add 5 minutes');
+    expect(emailOf(stateOf(m)).estimateMinutes).toBe(30);
+    expect(said(m)).toBe('23 of 30 minutes left, ends 10:28');
+    expect(layerOf(m).querySelector('.fmins strong')?.textContent).toBe('23 min left');
+    expect(layerOf(m).querySelector('.fmins .rest')?.textContent).toBe('of 30 · ends 10:28');
+  });
+
+  it('+5 min over a used-up estimate starts from the minutes so far, so five are left', async () => {
+    const m = await focused();
+    advance(m, 20); // 27 minutes worked of 25
+    press(m.container, 'Add 5 minutes');
+    expect(emailOf(stateOf(m)).estimateMinutes).toBe(32);
+    expect(layerOf(m).querySelector('.fmins strong')?.textContent).toBe('5 min left');
+    expect(layerOf(m).querySelector('.bar')?.className).toBe('bar bar-focus is-burn');
+  });
+
+  it('+5 min with no estimate sets one at the minutes so far plus five', async () => {
+    const m = await mount(TUE_1005, 'example', (state) => {
+      const email = emailOf(state);
+      return { ...state, tasks: model.setEstimate(state.tasks, email.id, undefined) };
+    });
+    press(m.container, /^Now: Write the question\. Step 2 of 3/);
+    expect(layerOf(m).querySelector('.fmins strong')?.textContent).toBe('7 min so far');
+    expect(layerOf(m).querySelector('.bar')?.className).toBe('bar bar-focus is-countUp');
+    press(m.container, 'Add 5 minutes');
+    expect(emailOf(stateOf(m)).estimateMinutes).toBe(12);
+    expect(layerOf(m).querySelector('.fmins strong')?.textContent).toBe('5 min left');
+  });
+
+  it('Step done moves to the next step, the done one above it, and the foot offers Undo', async () => {
+    const m = await focused();
+    settle(m);
+    press(m.container, 'Step done: Write the question');
+    expect(said(m)).toBe('Step done. Now: Read it once and send');
+    expect(id(m, 'f-step')?.textContent).toContain('Read it once and send');
+    expect(nameOf(id(m, 'f-disc')!)).toBe('Undo step done: Write the question');
+    const line = footOf(m).querySelector('.ff-line')!;
+    expect(line.textContent).toContain('Step done');
+    expect(line.textContent).toContain('Write the question');
+    // The pill and the disc name the same thing, and both take it back.
+    const undo = id(m, 'b-undo')!;
+    expect(nameOf(undo)).toBe('Undo step done: Write the question');
+    expect(undo.textContent).toBe('Undo');
+    expect(footOf(m).contains(undo)).toBe(true);
+    // One Undo on screen: the Next line under Focus does not carry it too.
+    expect(m.container.querySelectorAll('#b-undo')).toHaveLength(1);
+    // Counted as frame, as on Today.
+    expect(choices(m.container)).toBe(5);
+    // On the last step, the white pill reads Done.
+    expect(id(m, 'b-stepdone')?.textContent).toBe('Done');
+  });
+
+  it('the done step’s disc un-ticks it and makes it the current step again', async () => {
+    const m = await focused();
+    press(m.container, 'Undo step done: Find the school address');
+    expect(said(m)).toBe('Undone. Now: Find the school address');
+    expect(id(m, 'f-step')?.textContent).toContain('Find the school address');
+    expect(id(m, 'f-disc')).toBeNull();
+    // The line stays, empty, so the step keeps its height on the screen.
+    expect(layerOf(m).querySelector('.fdone')?.getAttribute('aria-hidden')).toBe('true');
+    expect(document.activeElement).toBe(id(m, 'f-step'));
+    expect(choices(m.container)).toBe(4);
+  });
+
+  it('pauses in place: Paused in words, the bar still, Set aside beside the minutes', async () => {
+    const m = await focused();
+    settle(m);
+    press(m.container, 'Pause');
+    expect(said(m)).toBe('Paused');
+    expect(m.container.dataset['focus']).toBe('open');
+    const layer = layerOf(m);
+    expect(readText(id(m, 'f-step')!)).toBe('Paused: Write the question');
+    expect(layer.querySelector('.bar')?.className).toBe('bar bar-focus is-paused is-frozen');
+    expect(layer.querySelector('.fmins strong')?.className).toContain('still');
+    expect(layer.querySelector('.fmins .rest')?.textContent).toBe('of 25');
+    expect(visibleText(layer)).not.toContain('ends');
+    expect(id(m, 'f-five')).toBeNull();
+    expect(nameOf(id(m, 'f-aside')!)).toBe(ASIDE);
+    expect(id(m, 'b-pause')?.textContent).toBe('Resume');
+    expect(id(m, 'b-pause')?.className).toContain('white');
+    expect(id(m, 'b-stepdone')?.className).toContain('ash');
+    // Paused, the clock is not running, so "⌄ Today" does not say it is.
+    expect(hintOf(button(m.container, 'Back to Today'))).toBeUndefined();
+  });
+
+  it('offers five choices paused, and reads them in order', async () => {
+    const m = await focused(TUE_1320, 'pauseLeft');
+    expect(choices(m.container)).toBe(5);
+    expect(readingOrder(m.container)).toEqual([
+      'Back to Today',
+      'Me',
+      'Focus, Write the school email, step 2 of 3',
+      'Undo step done: Find the school address',
+      'Paused: Write the question',
+      'After this: Read it once and send',
+      'Time left',
+      '18 of 25 minutes left',
+      ASIDE,
+      'Note: When is the permission slip due?',
+      'Step done: Write the question',
+      'Resume',
+      'Capture',
+      // The passed call, as paused Today's Next line names it (SPEC 9.8).
+      'Anytime today: Call the dentist',
+    ]);
+  });
+
+  it('opens paused with the estimate used up on the outline and "estimate 25"', async () => {
+    const m = await mount(TUE_1005, 'clockLeftRunning');
+    press(m.container, /^Paused: Write the question\./);
+    const layer = layerOf(m);
+    expect(layer.querySelector('.fmins strong')?.textContent).toBe('estimate 25');
+    expect(layer.querySelector<HTMLElement>('.fmins .rest')?.hidden).toBe(true);
+    expect(layer.querySelector('.bar')?.className).toBe('bar bar-focus is-over is-frozen');
+    expect(visibleText(m.container)).not.toMatch(/\b0 min left/);
+  });
+
+  it('Resume runs it again and the foot offers Undo, which pauses it again', async () => {
+    const m = await focused(TUE_1320, 'pauseLeft');
+    settle(m);
+    press(m.container, 'Resume');
+    expect(model.running(stateOf(m).tasks)?.title).toBe(EMAIL);
+    expect(footOf(m).querySelector('.ff-line')?.textContent).toContain('Resumed');
+    press(m.container, `Undo resume: ${EMAIL}`);
+    expect(model.running(stateOf(m).tasks)).toBeUndefined();
+    expect(m.container.dataset['focus']).toBe('open');
+    expect(document.activeElement).toBe(id(m, 'f-foot'));
+  });
+
+  it('Set aside folds Focus back to Today, whose Next line offers Undo', async () => {
+    const m = await focused(TUE_1320, 'pauseLeft');
+    button(m.container, ASIDE).focus();
+    press(m.container, ASIDE);
+    expect(m.container.dataset['focus']).toBeUndefined();
+    expect(visibleText(m.container.querySelector('.screen')!)).toContain('Nothing running');
+    const handle = id(m, 'b-handle')!;
+    expect(handle.querySelector('.h-l1')?.textContent).toBe('Set aside');
+    expect(button(m.container, `Undo set aside: ${EMAIL}`)).toBeTruthy();
+    expect(document.activeElement).toBe(id(m, 'b-idle'));
+  });
+
+  it('Done on the last step folds Focus back to Today, whose Next line offers Undo', async () => {
+    const m = await focused();
+    settle(m);
+    press(m.container, 'Step done: Write the question');
+    press(m.container, 'Done: Read it once and send');
+    expect(said(m)).toBe(`Done: ${EMAIL}`);
+    expect(m.container.dataset['focus']).toBeUndefined();
+    expect(button(m.container, 'Undo step done: Read it once and send')).toBeTruthy();
+    expect(m.container.dataset['drawer']).toBe('folded');
+  });
+
+  it('"⌄ Today" folds it back into the lantern; the clock keeps running', async () => {
+    const m = await focused();
+    press(m.container, 'Back to Today');
+    expect(m.container.dataset['focus']).toBeUndefined();
+    expect(model.running(stateOf(m).tasks)?.title).toBe(EMAIL);
+    expect(document.activeElement).toBe(id(m, 'b-lit'));
+    // It is read by nothing as it goes, then it is gone.
+    expect(layerOf(m).hasAttribute('inert')).toBe(true);
+    await Promise.resolve();
+    expect(layerOf(m).hidden).toBe(true);
+    expect(layerOf(m).childElementCount).toBe(0);
+    expect(m.container.querySelector('.screen')?.hasAttribute('inert')).toBe(false);
+    expect(m.container.querySelector('.tabs')?.hasAttribute('inert')).toBe(false);
+  });
+
+  it('opens from the capsule on a place as "⌄ Tasks", and goes back there', async () => {
+    const m = await mount(TUE_1005);
+    press(m.container, 'Tasks');
+    press(m.container, CAPSULE);
+    expect(m.container.dataset['focus']).toBe('open');
+    const back = button(m.container, 'Back to Tasks');
+    expect(back.textContent).toBe('Tasks');
+    expect(id(m, 't-tasks')?.getAttribute('aria-current')).toBe('page');
+    press(m.container, 'Back to Tasks');
+    expect(screenTitle(m)).toBe('Tasks');
+    expect(document.activeElement).toBe(id(m, 'b-capsule'));
+  });
+
+  it('opens from the capsule on a page pushed on a tab, and goes back to that page', async () => {
+    const m = await mount(TUE_1005);
+    press(m.container, 'Routines');
+    press(m.container, 'Me');
+    press(m.container, CAPSULE);
+    press(m.container, 'Back to Routines');
+    expect(screenTitle(m)).toBe('Me');
+    expect(id(m, 't-routines')?.getAttribute('aria-current')).toBe('page');
+  });
+
+  it('opens from the capsule on the open drawer, folding it', async () => {
+    const m = await mount(TUE_1005);
+    press(m.container, /^Next, in 25 minutes/);
+    press(m.container, CAPSULE);
+    expect(m.container.dataset['focus']).toBe('open');
+    expect(m.container.dataset['drawer']).toBe('folded');
+    press(m.container, 'Back to Today');
+    expect(id(m, 'b-lit')).not.toBeNull();
+    expect(m.container.dataset['drawer']).toBe('folded');
+  });
+
+  it('keeps help two taps away: Me opens over the tab, and Focus folds away', async () => {
+    const m = await focused();
+    press(m.container, 'Me');
+    expect(m.container.dataset['focus']).toBeUndefined();
+    expect(screenTitle(m)).toBe('Me');
+    press(m.container, 'If things are bad right now');
+    expect(visibleText(m.container)).toContain('Samaritans');
+    // No timer of any kind there.
+    expect(m.container.querySelector('.capsule')).toBeNull();
+  });
+
+  it('is a level of its own in history: back closes it, as "⌄ Today" does', async () => {
+    const m = await mount(TUE_1005);
+    press(m.container, LIT);
+    expect(historyDepth()).toBe(1);
+    goBack();
+    expect(m.container.dataset['focus']).toBeUndefined();
+    expect(id(m, 'b-lit')).not.toBeNull();
+    expect(historyDepth()).toBe(0);
+
+    settle(m);
+    press(m.container, LIT);
+    expect(historyDepth()).toBe(1);
+    press(m.container, 'Back to Today');
+    vi.advanceTimersByTime(1);
+    expect(historyDepth()).toBe(0);
+  });
+
+  it('closes before the page under it, and takes the entry of the drawer it folded', async () => {
+    const m = await mount(TUE_1005);
+    press(m.container, 'Me');
+    press(m.container, /^Next, in 25 minutes/);
+    expect(historyDepth()).toBe(2);
+    const moves = [vi.spyOn(history, 'go'), vi.spyOn(history, 'pushState')];
+    press(m.container, CAPSULE);
+    expect(historyDepth()).toBe(2);
+    expect(moves[0]).not.toHaveBeenCalled();
+    expect(moves[1]).not.toHaveBeenCalled();
+    for (const move of moves) move.mockRestore();
+    goBack();
+    expect(m.container.dataset['focus']).toBeUndefined();
+    expect(screenTitle(m)).toBe('Me');
+    goBack();
+    expect(id(m, 'b-lit')).not.toBeNull();
+  });
+
+  it('hands its entry to Me, opened from it', async () => {
+    const m = await focused();
+    press(m.container, 'Me');
+    expect(historyDepth()).toBe(1);
+    goBack();
+    expect(id(m, 'b-lit')).not.toBeNull();
+    expect(historyDepth()).toBe(0);
+  });
+
+  it('comes back to Focus after a short time away, and to Today after longer', async () => {
+    const m = await focused();
+    window.dispatchEvent(new Event('pagehide'));
+    expect(stateOf(m).bench.ui?.focus).toEqual({ returnTo: 'today' });
+    m.clock.now = new Date(at(TUE_1005).getTime() + 5 * 60_000);
+    window.dispatchEvent(new Event('pageshow'));
+    expect(m.container.dataset['focus']).toBe('open');
+
+    window.dispatchEvent(new Event('pagehide'));
+    m.clock.now = new Date(at(TUE_1005).getTime() + 30 * 60_000);
+    window.dispatchEvent(new Event('pageshow'));
+    expect(m.container.dataset['focus']).toBeUndefined();
+    expect(id(m, 'b-lit')).not.toBeNull();
+  });
+
+  it('opens again on a reload in Focus', async () => {
+    const m = await focused();
+    window.dispatchEvent(new Event('pagehide'));
+    const stored = stateOf(m).bench.ui!;
+    unmount();
+    const again = await mount(TUE_1005, 'example', (state) => ({
+      ...state,
+      bench: { ...state.bench, ui: stored, away: { since: at(TUE_1005).toISOString() } },
+    }));
+    expect(again.container.dataset['focus']).toBe('open');
+    expect(historyDepth()).toBe(1);
+    goBack();
+    expect(again.container.dataset['focus']).toBeUndefined();
   });
 });

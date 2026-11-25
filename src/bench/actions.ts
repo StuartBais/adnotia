@@ -14,8 +14,8 @@
 // stands.
 
 import * as model from '../domains/tasks';
-import { stepFacts, type BenchDomains, type BenchState, type UndoLines } from './state';
-import { ANNOUNCE, T, keptAtStep, resumedAt, say } from './strings';
+import { stepFacts, timeFacts, type BenchDomains, type BenchState, type UndoLines } from './state';
+import { ANNOUNCE, T, keptAtStep, minutesSpoken, resumedAt, say } from './strings';
 
 /** A change that can be taken back for six seconds. */
 export interface Undo {
@@ -25,6 +25,8 @@ export interface Undo {
   name: string;
   /** Takes the change back, on the state as it is when Undo is pressed. */
   inverse: (state: BenchDomains, now: Date) => BenchDomains;
+  /** The step a Step done finished, so its disc in Focus can end this Undo. */
+  step?: string;
 }
 
 export interface Changed {
@@ -194,6 +196,7 @@ export function stepDone(state: BenchDomains, id: string, now: Date): Changed {
     undo: {
       lines: { line1: T.stepDone, line2: step.title },
       name: say.undoStepDone(step.title),
+      step: step.id,
       inverse: (current) =>
         find(current, step.id)
           ? { ...current, tasks: model.reopen(current.tasks, step.id) }
@@ -220,6 +223,46 @@ export function setAside(state: BenchDomains, id: string, now: Date): Changed {
         };
       },
     },
+  };
+}
+
+/**
+ * +5 min, in Focus (SPEC 5.4): five more minutes on the task's estimate. With
+ * the estimate used up it first comes up to the whole minutes worked, so the
+ * bar shows five minutes left; with no estimate it becomes the whole minutes
+ * worked plus five (owner question 6). Not taken back: SPEC 9.8 lists no six
+ * seconds for it, and the minutes it changed are beside it. SPEC 11 gives it
+ * no announcement; it says what the bar now reads, so a tap is not silent.
+ */
+export function addFive(state: BenchDomains, id: string, now: Date): Changed {
+  const task = find(state, id);
+  if (!task || task.doneAt !== undefined) return { state };
+  const facts = timeFacts(task, now);
+  const base = facts.estimate === undefined ? facts.soFar : Math.max(facts.estimate, facts.soFar);
+  const tasks = model.setEstimate(state.tasks, id, base + 5);
+  // Said as the bar beside it now reads: "23 of 30 minutes left, ends 10:28".
+  const after = timeFacts(find({ ...state, tasks }, id) ?? task, now);
+  return {
+    state: { ...state, tasks },
+    announce: minutesSpoken({
+      kind: 'left',
+      left: after.left ?? 0,
+      estimate: after.estimate ?? 0,
+      endsAt: after.endsAt,
+    }),
+  };
+}
+
+/**
+ * A done step's disc, in Focus (SPEC 9.7): not done after all, and the current
+ * step again. It is its own way back, as a ticked row's disc is.
+ */
+export function reopenStep(state: BenchDomains, stepId: string): Changed {
+  const step = find(state, stepId);
+  if (!step || step.doneAt === undefined) return { state };
+  return {
+    state: { ...state, tasks: model.reopen(state.tasks, stepId) },
+    announce: ANNOUNCE.undoneThen(ANNOUNCE.now(step.title)),
   };
 }
 

@@ -331,7 +331,7 @@ svg.i28 {
   color: var(--charcoal);
 }
 .app[data-places='white'][data-ground='place'] .screen,
-.app[data-places='white'][data-ground='place'] .dock {
+.app[data-places='white'][data-ground='place']:not([data-focus]) .dock {
   --ring: var(--charcoal);
 }
 
@@ -985,6 +985,238 @@ svg.i28 {
 /* The name at width 95, so "18 min left · Write the school email" fits 238 whole. */
 .capsule .c2 .tn > span:last-child {
   font-stretch: 95%;
+}
+
+/* ═════════════ Focus (SPEC 5.4): the capsule opened all the way ═════════════ */
+
+/* Charcoal edge to edge, over everything but the dock line, with the lantern's
+   falloff behind the step at (190, 330). No stone and no white anywhere. */
+.focus {
+  position: absolute;
+  inset: 0;
+  z-index: 26;
+  background:
+    radial-gradient(
+      ellipse 360px 300px at 190px calc(var(--sa-top) + 276px),
+      var(--lamp) 0%,
+      rgba(50, 54, 52, 0.66) 38%,
+      rgba(50, 54, 52, 0.22) 72%,
+      rgba(34, 38, 36, 0) 100%
+    ),
+    var(--charcoal);
+  color: var(--white);
+}
+/* The foot, below the hairline at 754, read after the dock line. */
+.ffoot {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: var(--hair-b);
+  z-index: 27;
+  color: var(--ash);
+}
+.focus[hidden],
+.ffoot[hidden] {
+  display: none;
+}
+
+/* The content, from the context line at 166, scrolling only if a long step or
+   large text would take it under the dock line. */
+.fbody {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: var(--content-t);
+  bottom: calc(var(--dock-b) + 64px + 8px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 56px 24px 16px;
+  -webkit-overflow-scrolling: touch;
+}
+/* 166–186: "Focus" in ash at 650, then the task and the step count at 500. */
+.fctx {
+  height: 20px;
+  color: var(--ash);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.fctx b {
+  font-weight: 650;
+}
+/* 210–234: the done step's sage disc, in a 44 pt target, and the step in ash. */
+.fdone {
+  margin-top: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 17px;
+  line-height: 22px;
+  font-weight: 500;
+  color: var(--ash);
+  white-space: nowrap;
+}
+.fdone-t {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.fdisc {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  margin: -10px;
+  display: grid;
+  place-items: center;
+  color: var(--charcoal);
+}
+.fdisc > span {
+  width: 24px;
+  height: 24px;
+  border-radius: 12px;
+  background: var(--sage);
+  color: var(--charcoal);
+  display: grid;
+  place-items: center;
+}
+/* 252–352: the step, the one white heading, 44/50 at 700. */
+.fstep {
+  margin-top: 18px;
+  color: var(--white);
+  text-wrap: balance;
+}
+/* 366–388: "After this:" at 650, then the next step, in ash. */
+.fafter {
+  margin-top: 14px;
+  min-height: 22px;
+  color: var(--ash);
+}
+.fafter b {
+  font-weight: 650;
+}
+/* 420–432: the bar edge to edge, x 0–390, its ends square. */
+.fbody > .bar {
+  margin: 32px -24px 0;
+  width: auto;
+}
+/* 452–502: the minutes stacked, with +5 min (or Set aside) at 455–499 beside
+   them. Where the two no longer fit on one row, the pill goes under the
+   minutes, at the left (SPEC 11, large text). */
+.frow {
+  margin-top: 20px;
+  min-height: 50px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+}
+.fmins {
+  min-width: 0;
+  white-space: nowrap;
+}
+.fmins-shown {
+  display: flex;
+  flex-direction: column;
+}
+.fmins strong {
+  color: var(--terra);
+}
+.fmins strong.still {
+  color: var(--white);
+}
+.fmins .rest {
+  color: var(--ash);
+}
+/* 526–546: the note, as on Today. */
+.fbody > .note {
+  margin-top: 24px;
+}
+.fnote .note-shown {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+/* Compact heights: the dock line sits higher, so the lamp's gap and the gaps
+   between the parts close up, and a two-line step still clears the dock line
+   on a 667 pt screen. Undrawn: a proposal, as the compact handle is (SPEC 3). */
+@media (max-height: 739px) {
+  .fbody {
+    padding-top: 12px;
+  }
+  .fdone {
+    margin-top: 16px;
+  }
+  .fstep {
+    margin-top: 14px;
+  }
+  .fafter {
+    margin-top: 10px;
+  }
+  .fbody > .bar {
+    margin-top: 22px;
+  }
+  .frow {
+    margin-top: 14px;
+  }
+  .fbody > .note {
+    margin-top: 16px;
+  }
+}
+/* 754: a hairline of hair-dark, where the tabs' hairline is on a tabbed screen. */
+.ffoot .hair {
+  position: absolute;
+  left: 24px;
+  right: 24px;
+  top: 0;
+  height: 1px;
+  background: var(--hair-dark);
+}
+/* 776–796: the foot, text only. A long title is cut; its "in" part keeps its place. */
+.ff-line {
+  position: absolute;
+  left: 24px;
+  right: 24px;
+  bottom: calc(var(--tabs-b) + 16px);
+  height: 20px;
+  white-space: nowrap;
+}
+.ff-line.with-undo {
+  right: 110px;
+}
+.ff-line:focus-visible {
+  outline-offset: 4px;
+}
+.ff-shown {
+  display: flex;
+  min-width: 0;
+}
+.ff-shown > * {
+  flex: none;
+}
+.ff-shown > .ff-item {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* For six seconds after a tap: the Next line's Undo, at 764–808. */
+.ffoot .undo {
+  position: absolute;
+  right: 24px;
+  bottom: calc(var(--tabs-b) + 4px);
+  height: 44px;
+  padding: 0 20px;
+  border-radius: 22px;
+  display: inline-flex;
+  align-items: center;
+  background: var(--tint-stone);
+  color: var(--charcoal);
+  font-size: 15px;
+  line-height: 20px;
+  font-weight: 600;
 }
 
 /* ═════════════ The drawer (SPEC 9.8) ═════════════ */
