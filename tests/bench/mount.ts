@@ -147,14 +147,16 @@ export function controls(container: HTMLElement): HTMLElement[] {
 /**
  * The main choices on a screen (SPEC 3 "Counting the five choices"): the
  * frame is not counted (the tabs, Me, a back control, "⋯" and the drawer's
- * handle), and a list counts once however many rows it has.
+ * handle, which on the open drawer is Hide), and a list counts once however
+ * many rows it has.
  */
 export function choices(container: HTMLElement): number {
   let lists = 0;
   const seen = new Set<Element>();
   let count = 0;
   for (const node of controls(container)) {
-    if (node.closest('nav') || ['b-me', 'b-handle', 'b-back'].includes(node.id)) continue;
+    if (node.closest('nav') || node.classList.contains('me')) continue;
+    if (['b-handle', 'b-hide', 'b-back'].includes(node.id)) continue;
     const list = node.closest('.list');
     if (list) {
       if (!seen.has(list)) {

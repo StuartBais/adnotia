@@ -39,12 +39,15 @@ export function hints(): HTMLElement {
 
 // ---------------------------------------------------------------- header
 
-/** Me, at the right of the header row on every screen: two taps from help. */
-export function meButton(onMe: () => void): HTMLElement {
+/**
+ * Me, at the right of the header row on every screen: two taps from help. The
+ * open drawer carries its own, over a screen made inert, so it has its own id.
+ */
+export function meButton(onMe: () => void, id = 'b-me'): HTMLElement {
   return h('button', {
     class: 'me',
     type: 'button',
-    id: 'b-me',
+    id,
     'data-geo': 'me',
     'aria-describedby': HINT_IDS.me,
     text: SAY.me,
@@ -277,6 +280,101 @@ export function halfDrawer(props: HalfProps): Node[] {
   ];
 }
 
+export interface OpenProps extends Omit<HalfProps, 'onOpen'> {
+  onMe: () => void;
+}
+
+/** The open drawer, and a way to move its next row's "in N min" in place. */
+export interface Opened {
+  nodes: Node[];
+  /** The "in" line and each timed row's spoken name follow the clock. */
+  set(list: DayList): void;
+}
+
+/**
+ * The open drawer (SPEC 5.2): from y 60, the grabber, a header row with
+ * "Rest of today" as a place title and Me, then the whole of today, ending
+ * above the dock line on a covered row. Below that edge the drawer is a plain
+ * stone band, the cover, which the capsule and capture sit on; "⌄ Hide" is at
+ * its foot, in its own layer so it is read after them (see hideFoot).
+ *
+ * Only the next timed row carries its "in 25 min" line, and anytime titles
+ * run full width: capture sits on the cover, not over the list.
+ */
+export function openDrawer(props: OpenProps): Opened {
+  const heading = h('h1', {
+    class: 'place-title t-place',
+    id: 'h-rest',
+    tabindex: '-1',
+    // SPEC 11: opening the drawer lands focus here.
+    'data-focus-home': true,
+    text: T.restOfToday,
+  });
+  const list = h(
+    'div',
+    { class: 'list', 'data-scroll-key': 'open' },
+    ...dayListNodes(props, false),
+  );
+  return {
+    nodes: [
+      h('span', { class: 'grab', 'aria-hidden': 'true' }),
+      h(
+        'header',
+        { class: 'hdr', 'data-geo': 'open-hdr' },
+        heading,
+        meButton(props.onMe, 'b-me-rest'),
+      ),
+      h(
+        'div',
+        { class: 'viewport open' },
+        list,
+        h('span', { class: 'covered', 'aria-hidden': 'true' }),
+      ),
+      h('span', { class: 'coverband', 'aria-hidden': 'true' }),
+    ],
+    set(next) {
+      for (const row of next.later) {
+        const button = list.querySelector<HTMLElement>(`[id="r-${row.id}"]`);
+        if (!button) continue;
+        if (button.getAttribute('aria-label') !== row.label) {
+          button.setAttribute('aria-label', row.label);
+        }
+        const small = button.querySelector('small');
+        if (small && row.inLine !== undefined && small.textContent !== row.inLine) {
+          small.textContent = row.inLine;
+        }
+      }
+    },
+  };
+}
+
+/**
+ * "⌄ Hide", the open drawer's handle (SPEC 9.8): one button over the band
+ * 684–754, where the folded handle is, its words at the right exactly where
+ * "Rest of today ⌃" stands when folded. So the drawer opens and closes from
+ * one spot. The left of the band is plain stone.
+ */
+export function hideFoot(onHide: () => void): Node[] {
+  return [
+    h(
+      'button',
+      {
+        class: 'handle hide',
+        type: 'button',
+        id: 'b-hide',
+        'aria-label': SAY.hide,
+        onclick: onHide,
+      },
+      h(
+        'span',
+        { class: 'h-more t-label', 'aria-hidden': 'true', 'data-geo': 'hide' },
+        icon('down', 20),
+        T.hide,
+      ),
+    ),
+  ];
+}
+
 /** The day's list: Later today, Anytime today, and Done today when it is on. */
 export function dayListNodes(
   props: Pick<HalfProps, 'list' | 'onRow' | 'onTick' | 'onUntick'>,
@@ -293,7 +391,7 @@ export function dayListNodes(
         ...list.later.map((row) =>
           h(
             'li',
-            { class: 'row trow', 'data-row': true },
+            { class: row.inLine === undefined ? 'row trow' : 'row trow two', 'data-row': true },
             h(
               'button',
               {

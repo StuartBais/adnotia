@@ -14,10 +14,10 @@
 // person's focus, scroll or a tap in progress.
 //
 // Built so far (plan section 19, chunk 2): the frame, Today in every state,
-// the drawer at rest at its lip, folded and half, the capsule on the places,
-// the tabs with bare places, Me with the crisis page, and About with the
-// scenario buttons. Focus, capture, the open drawer and Undo come next; their
-// controls are in place and do nothing yet.
+// the drawer at rest at its lip, folded and half and open by tap, the capsule
+// on the places and the open drawer, the tabs with bare places, Me with the
+// crisis page, and About with the scenario buttons. Focus and capture come
+// next; their controls are in place and do nothing yet.
 
 import { emptyDomains, type KernelStore } from '../kernel/store';
 import * as act from './actions';
@@ -46,7 +46,17 @@ import {
   type View,
 } from './state';
 import { createTicker, type Ticker } from './clock';
-import { dock, foldedDrawer, halfDrawer, hints, tabs, type Built, type DockProps } from './frame';
+import {
+  dock,
+  foldedDrawer,
+  halfDrawer,
+  hideFoot,
+  hints,
+  openDrawer as openDrawerNodes,
+  tabs,
+  type Built,
+  type DockProps,
+} from './frame';
 import { lampOf, todayScreen } from './screens/today';
 import {
   BACK_TO,
@@ -134,6 +144,9 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
     fade: h('div', { class: 'fade', 'aria-hidden': 'true', hidden: true }),
     dock: h('div', { class: 'dock', 'data-geo': 'dock' }),
     drawer: h('div', { class: 'drawer', 'data-geo': 'drawer' }),
+    // "⌄ Hide" at the open drawer's foot: its own layer, so it is read after
+    // the capsule and capture on the cover (SPEC 11, list 2).
+    foot: h('div', { class: 'foot' }),
     tabs: h('div', { class: 'tabs' }),
     live: h('div', { class: 'live', 'aria-live': 'polite' }),
   };
@@ -144,6 +157,8 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
   /** Rows ticked since the list was opened: they stay in place as discs. */
   const ticked = new Set<string>();
   let shown: { position: DrawerPosition; tab: Tab; page: string | undefined } | undefined;
+  /** Where the drawer rested before it was opened, so Hide returns there. */
+  let beforeOpen: { key: 'running' | 'idle'; position: 'half' | 'folded' } | undefined;
   let order = '';
   let barRunning = false;
   let destroyed = false;
@@ -197,7 +212,8 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
    * block, rather than falling to the page.
    */
   function landFocus(): void {
-    container.querySelector<HTMLElement>('[data-focus-home]')?.focus({ preventScroll: true });
+    const homes = container.querySelectorAll<HTMLElement>('[data-focus-home]');
+    [...homes].find((home) => !home.closest('[inert]'))?.focus({ preventScroll: true });
   }
 
   function scrollOf(root: ParentNode): Record<string, number> {
@@ -233,13 +249,12 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
     const byMinute = motion(state) === 'reduced';
     const places = state.bench.settings.places;
 
-    // The drawer. Its open position is built next (plan section 19); until
-    // then it rests where it would fold to. Below 740 pt the half drawer would
-    // bring timed rows under capture's lane, so it rests folded there, as it
-    // does at large text sizes (SPEC 9.8); a proposal, since SPEC draws the
-    // half drawer at 844 only.
+    // The drawer. Below 740 pt the half drawer would bring timed rows under
+    // capture's lane, so it rests folded there, as it does at large text sizes
+    // (SPEC 9.8); a proposal, since SPEC draws the half drawer at 844 only.
     const rule = drawerPositions(state, t, { view, largeText: compact() });
-    const position: DrawerPosition = rule.position === 'open' ? 'folded' : rule.position;
+    const position = rule.position;
+    const open = position === 'open';
     const ground = view.kind === 'today' ? 'present' : 'place';
 
     // Moving between lists clears the rows ticked in them.
@@ -265,11 +280,18 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
     if (today) layer.screen.dataset['lamp'] = lampOf(today);
     else delete layer.screen.dataset['lamp'];
     paint(layer.screen, screenKey(view, today), () => screen(view, today, live));
+    // The open drawer covers the screen: what is under it is not read or reached.
+    for (const under of [layer.screen, layer.fade]) {
+      if (open) under.setAttribute('inert', '');
+      else under.removeAttribute('inert');
+    }
 
-    // The dock line.
+    // The dock line. On the open drawer the lantern has folded into the
+    // capsule, which sits on the cover with capture (SPEC 5.2).
     const mode = capsuleMode(view, current, position, false);
+    const lit = today?.kind === 'lit' && !open;
     const capsule =
-      today?.kind !== 'lit' && mode !== 'hidden' && presentNow && live
+      !lit && mode !== 'hidden' && presentNow && live
         ? {
             view: presentNow,
             live,
@@ -279,7 +301,7 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
           }
         : undefined;
     const props: DockProps = {
-      ...(today?.kind === 'lit'
+      ...(lit && today?.kind === 'lit'
         ? {
             present: {
               taskId: today.present.task.id,
@@ -294,37 +316,49 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
         : {}),
       ...(capsule ? { capsule } : {}),
       captureOnLight:
-        (ground === 'present' && position === 'half') || (ground === 'place' && places === 'white'),
+        open ||
+        (ground === 'present' && position === 'half') ||
+        (ground === 'place' && places === 'white'),
       draftKept: state.bench.drafts.capture !== undefined && state.bench.drafts.capture.text !== '',
       onCapture: openCapture,
     };
     paint(layer.dock, dockKey(props), () => dock(props));
-    layer.fade.hidden = !(ground === 'place' && capsule !== undefined);
+    layer.fade.hidden = !(ground === 'place' && capsule !== undefined && !open);
 
-    // The drawer at rest.
+    // The drawer, and Hide at its foot when it is open.
     if (position === 'lip') layer.drawer.setAttribute('inert', '');
     else layer.drawer.removeAttribute('inert');
     paint(layer.drawer, drawerKey(state, t, position, today), () =>
       drawer(state, t, position, today),
     );
+    paint(layer.foot, open ? 'hide' : '', () => ({ nodes: open ? hideFoot(hideDrawer) : [] }));
 
     // The tabs.
     paint(layer.tabs, nav.tab, () => ({ nodes: tabs(nav.tab, chooseTab) }));
 
     // Reading order: top to bottom, then the dock line, then the drawer, except
-    // on the half drawer, whose list is read before capture (SPEC 11, list 7).
-    // Moving a node takes focus off anything inside it, so only the drawer
-    // moves, and focus is put back where it was.
-    const wanted = position === 'half' ? 'half' : 'rest';
+    // where the drawer's list is read before capture: on the half drawer (SPEC
+    // 11, list 7) and the open one, whose Hide is read after the dock line from
+    // its own layer (list 2). Moving a node takes focus off anything inside it,
+    // so only the drawer moves, and focus is put back where it was.
+    const wanted = position === 'half' || open ? 'list-first' : 'dock-first';
     if (order === '') {
       container.append(
-        ...(wanted === 'half'
-          ? [layer.screen, layer.fade, layer.drawer, layer.dock, layer.tabs, layer.live]
-          : [layer.screen, layer.fade, layer.dock, layer.drawer, layer.tabs, layer.live]),
+        ...(wanted === 'list-first'
+          ? [layer.screen, layer.fade, layer.drawer, layer.dock, layer.foot, layer.tabs, layer.live]
+          : [
+              layer.screen,
+              layer.fade,
+              layer.dock,
+              layer.drawer,
+              layer.foot,
+              layer.tabs,
+              layer.live,
+            ]),
       );
     } else if (order !== wanted) {
       const active = document.activeElement;
-      container.insertBefore(layer.drawer, wanted === 'half' ? layer.dock : layer.tabs);
+      container.insertBefore(layer.drawer, wanted === 'list-first' ? layer.dock : layer.foot);
       if (
         active instanceof HTMLElement &&
         active.isConnected &&
@@ -470,6 +504,17 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
       const list = dayList(state, t, { keep: ticked, ...exclusion(today) });
       return JSON.stringify(['half', list]);
     }
+    if (position === 'open') {
+      // The next row's "in N min" and the spoken names follow the clock and are
+      // moved in place; which row carries the "in" line is part of the key.
+      const list = dayList(state, t, { keep: ticked, inLine: true });
+      const later = list.later.map((row) => ({
+        ...row,
+        inLine: row.inLine !== undefined,
+        label: undefined,
+      }));
+      return JSON.stringify(['open', { ...list, later }]);
+    }
     // "in N min" follows the clock and is moved in place; whether it is there is not.
     const next = nextLine(state, t);
     const shape =
@@ -489,18 +534,39 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
     today: ReturnType<typeof todayView> | undefined,
   ): Built {
     if (position === 'lip') return { nodes: [] };
+    const rows = {
+      onRow: openTask,
+      onTick: (id: string) => {
+        ticked.add(id);
+        run(act.tick, id);
+      },
+      onUntick: (id: string) => run(act.untick, id),
+    };
     if (position === 'half') {
       return {
         nodes: halfDrawer({
           list: dayList(state, t, { keep: ticked, ...exclusion(today) }),
           onOpen: openDrawer,
-          onRow: (id) => push({ kind: 'task', id }),
-          onTick: (id) => {
-            ticked.add(id);
-            run(act.tick, id);
-          },
-          onUntick: (id) => run(act.untick, id),
+          ...rows,
         }),
+      };
+    }
+    if (position === 'open') {
+      // The whole of today: the idle lantern is under the drawer, so the item
+      // it lights is listed here too.
+      const opened = openDrawerNodes({
+        list: dayList(state, t, { keep: ticked, inLine: true }),
+        onMe: () => {
+          foldDrawer(false);
+          openMe();
+        },
+        ...rows,
+      });
+      return {
+        nodes: opened.nodes,
+        patch() {
+          opened.set(dayList(read(), now(), { keep: ticked, inLine: true }));
+        },
       };
     }
     const next = nextLine(state, t);
@@ -614,10 +680,82 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
     else push({ kind: 'me' });
   }
 
-  /** A tab clears the pages pushed on the current one. */
+  /**
+   * A tab clears the pages pushed on the current one. With the drawer open,
+   * the current tab folds it and leaves the person exactly where they were
+   * (SPEC 5.2); another tab folds it and goes there.
+   */
   function chooseTab(tab: Tab): void {
+    if (isOpen()) {
+      foldDrawer(false);
+      if (tab === nav.tab) return;
+    }
     if (tab === nav.tab && nav.stack.length === 0) return;
     go({ tab, stack: [], list: nav.list });
+  }
+
+  /** A row in the day's list opens its task; from the open drawer, folding it. */
+  function openTask(id: string): void {
+    if (isOpen()) foldDrawer(false);
+    push({ kind: 'task', id });
+  }
+
+  // ---------------------------------------------------------------- the drawer
+
+  function isOpen(): boolean {
+    return shown?.position === 'open';
+  }
+
+  /** Which of the day's two remembered positions applies now: running or idle. */
+  function drawerKeyNow(state: BenchDomains): 'running' | 'idle' | undefined {
+    const rule = drawerPositions(state, now(), { view: viewOf(), largeText: compact() });
+    if (rule.mode === 'lip') return undefined;
+    return rule.mode === 'present' ? 'running' : 'idle';
+  }
+
+  function writeDrawer(state: BenchDomains, key: 'running' | 'idle', position: DrawerPosition) {
+    commit({
+      ...state,
+      bench: { ...state.bench, drawer: { ...state.bench.drawer, [key]: position } },
+    });
+  }
+
+  /**
+   * The handle, folded or half: the whole of today pulls up over the current
+   * tab, which stays current, and focus lands on its heading (SPEC 11).
+   */
+  function openDrawer(): void {
+    if (isOpen()) return;
+    const state = read();
+    const key = drawerKeyNow(state);
+    if (!key) return;
+    const was = shown?.position;
+    beforeOpen = { key, position: was === 'half' ? 'half' : 'folded' };
+    writeDrawer(state, key, 'open');
+    container.querySelector<HTMLElement>('#h-rest')?.focus({ preventScroll: true });
+  }
+
+  /**
+   * Back to where the drawer rested before it opened: half on idle Today,
+   * folded elsewhere. From Hide or back, focus goes to the handle, in the
+   * same spot; when a row, Me or a tab folds it, the place it leads to has it.
+   */
+  function foldDrawer(toHandle: boolean): void {
+    if (!isOpen()) return;
+    const state = read();
+    const key = drawerKeyNow(state);
+    if (!key) return;
+    const back =
+      beforeOpen?.key === key ? beforeOpen.position : key === 'running' ? 'folded' : 'half';
+    beforeOpen = undefined;
+    writeDrawer(state, key, back);
+    const handle = toHandle ? container.querySelector<HTMLElement>('#b-handle') : null;
+    if (handle) handle.focus({ preventScroll: true });
+    else if (focusLost()) landFocus();
+  }
+
+  function hideDrawer(): void {
+    foldDrawer(true);
   }
 
   function scenario(id: ScenarioId): void {
@@ -634,11 +772,10 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
     go({ ...TODAY });
   }
 
-  // Built in the chunks that follow (plan section 19): Focus (3), capture (4)
-  // and the open drawer (the rest of 2). Their controls are where they belong.
+  // Built in the chunks that follow (plan section 19): Focus (3) and capture
+  // (4). Their controls are where they belong.
   function openFocus(): void {}
   function openCapture(): void {}
-  function openDrawer(): void {}
 
   // ---------------------------------------------------------------- the page
 

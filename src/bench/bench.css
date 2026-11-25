@@ -1210,6 +1210,79 @@ svg.i28 {
   margin-top: 12px;
 }
 
+/* ═════════════ The open drawer (SPEC 5.2), from y 60 ═════════════ */
+
+/* Its grabber at 66, and its header row 76–120: 18 lower than on every other
+   screen, under its own grabber, so the canvas is still felt above it. */
+.app[data-drawer='open'] .drawer .grab {
+  top: 6px;
+}
+.drawer .hdr {
+  top: 16px;
+}
+.drawer .place-title {
+  color: var(--charcoal);
+}
+.drawer .me {
+  background: var(--tint-stone);
+  color: var(--charcoal);
+}
+/* The list from "Later today" at 132, ending above the dock line at 606. */
+.viewport.open {
+  top: 66px;
+  bottom: calc(var(--open-t) + var(--dock-b) + 64px);
+}
+.viewport.open .list ul + .lbl {
+  margin-top: 16px;
+}
+/* The cover: plain stone from the dock line down, which the capsule and capture
+   sit on with nothing passing behind them. Its faint top shadow falls onto the
+   list only where the list goes on under it (data-more). */
+.coverband {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: calc(var(--open-t) + var(--dock-b) + 64px);
+  background: var(--stone);
+  pointer-events: none;
+}
+.app[data-drawer='open'][data-more] .coverband {
+  box-shadow: var(--sh-cover);
+}
+/* The capsule on the cover is plain charcoal on stone: its ring is charcoal too. */
+.app[data-drawer='open'] .dock {
+  --ring: var(--charcoal);
+}
+
+/* "⌄ Hide": one button over the folded handle's band, 684–754, its words at
+   715–735 with their ink ending at x 366, where "Rest of today ⌃" stands. */
+.foot {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: var(--hair-b);
+  height: var(--handle);
+  z-index: 25;
+  --ring: var(--charcoal);
+}
+.foot:empty {
+  display: none;
+}
+.handle.hide {
+  height: 100%;
+  border-radius: 0;
+}
+.handle.hide .h-more {
+  right: 24px;
+  gap: 4px;
+}
+@media (max-height: 739px) {
+  .handle.hide .h-more {
+    top: 19px;
+  }
+}
+
 /* ═════════════ Rows (SPEC 9.7) ═════════════ */
 
 .row {
@@ -1230,6 +1303,14 @@ svg.i28 {
 }
 .trow .rowbtn {
   align-items: center;
+}
+/* The next row on the open drawer: its "in 25 min" under the title, the time
+   and the length on the title's line (62 tall). */
+.trow.two .rowbtn {
+  align-items: flex-start;
+}
+.trow.two .dur {
+  margin-top: 1px;
 }
 .trow .t {
   flex: none;

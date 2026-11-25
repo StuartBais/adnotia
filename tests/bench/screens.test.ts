@@ -658,6 +658,208 @@ describe('7b · Nothing planned (SPEC 5.7b)', () => {
   });
 });
 
+describe('2 · The rest of today, the drawer open (SPEC 5.2)', () => {
+  const HANDLE = 'Next, in 25 minutes: 10:30, Call the dentist. Rest of today';
+  const CAPSULE =
+    'Now: Write the question, step 2 of 3 of Write the school email. 18 of 25 minutes left, ends 10:23.';
+  const LATER = [
+    '10:30, Call the dentist, in 25 minutes, 10 minutes',
+    '11:00, Walk to the park, 20 minutes',
+    '14:00, Ring the bank, 15 minutes',
+  ];
+  const ANYTIME = [
+    'Renew the parking permit',
+    'Order printer ink',
+    'Book the boiler service',
+    'Pay the window cleaner',
+    'Text Sam about Saturday',
+    'Water the plants',
+    'Find the passport',
+    'Back up the photos',
+    'Post the birthday card',
+    'Sort the recycling',
+  ];
+
+  async function opened(atTime = TUE_1005, scenario: 'example' | 'notStarted' = 'example') {
+    const m = await mount(atTime, scenario);
+    press(m.container, scenario === 'example' ? HANDLE : 'Rest of today');
+    return m;
+  }
+
+  it('opens from the handle over Today, which stays current, and lands focus on its heading', async () => {
+    const m = await opened();
+    expect(m.container.dataset['drawer']).toBe('open');
+    expect(stateOf(m).bench.drawer.running).toBe('open');
+    const heading = m.container.querySelector('.drawer h1')!;
+    expect(heading.textContent).toBe('Rest of today');
+    expect(document.activeElement).toBe(heading);
+    expect(id(m, 't-today')?.getAttribute('aria-current')).toBe('page');
+    // What is under the drawer is neither read nor reached.
+    expect(m.container.querySelector('.screen')?.hasAttribute('inert')).toBe(true);
+  });
+
+  it('carries the step in the capsule, plain on the stone, beside capture', async () => {
+    const m = await opened();
+    const capsule = button(m.container, CAPSULE);
+    expect(capsule.classList.contains('lift')).toBe(false);
+    expect(hintOf(capsule)).toBe('Opens focus.');
+    expect(id(m, 'b-capture')?.classList.contains('on-light')).toBe(true);
+    expect(id(m, 'b-stepdone')).toBeNull();
+    expect(() => button(m.container, 'Pause')).toThrow();
+  });
+
+  it('holds only its title and Me in the header row, and Hide at the foot', async () => {
+    const m = await opened();
+    const header = m.container.querySelector('.drawer header')!;
+    expect([...header.children].map((child) => child.textContent)).toEqual(['Rest of today', 'Me']);
+    const hide = button(m.container, 'Hide the rest of today');
+    expect(header.contains(hide)).toBe(false);
+    expect(hide.closest('.foot')).not.toBeNull();
+    expect(hide.textContent).toBe('Hide');
+  });
+
+  it('lists the whole of today, the next timed row alone with its "in" line', async () => {
+    const m = await opened();
+    const list = m.container.querySelector('.drawer .list')!;
+    expect(list.textContent).not.toContain(EMAIL);
+    const later = [...list.querySelectorAll('.trow')];
+    expect(later.map((row) => row.querySelector('small')?.textContent)).toEqual([
+      'in 25 min',
+      undefined,
+      undefined,
+    ]);
+    expect(later[0]?.classList.contains('two')).toBe(true);
+    // The tracks share the 20 min track's slot, so every number ends on one line.
+    expect(
+      [...list.querySelectorAll<HTMLElement>('.trow .dur .m')].map((m) => [
+        m.style.width,
+        m.style.marginRight,
+      ]),
+    ).toEqual([
+      ['15px', '15px'],
+      ['30px', '0px'],
+      ['22.5px', '7.5px'],
+    ]);
+    // Anytime titles run full width: capture sits on the cover, not over the list.
+    expect(list.querySelector('.rrow.lane')).toBeNull();
+    expect(list.querySelectorAll('.rrow')).toHaveLength(10);
+  });
+
+  it('offers three choices, and reads them in SPEC 11’s order', async () => {
+    const m = await opened();
+    expect(choices(m.container)).toBe(3);
+    expect(readingOrder(m.container)).toEqual([
+      'Rest of today',
+      'Me',
+      'Later today',
+      ...LATER,
+      'Anytime today',
+      ...ANYTIME.flatMap((title) => [`Mark done: ${title}`, title]),
+      CAPSULE,
+      'Capture',
+      'Hide the rest of today',
+      ...TABS,
+    ]);
+  });
+
+  it('folds with Hide, where it opened, and puts focus on the handle', async () => {
+    const m = await opened();
+    press(m.container, 'Hide the rest of today');
+    expect(m.container.dataset['drawer']).toBe('folded');
+    expect(stateOf(m).bench.drawer.running).toBe('folded');
+    expect(document.activeElement).toBe(id(m, 'b-handle'));
+    expect(id(m, 'b-lit')).not.toBeNull();
+    expect(m.container.querySelector('.screen')?.hasAttribute('inert')).toBe(false);
+    expect(id(m, 'b-hide')).toBeNull();
+  });
+
+  it('returns to the half drawer when it was opened from there', async () => {
+    const m = await opened(TUE_0958, 'notStarted');
+    expect(m.container.dataset['drawer']).toBe('open');
+    // The idle lantern is under the drawer, so the item it lights is listed too.
+    expect(m.container.querySelector('.drawer .list')?.textContent).toContain(EMAIL);
+    press(m.container, 'Hide the rest of today');
+    expect(m.container.dataset['drawer']).toBe('half');
+  });
+
+  it('folds when the current tab is tapped, and goes when another is', async () => {
+    const m = await opened();
+    press(m.container, 'Today');
+    expect(m.container.dataset['drawer']).toBe('folded');
+    expect(id(m, 'b-lit')).not.toBeNull();
+    press(m.container, HANDLE);
+    press(m.container, 'Tasks');
+    expect(m.container.dataset['drawer']).toBe('folded');
+    expect(id(m, 't-tasks')?.getAttribute('aria-current')).toBe('page');
+  });
+
+  it('opens over a place, which stays current', async () => {
+    const m = await mount(TUE_1005);
+    press(m.container, 'Routines');
+    press(m.container, HANDLE);
+    expect(m.container.dataset['drawer']).toBe('open');
+    expect(id(m, 't-routines')?.getAttribute('aria-current')).toBe('page');
+    expect(m.container.querySelector('.fade')?.hasAttribute('hidden')).toBe(true);
+    press(m.container, 'Hide the rest of today');
+    expect(m.container.querySelector('.screen h1')?.textContent).toBe('Routines');
+  });
+
+  it('opens a row’s task, folding the drawer', async () => {
+    const m = await opened();
+    press(m.container, LATER[0]!);
+    expect(m.container.dataset['drawer']).toBe('folded');
+    expect(m.container.querySelector('.screen h1')?.textContent).toBe('Call the dentist');
+  });
+
+  it('ticks a ring in place, its disc the way back', async () => {
+    const m = await opened();
+    press(m.container, 'Mark done: Order printer ink');
+    expect(said(m)).toBe('Done: Order printer ink');
+    expect(titled(stateOf(m), 'Order printer ink').doneAt).toBeDefined();
+    press(m.container, 'Undo done: Order printer ink');
+    expect(titled(stateOf(m), 'Order printer ink').doneAt).toBeUndefined();
+  });
+
+  it('opens Me from its header, folding the drawer', async () => {
+    const m = await opened();
+    press(m.container, 'Me');
+    expect(m.container.dataset['drawer']).toBe('folded');
+    expect(m.container.querySelector('.screen h1')?.textContent).toBe('Me');
+  });
+
+  it('moves the next row’s "in N min" in place, without rebuilding the list', async () => {
+    const m = await opened();
+    const row = button(m.container, LATER[0]!);
+    advance(m, 1);
+    expect(button(m.container, '10:30, Call the dentist, in 24 minutes, 10 minutes')).toBe(row);
+    expect(row.querySelector('small')?.textContent).toBe('in 24 min');
+  });
+
+  it('stays open for the rest of the day, through a reload', async () => {
+    const m = await opened();
+    const stored = stateOf(m);
+    unmount();
+    const again = await mount(TUE_1005, 'example', (state) => ({
+      ...state,
+      bench: { ...state.bench, drawer: stored.bench.drawer },
+    }));
+    expect(again.container.dataset['drawer']).toBe('open');
+  });
+
+  it('lists what got done today only when that reward is on', async () => {
+    const m = await opened();
+    expect(visibleText(m.container)).not.toContain('Done today');
+    unmount();
+    const on = await mount(TUE_1005, 'example', (state) => ({
+      ...state,
+      rewards: setOption(state.rewards, { kind: 'day' }, 'doneList', true),
+    }));
+    press(on.container, HANDLE);
+    expect(on.container.querySelector('.drawer')?.textContent).toContain('Done today');
+    expect(readingOrder(on.container)).toContain('Bins out, done');
+  });
+});
+
 describe('the Now capsule (SPEC 4)', () => {
   const capsuleOf = (m: Mounted) => m.container.querySelector<HTMLElement>('.capsule');
 
