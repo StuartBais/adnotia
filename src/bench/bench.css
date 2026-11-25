@@ -1092,6 +1092,28 @@ svg.i28 {
   color: var(--muted);
 }
 
+/* For six seconds after an undoable tap: Undo, a 44 pt tint-stone pill at the
+   right of the handle beside both lines, from x 288; line 2 runs to 276, 252
+   wide, so "Write the school email at step 2" (249) fits (SPEC 9.8). */
+.handle.with-undo .h-l2 {
+  width: 252px;
+}
+.drawer .undo {
+  position: absolute;
+  right: 24px;
+  top: 18px;
+  height: 44px;
+  padding: 0 20px;
+  border-radius: 22px;
+  display: inline-flex;
+  align-items: center;
+  background: var(--tint-stone);
+  color: var(--charcoal);
+  font-size: 15px;
+  line-height: 20px;
+  font-weight: 600;
+}
+
 /* Compact: one 52 pt line, "Next 10:30 Call the dentist · in 25 min ⌃". */
 @media (max-height: 739px) {
   .handle.folded .h-l1,
@@ -1137,6 +1159,12 @@ svg.i28 {
   }
   .handle.folded .h-more .h-more-words {
     display: none;
+  }
+  .handle.folded.with-undo {
+    padding-right: 110px;
+  }
+  .drawer .undo {
+    top: 4px;
   }
   .grab {
     top: 3px;

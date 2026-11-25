@@ -115,6 +115,13 @@ export const say = {
   undoStepDone: (step: string) => `Undo step done: ${step}`,
   markDone: (title: string) => `Mark done: ${title}`,
   undoDone: (title: string) => `Undo done: ${title}`,
+  // Undo on the Next line names what it takes back (SPEC 11). The board
+  // draws the four above and below; Start, Resume and Set aside follow them.
+  undoStart: (title: string) => `Undo start: ${title}`,
+  undoStartInstead: (kept: string) => `Undo: go back to ${kept}`,
+  undoSave: (text: string) => `Undo: remove ${text} from the inbox`,
+  undoResume: (title: string) => `Undo resume: ${title}`,
+  undoSetAside: (title: string) => `Undo set aside: ${title}`,
   doneRow: (title: string) => `${title}, done`,
   backTo: (place: string) => `Back to ${place}`,
   setAside: (title: string, step: number | undefined) =>
@@ -137,6 +144,8 @@ export const ANNOUNCE = {
   saved: 'Saved to inbox',
   paused: 'Paused',
   undone: 'Undone',
+  /** "Undone. Now: Write the question": what Undo took back, then what is now the case. */
+  undoneThen: (now: string) => `Undone. ${now}`,
   stepDone: (next: string) => `Step done. Now: ${next}`,
   started: (title: string, kept: string, step: number | undefined) =>
     step === undefined

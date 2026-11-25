@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { SCENARIOS, type ScenarioId } from '../../src/bench/example';
-import { mount, press, unmount, type Mounted } from './mount';
+import { mount, outlastUndo, press, unmount, type Mounted } from './mount';
 
 // What the prototype never says (design/lantern/SPEC.md section 13, "Anything
 // that shames", and docs/03-scope.md "Tone"), across every screen built so far
@@ -87,6 +87,8 @@ describe('never', () => {
     press(m.container, 'Pause');
     holdsNothing(m, 'Today, paused');
     press(m.container, /^Set aside /);
+    holdsNothing(m, 'Today, set aside, its Undo showing');
+    outlastUndo();
     holdsNothing(m, 'Today, set aside');
     press(m.container, /^Mark done: /);
     holdsNothing(m, 'Today, a ring ticked');

@@ -3,7 +3,7 @@
 
 import { vi } from 'vitest';
 import { createStore, memoryStorageAdapter, type KernelStore } from '../../src/kernel/store';
-import { ANNOUNCE_AFTER, mountBench } from '../../src/bench/app';
+import { ANNOUNCE_AFTER, UNDO_MS, mountBench } from '../../src/bench/app';
 import type { ScenarioId } from '../../src/bench/example';
 import { loadScenario, migrateBench, type BenchDomains } from '../../src/bench/state';
 
@@ -75,6 +75,11 @@ export function advance(mounted: Mounted, minutes: number): void {
 export function said(mounted: Mounted): string {
   vi.advanceTimersByTime(ANNOUNCE_AFTER);
   return mounted.container.querySelector('.live')?.textContent ?? '';
+}
+
+/** Lets the six seconds of an Undo run out. */
+export function outlastUndo(): void {
+  vi.advanceTimersByTime(UNDO_MS);
 }
 
 /**

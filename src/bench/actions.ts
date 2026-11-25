@@ -6,18 +6,38 @@
 // startWork. The marks the prototype keeps about a task (set aside, a clock
 // the app closed) are cleared when that task starts again, because they were
 // about the session that ended.
+//
+// Every quick tap can be taken back (SPEC 9.8, plan section 12): a change
+// that can returns its six-second lines for the Next line, the Undo pill's
+// spoken name, and an inverse. The inverse works on the state as it is when
+// Undo is pressed, through the model, so anything else done in the meantime
+// stands.
 
 import * as model from '../domains/tasks';
-import { stepFacts, type BenchDomains, type BenchState } from './state';
-import { ANNOUNCE } from './strings';
+import { stepFacts, type BenchDomains, type BenchState, type UndoLines } from './state';
+import { ANNOUNCE, T, keptAtStep, resumedAt, say } from './strings';
+
+/** A change that can be taken back for six seconds. */
+export interface Undo {
+  /** What the Next line says meanwhile (SPEC 9.8, the rows at the foot). */
+  lines: UndoLines;
+  /** The Undo pill's spoken name, naming what it takes back (SPEC 11). */
+  name: string;
+  /** Takes the change back, on the state as it is when Undo is pressed. */
+  inverse: (state: BenchDomains, now: Date) => BenchDomains;
+}
 
 export interface Changed {
   state: BenchDomains;
   /** What the live region says, if anything (SPEC 11 "Announcements"). */
   announce?: string;
+  /** Present when the change can be taken back. */
+  undo?: Undo;
 }
 
 const find = (state: BenchDomains, id: string) => state.tasks.find((task) => task.id === id);
+
+type Marks = Pick<BenchState, 'setAside' | 'closedByApp'>;
 
 function clearMarks(bench: BenchState, id: string): BenchState {
   const { setAside, closedByApp, ...rest } = bench;
@@ -28,19 +48,103 @@ function clearMarks(bench: BenchState, id: string): BenchState {
   } as BenchState;
 }
 
-/** Start, or Resume: a new session on the task, and every other stopped. */
-export function start(state: BenchDomains, id: string, now: Date): Changed {
-  const task = find(state, id);
-  if (!task || task.doneAt !== undefined) return { state };
+/** Puts back the marks a start cleared, as they were before it. */
+function restoreMarks(bench: BenchState, marks: Marks): BenchState {
+  const { setAside: _setAside, closedByApp: _closed, ...rest } = bench;
+  return {
+    ...rest,
+    ...(marks.setAside ? { setAside: marks.setAside } : {}),
+    ...(marks.closedByApp ? { closedByApp: marks.closedByApp } : {}),
+  } as BenchState;
+}
+
+/**
+ * A new session on the task, every other stopped, and the inverse that takes
+ * the session back as if it had never begun: discardSession, the marks it
+ * cleared put back, and whatever it stopped started again at its step.
+ */
+function begin(
+  state: BenchDomains,
+  id: string,
+  now: Date,
+): { state: BenchDomains; inverse: Undo['inverse']; stopped: model.Task | undefined } {
+  const stopped = model.running(state.tasks);
+  const startedAt = now.toISOString();
+  const marks: Marks = {
+    ...(state.bench.setAside ? { setAside: state.bench.setAside } : {}),
+    ...(state.bench.closedByApp ? { closedByApp: state.bench.closedByApp } : {}),
+  };
+  const other = stopped && stopped.id !== id ? stopped : undefined;
   return {
     state: {
       ...state,
       tasks: model.startWork(state.tasks, id, now),
       bench: clearMarks(state.bench, id),
     },
+    stopped: other,
+    inverse(current, at) {
+      if (!find(current, id)) return current;
+      let tasks = model.discardSession(current.tasks, id, startedAt);
+      const back = other && find({ ...current, tasks }, other.id);
+      if (back && back.doneAt === undefined) tasks = model.startWork(tasks, back.id, at);
+      return { ...current, tasks, bench: restoreMarks(current.bench, marks) };
+    },
   };
 }
 
+/**
+ * Start: a new session on the task, and every other stopped. Started while
+ * another runs, it is SPEC 5.3's "Start this instead": the six-second lines
+ * say both tasks, and Undo goes back to the other at its step.
+ */
+export function start(state: BenchDomains, id: string, now: Date): Changed {
+  const task = find(state, id);
+  if (!task || task.doneAt !== undefined || model.running(state.tasks)?.id === id) {
+    return { state };
+  }
+  const begun = begin(state, id, now);
+  if (begun.stopped) {
+    const step = stepFacts(state.tasks, begun.stopped).position?.number;
+    const kept = keptAtStep(begun.stopped.title, step);
+    return {
+      state: begun.state,
+      announce: ANNOUNCE.started(task.title, begun.stopped.title, step),
+      undo: {
+        lines: { line1: `${T.started} ${task.title}`, line2: kept },
+        name: say.undoStartInstead(kept),
+        inverse: begun.inverse,
+      },
+    };
+  }
+  return {
+    state: begun.state,
+    undo: {
+      lines: { line1: T.started, line2: task.title },
+      name: say.undoStart(task.title),
+      inverse: begun.inverse,
+    },
+  };
+}
+
+/** Resume, on paused Today: the same new session, said as "Resumed". */
+export function resume(state: BenchDomains, id: string, now: Date): Changed {
+  const task = find(state, id);
+  if (!task || task.doneAt !== undefined || model.running(state.tasks)?.id === id) {
+    return { state };
+  }
+  const begun = begin(state, id, now);
+  const step = stepFacts(state.tasks, task).position?.number;
+  return {
+    state: begun.state,
+    undo: {
+      lines: { line1: T.resumed, line2: resumedAt(task.title, step) },
+      name: say.undoResume(task.title),
+      inverse: begun.inverse,
+    },
+  };
+}
+
+/** Pause is not taken back: Resume is one tap in the same place. */
 export function pause(state: BenchDomains, id: string, now: Date): Changed {
   if (!find(state, id)) return { state };
   return {
@@ -51,29 +155,71 @@ export function pause(state: BenchDomains, id: string, now: Date): Changed {
 
 /**
  * Step done: the current step is finished. On the last step, or for a task
- * with no steps, the button reads Done and finishes the task as well.
+ * with no steps, the button reads Done and finishes the task as well; Undo
+ * then reopens both and, if the clock was running, runs it again.
  */
 export function stepDone(state: BenchDomains, id: string, now: Date): Changed {
   const task = find(state, id);
   if (!task || task.doneAt !== undefined) return { state };
   const steps = stepFacts(state.tasks, task);
+  const step = steps.current;
+  const wasRunning = model.running(state.tasks)?.id === id;
   let tasks = state.tasks;
-  if (steps.current) tasks = model.complete(tasks, steps.current.id, now);
-  if (!steps.current || steps.isLast) {
+  if (step) tasks = model.complete(tasks, step.id, now);
+
+  if (!step || steps.isLast) {
     tasks = model.complete(tasks, id, now);
-    return { state: { ...state, tasks }, announce: ANNOUNCE.done(task.title) };
+    return {
+      state: { ...state, tasks },
+      announce: ANNOUNCE.done(task.title),
+      undo: {
+        lines: step
+          ? { line1: T.stepDone, line2: step.title }
+          : { line1: T.done, line2: task.title },
+        name: step ? say.undoStepDone(step.title) : say.undoDone(task.title),
+        inverse(current, at) {
+          let back = current.tasks;
+          if (step && find(current, step.id)) back = model.reopen(back, step.id);
+          if (!find(current, id)) return { ...current, tasks: back };
+          back = model.reopen(back, id);
+          if (wasRunning && !model.running(back)) back = model.startWork(back, id, at);
+          return { ...current, tasks: back };
+        },
+      },
+    };
   }
   return {
     state: { ...state, tasks },
     announce: ANNOUNCE.stepDone(steps.after?.title ?? task.title),
+    undo: {
+      lines: { line1: T.stepDone, line2: step.title },
+      name: say.undoStepDone(step.title),
+      inverse: (current) =>
+        find(current, step.id)
+          ? { ...current, tasks: model.reopen(current.tasks, step.id) }
+          : current,
+    },
   };
 }
 
 /** Set aside: the paused task goes, keeping its place at its step (SPEC 5.7c). */
 export function setAside(state: BenchDomains, id: string, now: Date): Changed {
-  if (!find(state, id)) return { state };
+  const task = find(state, id);
+  if (!task) return { state };
+  const before = state.bench.setAside;
   return {
     state: { ...state, bench: { ...state.bench, setAside: { taskId: id, at: now.toISOString() } } },
+    undo: {
+      lines: { line1: T.setAside, line2: task.title },
+      name: say.undoSetAside(task.title),
+      inverse(current) {
+        const { setAside: _gone, ...bench } = current.bench;
+        return {
+          ...current,
+          bench: (before ? { ...bench, setAside: before } : bench) as BenchState,
+        };
+      },
+    },
   };
 }
 
@@ -84,10 +230,16 @@ export function tick(state: BenchDomains, id: string, now: Date): Changed {
   return {
     state: { ...state, tasks: model.complete(state.tasks, id, now) },
     announce: ANNOUNCE.done(task.title),
+    undo: {
+      lines: { line1: T.done, line2: task.title },
+      name: say.undoDone(task.title),
+      inverse: (current) =>
+        find(current, id) ? { ...current, tasks: model.reopen(current.tasks, id) } : current,
+    },
   };
 }
 
-/** The ticked row's disc: not done after all. */
+/** The ticked row's disc: not done after all. It is its own way back. */
 export function untick(state: BenchDomains, id: string): Changed {
   const task = find(state, id);
   if (!task || task.doneAt === undefined) return { state };

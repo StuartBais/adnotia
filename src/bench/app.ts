@@ -68,6 +68,7 @@ import {
   ABOUT,
 } from './screens/places';
 import { settingsScreen, type SettingsView } from './screens/settings';
+import { ANNOUNCE, T } from './strings';
 import { h, injectSprite } from './ui';
 import { resolve as rewardOptions, setOption } from '../domains/options';
 import {
@@ -102,6 +103,18 @@ const MINUTE_MS = 60_000;
 const WHITE = '#FFFFFF';
 
 const TODAY: Nav = { tab: 'today', stack: [], list: 'inbox' };
+
+/** How long an undoable tap can be taken back (SPEC 9.8; an owner decision, SPEC 14). */
+export const UNDO_MS = 6000;
+
+interface UndoSlot {
+  undo: act.Undo;
+  /** The drawer was folded at the tap, so it stays folded to hold the Undo. */
+  hold: boolean;
+  timer: ReturnType<typeof setTimeout> | undefined;
+  /** The six seconds are over, but the pill has focus: it goes when focus does. */
+  expired: boolean;
+}
 
 /** How long the live region stays empty before it says something (ms). */
 export const ANNOUNCE_AFTER = 100;
@@ -159,6 +172,8 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
   /** Rows ticked since the list was opened: they stay in place as discs. */
   const ticked = new Set<string>();
   let shown: { position: DrawerPosition; tab: Tab; page: string | undefined } | undefined;
+  /** The live Undo, if a tap in the last six seconds can be taken back. */
+  let undo: UndoSlot | undefined;
   /** Where the drawer rested before it was opened, so Hide returns there. */
   let beforeOpen: { key: 'running' | 'idle'; position: 'half' | 'folded' } | undefined;
   let order = '';
@@ -255,7 +270,14 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
     // capture's lane, so it rests folded there, as it does at large text sizes
     // (SPEC 9.8); a proposal, since SPEC draws the half drawer at 844 only.
     const rule = drawerPositions(state, t, { view, largeText: compact() });
-    const position = rule.position;
+    // While an Undo shows, a drawer that was folded at the tap stays folded,
+    // so its Next line can hold the Undo, though the tap would send it to half
+    // (Done, Set aside) or to its lip; it settles when the six seconds end.
+    // Undrawn: a proposal from SPEC 9.8's "every quick tap can be taken back".
+    const position: DrawerPosition =
+      undo?.hold && (rule.position === 'half' || rule.position === 'lip')
+        ? 'folded'
+        : rule.position;
     const open = position === 'open';
     const ground = view.kind === 'today' ? 'present' : 'place';
 
@@ -312,7 +334,7 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
               isLast: today.present.steps.isLast,
               onStepDone: () => run(act.stepDone, today.present.task.id),
               onPause: () => run(act.pause, today.present.task.id),
-              onResume: () => run(act.start, today.present.task.id),
+              onResume: () => run(act.resume, today.present.task.id),
             },
           }
         : {}),
@@ -528,10 +550,10 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
       return JSON.stringify(['open', { ...list, later }]);
     }
     // "in N min" follows the clock and is moved in place; whether it is there is not.
-    const next = nextLine(state, t);
+    const next = nextLine(state, t, undo?.undo.lines);
     const shape =
       next.kind === 'line' ? { ...next, inMinutes: next.inMinutes !== undefined } : next;
-    return JSON.stringify(['folded', shape]);
+    return JSON.stringify(['folded', shape, undo?.undo.name]);
   }
 
   function exclusion(today: ReturnType<typeof todayView> | undefined): { exclude?: string } {
@@ -581,14 +603,19 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
         },
       };
     }
-    const next = nextLine(state, t);
+    const lines = undo?.undo.lines;
+    const next = nextLine(state, t, lines);
     if (next.kind === 'lip') return { nodes: [] };
-    const folded = foldedDrawer({ ...handleWords(next), onOpen: openDrawer });
+    const folded = foldedDrawer({
+      ...handleWords(next),
+      onOpen: openDrawer,
+      ...(undo ? { undo: { name: undo.undo.name, onUndo: takeBack } } : {}),
+    });
     return {
       nodes: folded.nodes,
       // The ticker's minute: "in 25 min" becomes "in 24 min" where it stands.
       patch() {
-        const again = nextLine(read(), now());
+        const again = nextLine(read(), now(), lines);
         if (again.kind === 'line') folded.set(handleWords(again));
       },
     };
@@ -653,8 +680,75 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
     id: string,
   ): void {
     const result = change(read(), id, now());
+    if (result.undo) offerUndo(result.undo);
     commit(result.state);
     if (result.announce) announce(result.announce);
+  }
+
+  // ---------------------------------------------------------------- undo
+
+  /**
+   * One live Undo (plan section 12): six seconds after an undoable tap, shown
+   * on the folded Next line. Only a newer undoable tap replaces it; other
+   * touches leave it. While the pill has focus it stays, standing in for
+   * "while VoiceOver is on it" (SPEC 9.8), and goes once focus leaves. Going
+   * to the background ends it. Where no Next line is on screen, a ticked
+   * row's disc is the way back.
+   */
+  function offerUndo(next: act.Undo): void {
+    dropUndo();
+    const slot: UndoSlot = {
+      undo: next,
+      // A drawer folded at the tap holds its Next line for the six seconds.
+      hold: shown?.position === 'folded' || shown?.position === 'lip',
+      timer: undefined,
+      expired: false,
+    };
+    slot.timer = setTimeout(() => {
+      slot.timer = undefined;
+      if (undo !== slot) return;
+      if (document.activeElement?.id === 'b-undo') slot.expired = true;
+      else {
+        undo = undefined;
+        render();
+      }
+    }, UNDO_MS);
+    undo = slot;
+  }
+
+  function dropUndo(): void {
+    if (undo?.timer !== undefined) clearTimeout(undo.timer);
+    undo = undefined;
+  }
+
+  /** Undo: the change taken back, said, and focus on the handle where the pill was. */
+  function takeBack(): void {
+    const slot = undo;
+    if (!slot) return;
+    const hadFocus = document.activeElement?.id === 'b-undo';
+    dropUndo();
+    const t = now();
+    const before = read();
+    commit(slot.undo.inverse(before, t));
+    if (read() === before) render();
+    const view = presentView(read(), t);
+    announce(ANNOUNCE.undoneThen(view ? `${view.lead}: ${view.step}` : T.nothingRunning));
+    if (hadFocus) {
+      const handle = container.querySelector<HTMLElement>('#b-handle');
+      if (handle) handle.focus({ preventScroll: true });
+      else landFocus();
+    }
+  }
+
+  /** An Undo kept for its focus goes when focus leaves it. */
+  function onFocusOut(event: FocusEvent): void {
+    if (!undo?.expired || (event.target as HTMLElement | null)?.id !== 'b-undo') return;
+    if ((event.relatedTarget as HTMLElement | null)?.id === 'b-undo') return;
+    queueMicrotask(() => {
+      if (!undo?.expired || document.activeElement?.id === 'b-undo') return;
+      undo = undefined;
+      render();
+    });
   }
 
   /**
@@ -792,6 +886,7 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
   }
 
   function scenario(id: ScenarioId): void {
+    dropUndo();
     commit(loadScenario(read(), id, now()));
     ticked.clear();
     go({ ...TODAY });
@@ -799,6 +894,7 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
 
   function deleteAll(): void {
     if (!confirm(ABOUT.deleteConfirm)) return;
+    dropUndo();
     const t = now();
     commit(migrateBench(emptyDomains(), t));
     ticked.clear();
@@ -893,6 +989,7 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
 
   /** Going to the background: when, and where the person was (plan section 12). */
   function hide(): void {
+    dropUndo();
     const t = now();
     const state = read();
     commit({
@@ -939,6 +1036,7 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
 
   history.replaceState({ bench: mark, depth: 0 }, '');
   window.addEventListener('popstate', onPopState);
+  container.addEventListener('focusout', onFocusOut);
   const unsubscribe = store.subscribe('domains', render);
   let ticker: Ticker | undefined;
   render();
@@ -961,6 +1059,8 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
     destroy() {
       destroyed = true;
       if (announcing !== undefined) clearTimeout(announcing);
+      dropUndo();
+      container.removeEventListener('focusout', onFocusOut);
       ticker?.destroy();
       unsubscribe();
       window.removeEventListener('resize', onResize);

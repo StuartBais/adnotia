@@ -186,6 +186,11 @@ export interface FoldedProps {
   title: string;
   label: string;
   onOpen: () => void;
+  /**
+   * For six seconds after an undoable tap: the Undo pill takes the right of
+   * the handle, beside both lines, and "Rest of today ⌃" is hidden (SPEC 9.8).
+   */
+  undo?: { name: string; onUndo: () => void };
 }
 
 /** The folded handle, and a way to move its "in N min" and its label in place. */
@@ -209,16 +214,18 @@ export function foldedDrawer(props: FoldedProps): Folded {
     props.time === undefined ? null : h('span', { class: 'h-time', text: props.time }),
     h('span', { class: 'h-title', text: props.title }),
   );
-  const more = h(
-    'span',
-    { class: 'h-more t-label' },
-    h('span', { class: 'h-more-words', text: T.restOfToday }),
-    icon('up', 20),
-  );
+  const more = props.undo
+    ? null
+    : h(
+        'span',
+        { class: 'h-more t-label' },
+        h('span', { class: 'h-more-words', text: T.restOfToday }),
+        icon('up', 20),
+      );
   const handle = h(
     'button',
     {
-      class: 'handle folded',
+      class: props.undo ? 'handle folded with-undo' : 'handle folded',
       type: 'button',
       id: 'b-handle',
       'aria-label': props.label,
@@ -229,9 +236,20 @@ export function foldedDrawer(props: FoldedProps): Folded {
     line2,
     more,
   );
-  for (const part of [line1, line2, more]) part.setAttribute('aria-hidden', 'true');
+  for (const part of [line1, line2, more]) part?.setAttribute('aria-hidden', 'true');
+  // A sibling of the handle, never inside it: a button holds no button.
+  const undo = props.undo
+    ? h('button', {
+        class: 'undo',
+        type: 'button',
+        id: 'b-undo',
+        'aria-label': props.undo.name,
+        text: T.undo,
+        onclick: props.undo.onUndo,
+      })
+    : null;
   return {
-    nodes: [h('span', { class: 'grab', 'aria-hidden': 'true' }), handle],
+    nodes: [h('span', { class: 'grab', 'aria-hidden': 'true' }), handle, ...(undo ? [undo] : [])],
     set(next) {
       if (next.when !== undefined && when.textContent !== next.when) when.textContent = next.when;
       if (handle.getAttribute('aria-label') !== next.label) {
