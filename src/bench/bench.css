@@ -143,8 +143,14 @@ ol {
   list-style: none;
 }
 
+/* The focus ring is the ground's own ink, never terracotta (SPEC 7 keeps it to
+   time and capture): white on charcoal (15.3), charcoal on stone (13.4) and on
+   white (15.3). Each light ground sets --ring below, where it is drawn. */
+:root {
+  --ring: var(--white);
+}
 :focus-visible {
-  outline: 2px solid var(--terra);
+  outline: 2px solid var(--ring);
   outline-offset: 2px;
 }
 
@@ -323,6 +329,10 @@ svg.i28 {
 .app[data-places='white'][data-ground='place'] .screen {
   background: var(--white);
   color: var(--charcoal);
+}
+.app[data-places='white'][data-ground='place'] .screen,
+.app[data-places='white'][data-ground='place'] .dock {
+  --ring: var(--charcoal);
 }
 
 /* The lantern's falloff (SPEC 7): a still pool of light around the block. */
@@ -883,6 +893,7 @@ svg.i28 {
 }
 .capture.on-light {
   box-shadow: var(--sh-disc-light);
+  --ring: var(--charcoal);
 }
 
 /* ═════════════ The Now capsule (SPEC 4): x 24–292, y 606–670 ═════════════ */
@@ -987,6 +998,7 @@ svg.i28 {
   z-index: 10;
   background: var(--stone);
   color: var(--charcoal);
+  --ring: var(--charcoal);
   border-radius: 28px 28px 0 0;
   box-shadow: var(--sh-drawer);
   transform: translateY(var(--dy));
@@ -1027,6 +1039,12 @@ svg.i28 {
   height: var(--handle);
   color: var(--charcoal);
   touch-action: none;
+  border-radius: 28px 28px 0 0;
+}
+/* The handle spans the drawer's width and meets the tabs, so its ring is drawn
+   inside it, on the stone, following the drawer's top corners. */
+.handle:focus-visible {
+  outline-offset: -4px;
 }
 .handle > span {
   position: absolute;
@@ -1305,6 +1323,7 @@ svg.i28 {
   height: var(--hair-b);
   z-index: 20;
   background: var(--stone);
+  --ring: var(--charcoal);
 }
 .tabs .hair {
   position: absolute;
