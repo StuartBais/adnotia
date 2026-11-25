@@ -203,6 +203,15 @@ describe('the Next line for six seconds (SPEC 9.8)', () => {
     expect(nameOf(handle(m))).toBe('Next, in 25 minutes: 10:30, Call the dentist. Rest of today');
   });
 
+  it('puts focus on the handle though the pill never had it, as after a tap in Safari', async () => {
+    const m = await mount(TUE_1005);
+    press(m.container, 'Step done: Write the question');
+    (document.activeElement as HTMLElement | null)?.blur();
+    press(m.container, 'Undo step done: Write the question');
+    expect(id(m, 'b-undo')).toBeNull();
+    expect(document.activeElement).toBe(handle(m));
+  });
+
   it('lasts six seconds', async () => {
     const m = await mount(TUE_1005);
     press(m.container, 'Step done: Write the question');

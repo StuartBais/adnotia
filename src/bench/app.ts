@@ -774,11 +774,14 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
     undo = undefined;
   }
 
-  /** Undo: the change taken back, said, and focus on the handle where the pill was. */
+  /**
+   * Undo: the change taken back, said, and focus on the handle where the pill
+   * was. Whether or not the pill had focus: Safari does not focus a button on
+   * a tap, nor reliably on VoiceOver's activation, and the pill is gone.
+   */
   function takeBack(): void {
     const slot = undo;
     if (!slot) return;
-    const hadFocus = document.activeElement?.id === 'b-undo';
     dropUndo();
     const t = now();
     const before = read();
@@ -786,11 +789,9 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
     if (read() === before) render();
     const view = presentView(read(), t);
     announce(ANNOUNCE.undoneThen(view ? `${view.lead}: ${view.step}` : T.nothingRunning));
-    if (hadFocus) {
-      const handle = container.querySelector<HTMLElement>('#b-handle');
-      if (handle) handle.focus({ preventScroll: true });
-      else landFocus();
-    }
+    const handle = container.querySelector<HTMLElement>('#b-handle');
+    if (handle) handle.focus({ preventScroll: true });
+    else landFocus();
   }
 
   /** An Undo kept for its focus goes when focus leaves it. */
