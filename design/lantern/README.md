@@ -4,12 +4,12 @@ November 2026. The owner looked at the ten directions in `design/explore/` and c
 
 ## The idea
 
-A dark charcoal canvas lit by one sentence, the step you are on, in very large white type, with one terracotta bar burning down beneath it. Everywhere else, that sentence travels folded into a charcoal Now capsule. The capsule sits in a fixed slot above the drawer and the tabs, with the capture button beside it, one tap from Focus on every screen. Charcoal means now, and the stone drawer holds the rest of today.
+A dark charcoal canvas lit by one sentence, the step you are on, in very large white type, with one terracotta bar burning down beneath it. Everywhere else, that sentence travels folded into a charcoal Now capsule that names its task. The capsule sits in a fixed slot above the drawer and the tabs, with the capture button beside it, one tap from Focus on every screen. Charcoal means now, and the stone drawer holds the rest of today.
 
 ## What is here
 
-- `board.html` is the board: a header showing the capsule at every size, eleven phones at 390 × 844 and the Lock Screen strip.
-- `shots/board.png` is its render at twice the size, and `shots/NN-*.png` is each phone on its own.
+- `board.html` is the board: a header showing the capsule at every size, thirteen phones at 390 × 844 (Today running and paused, the rest of today, a task opened in charcoal and in white, Focus, capture, Tasks in charcoal and in white, nothing running, nothing planned, the running task's page and Routines) and the Lock Screen strip.
+- `shots/board.png` is its render at twice the size, `shots/NN-*.png` is each phone on its own, and `shots/10-live-activity.png` is the strip outside the app.
 - `SPEC.md` is the full specification the board was drawn from: the capsule's rules, every screen top to bottom, tokens with measured contrast, type, components, motion, accessibility, what was left out, and the decisions the design depends on (section 14).
 
 ## How it was made
@@ -17,9 +17,9 @@ A dark charcoal canvas lit by one sentence, the step you are on, in very large w
 1. Three agents each proposed a way to combine the two: keep Lantern and carry the step as a capsule; make the lantern and the capsule one object at two sizes; or use the capsule to fix the judges' two complaints about Lantern. The complaints were that Today and Focus looked alike and that the day was hidden.
 2. Three judges scored the proposals for faithfulness to what the owner asked for, ease of use for an adult with ADHD, and craft. "Lantern, carried" won, and the other two contributed grafts.
 3. One agent wrote the spec, one built the board from it, and a second designer who had not built it reviewed and fixed it.
-4. Three judges scored the board through the same three lenses, for three rounds, with a fix pass between rounds.
+4. Judges scored the board through the same three lenses for three rounds, and in a fourth round a fourth judge compared each phone with the round before and looked for anything that had broken. A fix pass followed every round.
 
-The judges are agents, not people. The last round scored it 8 for faithfulness, 7.5 for ease of use and 7 for craft.
+The judges are agents, not people. The fourth round scored it 8 for faithfulness, 8 for ease of use, 7.5 for craft and 8 for regressions; this board is the fix pass after it (draft 5 of the specification).
 
 ## For the owner to choose
 
