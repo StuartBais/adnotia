@@ -14,6 +14,7 @@ import {
   historyDepth,
   mount,
   nameOf,
+  outlastFade,
   press,
   readText,
   readingOrder,
@@ -1674,9 +1675,10 @@ describe('4 · Focus (SPEC 5.4)', () => {
     expect(m.container.dataset['focus']).toBeUndefined();
     expect(model.running(stateOf(m).tasks)?.title).toBe(EMAIL);
     expect(document.activeElement).toBe(id(m, 'b-lit'));
-    // It is read by nothing as it goes, then it is gone.
+    // It fades out, read by nothing meanwhile, then goes.
     expect(layerOf(m).hasAttribute('inert')).toBe(true);
-    await Promise.resolve();
+    expect(layerOf(m).hasAttribute('data-leaving')).toBe(true);
+    outlastFade();
     expect(layerOf(m).hidden).toBe(true);
     expect(layerOf(m).childElementCount).toBe(0);
     expect(m.container.querySelector('.screen')?.hasAttribute('inert')).toBe(false);
@@ -1726,6 +1728,42 @@ describe('4 · Focus (SPEC 5.4)', () => {
     expect(visibleText(m.container)).toContain('Samaritans');
     // No timer of any kind there.
     expect(m.container.querySelector('.capsule')).toBeNull();
+  });
+
+  it('is built afresh when opened again while it is still fading out', async () => {
+    const m = await focused();
+    press(m.container, 'Back to Today');
+    expect(layerOf(m).hasAttribute('data-leaving')).toBe(true);
+    settle(m);
+    press(m.container, LIT);
+    expect(layerOf(m).hasAttribute('data-leaving')).toBe(false);
+    expect(layerOf(m).hasAttribute('inert')).toBe(false);
+    expect(document.activeElement).toBe(id(m, 'f-step'));
+    outlastFade();
+    expect(layerOf(m).hidden).toBe(false);
+    expect(id(m, 'f-back')).not.toBeNull();
+  });
+
+  it('fades the capsule in, already in its slot, as the lantern or Focus folds into it', async () => {
+    const m = await mount(TUE_1005);
+    const stepDone = id(m, 'b-stepdone');
+    press(m.container, LIT);
+    // Today and Focus hold the same buttons in the same places: nothing redrawn.
+    expect(id(m, 'b-stepdone')).toBe(stepDone);
+    expect(stepDone?.classList.contains('enter')).toBe(false);
+    press(m.container, 'Back to Today');
+    press(m.container, 'Tasks');
+    expect(id(m, 'b-capsule')?.classList.contains('enter')).toBe(true);
+    press(m.container, CAPSULE);
+    // Focus fades in whole, its buttons with it.
+    expect(id(m, 'b-stepdone')?.classList.contains('enter')).toBe(true);
+    expect(id(m, 'b-pause')?.classList.contains('enter')).toBe(true);
+    press(m.container, 'Back to Tasks');
+    expect(id(m, 'b-capsule')?.classList.contains('enter')).toBe(true);
+    // A capsule that only changes its figures is not faded again.
+    const capsule = id(m, 'b-capsule');
+    advance(m, 1);
+    expect(id(m, 'b-capsule')).toBe(capsule);
   });
 
   it('is a level of its own in history: back closes it, as "⌄ Today" does', async () => {

@@ -3,7 +3,7 @@
 
 import { vi } from 'vitest';
 import { createStore, memoryStorageAdapter, type KernelStore } from '../../src/kernel/store';
-import { ANNOUNCE_AFTER, UNDO_MS, mountBench } from '../../src/bench/app';
+import { ANNOUNCE_AFTER, FOCUS_FADE_MS, UNDO_MS, mountBench } from '../../src/bench/app';
 import type { ScenarioId } from '../../src/bench/example';
 import { loadScenario, migrateBench, type BenchDomains } from '../../src/bench/state';
 
@@ -111,6 +111,11 @@ export function outlastUndo(): void {
 export function goBack(): void {
   history.back();
   vi.advanceTimersByTime(1);
+}
+
+/** Lets Focus's 200 ms fade out run its course, as it closes (SPEC 10). */
+export function outlastFade(): void {
+  vi.advanceTimersByTime(FOCUS_FADE_MS);
 }
 
 /** How many levels above the tab the current history entry stands for. */

@@ -136,6 +136,9 @@ interface UndoSlot {
 /** How long the live region stays empty before it says something (ms). */
 export const ANNOUNCE_AFTER = 100;
 
+/** Focus fades in whole, and out, over this long (SPEC 10, Reduce Motion). */
+export const FOCUS_FADE_MS = 200;
+
 export function mountBench(options: BenchOptions): { destroy(): void } {
   const { store, container } = options;
   const now = options.now ?? (() => new Date());
@@ -212,6 +215,8 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
   let order = '';
   /** Whether the Focus layer was shown at the last render. */
   let focusShown = false;
+  /** The Focus layer fading out after it closed (SPEC 10, Reduce Motion). */
+  let leaving: ReturnType<typeof setTimeout> | undefined;
   let barRunning = false;
   let destroyed = false;
   let announcing: ReturnType<typeof setTimeout> | undefined;
@@ -360,14 +365,14 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
 
     // Focus, the capsule opened all the way (SPEC 5.4).
     if (showFocus && presentNow && live) {
-      showLayers();
+      stopLeaving();
       const back = BACK_TO[nav.tab];
       paint(layer.focus, JSON.stringify(['focus', ...focusKey(presentNow, back)]), () =>
         focusScreen(presentNow, live, back, focusActions(presentNow)),
       );
       paint(layer.focusFoot, footKey(state, t), () => footOf(state, t));
     } else if (wasFocus) {
-      clearLayers();
+      startLeaving();
     }
 
     // The dock line. On the open drawer the lantern has folded into the
@@ -401,8 +406,19 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
       draftKept: state.bench.drafts.capture !== undefined && state.bench.drafts.capture.text !== '',
       onCapture: openCapture,
     };
+    const slot = props.present ? 'present' : props.capsule ? 'capsule' : 'none';
+    // The lantern and Focus fold into the capsule, and grow out of it, as a
+    // 200 ms cross-fade, the capsule fading in already in its slot (SPEC 10,
+    // Reduce Motion; the only path until the animated one is built).
+    const morph =
+      lastSlot !== undefined && lastSlot !== slot && (slot === 'capsule' || lastSlot === 'capsule');
     guardArrival(props, view, open, showFocus);
     paint(layer.dock, dockKey(props), () => dock(props));
+    if (morph) {
+      for (const node of layer.dock.querySelectorAll('.capsule, .dock-pill')) {
+        node.classList.add('enter');
+      }
+    }
     layer.fade.hidden = !(ground === 'place' && capsule !== undefined && !open);
 
     // The drawer, and Hide at its foot when it is open.
@@ -810,29 +826,36 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
   }
 
   /**
-   * Focus has closed: read by nothing and reached by nothing at once, its ids
-   * gone so the Next line's Undo is the one #b-undo. Its nodes stay until the
-   * render that closed it is over, so where focus was can still be found.
+   * Focus fades out over 200 ms, taking no taps and read by nothing meanwhile.
+   * What fades is only a picture: its ids go, so the Next line's Undo is the
+   * one #b-undo, and Focus opened again within the fade is built afresh.
    */
-  function clearLayers(): void {
+  function startLeaving(): void {
     for (const part of [layer.focus, layer.focusFoot]) {
       part.setAttribute('inert', '');
+      part.dataset['leaving'] = '';
       keys.delete(part);
       patches.delete(part);
       for (const node of part.querySelectorAll('[id]')) node.removeAttribute('id');
     }
-    queueMicrotask(() => {
+    if (leaving !== undefined) clearTimeout(leaving);
+    leaving = setTimeout(() => {
+      leaving = undefined;
       if (focusShown || destroyed) return;
       for (const part of [layer.focus, layer.focusFoot]) {
         paint(part, '', () => ({ nodes: [] }));
+        delete part.dataset['leaving'];
         part.hidden = true;
       }
-    });
+    }, FOCUS_FADE_MS);
   }
 
-  function showLayers(): void {
+  function stopLeaving(): void {
+    if (leaving !== undefined) clearTimeout(leaving);
+    leaving = undefined;
     for (const part of [layer.focus, layer.focusFoot]) {
       part.removeAttribute('inert');
+      delete part.dataset['leaving'];
       part.hidden = false;
     }
   }
@@ -1351,6 +1374,7 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
     destroy() {
       destroyed = true;
       if (announcing !== undefined) clearTimeout(announcing);
+      if (leaving !== undefined) clearTimeout(leaving);
       dropUndo();
       container.removeEventListener('focusout', onFocusOut);
       ticker?.destroy();

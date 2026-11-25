@@ -1021,6 +1021,29 @@ svg.i28 {
   display: none;
 }
 
+/* Reduce Motion, and for now every motion setting (plan section 14, phase A):
+   Focus fades in whole and out again over 200 ms, and the capsule, or Step
+   done and Pause, fade in already in their slot. Nothing travels or scales. */
+@keyframes bench-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes bench-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+.app[data-focus] .focus,
+.app[data-focus] .ffoot,
+.dock .enter {
+  animation: bench-fade-in 200ms ease-out both;
+}
+.focus[data-leaving],
+.ffoot[data-leaving] {
+  animation: bench-fade-out 200ms ease-in both;
+}
+
 /* The content, from the context line at 166, scrolling only if a long step or
    large text would take it under the dock line. */
 .fbody {

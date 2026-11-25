@@ -68,3 +68,21 @@ describe('the focus ring', () => {
     }
   });
 });
+
+describe('the Reduce Motion fades (SPEC 10)', () => {
+  const animationOf = (selector: string): string | undefined =>
+    rules
+      .filter((item) => item.selectors.includes(selector))
+      .map((item) => /animation:\s*([^;]+);/.exec(item.body)?.[1]?.trim())
+      .filter((value) => value !== undefined)
+      .at(-1);
+
+  it('fades Focus in whole and out again, and the capsule in, over 200 ms, with nothing travelling', () => {
+    expect(animationOf('.app[data-focus] .focus')).toBe('bench-fade-in 200ms ease-out both');
+    expect(animationOf('.dock .enter')).toBe('bench-fade-in 200ms ease-out both');
+    expect(animationOf('.focus[data-leaving]')).toBe('bench-fade-out 200ms ease-in both');
+    const frames = css.match(/@keyframes bench-fade-(?:in|out)\s*\{[^@]*?\}\s*\}/g) ?? [];
+    expect(frames).toHaveLength(2);
+    for (const frame of frames) expect(frame).not.toMatch(/transform|translate|scale/);
+  });
+});
