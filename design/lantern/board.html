@@ -226,7 +226,10 @@
       }
 
       .objects {
-        padding-top: 8px;
+        padding-top: 0;
+      }
+      .objects .exlabel.from {
+        margin-top: 6px;
       }
       .objects h2 {
         font-size: 17px;
@@ -734,9 +737,9 @@
         display: none;
       }
 
-      /* durations in a list: the number, then one small square per five minutes, up to twelve (an hour).
-         Squares: two upright bars read as the pause glyph, and round dots as the More glyph or a trailing
-         ellipsis. No track, so nothing reads as part done. The same block as the no-estimate bar's marks */
+      /* durations in a list, in Lantern's own mark: the number, then one short track the shape of the
+         burning bar, 4 tall with round ends, 1.5 pt per minute (10 min 15, 20 min 30, an hour 90 and no
+         longer). One piece after the number, so it cannot read as minus, as pause or as part done */
       .dur {
         display: inline-flex;
         align-items: center;
@@ -749,24 +752,22 @@
         white-space: nowrap;
       }
       .dur .m {
-        display: inline-flex;
-        gap: 3px;
+        display: block;
         flex: none;
+        width: calc(min(var(--min), 60) * 1.5px);
+        height: 4px;
+        border-radius: 2px;
+        background: currentColor;
         position: relative;
         top: 1px; /* centred on the x-height, not on the line box */
-      }
-      .dur .m i {
-        display: block;
-        width: 5px;
-        height: 5px;
-        border-radius: 1.25px;
-        background: currentColor;
       }
       .dur.on-dark {
         color: var(--ash);
       }
+      /* in a column of timed rows the track sits in a slot as long as the longest in that list (20 min,
+         30 pt), so every number ends on one line and the slot, not the ink, ends at 366 */
       .trow .dur .m {
-        width: 29px; /* four marks, the most in these lists; fewer sit at its left */
+        margin-right: calc(30px - min(var(--min), 60) * 1.5px);
       }
 
       /* ═════════════ Pills and buttons (SPEC 9.5) ═════════════ */
@@ -967,12 +968,13 @@
         z-index: 8;
         pointer-events: none;
       }
-      /* on a white page the same lift is drawn lighter, with a hair of charcoal along the rounded
-         top so stone (1.14 against white) still reads as a sheet */
+      /* on a white page the lift is drawn short, a hair of charcoal along the rounded top and a soft
+         shadow reaching only 6 pt above it, so stone (1.14 against white) still reads as a sheet and
+         the 14 pt gap under the capsule stays white */
       .dshadow.on-light {
         box-shadow:
-          0 -1px 0 rgba(34, 38, 36, 0.07),
-          0 -4px 16px rgba(34, 38, 36, 0.16);
+          0 -1px 0 rgba(34, 38, 36, 0.08),
+          0 -1px 5px rgba(34, 38, 36, 0.08);
       }
       .grab {
         position: absolute;
@@ -990,6 +992,11 @@
         height: 1px;
         background: var(--hair-light);
         z-index: 5;
+      }
+      /* Focus's foot: the same hairline on charcoal, at the tab hairline's y, so the foot line is set
+         on the frame like the tabs elsewhere */
+      .hair.dark {
+        background: var(--hair-dark);
       }
       .handle {
         position: absolute;
@@ -1032,6 +1039,15 @@
       }
       .handle.strip {
         height: 44px;
+      }
+      /* the open drawer: its toggle stays where the folded handle's "Rest of today ⌃" sits, under
+         capture at 715–735, so the drawer closes from the spot that opened it */
+      .handle.open {
+        z-index: 8;
+      }
+      .handle.open .more {
+        right: 24px;
+        gap: 4px;
       }
       /* the half drawer: one deliberate row, its name at the left in charcoal and the chevron at 366 */
       .handle.strip .row1 {
@@ -1211,6 +1227,14 @@
         display: flex;
         flex-direction: column;
       }
+      /* the half drawer, where capture floats over the list with no capsule: a title wraps to a second
+         line ending by x 286, so it is never cut or faded beside the disc (the row grows to 62) */
+      .rrow.lane {
+        white-space: normal;
+      }
+      .rrow.lane .rt {
+        max-width: 222px;
+      }
       .rrow .rt small {
         display: flex;
         align-items: center;
@@ -1241,27 +1265,20 @@
       .rrow.done {
         color: var(--muted);
       }
-      .rrow.cue .ring {
-        -webkit-mask-image: linear-gradient(
-          180deg,
-          #000 0%,
-          rgba(0, 0, 0, 0.55) 30%,
-          transparent 92%
-        );
-        mask-image: linear-gradient(180deg, #000 0%, rgba(0, 0, 0, 0.55) 30%, transparent 92%);
-      }
-      .rrow.cue .rt {
-        position: relative;
-      }
-      .rrow.cue .rt::after {
+      /* the covered row: ring and title under one cover, on one ramp, from nothing at the ring's top
+         (y 10 in the row) to 30% stone at its foot (y 34). Charcoal under 30% stone is about 5:1 on
+         stone, so the whole circle and every glyph stay above 4.5:1 and the row reads as going under */
+      .rrow.cue::after {
         content: '';
         position: absolute;
-        inset: 0 -4px;
-        /* at most 0.3 of stone over the charcoal title: about 5.3:1 on stone at the baseline, the faintest any glyph gets */
+        left: -4px;
+        right: -4px;
+        top: 10px;
+        height: 24px;
         background: linear-gradient(
           180deg,
           rgba(238, 240, 236, 0) 0%,
-          rgba(238, 240, 236, 0.3) 78%,
+          rgba(238, 240, 236, 0.3) 92%,
           rgba(238, 240, 236, 0.3) 100%
         );
         pointer-events: none;
@@ -1661,10 +1678,12 @@
         gap: 18px;
         align-items: flex-start;
       }
+      /* cropped below the field (screen y 400) and faded over the plain stone under it, so no line of
+         text sits in the fade */
       .inset-frame {
         flex: none;
         width: 207px;
-        height: 260px;
+        height: 224px;
         padding: 6px 6px 0;
         border-radius: 33px 33px 0 0;
         background: linear-gradient(160deg, #2a2d2c 0%, #0c0d0d 50%, #0c0d0d 100%);
@@ -1672,12 +1691,12 @@
           0 0 0 1px #5a5f5c,
           0 18px 30px -16px rgba(20, 24, 22, 0.45);
         overflow: hidden;
-        -webkit-mask-image: linear-gradient(180deg, #000 74%, transparent 100%);
-        mask-image: linear-gradient(180deg, #000 74%, transparent 100%);
+        -webkit-mask-image: linear-gradient(180deg, #000 92%, transparent 100%);
+        mask-image: linear-gradient(180deg, #000 92%, transparent 100%);
       }
       .inset-clip {
         width: 195px;
-        height: 254px;
+        height: 218px;
         border-radius: 27px 27px 0 0;
         overflow: hidden;
       }
@@ -2008,6 +2027,34 @@
       .under.c34 {
         grid-column: 3 / 5;
       }
+      /* the panels in a band share its height, so their frames end on one line */
+      .under.bnote {
+        align-self: stretch;
+      }
+      .row3.tiered {
+        grid-template-rows: auto auto;
+        row-gap: 40px;
+      }
+      /* under row 3: one panel across the row, its heading over 7 and its text in three columns, each
+         set on a phone's column */
+      .under.c14 {
+        grid-column: 1 / 5;
+      }
+      .bnote.wide {
+        display: grid;
+        grid-template-columns: repeat(4, 366px);
+        column-gap: 104px;
+        align-items: start;
+      }
+      .bnote.wide p {
+        margin-top: 0;
+      }
+      .bnote.wide > p {
+        padding-top: 1px;
+      }
+      .bnote.wide p.test {
+        margin-top: 8px;
+      }
       .bnote {
         border: 1px solid rgba(34, 38, 36, 0.14);
         border-radius: 18px;
@@ -2060,9 +2107,6 @@
         grid-template-columns: 414px 414px;
         column-gap: 56px;
         align-items: start;
-        margin-left: -28px;
-        border-left: 1px solid rgba(34, 38, 36, 0.14);
-        padding-left: 27px;
       }
       .rowhead {
         grid-column: 1 / -1;
@@ -2079,9 +2123,7 @@
       }
       .undocol {
         grid-column: 2;
-        margin-left: -28px;
-        border-left: 1px solid rgba(34, 38, 36, 0.14);
-        padding: 4px 0 0 27px;
+        padding: 4px 12px 0;
         display: grid;
         gap: 16px;
         align-content: start;
@@ -2115,9 +2157,6 @@
         line-height: 22px;
         font-weight: 450;
         color: var(--board-text);
-      }
-      .undocol .bnote {
-        margin-top: 28px;
       }
       /* the folded Next line in its six seconds after a tap, drawn at actual size: the top of the
          drawer, so it is rounded on top only */
@@ -2247,7 +2286,7 @@
         display: grid;
         gap: 34px;
         align-content: start;
-        padding-top: 4px;
+        padding: 4px 12px 0;
       }
       .outside .stext {
         max-width: 560px;
@@ -2328,11 +2367,13 @@
         margin-right: -4px; /* the chevron's ink ends at 366 */
         color: var(--ash);
       }
+      /* "Ran today" on charcoal: an ash check and the words, no filled disc, so the plain fact is no
+         brighter than the titles */
       .ran {
         flex: none;
         display: inline-flex;
         align-items: center;
-        gap: 8px;
+        gap: 4px;
         font-size: 15px;
         line-height: 20px;
         font-weight: 500;
@@ -2415,10 +2456,12 @@
         line-height: 1;
         font-weight: 700;
       }
-      /* a done step's disc is a 44 pt button that un-ticks it */
+      /* a done step's disc is a 44 pt button that un-ticks it. Every disc carries the same 5 pt
+         charcoal ring, so the rail is cut the same way at all three */
       .mk.done {
         background: var(--sage);
         color: var(--charcoal);
+        box-shadow: 0 0 0 5px var(--charcoal);
       }
       .hit {
         position: relative;
@@ -2491,11 +2534,12 @@
       /* ═════════════ Draft 3 additions ═════════════ */
       /* the lantern's light: a static falloff of ash over charcoal around the block, never moving.
          At its brightest it is #323634 (1.25 against the canvas): white 12.5, ash 5.5, terracotta 5.1.
-         It reaches the header, so the dark above the step reads as light dropping away */
+         Centred a little above the block (y 380 on Today), so it reaches up toward the header and the
+         dark above the step reads as light dropping away, while the corners and the dock row stay dark */
       .screen.lamp {
         background:
           radial-gradient(
-            ellipse 360px 300px at var(--lx, 170px) var(--ly, 430px),
+            ellipse 360px 300px at var(--lx, 170px) var(--ly, 380px),
             #323634 0%,
             rgba(50, 54, 52, 0.66) 38%,
             rgba(50, 54, 52, 0.22) 72%,
@@ -2570,6 +2614,11 @@
         right: 0;
         background: var(--stone);
         z-index: 7;
+      }
+      /* the half drawer: the tabs' band is drawn as the cover the list goes under, a faint shadow along
+         its top edge falling 10 pt onto the list, so the covered row reads as passing beneath it */
+      .stoneband.cover {
+        box-shadow: 0 -6px 10px -6px rgba(34, 38, 36, 0.16);
       }
       .wall {
         position: absolute;
@@ -2993,7 +3042,7 @@
             Adnotia <span class="sep">·</span> phone app <span class="sep">·</span> design direction
           </p>
           <h1>Lantern</h1>
-          <p class="subtitle">with the Now capsule</p>
+          <p class="subtitle">with Glasshouse's pinned Now capsule</p>
           <p class="idea">
             <b>A dark charcoal canvas lit by one sentence:</b> the step you are on, in very large
             white type, with one terracotta bar burning down beneath it. Everywhere else, that
@@ -3085,6 +3134,10 @@
         </div>
         <aside class="objects" aria-labelledby="obj-h">
           <h2 id="obj-h">One object at every size</h2>
+          <p class="exlabel from">
+            From Glasshouse: the capsule's place above the tabs, and its rule that it hides while
+            the lit step is on screen.
+          </p>
           <div class="exhibit">
             <div class="cpair">
               <div
@@ -3291,28 +3344,26 @@
               <span class="grab" style="top: 66px" aria-hidden="true"></span>
               <header class="hdr" style="top: 76px">
                 <h2 class="place">Rest of today</h2>
-                <a class="hide" href="#today" aria-label="Hide the rest of today"
-                  ><svg class="i i20" aria-hidden="true"><use href="#i-down" /></svg>Hide</a
-                ><a class="me on-stone" href="#me">Me</a>
+                <a class="me on-stone" href="#me">Me</a>
               </header>
               <p class="a lbl" style="top: 132px">Later today</p>
               <div class="trow two" style="top: 154px; height: 62px">
                 <span class="t">10:30</span
                 ><span class="ti"><b>Call the dentist</b><small>in 25 min</small></span
                 ><span class="dur"
-                  >10 min<span class="m" aria-hidden="true"><i></i><i></i></span
+                  >10 min<span class="m" style="--min: 10" aria-hidden="true"></span
                 ></span>
               </div>
               <div class="trow" style="top: 216px; height: 44px">
                 <span class="t">11:00</span><span class="ti">Walk to the park</span
                 ><span class="dur"
-                  >20 min<span class="m" aria-hidden="true"><i></i><i></i><i></i><i></i></span
+                  >20 min<span class="m" style="--min: 20" aria-hidden="true"></span
                 ></span>
               </div>
               <div class="trow" style="top: 260px; height: 44px">
                 <span class="t">14:00</span><span class="ti">Ring the bank</span
                 ><span class="dur"
-                  >15 min<span class="m" aria-hidden="true"><i></i><i></i><i></i></span
+                  >15 min<span class="m" style="--min: 15" aria-hidden="true"></span
                 ></span>
               </div>
               <p class="a lbl" style="top: 320px">Anytime today</p>
@@ -3340,7 +3391,7 @@
                 <svg class="i ring" aria-hidden="true"><use href="#i-ring" /></svg
                 ><span class="rt"><span>Water the plants</span></span>
               </div>
-              <span class="stoneband" style="top: 606px; bottom: 0"></span>
+              <span class="stoneband cover" style="top: 606px; bottom: 0"></span>
               <a
                 class="capsule slot"
                 href="#focus"
@@ -3359,6 +3410,11 @@
               <button class="capture on-light" aria-label="Capture">
                 <svg class="i i28" aria-hidden="true"><use href="#i-plus" /></svg>
               </button>
+              <a class="handle open" href="#today" aria-label="Hide the rest of today"
+                ><span class="more"
+                  ><svg class="i i20" aria-hidden="true"><use href="#i-down" /></svg>Hide</span
+                ></a
+              >
               <span class="hair" style="top: 754px; z-index: 8"></span>
               <nav class="tabs" aria-label="Main" style="z-index: 9">
                 <a class="tab" href="#today" aria-current="page"
@@ -3382,10 +3438,10 @@
             <h2>The day pulled up, the step carried</h2>
             <p class="t">
               Opening the day keeps the light on: the step, bar and minutes fold into the Now
-              capsule. The list ends above it on a row that fades whole, to say the list goes on,
-              and scrolls up from there, so no task hides behind the capsule. Me sits 18 lower here,
-              because this drawer's edge is below the status bar. Done today is off until chosen, so
-              it is not drawn.
+              capsule. The list ends above it on a covered row, its ring and title greying together
+              toward their foot, and scrolls up from there, so no task hides behind the capsule.
+              Hide sits where Rest of today was, so the drawer closes from the spot that opened it.
+              Me sits 18 lower, below this drawer's edge.
             </p>
           </div>
         </section>
@@ -3414,8 +3470,9 @@
                   <svg class="i i18" aria-hidden="true"><use href="#i-cal" /></svg>Today, 10:30<span
                     class="dot"
                     >·</span
-                  ><span class="dur">10 min</span></button
-                ><span class="meta on-dark">in 25 min</span>
+                  ><span class="dur">10 min</span><span class="dot">·</span
+                  ><span class="dur">in 25 min</span>
+                </button>
               </div>
               <button class="pill ash pad" style="left: 24px; top: 240px">
                 <svg class="i i20" aria-hidden="true"><use href="#i-play" /></svg>Start this instead
@@ -3515,8 +3572,9 @@
                   <svg class="i i18" aria-hidden="true"><use href="#i-cal" /></svg>Today, 10:30<span
                     class="dot"
                     >·</span
-                  ><span class="dur">10 min</span></button
-                ><span class="meta">in 25 min</span>
+                  ><span class="dur">10 min</span><span class="dot">·</span
+                  ><span class="dur">in 25 min</span>
+                </button>
               </div>
               <button class="pill quiet pad" style="left: 24px; top: 240px">
                 <svg class="i i20" aria-hidden="true"><use href="#i-play" /></svg>Start this instead
@@ -3609,7 +3667,7 @@
                   ><svg class="i i20" aria-hidden="true"><use href="#i-down" /></svg>Today</a
                 ><span class="grow"></span><a class="me on-dark" href="#me">Me</a>
               </header>
-              <h2 class="a ctx" style="top: 122px">
+              <h2 class="a ctx" style="top: 166px">
                 <b class="fl">Focus</b> <span class="sep">·</span> Write the school email
                 <span class="sep">·</span> step 2 of 3
               </h2>
@@ -3671,6 +3729,7 @@
               <button class="capture on-dark" aria-label="Capture">
                 <svg class="i i28" aria-hidden="true"><use href="#i-plus" /></svg>
               </button>
+              <span class="hair dark" style="top: 754px"></span>
               <p class="a nexttext" style="top: 776px">
                 Later today <span class="sep">·</span> 10:30 Call the dentist
                 <span class="sep">·</span> in 25 min
@@ -3811,7 +3870,7 @@
                   left: 24px;
                   top: 114px;
                   width: 342px;
-                  grid-template-columns: 1fr 1fr 1.4fr 1fr;
+                  grid-template-columns: 75.57px 78.63px 114.07px 73.73px;
                 "
                 role="tablist"
                 aria-label="Lists"
@@ -3847,8 +3906,11 @@
                   ><small
                     >3 steps <span class="sep">·</span>
                     <span class="dur on-dark"
-                      >30 min<span class="m" aria-hidden="true"
-                        ><i></i><i></i><i></i><i></i><i></i><i></i></span></span></small
+                      >30 min<span
+                        class="m"
+                        style="--min: 30"
+                        aria-hidden="true"
+                      ></span></span></small
                 ></span>
               </div>
               <div class="rrow tall two" style="top: 430px">
@@ -3857,8 +3919,11 @@
                   ><span>Return the library books</span
                   ><small
                     ><span class="dur on-dark"
-                      >15 min<span class="m" aria-hidden="true"
-                        ><i></i><i></i><i></i></span></span></small
+                      >15 min<span
+                        class="m"
+                        style="--min: 15"
+                        aria-hidden="true"
+                      ></span></span></small
                 ></span>
               </div>
               <div class="rrow tall" style="top: 492px">
@@ -3952,7 +4017,7 @@
                   left: 24px;
                   top: 114px;
                   width: 342px;
-                  grid-template-columns: 1fr 1fr 1.4fr 1fr;
+                  grid-template-columns: 75.57px 78.63px 114.07px 73.73px;
                 "
                 role="tablist"
                 aria-label="Lists"
@@ -3988,8 +4053,11 @@
                   ><small
                     >3 steps <span class="sep">·</span>
                     <span class="dur"
-                      >30 min<span class="m" aria-hidden="true"
-                        ><i></i><i></i><i></i><i></i><i></i><i></i></span></span></small
+                      >30 min<span
+                        class="m"
+                        style="--min: 30"
+                        aria-hidden="true"
+                      ></span></span></small
                 ></span>
               </div>
               <div class="rrow tall two" style="top: 430px">
@@ -3998,8 +4066,11 @@
                   ><span>Return the library books</span
                   ><small
                     ><span class="dur"
-                      >15 min<span class="m" aria-hidden="true"
-                        ><i></i><i></i><i></i></span></span></small
+                      >15 min<span
+                        class="m"
+                        style="--min: 15"
+                        aria-hidden="true"
+                      ></span></span></small
                 ></span>
               </div>
               <div class="rrow tall" style="top: 492px">
@@ -4075,10 +4146,10 @@
           <p class="n">1 and 4</p>
           <h3 id="told-h">Today and Focus, told apart</h3>
           <p>
-            The judges' main worry about Lantern was that these two look alike. Each now has what
-            the other lacks. Today: the date, the stone drawer and the tabs. Focus: its name at the
-            head of the context line, a bar run edge to edge like a horizon, and +5 min beside the
-            minutes. On both, the step is the one white heading.
+            A risk with Lantern was that these two look alike. Each has what the other lacks. Today:
+            the date, the stone drawer and the tabs. Focus: its name at the head of the context
+            line, a bar run edge to edge like a horizon, and +5 min beside the minutes. On both, the
+            step is the one white heading.
           </p>
           <p>
             The row under the thumb is the same on both. While the capsule is opening, and for a
@@ -4132,17 +4203,6 @@
                     <p class="a sheettitle" style="top: 307px">Capture</p>
                     <span class="textbtn quiet" style="right: 20px; top: 296px">Close</span>
                     <div class="field">Ask Ana about Friday<span class="caret"></span></div>
-                    <p class="a lbl" style="top: 412px; font-weight: 500; letter-spacing: 0">
-                      Goes to the inbox with no date. Plan it later if you like.
-                    </p>
-                    <div
-                      class="switch on-stone"
-                      style="left: 24px; top: 442px; width: 176px; grid-template-columns: 1fr 1fr"
-                    >
-                      <span aria-checked="true"><b>Inbox</b></span
-                      ><span><b>Today</b></span>
-                    </div>
-                    <span class="save">Save</span>
                   </div>
                 </div>
               </div>
@@ -4159,8 +4219,8 @@
           <div class="cols">
             <p>
               <b>Charcoal, Lantern's default.</b> One dark app, as Lantern drew it, and calmer at
-              night. The capsule is no longer the one dark thing, so it is lifted: a lighter fill
-              and a full ash edge, with its Now and its burning bar. A task that is not running is
+              night. The capsule is not the one dark thing here, so it is lifted: a lighter fill and
+              a full ash edge, with its Now and its burning bar. A task that is not running is
               charcoal too, close to the running task's own page. Long lists in white on charcoal
               may be harder to read in daylight.
             </p>
@@ -4176,7 +4236,7 @@
           </p>
         </aside>
       </div>
-      <div class="row3">
+      <div class="row3 tiered">
         <section class="device" aria-labelledby="c7">
           <div class="frame" data-shot="07-nothing-running">
             <div class="screen dark lamp" style="--lx: 170px; --ly: 220px">
@@ -4235,35 +4295,35 @@
               <div class="trow" style="top: 440px; height: 44px">
                 <span class="t">10:30</span><span class="ti">Call the dentist</span
                 ><span class="dur"
-                  >10 min<span class="m" aria-hidden="true"><i></i><i></i></span
+                  >10 min<span class="m" style="--min: 10" aria-hidden="true"></span
                 ></span>
               </div>
               <div class="trow" style="top: 484px; height: 44px">
                 <span class="t">11:00</span><span class="ti">Walk to the park</span
                 ><span class="dur"
-                  >20 min<span class="m" aria-hidden="true"><i></i><i></i><i></i><i></i></span
+                  >20 min<span class="m" style="--min: 20" aria-hidden="true"></span
                 ></span>
               </div>
               <div class="trow" style="top: 528px; height: 44px">
                 <span class="t">14:00</span><span class="ti">Ring the bank</span
                 ><span class="dur"
-                  >15 min<span class="m" aria-hidden="true"><i></i><i></i><i></i></span
+                  >15 min<span class="m" style="--min: 15" aria-hidden="true"></span
                 ></span>
               </div>
               <p class="a lbl" style="top: 584px">Anytime today</p>
-              <div class="rrow" style="top: 606px">
+              <div class="rrow lane" style="top: 606px">
                 <svg class="i ring" aria-hidden="true"><use href="#i-ring" /></svg
                 ><span class="rt"><span>Renew the parking permit</span></span>
               </div>
-              <div class="rrow" style="top: 650px">
+              <div class="rrow lane" style="top: 650px">
                 <svg class="i ring" aria-hidden="true"><use href="#i-ring" /></svg
                 ><span class="rt"><span>Order printer ink</span></span>
               </div>
-              <div class="rrow cue" style="top: 694px">
+              <div class="rrow lane cue" style="top: 694px">
                 <svg class="i ring" aria-hidden="true"><use href="#i-ring" /></svg
                 ><span class="rt"><span>Book the boiler service</span></span>
               </div>
-              <span class="stoneband" style="top: 754px; bottom: 0"></span>
+              <span class="stoneband cover" style="top: 754px; bottom: 0"></span>
               <button class="capture on-light" aria-label="Capture">
                 <svg class="i i28" aria-hidden="true"><use href="#i-plus" /></svg>
               </button>
@@ -4291,14 +4351,14 @@
             <p class="t">
               Nothing running is said first, in white, and there is no terracotta on the canvas. The
               first thing on today's list is lit a size smaller than a running step, and the rest of
-              today waits beneath it, clear of capture, its last row fading to say the list goes on.
-              This is the screen after any time away, if anything has today's date.
+              today waits beneath it, clear of capture, its last row greying where it goes under the
+              tabs. This is the screen after any time away, if anything has today's date.
             </p>
           </div>
         </section>
         <section class="device" aria-labelledby="c7b">
           <div class="frame" data-shot="07b-nothing-planned">
-            <div class="screen dark lamp" style="--lx: 170px; --ly: 440px">
+            <div class="screen dark lamp" style="--lx: 170px; --ly: 390px">
               <div class="status" aria-hidden="true">
                 <span class="clock">9:12</span><span class="cam"></span
                 ><span class="sys"
@@ -4417,14 +4477,12 @@
               <a
                 class="handle"
                 href="#rest"
-                aria-label="Next, in 40 minutes: 14:00, Ring the bank. Rest of today."
-                ><p class="l1 lbl">Next <span class="sep">·</span> in 40 min</p>
+                aria-label="Anytime today: Call the dentist. Rest of today."
+                ><p class="l1 lbl">Anytime today</p>
                 <span class="more" aria-hidden="true"
                   >Rest of today<svg class="i i20"><use href="#i-up" /></svg
                 ></span>
-                <p class="l2">
-                  <span class="t">14:00</span><span class="ti">Ring the bank</span>
-                </p></a
+                <p class="l2"><span class="ti">Call the dentist</span></p></a
               >
               <span class="hair" style="top: 754px"></span>
               <nav class="tabs" aria-label="Main">
@@ -4450,7 +4508,8 @@
             <p class="t">
               Where the app opens when a task was paused and left. Paused is said in words, the bar
               stands still in ash, and nothing says how long it has been. Resume is where Pause was,
-              and Set aside, beside the minutes, puts the task away at its step.
+              and Set aside puts the task away at its step. The dentist call, whose slot passed
+              meanwhile, is on the Next line under Anytime today, unmarked.
             </p>
             <p class="fn">
               After a forgotten clock was closed at its estimate, the same screen shows the empty
@@ -4567,12 +4626,33 @@
             <h2>The task lit, its steps on a rail</h2>
             <p class="t">
               Lantern's own task page: steps on an even rail with the current one marked Now, and
-              the note in a dark field so the step stays the brightest thing. This page is the lit
-              task itself, so the slot where other pages carry the capsule holds Focus, which opens
-              upward from where Step done sits on Today.
+              the note in a dark field so the step stays the brightest thing. Every other task's
+              page carries the capsule here. This one is the lit task itself, so the capsule is not
+              shown and the slot holds Focus, which opens upward from the dock line.
             </p>
           </div>
         </section>
+        <aside class="under c14 bnote wide" aria-labelledby="weighed-h">
+          <div>
+            <p class="n">7, 7b and 7c <span class="sep">·</span> Weighed, not overlooked</p>
+            <h3 id="weighed-h">While something runs, the rest of today stays folded</h3>
+            <p class="test">Whether that is enough is the first thing to test with people.</p>
+          </div>
+          <p>
+            For this audience a task out of sight is a task forgotten. Lantern's fold is kept on
+            purpose, so the step stays the one lit thing while it burns. When nothing runs, the day
+            rests half open, as on 7.
+          </p>
+          <p>
+            What answers the risk: the Next line names what comes next and how soon on every tabbed
+            screen, says Rest of today in words, and opens in one tap without putting the step out.
+          </p>
+          <p>
+            A timed item whose slot passes unstarted goes to the top of Anytime today, unmarked. The
+            idle lantern lights it next, and while a task runs or is paused the Next line names it
+            unless a booked item is due within 15 minutes, as on 7c.
+          </p>
+        </aside>
       </div>
       <div class="row4">
         <section class="device" aria-labelledby="c9r">
@@ -4594,9 +4674,8 @@
               <div class="rrow routine" style="top: 142px">
                 <span class="rt"><span>Morning</span><small>6 steps</small></span
                 ><span class="ran"
-                  ><span class="disc"
-                    ><svg class="i i16" aria-hidden="true"><use href="#i-check-s" /></svg></span
-                  >Ran today</span
+                  ><svg class="i i18" aria-hidden="true"><use href="#i-check-s" /></svg>Ran
+                  today</span
                 ><svg class="i i20" aria-hidden="true"><use href="#i-right" /></svg>
               </div>
               <div class="rrow routine" style="top: 204px">
@@ -4696,7 +4775,7 @@
           <div class="ustrip" role="group" aria-label="Next line, just after a tap">
             <span class="grab" style="top: 8px" aria-hidden="true"></span>
             <p class="l1 lbl">Started Call the dentist</p>
-            <p class="l2"><span class="ti">Write the school email stopped</span></p>
+            <p class="l2"><span class="ti">Write the school email at step 2</span></p>
             <button class="undo" aria-label="Undo: go back to Write the school email at step 2">
               Undo
             </button>
@@ -4720,19 +4799,6 @@
             is next opened. A done step's disc does the same in Focus and on the task's page, which
             is how a Step done from the Lock Screen is taken back.
           </p>
-          <aside class="bnote" aria-labelledby="weighed-h">
-            <p class="n">7 and 7b · Weighed, not overlooked</p>
-            <h3 id="weighed-h">While something runs, the rest of today stays folded</h3>
-            <p>
-              The judges warned that for this audience a task out of sight is a task forgotten.
-              Lantern's fold is kept on purpose, so the step stays the one lit thing. What answers
-              the risk: the Next line names what comes next and how soon on every tabbed screen,
-              says Rest of today in words, and opens in one tap without putting the step out. When
-              nothing runs, the day rests half open. A timed item whose slot passes unstarted goes
-              to the top of Anytime today, so the idle lantern lights it next.
-            </p>
-            <p>Whether that is enough is the first thing to test with people.</p>
-          </aside>
         </section>
         <section class="outside" id="live" aria-labelledby="live-h">
           <section class="device" aria-labelledby="c9">
@@ -4820,11 +4886,11 @@
                     >
                   </div>
                 </div>
-                <span class="lockctl" style="left: 46px" aria-label="Capture"
-                  ><svg class="i" aria-hidden="true"><use href="#i-plus" /></svg
-                ></span>
-                <span class="lockctl" style="left: 294px" aria-label="Camera"
+                <span class="lockctl" style="left: 46px" aria-label="Camera"
                   ><svg class="i" aria-hidden="true"><use href="#s-camera" /></svg
+                ></span>
+                <span class="lockctl" style="left: 294px" aria-label="Capture"
+                  ><svg class="i" aria-hidden="true"><use href="#i-plus" /></svg
                 ></span>
                 <span class="homebar w"></span>
               </div>
@@ -4835,7 +4901,8 @@
               <p class="t">
                 The step, the bar and the minutes, in the same order and colours as the capsule, and
                 when the next booked item is. Step done works without unlocking, and a tap anywhere
-                else opens Focus. There is no Pause here: pausing ends the card.
+                else opens Focus. There is no Pause here: pausing ends the card. Capture is the
+                right-hand control, under the thumb as in the app; iOS lets the person change it.
               </p>
               <p class="fn">
                 System text (the status bar, the keyboard and this clock) is set in Inter, standing

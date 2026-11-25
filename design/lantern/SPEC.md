@@ -1,8 +1,8 @@
 # Lantern, carried
 
-Design specification for the phone app · November 2026 · draft 5
+Design specification for the phone app · November 2026 · draft 6
 
-This follows the owner's choice, in their words: "Lantern, but with Glasshouse's pinned now capsule." It starts from the proposal the judges favoured, "Lantern, carried", and adds the ideas they named from the other two proposals. Where a judge's idea and the owner's request disagreed, the owner's request won. Drafts 2 to 5 each apply a review of the board by the judges (three lenses, and a fourth that looks for regressions in draft 5); where they disagreed, the owner's request came first and the person using the app second. Section 15 says where each part came from, where a graft was changed, and what drafts 2 to 5 changed.
+This follows the owner's choice, in their words: "Lantern, but with Glasshouse's pinned now capsule." It starts from the proposal the judges favoured, "Lantern, carried", and adds the ideas they named from the other two proposals. Where a judge's idea and the owner's request disagreed, the owner's request won. Drafts 2 to 6 each apply a review of the board by the judges (three lenses, and from draft 5 a fourth that looks for regressions); where they disagreed, the owner's request came first and the person using the app second. Section 15 says where each part came from, where a graft was changed, and what drafts 2 to 6 changed.
 
 Sources:
 
@@ -36,10 +36,11 @@ The other places (Tasks, Routines, Library and Me) are drawn in charcoal, which 
 - **Row 1:** phones 1, 2, 3a and 3b.
 - **Row 2:** phones 4, 5, 6a and 6b, then a band of notes beneath them, 40 below the tallest caption:
   - under 4, a panel headed "Today and Focus, told apart" (section 5.4);
-  - under 5, the capture sheet opened from Focus, at half size, fading out at its foot rather than cut flat (section 5.5);
+  - under 5, the capture sheet opened from Focus, at half size, cropped just below its field and fading out over the plain stone under it, so no line of text sits in the fade (section 5.5);
   - under 6a and 6b, one panel spanning both columns: "A choice for the owner: the other places in charcoal or in white" (section 5.6).
-- **Row 3:** phones 7, 7b, 7c and 8: the three ways back after time away, then the running task's own page.
-- **Row 4:** phone 9, Routines, in column 1. Then column 2, behind a 1 pt rule of 14% charcoal in the middle of the gap: "After a tap", with four Next lines in their six seconds after a tap (section 9.8), each fading into the board at its foot rather than cut flat, and under them the panel "Weighed, not overlooked" (section 5.7). Then "Outside the app" across columns 3 and 4, behind the same rule: the Lock Screen phone, then a column with a short text, the Live Activity after its estimate, and the Android notification (section 6). No column of the board is left empty.
+  - The two panels share the band's height, so their frames end on one line.
+- **Row 3:** phones 7, 7b, 7c and 8: the three ways back after time away, then the running task's own page. Then a band, 40 below the tallest caption: one panel across all four columns, "Weighed, not overlooked" (section 5.7). Its label, heading and one line about testing stand over 7, and its text runs in three paragraphs over 7b, 7c and 8, each 366 wide and set 24 inside its phone's column, so the note sits under the screens it is about.
+- **Row 4:** phone 9, Routines, in column 1. Then column 2: "After a tap", with four Next lines in their six seconds after a tap (section 9.8), each fading into the board at its foot rather than cut flat. Then "Outside the app" across columns 3 and 4: the Lock Screen phone, then a column with a short text, the Live Activity after its estimate, and the Android notification (section 6). The two text columns are set 12 inside their columns, on the captions' edge. No column of the board is left empty, and no row has vertical rules.
 - 80 between rows, captions included.
 
 The charcoal and white versions of a place sit side by side in columns 3 and 4 of rows 1 and 2, charcoal first, so the choice reads down two columns.
@@ -52,7 +53,7 @@ The left column is 1100 wide. Top to bottom:
 
 - Eyebrow, muted 14/20, weight 600: "Adnotia · phone app · design direction".
 - Title, charcoal 80/80, weight 700, tracking −0.035em: "Lantern".
-- Under it, muted 30/36, weight 600: "with the Now capsule".
+- Under it, muted 30/36, weight 600, in the owner's words: "with Glasshouse's pinned Now capsule".
 - The idea, in #2E3230 at 20/30 and weight 450, in two sentences: Lantern's own opening line and one about the capsule. "**A dark charcoal canvas lit by one sentence:** the step you are on, in very large white type, with one terracotta bar burning down beneath it. Everywhere else, that sentence rides folded in a Now capsule, one tap from anywhere, in the row that never moves." The bold part is charcoal at weight 650. The white or charcoal choice is left to its own panel.
 - A row of swatches, each a 16 pt square with a 5 pt radius and a 1 pt inner edge of 14% charcoal, labelled in 13.5/20 at weight 500:
   - "Charcoal #222624 now, and the canvas"
@@ -62,7 +63,7 @@ The left column is 1100 wide. Top to bottom:
   - "Stone #EEF0EC the rest of today"
   - "Sage #DFE9E0 done"
   - "Muted #595C5B on light only"
-- A type note in 13.5/20: "**Instrument Sans**, SIL Open Font License, variable width 75–100 and weight 400–700, bundled in the app. Step 40/46 and 44/50 at 700; the idle sentence 32/38. Nothing below 12 pt, no weight under 400. Text measures 4.7:1 to 15.3:1 against the pixels under it." That range holds for every line of text on the board, the faded last row of a list included (section 9.7): measured from the render, the lowest is terracotta on the lifted capsule (4.72), and the faded rows' darkest glyph pixels stay above 5.3:1 down to their baselines.
+- A type note in 13.5/20: "**Instrument Sans**, SIL Open Font License, variable width 75–100 and weight 400–700, bundled in the app. Step 40/46 and 44/50 at 700; the idle sentence 32/38. Nothing below 12 pt, no weight under 400. Text measures 4.7:1 to 15.3:1 against the pixels under it." That range holds for every line of text on the board, the covered last rows and the half-size capture inset included. Measured from the render, the lowest is terracotta on the lifted capsule (4.72). The covered rows' darkest glyph pixels stay at 5.5:1 or more down to their baselines, and their rings at 5.3:1 at their foot (section 9.7). The inset is cropped above its fade (section 5.5), so its lowest line measures 5.5:1.
 - 40 below the type note, the capsule's other states, under a heading in charcoal 17/22 at 650, "The capsule paused, over its estimate, and with a long name". Three capsules on the board ground, 268 × 64 and 16 apart, as on a white place:
   - paused: "Paused" in ash where Now was, "Write the question", the bar frozen in ash, and "18 min left · Write the school email" in white and ash;
   - over the estimate: "● Now  Write the question", the empty outline, "27 min so far";
@@ -70,7 +71,7 @@ The left column is 1100 wide. Top to bottom:
 
   Labelled 16 below in muted 13/18, up to 1000 wide: "Paused is said in words where Now was, with the bar frozen in ash and the minutes in white. Over the estimate, the track is an empty outline and the time counts up; "27 min so far" leaves no room for the name, so the name gives way. A longer name gives way the same way: "Renew the car insurance online" does not fit beside "12 min left", so line 2 shows the minutes alone and the name stays in the spoken label. A name is shown whole or not at all, never cut to a fragment." Draft 4 kept these states in the right column, which left an empty block about 1,100 by 340 under the left column's text.
 
-The right column is 600 wide, with the heading "One object at every size" in charcoal 17/22, weight 650. It holds these exhibits, drawn at actual size and each labelled beneath in muted 13/18:
+The right column is 600 wide, with the heading "One object at every size" in charcoal 17/22, weight 650. It has no top padding, so its cap tops and the eyebrow's sit on one line (y 65 on the board). 6 below the heading, in muted 13/18, the graft is named: "From Glasshouse: the capsule's place above the tabs, and its rule that it hides while the lit step is on screen." The column holds these exhibits, drawn at actual size and each labelled beneath in muted 13/18:
 
 - Side by side, 16 apart: the capsule as on a white place, 268 × 64, reading "18 min left · Write the school email" on line 2; and the capsule **lifted, as on a charcoal place**, on a piece of the canvas (a charcoal tile with a 24 radius and padding 14 and 16), showing a routine step: "● Now  Put shoes on", its bar, and "2 min left · Leaving the house". Labelled 10 below: "The Now capsule, in the lantern's order: the step, the bar, then the minutes left and the task's name, set a little narrower so "Write the school email" fits whole. On a white place it is the one dark thing. On a charcoal place it is lifted on a lighter fill with a full ash edge (right, carrying a routine step)."
 - The Dynamic Island in three states: compact, minimal and expanded (section 6), labelled "Dynamic Island: compact, minimal, and expanded on a long press. It never shows while the app is in front." The compact Island appears here only, not again in row 4.
@@ -124,12 +125,12 @@ Every screen with tabs uses these rows. They are anchored to the bottom safe are
 | Content | 110 to about 594 | 24 to 366 | Whatever the screen is for |
 | Dock line | 606–670 | 24 to 366 | The capsule slot, x 24–292, then capture, x 302–366, centre (334, 638). Every object on it is 64 tall |
 | Folded drawer | 684–844 | full width | Stone, with a 28 radius on its top corners |
-| Drawer handle | 684–754 | full width | Grabber mark at 692; two lines at 704–746 (section 9.8) |
+| Drawer handle | 684–754 | full width | Grabber mark at 692; two lines at 704–746, and "Rest of today ⌃" at the right, 715–735. On the open drawer the same band holds "⌄ Hide" at 715–735 (section 9.8) |
 | Hairline | 754 | 24 to 366 | 1 pt, charcoal at 10% |
 | Tabs | 760–812 | 16 to 374 | Today, Tasks, Routines, Library |
 | Home indicator | 831–836 | centred | System |
 
-**One right edge.** Everything ends at x 366, mirroring the 24 pt left edge: text, the ink of a chevron, the bar's end cap, Me, capture, the switchers, the capture field and Save. Back pills start at x 24.
+**One right edge.** Everything ends at x 366, mirroring the 24 pt left edge: text, the ink of a chevron, the bar's end cap, Me, capture, the switchers, the capture field and Save. Back pills start at x 24. The one exception is the duration track in a column of timed rows (screens 2 and 7): its slot ends at 366, not its ink. The slot is as long as the longest duration in that list, so the 20 min track ends at 366 and the 10 and 15 min tracks end inside it, at 351 and 358.5, and every number still ends on one line (section 9.2).
 
 **The foot of a tabbed screen** is the dock line, 14 pt of gap, the folded drawer and the tabs. The tabs end at 812, 19 pt above the home indicator, and are inset to x 16–374 so the current tab's lozenge stays clear of the display's corner. The capsule rests close on the drawer, as Glasshouse's sat on its bar.
 
@@ -143,6 +144,15 @@ The dock line is the one row that never moves. Lantern's Today keeps its action 
 - **When nothing is running or paused**, a place's slot is empty, and capture stands alone.
 
 Capture and the capsule are separate objects, 10 pt apart, with separate targets and separate names. Capture never sits inside the capsule.
+
+### When a field has the keyboard
+
+The capture sheet carries its own row on the keyboard (section 5.5). Any other field, such as "Add a step" on a task's page (3a, 3b), the note on the running task's page (8), "New routine" (9) or a rename, takes the keyboard without moving the frame:
+
+- **The dock line, the folded drawer and the tabs stay where they are, behind the keyboard.** They are not lifted above it. In SwiftUI they ignore the keyboard's safe area (`.ignoresSafeArea(.keyboard)`), which SwiftUI otherwise counts as part of the bottom safe area; on Android only the content takes the keyboard's inset (`imePadding()` on the content, never on the dock line, the drawer or the tabs).
+- **Only the content moves.** It scrolls so the field and the line under it sit above the keyboard.
+- **Why.** Lifted, the capsule, capture, the two-line Next line and the tabs would stack about 200 pt above the keys, leaving about 100 pt for the field, and the capsule would sit just above the suggestion bar, where a tap meant for a suggestion would open Focus in the middle of typing.
+- **Text in the field is kept.** When the keyboard goes, the foot is where it was. If the person then taps the capsule, a tab or the Next line while the field holds text, the text is kept as a draft in that field, as the capture sheet keeps its draft, and is there when they come back (section 4).
 
 ### Counting the five choices
 
@@ -211,7 +221,7 @@ Line 2 reads "18 min left · Write the school email" on every place drawn. At wi
 |---|---|---|---|
 | Running | ● Now · step | Burning | "18 min left" in terracotta, then · and the task title in ash if it fits whole |
 | Estimate used up | ● Now · step | The track drawn as a 1 pt ash outline with nothing inside and no end cap (6.9:1) | "27 min so far" in terracotta. Beside it the email's name does not fit, so it gives way. "estimate 25" is in the spoken label, on Today and in Focus. No colour changes, nothing flashes, and there is no alert unless the person set one when they started |
-| No estimate | ● Now · step | Five-minute marks (section 9.2) | "7 min so far" in terracotta, then the title if it fits whole |
+| No estimate | ● Now · step | A terracotta length growing from the leading edge, with no track behind it and no end cap; the bar's full width is an hour (section 9.2) | "7 min so far" in terracotta, then the title if it fits whole |
 | Paused | "Paused" in ash 15/20 at 650, set at width 90 so it fits the 54 pt first column where Now was, then the step, which does not move | Frozen, its fill turned ash on the ash-30 track (3.7) | "18 min left" in white, then · and the task title in ash if it fits whole. Paused is said in words, not only shown by the bar going still or the minutes turning white |
 | Paused, with the estimate used up | "Paused" · step | The empty outline | "estimate 25" in white, with "Paused" already on line 1, as on Today's Now line. Never "0 min left". The name gives way. This is the state the app opens on after a forgotten clock is closed |
 | Routine step with minutes | ● Now · "Put shoes on" | That step's minutes | "2 min left" · "Leaving the house" |
@@ -261,6 +271,7 @@ Then it goes without comment.
 - **Focus.** Focus is the capsule opened all the way. It never shows the capsule. Leaving Focus folds it back into the capsule on the screen you came from, or into the lantern if that was Today.
 - **Capture.** Capture is a separate disc beside the capsule, never inside it. When capture opens from a place, the capsule rides on the sheet's top edge and keeps burning. When capture opens from a charcoal screen of the present, the lantern itself stays lit above the sheet.
 - **Starting another task.** On a task page, "Start this instead" lights that page and the capsule goes, because the new present is the page itself. Starting a routine from its own page stops the running task in the same way (it keeps its place), and the routine's page lights. Either way, the one-running-task rule is shown without a message, and for six seconds the Next line offers Undo (section 9.8).
+- **A field in use.** While a field outside the capture sheet has the keyboard, the capsule stays behind the keyboard with the rest of the dock line; it is never lifted above the keys (section 3). If the person puts the keyboard away and taps the capsule while the field holds text, Focus opens and the text is kept as a draft in that field, as the capture sheet keeps its draft.
 - **The Live Activity.** It is the same object outside the app (section 6). iOS does not show an app's own activity in the Dynamic Island while that app is in front, so the capsule and the Island are never on screen together.
   - On Pause, the Live Activity ends. A paused task left on the Lock Screen would be a reminder nobody asked for, so paused is shown only inside the app.
   - On Resume, a new Live Activity starts.
@@ -299,7 +310,7 @@ Screens 1 to 6, 8 and 9 are at 10:05 on Tuesday 24 November, with "Write the sch
 
 **Caption.** "1 · Today". Title: "One sentence lit". Text: "The app opens on the current step, its bar burning down and the light falling off around it. The Next line names what comes next and opens the rest of today, and the row under the thumb holds Step done, Pause and capture."
 
-**Surfaces.** Charcoal from the top of the screen to y 684, with the lantern's falloff (section 7) centred at about (170, 430): a pool at its brightest #323634 behind the block that returns to the canvas, #222624, above about y 130 and at the screen's edges, so the sentence looks lit by a lamp and the top of the screen is Lantern's deep charcoal. Stone below, as the folded drawer. There is no white.
+**Surfaces.** Charcoal from the top of the screen to y 684, with the lantern's falloff (section 7) centred at about (170, 380), a little above the middle of the block: a pool at its brightest #323634 that reaches up toward the header and returns to the canvas, #222624, at the header row, the top corners and the screen's edges. So the sentence looks lit by a lamp and the dark above it reads as light dropping away. Measured from the render at x 170, the canvas lifts from #232725 at y 110 through #262A28 at 170 to #2A2E2C at 230 and #2B2F2D at 250. The ground on the dock row stays at #232725, and Pause measures 1.46:1 against it. Draft 5 centred the pool at (170, 430), which left the band from the header to about y 200 flat (#222624 to #242826). Stone below, as the folded drawer. There is no white.
 
 **Top to bottom:**
 
@@ -353,7 +364,7 @@ Everything else is as Lantern drew it.
 
 ### 5.2 The rest of today
 
-**Caption.** "2 · The rest of today". Title: "The day pulled up, the step carried". Text: "Opening the day keeps the light on: the step, bar and minutes fold into the Now capsule. The list ends above it on a row that fades whole, to say the list goes on, and scrolls up from there, so no task hides behind the capsule. Me sits 18 lower here, because this drawer's edge is below the status bar. Done today is off until chosen, so it is not drawn."
+**Caption.** "2 · The rest of today". Title: "The day pulled up, the step carried". Text: "Opening the day keeps the light on: the step, bar and minutes fold into the Now capsule. The list ends above it on a covered row, its ring and title greying together toward their foot, and scrolls up from there, so no task hides behind the capsule. Hide sits where Rest of today was, so the drawer closes from the spot that opened it. Me sits 18 lower, below this drawer's edge."
 
 **Surfaces:**
 
@@ -367,18 +378,19 @@ Everything else is as Lantern drew it.
 - **Drawer top at 60,** with a 28 radius. Grabber mark at 66–71.
 - **Header row, 76–120,** one row where draft 2 had two:
   - "Rest of today" as a place title: charcoal 28/34, weight 700, tracking −0.02em, at x 24, the same as "Tasks" and "Routines" (section 9.10);
-  - "⌄ Hide": a tint-stone pill 44 tall, a 20 pt down chevron first and then "Hide" in charcoal 15/20 at 600, named "Hide the rest of today". It is drawn like "⌄ Today" in Focus, a header pill that puts the drawer back down, where draft 3's muted words read as a sort menu. It is the same control as the Next line's "Rest of today ⌃", showing its open state;
   - "Me" at x 314–366: an 8% charcoal pill (#DEE0DC on stone) with charcoal 15/20 text at weight 600.
+  - There is no Hide in this row. Draft 5 drew "⌄ Hide" here as a header pill, which one thumb cannot reach from the foot, and it left the spot that had opened the drawer doing nothing. Hide is now at the foot (below).
   - **Why this row sits 18 lower than on every other screen:** the open drawer is a sheet whose edge is at 60, below the status bar, so that the canvas is still felt above it; its header has to sit below its grabber. Me is at 58–102 everywhere else.
 - **"Later today"**, 132–150, in muted 13/18, weight 650.
   - Rows are sized to their text with 11 above and below (section 9.7): 44 for one line, 62 for two.
-  - **154–216:** "10:30" in charcoal 17/22 at weight 650 with tabular figures. "Call the dentist" in charcoal 17/22 at weight 500, like every title in a list, with "in 25 min" under it in muted 13/18; the "in" line alone marks it as next. At the right, "10 min" and its marks.
+  - **154–216:** "10:30" in charcoal 17/22 at weight 650 with tabular figures. "Call the dentist" in charcoal 17/22 at weight 500, like every title in a list, with "in 25 min" under it in muted 13/18; the "in" line alone marks it as next. At the right, "10 min" and its track.
   - **216–260:** "11:00", "Walk to the park", "20 min".
   - **260–304:** "14:00", "Ring the bank", "15 min".
-  - Times sit in a 60 pt column from x 24, and titles start at x 84. The marks sit in a slot 29 wide, the width of four marks, the most in this list, left-aligned after the number, so "10 min", "20 min" and "15 min" end on one line at x 330. Draft 4 right-aligned the marks to x 366, so the numbers ended up to 16 pt apart.
+  - Times sit in a 60 pt column from x 24, and titles start at x 84. Each duration is the number, then 7 pt, then a short track 1.5 pt long per minute (section 9.2). The tracks sit in a slot 30 wide, the length of the longest in this list (20 min), left-aligned after the number, so "10 min", "20 min" and "15 min" end on one line at x 329 and the tracks run 336–351, 336–366 and 336–358.5. The slot, not every track's ink, ends at 366 (section 3). Draft 4 right-aligned the marks to x 366, so the numbers ended up to 16 pt apart.
 - **"Anytime today"**, 320–338. Each row has a 24 pt charcoal ring (1.75 pt stroke) at x 24 inside a 44 pt target, with the title from x 64 in charcoal 17/22 at weight 500. Ten rows, 44 apart from 342: "Renew the parking permit", "Order printer ink", "Book the boiler service", "Pay the window cleaner", "Text Sam about Saturday", "Water the plants", "Find the passport", "Back up the photos", "Post the birthday card", "Sort the recycling". It is a busy day: six rows are on screen and four wait below.
-- **The list ends above the dock line, on a covered row.** The last row on screen, "Water the plants" (562–606), is drawn as covered (section 9.7): its ring fades out whole, from solid at its top to clear near its foot, and its title greys toward its baseline under at most 30% stone, so it reads as going on under the edge. No ring is cut in half. Measured from the render as the darkest glyph pixel against stone, the title is about 10:1 at its cap tops and 5.3:1 at its baseline and descenders, so it keeps the 4.5:1 rule. Draft 4 faded the row whole into stone, which took its baseline to about 1.9:1 and most of the word under 3.4:1: the one place on the board under the rule. From 606 down to the tabs the drawer is plain stone, and the capsule and capture sit on it with nothing passing behind them. The rows after "Water the plants" scroll up from under the edge; the list ends with 96 pt of padding, so its last row can always rise clear of the capsule. On the static board nothing in the list shows below the dock line and no row is cut at the hairline.
-- **The band under the capsule, 670–754, stays plain stone.** Three of the fourth review's judges asked for something there, and two proposed letting the list run on under the capsule behind about 80% stone. That would put text at about 1.3:1, under the 4.5:1 rule, and it would hide a row behind the capsule while rows show above and below it, which is the draft 3 defect below. On every other tabbed screen the folded Next line fills this band; on the open drawer the list is the day, so there is nothing to fold into it. It stays a question for a real phone (section 14).
+- **The list ends above the dock line, on a covered row.** The last row on screen, "Water the plants" (562–606), is drawn as covered (section 9.7). Its ring and its title sit under one cover on one ramp, from nothing at the ring's top (572) to 30% stone at its foot (596), so the row greys toward its foot as one object and reads as going on under the edge. Measured from the render as the darkest pixel in each pixel row against stone, the ring runs from about 13:1 at its top to 5.3:1 at its foot, and the title from 10.5:1 at its cap tops to 5.5:1 at its baseline and descenders, so the whole circle and every glyph keep the 4.5:1 rule. No ring is cut or faded out. Draft 5 faded the ring to about 1.07:1 at its foot while the title greyed only to 30%, so the ring read as a loading arc or a broken C; draft 4 faded the whole row into stone, which took its baseline to about 1.9:1.
+- **The edge the list goes under is drawn.** From 606 down to the tabs the drawer is a plain stone band, the cover, with a faint shadow along its top edge (0 −6 10 −6 at 16% charcoal) that falls about 10 pt onto the list, below the covered row's ink. The capsule and capture sit on the cover with nothing passing behind them. The rows after "Water the plants" scroll up from under its edge; the list ends with 96 pt of padding, so its last row can always rise clear of the capsule. On the static board nothing in the list shows below the dock line and no row is cut at the hairline.
+- **The band under the dock line, 670–754, holds Hide.** "⌄ Hide", a 20 pt down chevron and then "Hide" in muted 13/18 at weight 650, its ink ending at x 366, sits at 715–735: exactly where "Rest of today ⌃" sits on the folded drawer. So the drawer opens and closes from one spot, in reach of the right thumb, and capture does not move. It is the drawer's handle in its open state: one button over the band 684–754, named "Hide the rest of today", as the folded handle is one button over the same band, and the left of the band is plain stone as the handle's right column is. Draft 5 left the band empty, which read as a missing component, and put Hide in the header. Two judges had proposed letting the list run on under the capsule behind about 80% stone instead; that would put text at about 1.3:1 and hide a row behind the capsule while rows show above and below it, which is the draft 3 defect below.
 - Draft 3 ran the list on under the dock line to the hairline, with solid stone behind the dock line only. Two rows were then hidden behind the band while rows above and below it showed, so the list looked whole while two tasks were missing, and the capsule looked dropped into the middle of the list. For this audience a task out of sight is a task forgotten, so a covered row must read as covered, never as absent.
 - **The running email is not in any list,** because it is the capsule.
 - **Dock line, 606–670:** the capsule as in section 4, and capture at x 302–366. Anytime rows have no right-hand column, so capture's lane stays clear.
@@ -412,9 +424,10 @@ This is the screen the owner will set beside Lantern's own "Task opened", and th
 - **176–220:** the when pill, drawn as a field: a capsule 44 tall from x 24, with no fill and a 1 pt edge of ash at 36%, so it reads as a value to change and the one action below it stands apart. (Draft 3 filled it ash-8, which made five grey capsules of nearly one value on this page.) It contains:
   - an 18 pt calendar glyph in white;
   - "Today, 10:30" in white 15/20, weight 600 (15.3:1 on the canvas);
-  - "·" and "10 min" in ash (6.9:1). No duration marks here: with nothing beside it to compare, a quantity would only be decoration.
+  - "·" and "10 min" in ash (6.9:1). No duration track here: with nothing beside it to compare, a quantity would only be decoration;
+  - "·" and "in 25 min" in ash, so the when is one object: the time, how long, and how soon.
 
-  To its right, outside the pill, "in 25 min" in ash 15/20. A tap opens the when sheet (section 12).
+  The pill runs from x 24 to 315. A tap opens the when sheet (section 12), where "in 25 min" is not set: it follows from the time. Draft 5 set "in 25 min" outside the pill on its own, so the when read as two things.
 - **240–296:** "Start this instead": an ash-20 pill from x 24, 56 tall and as wide as its words (padding 18 and 22), with a 20 pt play glyph and white 17/22 text at weight 600 (10.4:1). It is a secondary pill because it is not the present: the capsule is.
 - **308–348:** in ash 15/20, on two lines: "Starting this stops the timer on Write the school email. It keeps its place at step 2."
 - **372–390:** "Steps" in ash 13/18, weight 650.
@@ -427,11 +440,11 @@ This is the screen the owner will set beside Lantern's own "Task opened", and th
 
 - the ground is white, the status glyphs charcoal, the title charcoal;
 - "‹ Today", "⋯" and Me are tint-white pills (#EDEEED) with charcoal text;
-- the when pill is stone with a 1 pt edge of charcoal at 10%, "Today, 10:30" in charcoal and "· 10 min" in muted; "in 25 min" is muted;
+- the when pill is stone with a 1 pt edge of charcoal at 10%, "Today, 10:30" in charcoal and "· 10 min · in 25 min" in muted;
 - "Start this instead" is a filled quiet pill: #DEE0DC (charcoal at about 13% on white), a 1 pt edge of charcoal at 10% and the tab lozenge's lift (0 1 3 rgba(34,38,36,0.12)), charcoal 17/22 text at weight 600 (11.5:1). The edge and lift make it read as pressable; draft 3's flat fill with no edge (1.33:1 on white) read as a disabled button, and draft 2's 1.5 pt outline as a form's ghost button. Its 56 pt height sets it apart from the 44 pt when pill;
 - the sentence, "Steps" and "Add a step" are muted;
 - the capsule is charcoal, the one dark thing on the page, over a white fade from 582 to 606;
-- the folded drawer and tabs are as in 3a. On white the drawer's shadow is lighter, 0 −4 16 rgba(34,38,36,0.16), with a hair of charcoal at 7% along its rounded top, because stone is only 1.14:1 against white and needs an edge to read as a sheet. The white page runs on under the drawer to the foot of the screen, so the corners sit on white.
+- the folded drawer and tabs are as in 3a. On white the drawer's lift is short: a 1 pt hair of charcoal at 8% along its rounded top and a soft shadow, 0 −1 5 rgba(34,38,36,0.08), that reaches only about 6 pt above it. Stone is only 1.14:1 against white and needs an edge to read as a sheet, and the 14 pt gap under the capsule should stay white. Measured from the render, the gap is #FFFFFF beside the capsule and #EFEFEF to #F7F7F7 under it, where only the capsule's own shadow falls. Draft 5's drawer shadow, 0 −4 16 at 16%, added to the capsule's and took the gap under it to #E6E6E6. The white page runs on under the drawer to the foot of the screen, so the corners sit on white.
 
 **Choices: 5.** When, Start this instead, Add a step, the capsule, Capture. Back, "⋯", Me and the handle are the frame. "⋯" holds Add a note, Rename and Delete.
 
@@ -440,8 +453,8 @@ This is the screen the owner will set beside Lantern's own "Task opened", and th
 - **After "Start this instead":**
   - The email's session stops. It keeps step 2 as its place.
   - The page lights and becomes the running task's own page (5.8), and the capsule goes. On white the page turns to charcoal over 300 ms; on charcoal only the layout changes.
-  - VoiceOver says: "Started Call the dentist. Write the school email stopped at step 2."
-  - For six seconds the Next line reads "Started Call the dentist" over "Write the school email stopped", with Undo, so the strip says what happened to both tasks. Undo stops the dentist's session, starts the email again at step 2, and returns to this page unlit. (Draft 4's "Write the school email, step 2" did not say what had happened to the email; "kept at step 2" was asked for and needs 290 of the 252 pt beside Undo. The page's own sentence has already said it keeps its place.)
+  - VoiceOver says: "Started Call the dentist. Write the school email keeps its place at step 2."
+  - For six seconds the Next line reads "Started Call the dentist" over "Write the school email at step 2", with Undo, so the strip accounts for both tasks and keeps the page's promise in sight: the email waits at step 2. Undo stops the dentist's session, starts the email again at step 2, and returns to this page unlit. The line measures 249 of the 252 pt beside Undo. Draft 5's "Write the school email stopped" could read as abandoned, just after the page said the email keeps its place; "Write the school email kept at step 2" needs 288 pt, and a short name such as "Email" is one the app cannot make up.
 - **When nothing is running,** the same button reads "Start": the white primary pill on charcoal (3a), and on white the charcoal pill (3b, the one place charcoal is used for a button on a white page). The sentence under it is absent. Start also leaves six seconds of Undo, which stops the session as if it had never begun (section 9.8).
 
 ### 5.4 Focus
@@ -456,7 +469,7 @@ This is the screen the owner will set beside Lantern's own "Task opened", and th
 - **Header row, 58–102.**
   - "⌄ Today" at x 24: an ash-20 pill with a 20 pt down chevron and white 15/20 text at weight 600. It names the place you return to. If Focus was opened from the capsule on Tasks, it reads "⌄ Tasks".
   - "Me" at the right, ash-20. Me stays here because the "if things are bad right now" page must be two taps from anywhere.
-- **122–142:** the context line, a heading: "Focus" in ash 15/20 at weight 650, then "· Write the school email · step 2 of 3" in ash at 500. Focus names itself at the head of its context line, where Lantern's own Focus carried only the context, so the step is the one white heading on the screen: one sentence lit, as on Today. "Am I in Focus?" is answered by that word together with what Focus alone has: the bar run edge to edge, "⌄ Today" where the date sits, +5 min beside the minutes, and no tabs or drawer. Draft 4 set "Focus" as a white page title at 32/38 and 700 directly above the 44 pt step, which gave the screen two white headings of nearly one weight.
+- **166–186:** the context line, a heading: "Focus" in ash 15/20 at weight 650, then "· Write the school email · step 2 of 3" in ash at 500. It sits 24 above the done step, so it reads as the heading of the step block it names, and the 64 pt above it, under the header row, is the lamp's. Draft 5 left it at 122–142 when it removed the white Focus title, which left a 68 pt hole between the line and the done step. Focus names itself at the head of its context line, where Lantern's own Focus carried only the context, so the step is the one white heading on the screen: one sentence lit, as on Today. "Am I in Focus?" is answered by that word together with what Focus alone has: the bar run edge to edge, "⌄ Today" where the date sits, +5 min beside the minutes, and no tabs or drawer. Draft 4 set "Focus" as a white page title at 32/38 and 700 directly above the 44 pt step, which gave the screen two white headings of nearly one weight.
 - **210–234:** a 24 pt sage disc with a 16 pt charcoal check, then "Find the school address" in ash 17/22, weight 500. The disc sits in a 44 pt button named "Undo step done: Find the school address", which un-ticks it and makes it the current step again.
 - **252–352:** "Write the question" in white 44/50, weight 700, tracking −0.026em. It wraps to two lines, "Write the" and "question", and it is the largest thing on screen.
 - **366–388:** "After this:" in ash at weight 650, then "Read it once and send" in ash 17/22, weight 500.
@@ -468,6 +481,7 @@ This is the screen the owner will set beside Lantern's own "Task opened", and th
   - "Step done": a white pill, x 24–162;
   - "Pause": an ash-20 pill, x 172–292;
   - Capture at x 302–366.
+- **754:** a 1 pt hairline of hair-dark, x 24–366, at the y of the tab hairline on every tabbed screen, so the foot line is set on the frame and the bottom of the screen reads as deliberate rather than empty.
 - **776–796:** the foot, text only, not a control: "Later today · 10:30 Call the dentist · in 25 min" in ash 15/20, set where the tabs sit on a tabbed screen, so the foot is anchored and the band under the dock line is not left as dead charcoal. It is labelled with the drawer's own section name: the word "Next" is not used here, because "After this" already names the next step and two nexts on one screen meant two different things.
 - **Home indicator** in white.
 
@@ -475,7 +489,7 @@ This is the screen the owner will set beside Lantern's own "Task opened", and th
 
 **Choices: 4.** Step done, Pause, Capture and +5 min. "⌄ Today" (a back control) and Me are the frame.
 
-**How it differs from Today.** The judges' main worry about Lantern was that the two look alike. Each now has what the other lacks:
+**How it differs from Today.** A risk with Lantern was that the two look alike. Each has what the other lacks:
 
 - Today: the date in the header, the stone drawer with its Next line, and the tabs.
 - Focus: its name at the head of the context line, the bar run edge to edge, +5 min beside the minutes, the step at eye height at 44 pt between the step before and after it, and "Later today" as plain text at the foot that cannot be tapped, so nobody leaves Focus by accident.
@@ -526,13 +540,13 @@ The row under the thumb is the same on both, and Step done and Pause ignore taps
     - at the right, x 270–366, "Save": a terracotta pill 44 tall with charcoal 17/22 text at weight 600 (6.3:1). It is in the same right-hand column as the capture disc.
 - **The keyboard,** 508–844, the light system keyboard in the system's face, drawn as the current system draws it: a light panel with 30 pt top corners and a highlight along its top edge, white keys with a 9 pt radius and a hairline shadow, and grey function keys. On iOS its return key is the default "return" key type, which still files the item in this one-line field. It is not "Done": everywhere else in this app "Done" means completing a task or a step, so it keeps that one meaning. On Android, the keyboard's action label is "Save" where the keyboard shows the label.
 
-**Below it, in the notes band,** at half size, fading out from 74% of its height so no keyboard shows and nothing reads as cut: Focus with the same sheet risen.
+**Below it, in the notes band,** at half size: Focus with the same sheet risen. It is cropped just below the field, at sheet y 400, and fades out over the plain stone under it to y 436, so no keyboard shows, nothing reads as cut, and no line of text sits in the fade. Draft 5 cropped it lower and faded it over the helper line, the switch and Save, which measured 3.0, 2.3, 1.8 and 1.6:1 on the board.
 
 - "⌄ Today" and Me;
 - 112–132, the context line as in Focus: "Focus · Write the school email · step 2 of 3", in ash;
 - 144–190, "Write the question" at 40/46 on one line;
 - 206–218, the 12 pt bar edge to edge, and 228–258, the minutes;
-- the sheet from 280, as above.
+- the sheet from 280, as above, down to its field; the helper line, the switch and Save are below the crop.
 
 Its label, in muted 13/18: "From Focus: the same sheet. The step stays lit above it, and Save returns to Focus on the same step."
 
@@ -574,7 +588,7 @@ Its label, in muted 13/18: "From Focus: the same sheet. The step stays lit above
 - **Header row, 58–102:**
   - "Tasks" in white 28/34, weight 700, tracking −0.02em, at x 24;
   - "Me" at the right, ash-20.
-- **114–158:** the list switcher, x 24–366 and 44 tall, on an ash-8 track (#2D312F). It has four parts sized to their words, in the proportion 1 : 1 : 1.4 : 1, so "Coming up" at weight 700 has room in its thumb: "Inbox", "Today", "Coming up" and "Done".
+- **114–158:** the list switcher, x 24–366 and 44 tall, on an ash-8 track (#2D312F). It has four parts, "Inbox", "Today", "Coming up" and "Done", each sized to its word with the same padding either side. The four labels, measured at weight 700 so nothing shifts when the selection moves, take 200 of the 342 pt, and the 142 left is shared out as 17.7 pt either side of each, so the parts are 75.6, 78.6, 114.1 and 73.7 wide. Measured from the render, the space either side of each label is 17.7 to 18.2 pt. Draft 5's proportion of 1 : 1 : 1.4 : 1 gave uneven gaps between the labels (37, 34 and 36 pt).
   - Inbox is selected: an ash-20 thumb inset 3 pt with the shadow 0 1 3 rgba(0,0,0,0.35), and its label in white 15/20 at weight 700.
   - The others are ash at weight 600 (5.9:1).
 - **172–192:** "Anything with no date waits here." in ash 15/20.
@@ -582,8 +596,8 @@ Its label, in muted 13/18: "From Focus: the same sheet. The step stays lit above
   - 200–244: "Birthday present for Mum";
   - 244–306: "Cancel the gym trial", with "2 steps";
   - 306–368: "Ask about the boiler quote", with a 12 pt note glyph and "Thursday or Friday morning", the start of its note;
-  - 368–430: "Look into swimming lessons", with "3 steps · 30 min" and six marks (section 9.2);
-  - 430–492: "Return the library books", with "15 min" and three marks;
+  - 368–430: "Look into swimming lessons", with "3 steps · 30 min" and a 45 pt track (section 9.2);
+  - 430–492: "Return the library books", with "15 min" and a 22.5 pt track;
   - 492–536: "Fix the bike light";
   - 536–580: "Ask Ana about Friday", saved from screen 5 a moment ago, last because it came in last.
   - Draft 4 gave every row a fixed 56, so a one-line row had about 17 above and below its title and a two-line row 8, and the gaps measured on the ink ran from 22.5 to 40.5 pt, loosening toward the foot of the list. The drawer's rows were 44 at the same time, although Tasks › Today is the same list.
@@ -599,7 +613,7 @@ Its label, in muted 13/18: "From Focus: the same sheet. The step stays lit above
 - the helper line and second lines are muted, the titles charcoal, the rings charcoal;
 - the fade behind the dock line is white;
 - the capsule is charcoal, with its light-ground shadows;
-- the drawer's shadow is the lighter one with its 7% hair, as on 3b, and the white page runs on under the drawer;
+- the drawer's lift is the short one with its 8% hair, as on 3b, and the white page runs on under the drawer;
 - the folded drawer and the tabs are stone, as in 6a.
 
 **Choices: 4.** The switcher, the inbox list, the capsule and Capture. Me, the handle and the tabs are the frame.
@@ -613,18 +627,20 @@ Its label, in muted 13/18: "From Focus: the same sheet. The step stays lit above
 
 A row opens its task, and a ring marks the task done. The ticked row stays in place, its disc a button that un-ticks it, until the list is next opened, and the Next line offers Undo for six seconds (sections 9.7 and 9.8).
 
-**The inbox opens at its newest end every time,** not only from 7b. It lists in the order things came in, so after a capture from Tasks in a long inbox the new item is in view above the dock line rather than below it. With seven items, as drawn, the whole list shows.
+**The inbox opens at its newest end every time,** not only from 7b. It lists in the order things came in, so the last things written down are in view above the dock line when it opens. With seven items, as drawn, the whole list shows.
+
+**Save leaves the scroll where it was.** After a capture from Tasks, the list does not jump to its newest end, so a person halfway down a long inbox keeps their place. The new item is accounted for by the Undo strip, which names it ("Saved to the inbox" over "Ask Ana about Friday"), and it is at the newest end the next time the inbox opens.
 
 **Tasks › Today and the drawer.** Tasks › Today is the same list as the drawer's "Rest of today", in the same order, with the same sections, rings and row metric, plus anything already done today under "Done" in Tasks only. They are one list reached two ways: from a tab when planning, and from the drawer when doing.
 
 ### 5.7 Nothing running
 
-**Caption.** "7 · Nothing running". Title: "Nothing burns, and the day rests half open". Text: "Nothing running is said first, in white, and there is no terracotta on the canvas. The first thing on today's list is lit a size smaller than a running step, and the rest of today waits beneath it, clear of capture, its last row fading to say the list goes on. This is the screen after any time away, if anything has today's date."
+**Caption.** "7 · Nothing running". Title: "Nothing burns, and the day rests half open". Text: "Nothing running is said first, in white, and there is no terracotta on the canvas. The first thing on today's list is lit a size smaller than a running step, and the rest of today waits beneath it, clear of capture, its last row greying where it goes under the tabs. This is the screen after any time away, if anything has today's date."
 
 **Surfaces.**
 
 - Charcoal from 0 to 366, with the lantern's falloff centred on the unlit block, at about (170, 220).
-- The stone drawer at its half position, from 366 to the foot.
+- The stone drawer at its half position, from 366 to the foot. The tabs' band, from 754, is drawn as the cover the list goes under (section 9.7).
 - There is no capsule anywhere in the app.
 
 **Top to bottom:**
@@ -636,13 +652,13 @@ A row opens its task, and a ring marks the task done. The ticked row stays in pl
   - **152–172:** "First on today's list" in ash 15/20, weight 500. It says why this item is shown, and it is smaller than "Nothing running" above it, so the hierarchy reads downward. Draft 2 set it at 20/26, larger than the status line.
   - **184–222:** "Write the school email" in white 32/38, weight 700, tracking −0.022em, on one line, 12 below the label. The idle sentence is a size smaller than a running step (40/46), so idle and running differ in size as well as in terracotta.
   - **232–254:** "Starts with:" in ash at weight 650, then "Find the school address" in ash 17/22.
-  - **260–280:** "3 steps · 25 min · would end about 10:23", in ash 15/20. No duration marks: one duration standing alone in a sentence has nothing to be compared with.
+  - **260–280:** "3 steps · 25 min · would end about 10:23", in ash 15/20. No duration track: one duration standing alone in a sentence has nothing to be compared with.
 - **294–350:** "Start": a white pill, x 24–140, with a play glyph and charcoal 17/22 text at weight 600.
 - **The drawer at half, from 366:**
   - **374–379:** the grabber mark.
   - **366–412:** the handle, one button named "Rest of today", drawn as one deliberate row, the drawer's name: "Rest of today" in charcoal 17/22 at weight 600 from x 24, 386–408, and the 20 pt up chevron in muted at the right, its ink ending at x 366. Draft 3 set the words alone at the far right above an empty left side.
   - **418–436:** "Later today" in muted 13/18.
-  - Three rows, 44 tall, with time, title, minutes and marks as on screen 2, the marks in the same 29 pt slot so the minutes end on one line. There is no "in" figure here, because the canvas already says "free until 10:30":
+  - Three rows, 44 tall, with time, title, minutes and track as on screen 2, the tracks in the same 30 pt slot so the minutes end on one line at x 329. There is no "in" figure here, because the canvas already says "free until 10:30":
     - 440–484: "10:30" "Call the dentist", "10 min";
     - 484–528: "11:00" "Walk to the park", "20 min";
     - 528–572: "14:00" "Ring the bank", "15 min".
@@ -650,12 +666,12 @@ A row opens its task, and a ring marks the task done. The ticked row stays in pl
   - Rows with rings:
     - 606–650: "Renew the parking permit";
     - 650–694: "Order printer ink";
-    - 694–738: "Book the boiler service", drawn as covered (section 9.7): its ring fades out whole from its top edge and its title greys to at most 30% stone at its baseline, 5.5:1 there, measured from the render. Seven more anytime items wait below the hairline at 754, and the faded row says so. Draft 4 drew the row at full strength over a fade from 730 that touched no text, so the half drawer looked like a whole list ending cleanly at the hairline while seven tasks were hidden, the defect section 5.2 names.
+    - 694–738: "Book the boiler service", drawn as covered (section 9.7): its ring and title grey together, on one ramp, to 30% stone at the ring's foot, so the ring measures 5.3:1 there and the title 6.4:1 at its baseline, measured from the render. Below it the tabs' band is drawn as the cover, with the same faint shadow along its top edge (at 754) as the open drawer's cover, so the row reads as passing under the tabs rather than as dimmed or done. Seven more anytime items wait below, and the covered row says so. Draft 5 faded the ring out at its foot, so it read as a loading arc; draft 4 drew the row at full strength over a fade from 730 that touched no text, so the half drawer looked like a whole list ending cleanly at the hairline while seven tasks were hidden, the defect section 5.2 names.
   - The lit email is not repeated in the list.
   - **Tabs, 760–812,** with Today current.
 - **Capture** at x 302–366 and y 606–670, on the stone, beside the anytime rows. With nothing running, the dock line holds capture alone.
 
-**Capture's lane.** When capture floats over a list, the list keeps the band behind it clear: nothing with a right-hand column (a duration, a time) rests in x 292–390 between y 582 and 694, and a row that scrolls into that band fades at its right edge under a stone clearing from x 286 to 302. Here the timed rows end at 572 and only the anytime rows, whose titles end well short of x 292, pass beside the disc. Every list ends with 96 pt of padding, so its last row can always scroll clear.
+**Capture's lane.** When capture floats over a list with no capsule beside it (the half drawer), the list keeps the band behind it clear: nothing with a right-hand column (a duration, a time) rests in x 292–390 between y 582 and 694. Every anytime title on the half drawer wraps to a second line that ends by x 286, 16 short of the disc, so no title is ever cut or faded beside it; such a row grows to 62, the two-line row of section 9.7. Here the timed rows end at 572, and the anytime titles that pass beside the disc end well short of x 286 ("Renew the parking permit" at 268), so none wraps. A longer one, such as "Renew the car insurance online", would take two lines. Every list ends with 96 pt of padding, so its last row can always scroll clear. Draft 5 faded a row's right edge under a stone clearing from x 286 to 302, which could cut a long title beside the disc.
 
 **The only terracotta on the screen is the capture disc.**
 
@@ -664,7 +680,7 @@ A row opens its task, and a ring marks the task done. The ticked row stays in pl
 **What the lantern lights when idle.** These rules are checked in order. The first line is "Nothing running" in white, then the rest in ash, except on 7b (rule 4), where nothing could be running:
 
 1. A timed item that starts within 15 minutes, or whose slot is under way: "Nothing running · starts at 10:30, in 5 min", then "Next booked", then "Call the dentist", then Start.
-2. Otherwise, the first item in Anytime today, in the person's own order. That is the case drawn here. The app never chooses by any other rule. A timed item whose slot passed unstarted has already gone to the top of Anytime today (section 9.8), so this rule lights it next, unmarked, and it is not lost from view.
+2. Otherwise, the first item in Anytime today, in the person's own order. That is the case drawn here. The app never chooses by any other rule. A timed item whose slot passed unstarted has already gone to the top of Anytime today (section 9.8), so this rule lights it next, unmarked. While a task is running or paused the lantern is that task's, so the folded Next line names the passed item instead, under "Anytime today", unless a timed item starts within 15 minutes (section 9.8, and screen 7c). Either way it is not lost from view.
 3. If Anytime today is empty but timed items remain:
    - "Nothing running";
    - "Free until 14:00" as the white sentence;
@@ -686,7 +702,13 @@ Start lights the lantern on the spot: the words stay and grow to 40/46, the bar 
 - A routine says "Ran today" only when it has run today.
 - **At accessibility text sizes,** the half drawer rests folded to its Next line, so the lantern has room.
 
-**On the board, in row 4 under "After a tap":** "Weighed, not overlooked". "While something runs, the rest of today stays folded. The judges warned that for this audience a task out of sight is a task forgotten. Lantern's fold is kept on purpose, so the step stays the one lit thing. What answers the risk: the Next line names what comes next and how soon on every tabbed screen, says Rest of today in words, and opens in one tap without putting the step out. When nothing runs, the day rests half open. A timed item whose slot passes unstarted goes to the top of Anytime today, so the idle lantern lights it next. Whether that is enough is the first thing to test with people."
+**On the board, in the band under row 3** (section 2): "7, 7b and 7c · Weighed, not overlooked". Heading: "While something runs, the rest of today stays folded", with "Whether that is enough is the first thing to test with people." under it. Then three paragraphs:
+
+- "For this audience a task out of sight is a task forgotten. Lantern's fold is kept on purpose, so the step stays the one lit thing while it burns. When nothing runs, the day rests half open, as on 7."
+- "What answers the risk: the Next line names what comes next and how soon on every tabbed screen, says Rest of today in words, and opens in one tap without putting the step out."
+- "A timed item whose slot passes unstarted goes to the top of Anytime today, unmarked. The idle lantern lights it next, and while a task runs or is paused the Next line names it unless a booked item is due within 15 minutes, as on 7c."
+
+Draft 5 set this panel in row 4 under "After a tap", far from the screens it is about, and quoted a review's warning on the owner's board; it now says the concern directly.
 
 ### 5.7b Nothing planned: the way back after weeks
 
@@ -694,7 +716,7 @@ Start lights the lantern on the spot: the words stay and grow to 40/46, the bar 
 
 This is rule 4 of the idle lantern, and the usual screen after weeks away: every past-dated item has gone back to the inbox, so nothing has today's date. Draft 2's caption on screen 7 promised "the same screen after ten minutes or three weeks" without drawing this case.
 
-**Surfaces.** Charcoal to 730, with the lantern's falloff centred on the unlit block, at about (170, 440), a pool of light around the block with the top of the screen at the canvas's own charcoal. Then the stone drawer, resting at its lip. No terracotta on the canvas.
+**Surfaces.** Charcoal to 730, with the lantern's falloff centred a little above the unlit block, at about (170, 390), a pool of light that reaches up toward the header, with the top of the screen at the canvas's own charcoal (draft 5 centred it at 440, which left the upper canvas flat). Then the stone drawer, resting at its lip. No terracotta on the canvas.
 
 **Top to bottom:**
 
@@ -714,13 +736,13 @@ This is rule 4 of the idle lantern, and the usual screen after weeks away: every
 
 ### 5.7c Paused: the way back after a pause that was left
 
-**Caption.** "7c · Paused". Title: "Paused, and one tap to let it go". Text: "Where the app opens when a task was paused and left. Paused is said in words, the bar stands still in ash, and nothing says how long it has been. Resume is where Pause was, and Set aside, beside the minutes, puts the task away at its step." A smaller line, muted 13/18: "After a forgotten clock was closed at its estimate, the same screen shows the empty outline and reads "estimate 25" in place of the minutes."
+**Caption.** "7c · Paused". Title: "Paused, and one tap to let it go". Text: "Where the app opens when a task was paused and left. Paused is said in words, the bar stands still in ash, and nothing says how long it has been. Resume is where Pause was, and Set aside puts the task away at its step. The dentist call, whose slot passed meanwhile, is on the Next line under Anytime today, unmarked." A smaller line, muted 13/18: "After a forgotten clock was closed at its estimate, the same screen shows the empty outline and reads "estimate 25" in place of the minutes."
 
 This is the most common way back for this audience: something was paused, or its clock was forgotten and closed (section 4), and the person returns hours later. Draft 3 described it and did not draw it, and as described the only way to let go of the paused task was to open Focus first.
 
-It is 13:20 on the same Tuesday. The email was paused at 10:05 with 18 minutes left. The 10:30 and 11:00 items passed unstarted and have quietly joined the top of Anytime today, so the Next line names 14:00.
+It is 13:20 on the same Tuesday. The email was paused at 10:05 with 18 minutes left. The 10:30 and 11:00 items passed unstarted and have quietly joined the top of Anytime today, in the order their slots fell, so the dentist call is first. The next timed item, 14:00, is 40 minutes away, so the Next line names the call (section 9.8).
 
-**Surfaces.** As screen 1: charcoal to 684 with the lantern's falloff centred at about (170, 430), then the folded stone drawer. There is no terracotta on the canvas: terracotta means a clock is running.
+**Surfaces.** As screen 1: charcoal to 684 with the lantern's falloff centred at about (170, 380), then the folded stone drawer. There is no terracotta on the canvas: terracotta means a clock is running.
 
 **Top to bottom:**
 
@@ -738,7 +760,7 @@ It is 13:20 on the same Tuesday. The email was paused at 10:05 with 18 minutes l
   - "Step done": an ash-20 pill, x 24–162, with the check and white text. It stays, because the step may have been done while away;
   - "▶ Resume": the white primary pill, x 172–292, with a play glyph and charcoal 17/22 at 600, in Pause's place, so Pause and Resume are one spot that changes its word. Its content is centred by its ink, 17.5 pt either side: the play glyph's ink sits right of its box's centre, and draft 4 left 21 pt before the glyph and 14.5 after the word;
   - Capture at x 302–366.
-- **Folded drawer:** "Next · in 40 min" over "14:00 Ring the bank", and "Rest of today ⌃" at the right. Tabs show Today current.
+- **Folded drawer:** "Anytime today" over "Call the dentist", from x 24 with no time, no mark and no "missed", and "Rest of today ⌃" at the right. The handle is named "Anytime today: Call the dentist. Rest of today." Tabs show Today current. Draft 5 named "14:00 Ring the bank" here, so the call that passed while the email was paused stayed out of sight on the most common way back: the paused email holds the lantern and Resume keeps the drawer folded, so the idle lantern could not light it, although section 9.8 promised it would not drop out of sight.
 
 **With the estimate used up** (a forgotten clock, closed at its estimate): the track is the 1 pt ash outline with nothing inside, and the minutes row reads "estimate 25" in white, never "0 min left". Everything else is the same.
 
@@ -755,7 +777,7 @@ It is 13:20 on the same Tuesday. The email was paused at 10:05 with 18 minutes l
 
 ### 5.8 The running task's own page
 
-**Caption.** "8 · The running task". Title: "The task lit, its steps on a rail". Text: "Lantern's own task page: steps on an even rail with the current one marked Now, and the note in a dark field so the step stays the brightest thing. This page is the lit task itself, so the slot where other pages carry the capsule holds Focus, which opens upward from where Step done sits on Today."
+**Caption.** "8 · The running task". Title: "The task lit, its steps on a rail". Text: "Lantern's own task page: steps on an even rail with the current one marked Now, and the note in a dark field so the step stays the brightest thing. Every other task's page carries the capsule here. This one is the lit task itself, so the capsule is not shown and the slot holds Focus, which opens upward from the dock line."
 
 **Surfaces.** Charcoal to 684, then the stone folded drawer. It is the one screen in Lantern with its own layout, so it is drawn.
 
@@ -767,9 +789,10 @@ It is 13:20 on the same Tuesday. The email was paused at 10:05 with 18 minutes l
 - **170–190:** "Today" in white at weight 600, then "· 25 min estimate · 7 min so far" in ash 15/20, set inline so each "·" has a word space and 0.3em on either side, as everywhere. Draft 4 set the line as separate flex pieces, which dropped the word spaces and left the first dot 8 pt after "Today" and 6 before "25".
 - **202–222:** the bar, 132 × 8, with its tick, halo and end cap; 12 pt, then "18 min left" in terracotta 15/20 at weight 650; 12 pt, then "ends 10:23" in ash.
 - **The steps, from 244,** on a rail, every row 58 tall so the discs sit on one even pitch: a 2 pt line of hair-dark at x 37, from the first disc's centre to the last. Each marker is a 28 pt disc, with the step 16 to its right:
-  - 244–302: a sage disc with a 16 pt charcoal check, then "Find the school address" in ash 17/22 at 500. The disc sits in a 44 pt button named "Undo step done: Find the school address";
+  - 244–302: a sage disc with a 16 pt charcoal check and the same 5 pt charcoal ring as the other two, then "Find the school address" in ash 17/22 at 500. The disc sits in a 44 pt button named "Undo step done: Find the school address";
   - 302–360: a white disc marked "2" in charcoal 14 at 700, with a 5 pt charcoal ring that cuts the rail; "Write the question" in white 22/28 at 600, then 12 pt after it on the same baseline the terracotta dot and "Now" in terracotta 15/20 at 650, as the Now tag is drawn on charcoal. Draft 2 set "Now" above the step, which made the gap to step 1 74 pt and to step 3 56;
-  - 360–418: a charcoal disc with a 1.5 pt ring of ash at 55%, marked "3" in ash; "Read it once and send" in ash 17/22.
+  - 360–418: a charcoal disc with a 1.5 pt ring of ash at 55% and the 5 pt charcoal ring outside it, marked "3" in ash; "Read it once and send" in ash 17/22.
+  - Every disc carries the 5 pt charcoal ring, so the rail stops 5 pt short of each disc, above and below, and all four joins match. Draft 5 gave the ring to discs 2 and 3 only, so the rail touched the done disc and stood off the other two.
 - **438–514:** the note in an ash-8 field, x 24–366, with a 20 radius and padding 14, 18 and 16: a 16 pt note glyph and "Note" in ash 13/18 at 650, then "When is the permission slip due?" in white 17/23 at 500 (13.2:1). A tap opens a stone sheet to edit it.
 - **Dock line:** a white "⌃ Focus" pill, x 24–292 and 64 tall like everything on the dock line, then capture. The up chevron says Focus opens upward out of the page, as it grows out of the capsule elsewhere, and pairs with "⌄ Today" in Focus. Draft 2's play glyph read as "start again" on a task that was already running.
 - **Folded drawer and tabs** as on screen 1, with Today current, because the page was pushed from Today.
@@ -792,7 +815,7 @@ No direction drew Routines. It is drawn here with the capsule docked, so the boa
 - **Header row, 58–102:** "Routines" as a place title, white 28/34 at 700, tracking −0.02em, and Me.
 - **114–134:** "Open a routine to start it." in ash 15/20, the helper line, as Tasks has one.
 - **Four rows, 62 tall, from 142,** with the row metric of every list (11 above and below the two lines), no ring (a routine is not ticked from the list), the title from x 24 in white 17/22 at weight 500 and a second line in ash 13/18, and a 20 pt right chevron in ash at the right, its ink ending at x 366, which says the row opens the routine's page. No dividers and no cards:
-  - 142–204: "Morning", "6 steps". Before the chevron, a 24 pt sage disc with a 16 pt charcoal check and "Ran today" in ash 15/20. It is a plain fact about today, with no count, no streak and no days;
+  - 142–204: "Morning", "6 steps". Before the chevron, an 18 pt check in ash (1.75 stroke), 4 pt, and "Ran today" in ash 15/20, with no disc. It is a plain fact about today, with no count, no streak and no days, and it is no brighter than the titles. Draft 5's sage disc (#DFE9E0) was the most luminous mark in the list and pulled the eye from the routines' names;
   - 204–266: "Leaving the house", "4 steps";
   - 266–328: "Evening wind-down", "5 steps";
   - 328–390: "Sunday reset", "7 steps".
@@ -816,7 +839,7 @@ On the board these sit in row 4 under "Outside the app", at actual size, after e
 
 ### The Lock Screen
 
-**Caption.** "Lock Screen". Title: "The Lock Screen: the same object, at actual size". Text: "The step, the bar and the minutes, in the same order and colours as the capsule, and when the next booked item is. Step done works without unlocking, and a tap anywhere else opens Focus. There is no Pause here: pausing ends the card." A smaller line: "System text (the status bar, the keyboard and this clock) is set in Inter, standing in for SF Pro. The wallpaper stands in for the person's own. The card's mark is the app's own, from assets/logo.svg."
+**Caption.** "Lock Screen". Title: "The Lock Screen: the same object, at actual size". Text: "The step, the bar and the minutes, in the same order and colours as the capsule, and when the next booked item is. Step done works without unlocking, and a tap anywhere else opens Focus. There is no Pause here: pausing ends the card. Capture is the right-hand control, under the thumb as in the app; iOS lets the person change it." A smaller line: "System text (the status bar, the keyboard and this clock) is set in Inter, standing in for SF Pro. The wallpaper stands in for the person's own. The card's mark is the app's own, from assets/logo.svg."
 
 **Surfaces:**
 
@@ -830,8 +853,8 @@ On the board these sit in row 4 under "Outside the app", at actual size, after e
 - "10:05" in white, about 104 pt at weight 600, centred at about 128–236, in the system's face, as the current Lock Screen draws its clock.
 - The Live Activity, x 16–374 and y 600–756, laid out below.
 - At the foot, the system's two Lock Screen controls, each a 50 pt circle at y 772–822:
-  - at the left, the person's optional Adnotia capture control, a white plus glyph on the system's glass circle (white at 16% with a light rim), which opens capture straight away;
-  - at the right, the camera control.
+  - at the left, the camera control;
+  - at the right, x 294–344, the person's optional Adnotia capture control, a white plus glyph on the system's glass circle (white at 16% with a light rim), which opens capture straight away. The right-hand slot is the one recommended in the app's setup, because it puts capture under the right thumb, as the capture disc is in the app at x 302–366. iOS lets the person put any control in either slot, or none, so this is a suggestion the person can change; it is drawn here as recommended. Draft 5 drew it at the left.
 - Home indicator in white.
 
 **Choices:** the card (opens Focus), Step done, and the optional capture control.
@@ -903,7 +926,7 @@ These are the capsule's two ends.
 **Other states:**
 
 - **When the estimate runs out** (the stale date is set to 10:23), the card switches by itself to its stale layout: the outline track, and "estimate 25" beside a system count-up of the time so far. Nothing turns red and nothing alerts. A second stale date 15 minutes later ends it.
-- **No estimate:** the count runs up (`Text(timerInterval:countsDown: false)`), with five-minute marks in place of the bar.
+- **No estimate:** the count runs up (`Text(timerInterval:countsDown: false)`), and the bar grows from the leading edge with no track behind it, its full width an hour (section 9.2).
 
 ### Android
 
@@ -939,17 +962,17 @@ Lantern's tokens are kept. Ratios were measured with the WCAG 2.x formula.
 |---|---|---|---|---|
 | `charcoal` | #222624 | white 15.3, ash 6.9, terracotta 6.3 | The present: Today's canvas, Focus, the running task's own page, the capsule, the Live Activity. Text and glyphs on every light surface. The plus of the capture disc. On white places, only the things that make or mark the present: the plain "Start" pill when nothing runs, and the "Now" tag. The ground of the places, drawn as the default (3a, 6a) | A decorative panel or card. A button on a white page that is not the present, such as "Start this instead" while something runs |
 | `white` | #FFFFFF | charcoal 15.3 | Primary text on charcoal. The primary pill on charcoal (Step done, Start, Focus, and Resume when paused). The ground of the places, if the owner chooses white (3b, 6b): Tasks, Routines, Library, Me, and pages not running. Fields in sheets. The current tab's lozenge and a selected segment's thumb on light | Text on terracotta (2.4). Text on any light ground |
-| `ash` | #A9AFAB | — | Secondary text, glyphs, rings, the bar's end cap and the paused bar on charcoal (6.9). The outline of a used-up bar track. Duration marks on charcoal. Text on the lifted capsule (5.1) and on ash-8 (5.9). Text in the Island (9.4 on black) | Stone (1.9), white (2.2), ash-20 (4.6), terracotta (1.1) |
+| `ash` | #A9AFAB | — | Secondary text, glyphs, rings, the bar's end cap and the paused bar on charcoal (6.9). The outline of a used-up bar track. Duration tracks on charcoal. Text on the lifted capsule (5.1) and on ash-8 (5.9). Text in the Island (9.4 on black) | Stone (1.9), white (2.2), ash-20 (4.6), terracotta (1.1) |
 | `terracotta` | #F28C5E | charcoal 6.3 | On charcoal: the bar's fill, the minutes figure, the Now dot and word. On any surface: the capture disc (charcoal plus and ring) and the Save pill (charcoal text) | Text or glyph on stone (2.1), white (2.4) or sage. Under white text (2.4). On ash-20 (4.3). Any other fill. Any warning |
 | `stone` | #EEF0EC | charcoal 13.4, muted 5.9 | The rest of today: the drawer in every position. Sheets. Switch tracks on white. The when pill | Ash or terracotta text |
 | `sage` | #DFE9E0 | charcoal 12.3, muted 5.4 | The disc behind a done tick, and nothing else | Marking the current tab or a selection (1.1 against stone, 1.2 against white). Large areas |
-| `muted` | #595C5B | — | Secondary text and duration marks on stone (5.9), white (6.8), the tints (5.1 and 5.8) and sage (5.4) | On charcoal (2.3) |
+| `muted` | #595C5B | — | Secondary text and duration tracks on stone (5.9), white (6.8), the tints (5.1 and 5.8) and sage (5.4) | On charcoal (2.3) |
 | `ash-20` | #3D413F | white 10.4 | Secondary pills on charcoal: Pause, Step done while paused, +5 min, Set aside, Me, "⌄ Today", "‹ Today", "⋯", and "Start this instead" on a charcoal page. The selected thumb of a switch on charcoal | Ash text (4.6). Terracotta (4.3) |
 | `ash-30` | #4B4F4D | — | The bar's track on charcoal. Terracotta against it is 3.4. The bare track against charcoal is 1.8, which is why the end cap exists | Text |
 | `ash-8` | #2D312F | white 13.2, ash 5.9, terracotta 5.5 | The note field on the running task's page. The track of a switch on charcoal | The capsule (draft 3's lift, 1.16 against the canvas, was too weak) |
 | `ash-15` | #363B38 (ash 15% over charcoal) | white 11.4, ash 5.1, terracotta 4.7 | The lifted capsule's fill on a charcoal place, 1.34 against the canvas | Any other surface: terracotta on it is the closest pair in the app to 4.5 |
 | `ash-edge` | #737875 (ash 60% over charcoal) | — | The lifted capsule's full 1 pt edge, 3.4 against the canvas | Text |
-| `tint-stone` | #DEE0DC (charcoal 8% on stone) | charcoal 11.5, muted 5.1 | Me and "⌄ Hide" on stone. The track of the Inbox and Today switch in the capture sheet. The Undo pill on the Next line. The same colour on a white page fills the quiet "Start this instead" pill, with a 1 pt edge of charcoal at 10% (`hair-light`) and a 0 1 3 lift (section 9.5) | The only mark of a state |
+| `tint-stone` | #DEE0DC (charcoal 8% on stone) | charcoal 11.5, muted 5.1 | Me on stone. The track of the Inbox and Today switch in the capture sheet. The Undo pill on the Next line. The same colour on a white page fills the quiet "Start this instead" pill, with a 1 pt edge of charcoal at 10% (`hair-light`) and a 0 1 3 lift (section 9.5) | The only mark of a state |
 | `tint-white` | #EDEEED (charcoal 8% on white) | charcoal 13.2, muted 5.8 | Me, back pills and "⋯" on white | The only mark of a state |
 | `hair-dark` | rgba(169,175,171,0.16) | — | The step rail and dividers on charcoal | — |
 | `hair-light` | rgba(34,38,36,0.10) | — | The hairline under the drawer handle, the edge of the when pill on white, the edge of the quiet "Start this instead" pill, and the done disc's edge on light. The capture disc's edge on light is the same mix at 15% | — |
@@ -966,12 +989,13 @@ Lantern's tokens are kept. Ratios were measured with the WCAG 2.x formula.
 - the when pill on a charcoal page: a field with a 1 pt edge of ash at 36% (2.1), identified by its white text (15.3);
 - the paused bar: an ash fill on the ash-30 track, 3.7;
 - the current tab and a selected segment: the cue is not colour but a filled glyph (tabs) and the label at 700, on a white lozenge or thumb with a soft shadow. The lozenge alone is 1.1 against stone, and is not relied on;
-- duration marks: muted on stone 5.9 and on white 6.8, ash on charcoal 6.9. There is no track;
+- duration tracks: muted on stone 5.9 and on white 6.8, ash on charcoal 6.9. Each is one piece with nothing behind it, so it is a length and never a share;
 - the quiet "Start this instead" on white: fill 1.33, edge 1.6, lift; identified by its charcoal label (11.5).
 
 **Shadows:**
 
-- the drawer: 0 −6 22 rgba(0,0,0,0.24). On a place with a capsule it is drawn as its own layer above the dock line's fade, so it falls evenly across the drawer's whole rounded top (5.3). On a white place it is 0 −4 16 rgba(34,38,36,0.16), with a 1 pt hair of charcoal at 7% along the rounded top;
+- the drawer: 0 −6 22 rgba(0,0,0,0.24). On a place with a capsule it is drawn as its own layer above the dock line's fade, so it falls evenly across the drawer's whole rounded top (5.3). On a white place it is short: 0 −1 0 rgba(34,38,36,0.08), a 1 pt hair along the rounded top, and 0 −1 5 rgba(34,38,36,0.08), which reaches about 6 pt up, so the 14 pt gap under the capsule stays white but for the capsule's own shadow (5.3);
+- the cover, where a list goes under an edge (the open drawer at 606, the half drawer's tabs at 754): 0 −6 10 −6 rgba(34,38,36,0.16) along the edge's top, falling about 10 pt onto the list, below the covered row's ink (section 9.7);
 - the capsule on light: 0 6 14 −6 rgba(34,38,36,0.4) and 0 2 5 rgba(34,38,36,0.12) (section 4);
 - the capture disc on charcoal: 0 6 14 −6 rgba(0,0,0,0.55);
 - the capture disc on light: 0 6 14 −6 rgba(34,38,36,0.45) and 0 2 5 rgba(34,38,36,0.14), with a 1 pt inner hairline of charcoal at 15%. Draft 3's 10% hairline and lighter shadow left the disc reading pastel on stone (2.1) and white (2.4);
@@ -988,13 +1012,13 @@ Lantern's tokens are kept. Ratios were measured with the WCAG 2.x formula.
 
 That is the only halo. The Now dot is a crisp disc: at 7 pt a halo read as a muddy ring. Halos are static, appear on charcoal only, and never animate.
 
-**The lantern's falloff:** a static radial falloff behind the block, wherever the block stands on Today's canvas (running, paused, idle, nothing planned, and raised above the capture sheet) and in Focus. It is an ellipse with radii 360 across and 300 down, from `lamp` (#323634) at its centre, through 66% of that lift at 38% and 22% at 72%, to charcoal at its edge, so it is a pool around the block and the top of the screen, the header and the corners stay at the canvas's own #222624, as Lantern drew it. Draft 4's ellipse, 540 by 520 on a screen 390 wide, lifted almost the whole canvas (#272B29 even at the top corners), so Today read greyer than Lantern's charcoal and the ground under the dock line rose to #2D312F, which took the ash-20 pills to 1.25:1 against it; they are back to 1.4. It is centred on the block: about (170, 430) on Today and paused Today, (170, 440) on 7b, (170, 220) on 7, (170, 190) above the capture sheet, and (190, 330) in Focus. It never moves and never pulses. It is the light the sentence gives off, so the dark above the step reads as light dropping away rather than as unused space; on the unlit screens it is the same light, because the block still stands there. Draft 3's falloff peaked at #2A2E2C (1.11:1), which is invisible on a phone in daylight. Every text pair on it is measured at its brightest point: ash 5.5, terracotta 5.1, white 12.3.
+**The lantern's falloff:** a static radial falloff behind the block, wherever the block stands on Today's canvas (running, paused, idle, nothing planned, and raised above the capture sheet) and in Focus. It is an ellipse with radii 360 across and 300 down, from `lamp` (#323634) at its centre, through 66% of that lift at 38% and 22% at 72%, to charcoal at its edge, so it is a pool around the block and the top of the screen, the header and the corners stay at the canvas's own #222624, as Lantern drew it. Draft 4's ellipse, 540 by 520 on a screen 390 wide, lifted almost the whole canvas (#272B29 even at the top corners), so Today read greyer than Lantern's charcoal and the ground under the dock line rose to #2D312F, which took the ash-20 pills to 1.25:1 against it; they are back to 1.4. It is centred on the block, a little above its middle where the block sits low: about (170, 380) on Today and paused Today, (170, 390) on 7b, (170, 220) on 7, (170, 190) above the capture sheet, and (190, 330) in Focus. On Today that lifts the band from the header to the Now line (110 to 250) from #232725 to #2B2F2D at x 170, while the top corners stay at #222624 and the ground on the dock row at #232725, so Pause measures 1.46:1 against its ground. Draft 5 centred it at (170, 430) on Today and paused Today and (170, 440) on 7b, which left the canvas from the header to about y 200 flat. It never moves and never pulses. It is the light the sentence gives off, so the dark above the step reads as light dropping away rather than as unused space; on the unlit screens it is the same light, because the block still stands there. Draft 3's falloff peaked at #2A2E2C (1.11:1), which is invisible on a phone in daylight. Every text pair on it is measured at its brightest point: ash 5.5, terracotta 5.1, white 12.3.
 
 **Fades:**
 
 - white: rgba(255,255,255,0) at 582 to 0.94 at 606, and 0.94 down to the drawer, behind the dock line on white pages while a capsule shows;
 - charcoal: the same in rgba(34,38,36) on charcoal places;
-- on the open drawer and the half drawer there is no fade over text: the list ends on a covered row (section 9.7), and below it the drawer is solid stone down to the tabs, so nothing passes behind the capsule (5.2).
+- on the open drawer and the half drawer there is no fade over text: the list ends on a covered row at a drawn edge, the cover, with its faint top shadow (section 9.7). Below the edge the drawer is solid stone down to the tabs, so nothing passes behind the capsule (5.2).
 
 Without a capsule there is no full fade. Capture keeps its lane clear instead (section 5.7), and every list ends with 96 pt of padding.
 
@@ -1022,8 +1046,8 @@ Instrument Sans (SIL Open Font License), variable, at width 100 and weights 400 
 | Sheet title | 17/22 | 650 | −0.005em | "Capture" at the top of its sheet, in charcoal |
 | Row | 17/22 | 500 | 0 | List titles, "After this", the done line in Focus |
 | Meta | 15/20 | 500 | 0 | The date, "of 25 · ends 10:23", the note line, helper lines, "First on today's list", the task title in the capsule (at width 95), Focus's context, "Ran today", Focus's foot |
-| Meta strong | 15/20 | 600–650 | 0 | "Now", "Paused" (at width 90 in the capsule), Me, back pills, "⌄ Hide", "Focus ›", "Focus" at the head of Focus's context line, "18 min left" in the capsule, segment labels, Undo, "+5 min", "Set aside" |
-| Label | 13/18 | 650 | +0.01em | Section labels, "Next · in 25 min", and "Rest of today" on the folded handle |
+| Meta strong | 15/20 | 600–650 | 0 | "Now", "Paused" (at width 90 in the capsule), Me, back pills, "Focus ›", "Focus" at the head of Focus's context line, "18 min left" in the capsule, segment labels, Undo, "+5 min", "Set aside" |
+| Label | 13/18 | 650 | +0.01em | Section labels, "Next · in 25 min", "Rest of today" on the folded handle, and "Hide" on the open drawer |
 | Tab | 12/16 | 600, or 700 when current | +0.01em | Tab labels |
 
 **Floors.** Nothing is below 12 pt or below weight 400. Everything is sentence case. There are no uppercase micro-labels and no italics.
@@ -1070,7 +1094,7 @@ When idle it is unlit: "Nothing running" in white first, then the same structure
 
 In every state the lantern's falloff sits behind it (section 7).
 
-### 9.2 The bar, and duration marks
+### 9.2 The bar, and duration tracks
 
 **Shape.** A rounded track (radius half its height) in ash-30. The terracotta fill runs from the leading edge, and its length is the time left as a share of the estimate, so it burns down toward the leading edge.
 
@@ -1100,22 +1124,20 @@ In every state the lantern's falloff sits behind it (section 7).
 
 - **Estimate used up:** at every size, the track turns to a 1 pt ash outline with nothing inside it, no fill, no tick and no end cap (6.9:1). It reads as "the time is spent", where an empty track with a tick at its far end read as zero or broken. The words say the rest: "27 min so far", "estimate 25".
 - **Paused:** the fill turns ash and stops (3.7 against the track). The white tick and its halo go, because nothing burns; the end cap stays, so the whole estimate still reads.
-- **No estimate:** five-minute marks instead of a fill and the track: one terracotta square per five minutes worked, the same 5 × 5 square with a 1.25 radius as the duration marks below, 3 apart and centred on the line the bar would run along, at every size from the capsule to Focus. The mark for the current five minutes grows from nothing as it fills. Past the bar's length, each mark stands for fifteen minutes. Draft 4 drew these marks 6 wide and the bar's height (6 × 10 on Today, 6 × 12 in Focus): upright blocks, which at two marks, seven to ten minutes in, read as the pause glyph, the shape removed from lists in that draft.
+- **No estimate:** there is nothing to burn down, so the bar counts up in the duration track's language (below): a terracotta length grows from the leading edge, one piece with round ends, with no track behind it, no tick and no end cap. Its full width stands for an hour, so 7 minutes is about 40 pt on Today (342 wide) and 28 pt in the capsule (238); past an hour it stays full and the number says how much. With nothing behind it, it cannot be read as a share of an estimate, and the words beside it, "7 min so far", say that it counts up. Drafts 4 and 5 drew terracotta squares here, one per five minutes, Glasshouse's pip meter (section 15).
 
-**Duration marks** sit after a duration in a list row: the number, 7 pt (6 in a 13/18 second line), then one mark for every five minutes.
+**Duration tracks** sit after a duration in a list row: the number, 7 pt (6 in a 13/18 second line), then one short track.
 
-- Each mark is a small square, 5 × 5 with a 1.25 radius, 3 apart, centred on the line's x-height, in muted on light and ash on charcoal: 10 min is two marks, 15 is three, 20 four, 30 six. It is the same block as the no-estimate bar's five-minute marks, so one mark is one shape everywhere.
-- Why squares: draft 3's upright bars (3 × 10) read as the pause glyph at two ("10 min ❚❚" looked like "paused") and as a barcode at six. Round dots, tried in this draft, read as the "⋯" More glyph and as a trailing ellipsis at three. A low square is neither: it is not tall like pause and not round like More. Drawn beside the Pause pill and the paused Now line on the board, they cannot be confused.
-- Up to twelve marks, an hour. Longer shows twelve, and the number says how much.
-- There is no track. A rounded track with part of it filled is the shape of the lantern's bar, which means time left, so draft 2's meters read as "half done" on tasks never started. Marks are a count, not a share, so nothing reads as progress.
-- One mark is five minutes everywhere in the app: the no-estimate bar counts time worked in the same unit.
-- Marks are drawn only where durations sit together and can be compared: the rows of the rest of today, the half drawer and the inbox. They are not drawn where one duration stands alone: the idle lantern's sentence and the when pill. The folded Next line carries no minutes at all (section 5.1).
-- In a column of timed rows the marks sit in a slot as wide as the most marks in that list (four, 29 pt, on screens 2 and 7), left-aligned after the number, so every number ends on one line. In an inbox row's second line they follow the number directly.
-- One mark per five minutes after the number echoes Glasshouse's pip meter, which drew two pips for 10 min and four for 20 (section 15).
+- The track is Lantern's own duration mark, the burning bar at its smallest: 4 tall with round ends (radius 2), one piece, in muted on light and ash on charcoal, centred on the line's x-height. Its length is 1.5 pt a minute: 10 min is 15 pt, 15 is 22.5, 20 is 30, 30 is 45 and an hour 90. Longer stays at 90, and the number says how much.
+- Lantern drew a 12 pt dash before the number for 10 min. Before the number a dash reads as a minus sign ("— 10 min"); after it, and as long as the time it stands for, it reads as a length. It is one piece, so it is not a count, and it is flat, so it cannot be taken for the pause glyph beside Pause.
+- There is nothing behind it. A rounded track with part of it filled is the shape of the lantern's bar, which means time left, so draft 2's meters read as "half done" on tasks never started. A duration track is the whole of the time, drawn alone, so nothing reads as progress.
+- One length is one minute wherever durations sit in a list.
+- Tracks are drawn only where durations sit together and can be compared: the rows of the rest of today, the half drawer and the inbox. They are not drawn where one duration stands alone: the idle lantern's sentence and the when pill. The folded Next line carries no minutes at all (section 5.1).
+- In a column of timed rows the tracks sit in a slot as long as the longest in that list (20 min, 30 pt, on screens 2 and 7), left-aligned after the number, so every number ends on one line at x 329; the slot, not every track's ink, ends at 366 (section 3). In an inbox row's second line the track follows the number directly.
 
-The first board drew a bare 4 pt dash before the number, which read as a minus sign. Draft 2 drew a part-filled meter, which read as progress. Draft 3's upright marks read as pause. Small squares after the number read as none of these.
+The first board drew a bare 4 pt dash before the number, which read as a minus sign. Draft 2 drew a part-filled meter, which read as progress. Draft 3's upright marks read as pause. Drafts 4 and 5 drew small squares after the number, one per five minutes: they read as none of those, but they were Glasshouse's pip meter, a second graft from Glasshouse that the owner did not ask for and the board never named. Draft 6 returns to Lantern's own mark, moved after the number and scaled to the minutes.
 
-A bar or marks always sit beside a written number. Time is shown as a quantity, as a number, and where it applies, as an end time.
+A bar or a track always sits beside a written number. Time is shown as a quantity, as a number, and where it applies, as an end time.
 
 ### 9.3 The capsule
 
@@ -1132,7 +1154,7 @@ See section 4.
 
 ### 9.5 Pills and buttons
 
-Every pill has a radius of half its height. Main actions on the dock line (Step done, Pause, Resume, Focus) are 64 tall, the height of the capsule and the capture disc, so the dock line is one band of equal-height objects. Main actions elsewhere (Start, Start this instead, Open the inbox) are 56 tall with padding 18 and 22. Both have a 20 pt glyph, an 8 gap, and a 17/22 label at weight 600. Header pills ("⌄ Today", "‹ Today", "⌄ Hide"), "+5 min", "Set aside" beside the minutes, Save and Undo are 44 tall with 15/20 (17/22 for Save) at weight 600.
+Every pill has a radius of half its height. Main actions on the dock line (Step done, Pause, Resume, Focus) are 64 tall, the height of the capsule and the capture disc, so the dock line is one band of equal-height objects. Main actions elsewhere (Start, Start this instead, Open the inbox) are 56 tall with padding 18 and 22. Both have a 20 pt glyph, an 8 gap, and a 17/22 label at weight 600. Header pills ("⌄ Today", "‹ Today"), "+5 min", "Set aside" beside the minutes, Save and Undo are 44 tall with 15/20 (17/22 for Save) at weight 600.
 
 "Focus" on the running task's page carries an up chevron, not a play glyph: Focus opens upward, and play means Start everywhere else.
 
@@ -1142,7 +1164,7 @@ Every pill has a radius of half its height. Main actions on the dock line (Step 
 | Secondary on charcoal | ash-20 | white | Pause, Step done while paused, +5 min, Set aside, Me, "⌄ Today", "‹ Today", "⋯", and "Start this instead" on a charcoal page |
 | The present, on white | charcoal | white | "Start" on a white task page, when nothing runs |
 | Quiet, on white | #DEE0DC, a 1 pt edge of charcoal at 10% and a 0 1 3 lift, 56 tall | charcoal | "Start this instead" on a white page, while something else runs |
-| Quiet on light | tint-white or tint-stone | charcoal | Me, "‹ Today", "⋯", "⌄ Hide" |
+| Quiet on light | tint-white or tint-stone | charcoal | Me, "‹ Today", "⋯" |
 | Save | terracotta | charcoal | The capture sheet only |
 | Text button | none | muted 17/22 at 600 | Close, with a 44 target, beside the sheet's charcoal title |
 | Undo | tint-stone, 44 tall, padding 20 | charcoal 15/20 at 600 | At the right of the Next line, beside both its lines, and of Focus's foot line. A pill rather than an underlined word, so it reads as a native control by its shape |
@@ -1158,7 +1180,7 @@ Destructive actions (Delete) are quiet text buttons with a confirm step, never c
 **On light** (the Tasks switcher, and Inbox or Today in capture):
 
 - a track in stone (on white) or tint-stone (on stone), 44 tall;
-- each part a 44 pt target, sized to its words where the words differ in length (the Tasks switcher is 1 : 1 : 1.4 : 1);
+- each part a 44 pt target, sized to its word with the same padding either side, the labels measured at weight 700 so nothing shifts when the selection moves (17.7 pt either side in the Tasks switcher, whose parts are 75.6, 78.6, 114.1 and 73.7 wide); where the words are the same length, as in capture's Inbox and Today, the parts are equal;
 - the selected part is a white thumb inset 3 pt with iOS's own thumb shadow (0 3 8 rgba(0,0,0,0.12) and 0 3 1 rgba(0,0,0,0.04)), and its label in charcoal at weight 700;
 - the others are muted at weight 600.
 
@@ -1174,25 +1196,27 @@ Focus has no segmented control. "+5 min" is a 44 pt pill beside the minutes, and
 
 - sized to their text, with 11 above and below it: 44 for one line, 62 for two. The one metric holds in every list: the rest of today, the half drawer, Tasks and Routines, so the space between any two rows is the same 22 whatever they hold;
 - the title in charcoal 17/22 at weight 500 (white on charcoal);
-- an optional second line in muted 13/18 (ash on charcoal): steps, an estimate with its marks, or the start of a note after a 12 pt note glyph. Never a date it was added, never how long it has waited. On a row with a second line, the ring is centred on the title line, not on the two lines;
+- an optional second line in muted 13/18 (ash on charcoal): steps, an estimate with its track, or the start of a note after a 12 pt note glyph. Never a date it was added, never how long it has waited. On a row with a second line, the ring is centred on the title line, not on the two lines;
 - every title in a list at weight 500, the next item included: it is marked by its "in 25 min" line, not by weight;
 - no dividers and no cards.
 
-**Routine rows** (screen 9) have no ring, because a routine is not ticked from a list: the title from x 24, the step count as the second line, a 20 pt right chevron in ash at the right (the row opens the routine's page), and, only on a routine that has run today, a sage disc with a check and "Ran today" before the chevron.
+**Routine rows** (screen 9) have no ring, because a routine is not ticked from a list: the title from x 24, the step count as the second line, a 20 pt right chevron in ash at the right (the row opens the routine's page), and, only on a routine that has run today, an 18 pt check and "Ran today" before the chevron, both in ash on charcoal (muted on a white place), with no disc. The sage disc is kept for a done tick; "Ran today" is a plain fact, set no brighter than the titles.
 
-**The covered row.** Where a list stops at an edge with more below it (the open drawer above the dock line, the half drawer at the hairline), the last row on screen is drawn as covered, so the list reads as going on and never as complete:
+**The covered row.** Where a list stops at an edge with more below it (the open drawer above the dock line, the half drawer at the tabs), the last row on screen is drawn as covered, so the list reads as going on and never as complete:
 
-- its ring fades out whole, solid at its top and clear near its foot;
-- its title greys toward its baseline under at most 30% stone, from nothing at its cap height, so its darkest pixels go from about 10:1 at the cap tops to 5.3:1 at the baseline. It stays above 4.5:1, so it is text like any other;
-- no ring or title is cut by the edge.
+- **ring and title on one ramp.** One cover lies over the whole row, from nothing at the ring's top (10 below the row's top) to 30% stone at the ring's foot (34 below), so the ring and the title grey together toward their foot as one object. Charcoal under 30% stone is about 5:1 on stone: measured from the render as the darkest pixel in each pixel row, the ring runs from about 13:1 at its top to 5.3:1 at its foot, and the title from 10.5:1 at its cap tops to 5.5:1 at its baseline. The whole circle and every glyph stay above 4.5:1, so the ring is still a control that reads whole and the title is text like any other;
+- **the edge is drawn.** Below the row the surface it goes under, the cover, carries a faint shadow along its top (0 −6 10 −6 at 16% charcoal) that falls about 10 pt onto the list, below the row's ink: at 606 on the open drawer, under the capsule and capture, and at 754 on the half drawer, along the tabs. So the row reads as passing under something, not as dimmed or done;
+- no ring or title is cut by the edge or faded out.
 
-Draft 4 faded the whole row into solid stone on screen 2, which took its title under 3:1, and left the half drawer's last row at full strength, so it looked like the end of the list.
+Draft 5 faded the ring out at its foot to about 1.07:1 while the title greyed only to 30%, so the two parts fell at different rates and the ring read as a loading arc or a broken C, and nothing on screen 7 was drawn covering the row. Draft 4 faded the whole row into solid stone on screen 2, which took its title under 3:1, and left the half drawer's last row at full strength, so it looked like the end of the list.
+
+**Titles beside the capture disc.** On the half drawer, where capture floats over the list with no capsule, every anytime title wraps to a second line ending by x 286, 16 short of the disc, so no title is ever cut or faded beside it; that row grows to 62 (section 5.7).
 
 **Timed rows:**
 
 - the time in a 60 pt column, charcoal 17/22 at weight 650 with tabular figures;
 - the title from x 84;
-- the minutes and marks at the right, the marks in a fixed slot so the minutes form one column (section 9.2).
+- the minutes and their track at the right, the tracks in a fixed slot so the minutes form one column; the slot ends at 366 (section 9.2).
 
 **Tick rings and done discs:**
 
@@ -1216,7 +1240,7 @@ Stone, with a 28 radius on its top corners, a 38 × 5 grabber mark (muted at 42%
 | Lip | 730 | The tabs, on a plain stone edge, and nothing else: no grabber | Only when nothing has today's date (7b) |
 | Folded | 684 | The handle (two lines of Next) and the tabs | The default while something runs or is paused; on places, always |
 | Half | 366 | The handle, Later today, Anytime today and the tabs | Only when nothing runs or is paused. The default then, except at accessibility text sizes |
-| Open | 60 | The grabber, a header row with "Rest of today", "⌄ Hide" and Me, the whole of today, and the tabs | Pulled open from any tab |
+| Open | 60 | The grabber, a header row with "Rest of today" and Me, the whole of today ending above the dock line, the cover from 606 with the capsule, capture and "⌄ Hide" on it, and the tabs | Pulled open from any tab |
 
 While something runs, a drag snaps to folded or open, never to half, so the lit step is never on screen twice.
 
@@ -1230,24 +1254,26 @@ The drawer stays where the person leaves it for the rest of the logging day, sep
 |---|---|---|---|
 | Folded | 684–754 | The Next line, two lines, as in the table below. Line 2 stops by x 246 | "Rest of today ⌃" in muted 13/18 at 650, centred across both lines (715–735), so it names the handle and heads no column |
 | Half | 366–412 | "Rest of today" in charcoal 17/22 at 600, one deliberate row (386–408): the drawer's name | The up chevron alone, in muted |
-| Open | 76–120 | The place title "Rest of today", on the same row | "⌄ Hide", a tint-stone header pill, then Me |
+| Open | 684–754, the folded handle's place | Nothing: plain stone | "⌄ Hide", a 20 pt down chevron and "Hide" in muted 13/18 at 650, at 715–735, its ink ending at x 366, exactly where "Rest of today ⌃" sits when folded. Named "Hide the rest of today" |
 | Lip | none | Nothing | Nothing |
 
-On the open drawer the control is at the top, in the header row by the grabber, where the drawer is held. On the first board it sat under the capsule, which put the capsule between the list and its own close control; draft 2 gave it a 44 pt row of its own above the header, which cost a row of the day.
+**The toggle stays in one place, open or folded.** On the open drawer the handle is where it is when folded, at the foot under capture, so the drawer opens and closes from one spot in reach of the right thumb, and on opening "Rest of today ⌃" turns into "⌄ Hide" where it stood. Pulling the sheet down by its grabber, tapping the current tab and Android's back close it too. The first board put Hide under the capsule, between the list and the tabs, on a row of its own; draft 2 gave it a 44 pt row above the header, which cost a row of the day; drafts 3 to 5 put it in the header row by the grabber, out of the thumb's reach, which left the spot that had opened the drawer doing nothing and the band under the dock line empty. Here it sits under capture rather than under the capsule, in the same place as its folded twin.
 
-When folded, the first two lines read:
+When folded, the first two lines read as below. The six-second rows come first; the others are checked in the order given:
 
 | Situation | Line 1 | Line 2 |
 |---|---|---|
-| A timed item is next | "Next · in 25 min" | The time and the title. No minutes: under "Rest of today ⌃" they read as the length of the rest of the day (5.1) |
+| A timed item starts within 15 minutes | "Next · in 10 min" | The time and the title |
 | A timed item's slot is under way and it has not been started | "Next · until 10:40" | "10:30 Call the dentist" |
+| The top of Anytime today holds an item whose slot passed today, and no timed item starts within 15 minutes | "Anytime today" | That item's title, "Call the dentist", from x 24, with no time, no mark and no "missed" (7c) |
+| A timed item is next | "Next · in 25 min" | The time and the title. No minutes: under "Rest of today ⌃" they read as the length of the rest of the day (5.1) |
 | No timed item is left today | "Anytime today" | The first anytime title |
 | Nothing is left for today, after some was done | "Rest of today" | "Nothing else planned" |
 | Nothing has today's date (7b) | No handle: the drawer rests at its lip (above) | None. No empty-state copy and no zero |
 | For six seconds after Step done or Done | "Step done" | "Write the question", with the Undo pill at the right |
 | For six seconds after a tick | "Done" | "Renew the parking permit", with Undo |
 | For six seconds after Start | "Started" | "Write the school email", with Undo |
-| For six seconds after Start this instead | "Started Call the dentist" | "Write the school email stopped", with Undo, so both tasks are accounted for |
+| For six seconds after Start this instead | "Started Call the dentist" | "Write the school email at step 2", with Undo, so both tasks are accounted for and the email's place is in sight (249 of the 252 pt beside Undo) |
 | For six seconds after Save | "Saved to the inbox" | "Ask Ana about Friday", with Undo |
 | For six seconds after Resume | "Resumed" | "Write the school email, step 2", with Undo |
 | For six seconds after Set aside | "Set aside" | "Write the school email", with Undo |
@@ -1257,7 +1283,12 @@ The Next line names the true next item on every screen, including the page of th
 
 **Undo.** Each of these lasts the full six seconds. Other touches do not end it: only a newer undoable tap replaces it, with its own six seconds. It stays while VoiceOver focus is on it. Undo is a 44 pt tint-stone pill at the right of the handle, beside both lines, and "Rest of today ⌃" is hidden while it shows, so there is one control at the right. Undo after Step done un-ticks the step; after Done it also reopens the task; after a tick it un-ticks the task; after Start it stops the session as if it had never begun; after Start this instead it stops the new session and starts the old task again at its step; after Save it removes the item and reopens the sheet with the text; after Resume it pauses again; after Set aside it brings the paused task back. In Focus, the foot line shows the same words and Undo. The six seconds are an owner decision (section 14). Four of these are drawn on the board under "After a tap", each as the top of the drawer, rounded on its top corners only.
 
-**A timed item whose slot ends unstarted** quietly loses its time and goes to the top of Anytime today, unmarked, on the same day, rather than into the person's order. The idle lantern lights the first anytime item, so it is the next thing lit when nothing runs, and it does not drop out of sight. This is a product decision; see section 14.
+**A timed item whose slot ends unstarted** quietly loses its time and goes to the top of Anytime today, unmarked, on the same day, rather than into the person's order. Two that pass go in the order their slots fell, the earlier first. It does not drop out of sight, whatever is happening:
+
+- **when nothing runs or is paused,** the idle lantern lights the first anytime item, so it is the next thing lit (5.7, rule 2);
+- **while a task runs or is paused,** the lantern is that task's, so the folded Next line names it under "Anytime today", unless a timed item starts within 15 minutes (the third row above). This holds on the most common way back, paused Today (7c), where the drawer has no half position and Resume keeps it folded. Draft 5 named only the next timed item there, so a call that passed while a task was paused stayed hidden until that task was set aside or done.
+
+Nothing marks it as missed, late or moved, in either place. This is a product decision; see section 14.
 
 ### 9.9 Sheets
 
@@ -1361,7 +1392,7 @@ These are notes for the build; the board is static. Motion explains where someth
 - The bar does not change, because it measures the task.
 - The Next line crossfades to "Step done" and Undo over 150 ms, and back after six seconds.
 
-**The drawer** follows the finger one to one. On release it springs to the nearest allowed resting place, taking the finger's speed into account.
+**The drawer** follows the finger one to one. On release it springs to the nearest allowed resting place, taking the finger's speed into account. As it opens, "Rest of today ⌃" at the foot crossfades to "⌄ Hide" in the same place over 150 ms, and back as it folds.
 
 **The bar** redraws every second, about 0.23 pt per second on Today.
 
@@ -1416,9 +1447,10 @@ Labels use the same words as the screen.
 | +5 min | "Add 5 minutes" | — |
 | "⌄ Today" | "Back to Today" | "The timer keeps running." |
 | The handle, folded | "Next, in 25 minutes: 10:30, Call the dentist. Rest of today" | "Shows the rest of today." |
+| The handle, folded, naming a passed item (7c) | "Anytime today: Call the dentist. Rest of today" | "Shows the rest of today." |
 | The handle, half | "Rest of today" | "Shows the rest of today." |
 | The drawer at its lip (7b) | Not a control, not read | — |
-| Hide, on the open drawer | "Hide the rest of today" | — |
+| Hide, at the foot of the open drawer | "Hide the rest of today" | — |
 | Undo on the Next line | "Undo step done: Write the question", and the like, naming what it takes back | — |
 | A done step's disc | "Undo step done: Find the school address" | — |
 | A tick ring | "Mark done: Renew the parking permit" | Each row is also a button that opens its task |
@@ -1435,7 +1467,7 @@ Labels use the same words as the screen.
 
 - "Saved to inbox".
 - "Step done. Now: Read it once and send".
-- "Started Call the dentist. Write the school email stopped at step 2".
+- "Started Call the dentist. Write the school email keeps its place at step 2".
 - "Paused". Pausing also ends the Live Activity.
 - "Done: Renew the parking permit" after a tick.
 - "Undone" after Undo, followed by what is now the case: "Now: Write the question".
@@ -1451,7 +1483,7 @@ Labels use the same words as the screen.
 The order is top to bottom, then the dock line, then the drawer.
 
 1. **Today:** date, Me, the lit block, Step done, Pause, Capture, the handle, tabs.
-2. **The rest of today:** "Rest of today" (a heading), "Hide the rest of today", Me, Later today with its rows, Anytime today with its rows, the capsule, Capture, tabs.
+2. **The rest of today:** "Rest of today" (a heading), Me, Later today with its rows, Anytime today with its rows, the capsule, Capture, "Hide the rest of today", tabs.
 3. **A task opened:** Back, More, Me, "Call the dentist" (a heading), the when pill, "Start this instead", the sentence under it, Steps, "Add a step", the capsule, Capture, the handle, tabs.
 4. **Focus:** "Back to Today", Me, "Focus, Write the school email, step 2 of 3" (a heading), "Undo step done: Find the school address", "Now: Write the question" (a heading), "After this: Read it once and send", the time meter, the minutes, "Add 5 minutes", the note, Step done, Pause, Capture, "Later today: 10:30, Call the dentist, in 25 minutes".
 5. **Capture:** the sheet is modal and the lantern above it is visual only. The order is "Capture" (a heading), Close, the field (with focus here on open), the helper line, Inbox or Today, Save, then Me, which keeps the draft.
@@ -1554,7 +1586,7 @@ Below them, "How long" with −5 and +5 around the minutes, then "Done".
 
 ## 13. Deliberately left out
 
-**From Glasshouse,** everything except the capsule's place and its rules, and two smaller things named so the owner can see them: white places, drawn only as the alternative side of a choice, and duration marks, one per five minutes, which are Glasshouse's pip meter (section 15). Left out:
+**From Glasshouse,** everything except the capsule's place and its rules (the board names this under "One object at every size"), and one smaller thing named so the owner can see it: white places, drawn only as the alternative side of a choice. Left out:
 
 - glass and blur;
 - SF Pro inside the app;
@@ -1564,6 +1596,7 @@ Below them, "How long" with −5 and +5 around the minutes, then "Done".
 - the stock white list look as a given: white places are drawn, but only as the alternative side of a choice (3b and 6b), with charcoal drawn as the default;
 - the capsule docked directly on the tab bar. Here it rides the dock line, resting 14 pt above the drawer's Next line and 90 pt above the tabs, so that capture keeps one place on every screen;
 - Glasshouse's "18 min" without "left". Draft 3 took it to fit the task's name; the third review showed that a bare "18" beside a part-filled bar can be read as time spent, so "left" stays and the name gives way when it does not fit.
+- Glasshouse's pip meter for durations, one pip per five minutes. It came in through the review of the first board and was drawn in drafts 3 to 5, as upright bars and then as small squares, without the board saying where it came from. Draft 6 draws Lantern's own mark instead, a short track after the number, scaled to the minutes (section 9.2), and the no-estimate bar grows as one length rather than counting squares.
 
 **From Lantern:**
 
@@ -1573,6 +1606,7 @@ Below them, "How long" with −5 and +5 around the minutes, then "Done".
 - the label "Back to it", now "Focus", with an up chevron;
 - Focus's three-part control (+5 min, Pause, End focus). Focus now shares Today's dock line, with +5 min beside the minutes;
 - the bar inset in Focus; it now runs edge to edge.
+- the folded stone drawer in Focus. Lantern's Focus kept the drawer at its foot, with the Next line, and one pull brought the tabs back. Focus here is charcoal to the foot, with "Later today · 10:30 Call the dentist · in 25 min" as plain text that cannot be tapped. Two reasons: Focus and Today are told apart at a glance, since only Today has the stone drawer and the tabs (5.4), and nobody leaves Focus by accident, since the only ways out are "⌄ Today" and Me.
 
 **Hidden gestures:**
 
@@ -1627,7 +1661,7 @@ None of these is made here.
 | What is recorded when a timer is left running | Closed at the moment its estimate ran out once the app has been in the background 15 minutes past it, or with no estimate at the last moment the app was open. The app then opens paused, with no figure for the time away. Never shown as a fact about the person | Owner |
 | The margin before a forgotten session closes | 15 minutes past the estimate | Owner |
 | How long Undo stays | Six seconds, ended early only by a newer undoable tap, and longer while VoiceOver is on it. It covers Step done, Done, a tick, Start, Start this instead, Save, Resume and Set aside | Owner |
-| A timed item whose slot passes unstarted | Loses its time and goes to the top of Anytime today the same day, unmarked, so the idle lantern lights it next. At the end of the day it goes to the inbox | Owner |
+| A timed item whose slot passes unstarted | Loses its time and goes to the top of Anytime today the same day, unmarked, so the idle lantern lights it next, and while a task runs or is paused the folded Next line names it under "Anytime today" unless a timed item starts within 15 minutes (9.8, 7c). At the end of the day it goes to the inbox | Owner |
 | Where "Open the inbox" lands after time away | Tasks › Inbox, at its newest end, as every time it opens. The alternative, a one-tap "Today" on every inbox row, was not taken: it adds a right-hand control to every row | Owner |
 | A ticked task in a list | Stays in place, un-tickable, until the list is next opened | Owner |
 | Taps ignored on Step done and Pause | During the capsule's movement, and for 1 s after Today or Focus has grown out of the capsule (500 ms when reached another way). Test on a phone | Build |
@@ -1640,6 +1674,8 @@ None of these is made here.
 | "Done today" and Tasks › Done | "Done today" follows the `doneList` reward (off by default). Tasks › Done is where a done task is reopened, and it shows no count | Owner |
 | The five-choice count | The frame (tabs, Me, back, "⋯" and the drawer's handle) is not counted. The capsule and capture are. Paused Today has five | Owner |
 | Live Activity minutes, buttons and lifetime | The system timer text, App Intent buttons (iOS 17 and later), and stale dates at the end of the estimate and 15 minutes later | Build |
+| Whether the Live Activity keeps counting through an overrun | The card closes 15 minutes past the estimate if the app stays in the background, as drawn (section 6). The alternative: it keeps counting up ("40 min so far, estimate 25") until the person acts or the logging day ends. A task done in another app, such as an email, reaches the margin during real work, and a time-blind person may need the count most then; against it, a card that runs all day after a forgotten clock is the reminder nobody asked for | Owner |
+| What a session the app closed itself is called | "Paused", as drawn: paused Today (7c) says "Paused" after a forgotten clock was closed at its estimate, though the person never paused it, which can prompt "did I forget something?". The alternative is "Timer stopped · step 2 of 3", with the same outline track and "estimate 25", so the words say what happened | Owner |
 | Android Live Update, chip and foreground service | Android 16 `ProgressStyle`, with a chronometer and a fixed end time as sub-text. Whether a terracotta chip still qualifies for promotion to the system's surfaces is to be confirmed | Build |
 | Local alerts when an estimate runs out | Only if the person set one when starting. Whether local alerts work with no server is unconfirmed | Build |
 | The typeface | Instrument Sans, as Lantern used | Owner |
@@ -1653,11 +1689,12 @@ None of these is made here.
 - whether the idle lantern's "First on today's list" feels like the app choosing;
 - mis-taps between the capsule and capture, and between the capsule's slot and Step done, on a real phone;
 - whether the lifted capsule is found at a glance on charcoal places;
-- whether duration marks, small squares, read as a quantity of time, and never as progress, as pause or as "more";
+- whether duration tracks, a short length after the number, read as a quantity of time, and never as a trailing dash, as progress or as part of the bar;
 - whether the task's name at width 95 in the capsule reads as the same face, and whether people miss it where a longer name gives way;
 - whether the lantern's falloff, a pool at #323634 around the block, is seen on a real OLED screen in daylight and at night, and whether it ever reads as a smudge;
-- whether the covered last row (its ring fading out, its title greying) reads as "the list goes on" on a phone, on the open drawer and the half drawer;
-- whether the 84 pt of plain stone under the capsule on the open drawer reads as stranded on a phone, and whether anything belongs there that is not a covered row;
+- whether the covered last row (ring and title greying together, under a drawn edge) reads as "the list goes on" on a phone, on the open drawer and the half drawer, and never as dimmed or done;
+- whether people close the open drawer from "⌄ Hide" at the foot, where they opened it, or reach for the top of the sheet;
+- whether "Anytime today" over a passed item on the Next line (7c) is read as a plain reminder, with no sense of blame;
 - whether anyone misses the next item's minutes on the Next line;
 - the ash-20 pills on the lamp (Pause, Step done while paused) under Increase Contrast, with the 1 pt ash outline of section 10;
 - whether "Open the inbox" at its newest end is where a returning person wants to start;
@@ -1708,8 +1745,8 @@ None of these is made here.
 
 **From Glasshouse, beyond the capsule:**
 
-- **Duration marks, one per five minutes after the number.** They are Glasshouse's pip meter, which drew two pips for 10 min and four for 20; Lantern drew a single dash before the number. They came in through the judges' review of the first board, and are named here because the owner asked for the capsule alone. Their shape has changed since (section 9.2), and the count, not the shape, is what is Glasshouse's.
 - **White places, as the alternative side of a choice** (5.6). Charcoal is drawn first, as Lantern's default.
+- Until draft 6, **duration marks, one per five minutes after the number**, which were Glasshouse's pip meter (two pips for 10 min, four for 20). They came in through the judges' review of the first board, and the board never said where they came from. Draft 6 replaced them with Lantern's own mark, a short track scaled to the minutes and moved after the number (section 9.2), so the capsule and the white alternative are now the only things taken from Glasshouse.
 
 **Changed to fit the owner's request:**
 
@@ -1905,3 +1942,44 @@ Not taken in draft 5, and why:
 - **"Today is open"** in place of "Nothing planned for today" on 7b. Dropping "Nothing running" above it removed the stacked negatives; the remaining line is plain and true.
 - **A one-line Next handle on places at regular sizes,** to lighten the foot. The handle would differ between Today and the places; it stays a test.
 - **Something lower on the task page for a task with no steps** (3a, 3b). The page already offers five choices, and a line that is not a choice would be filler.
+
+**Changed in draft 6, from the fifth review.** The same four judges read the draft 5 board: faithfulness, ease of use, craft, and a fourth that compared every phone with the draft before it. Every must-fix item was applied, with the nice-to-fix items chosen for this round.
+
+Faithful to what the owner asked for:
+
+- **Durations are drawn in Lantern's own mark.** The small squares, one per five minutes, were Glasshouse's pip meter, a second graft the owner did not ask for and the board never named. A duration in a list is now the number and then one short track, the burning bar at its smallest, 1.5 pt a minute (9.2). The no-estimate bar grows as one length, its full width an hour, rather than counting squares.
+- **The board names Glasshouse.** The subtitle is the owner's own words, "with Glasshouse's pinned Now capsule", and a line under "One object at every size" says what came from Glasshouse: the capsule's place above the tabs, and its rule that it hides while the lit step is on screen.
+- **Section 13 records that Focus lost Lantern's folded stone drawer,** and why: Today and Focus are told apart, and nobody leaves Focus by accident.
+- **The board describes the design, not the process.** "The judges' main worry" and "The judges warned" are gone from the panels; the concern is said directly. The history stays here.
+- **Screen 8's caption** says that every other task's page carries the capsule and this one, being the lit task, does not; Focus opens upward from the dock line.
+
+Easier to use:
+
+- **Paused Today keeps the passed item in sight.** When the top of Anytime today holds an item whose slot passed today and no timed item starts within 15 minutes, the folded Next line reads "Anytime today" over it, with no mark and no "missed". 7c now reads "Anytime today" over "Call the dentist", where draft 5 named 14:00 and left the call hidden on the most common way back. The promise in 9.8 and 5.7 now holds while a task runs or is paused.
+- **A field's keyboard does not lift the frame.** Outside the capture sheet, the dock line, the drawer and the tabs stay behind the keyboard, and text in the field is kept as a draft if the person then reaches the capsule (sections 3 and 4).
+- **The open drawer closes from the spot that opened it.** "⌄ Hide" sits at 715–735 under capture, where "Rest of today ⌃" sits when folded, and the header's Hide pill is gone. The band under the dock line is no longer empty.
+- **Save leaves the inbox's scroll where it was,** and the Undo strip names the new item (5.6).
+- **Capture is the Lock Screen's right-hand control,** under the thumb as in the app, and the caption says iOS lets the person change it.
+- **Titles beside capture on the half drawer wrap by x 286,** never cut beside the disc (5.7, 9.7).
+- **The Undo strip after Start this instead reads "Write the school email at step 2",** which keeps the page's promise in sight and fits the 252 pt; "stopped" could read as abandoned.
+- Section 14 adds two questions for the owner: whether the Live Activity keeps counting through an overrun, and whether a session the app closed itself says "Timer stopped" rather than "Paused".
+
+Craft:
+
+- **The covered row is one object.** Its ring and title grey on one ramp to 30% stone at the foot, so the whole circle stays at 5.3:1 or better, and the edge it goes under is drawn as a faint shadow (606 on the open drawer, 754 on the half drawer). Draft 5's ring faded to about 1.07:1 and read as a loading arc.
+- **The rail on the running task's page is cut the same way at every disc:** the done disc carries the same 5 pt charcoal ring as the other two.
+- **The lamp reaches up again.** Its centre moved to (170, 380) on Today and 7c and (170, 390) on 7b, so the band from 110 to 250 lifts toward #2B2F2D while the top corners stay at #222624 and Pause measures 1.46:1 against its ground.
+- **The capture inset ends above its fade:** it is cropped below the field and fades over plain stone, so the type note's claim that every line of text on the board measures 4.7:1 or more is true.
+- **Focus's context line sits 24 above the done step,** as the step block's heading, and a hairline at 754 sets the foot line on the frame.
+- **"in 25 min" is inside the when pill,** so the when is one object.
+- **The Tasks switcher has equal padding** either side of each label (17.7 pt).
+- **"Ran today" is an ash check with no disc,** no brighter than the titles.
+- **On white places the 14 pt gap under the capsule stays white:** the drawer's lift is a hair and a 6 pt shadow, so only the capsule's own shadow falls there.
+- **The board's layout.** The header's two columns share one top line; the "Weighed, not overlooked" panel is a band under row 3, beside 7, 7b and 7c; the row-2 panels share one height; and row 4 has no vertical rules. Section 3 notes that the timed rows' track slot, not its ink, ends at x 366.
+
+Not taken in draft 6, and why:
+
+- **A smaller white alternative.** Both the charcoal and the white places stay at full size, so the owner can compare them fairly.
+- **A one-line Next handle on places at regular sizes,** to lighten the foot. The handle would differ between Today and the places; it stays a test.
+- **A paused capsule drawn on a place.** The places are drawn at 10:05 with the email running; the paused capsule is in the header and paused Today is 7c.
+- **Something lower on the task page** (3a, 3b). The page already offers five choices, and a line that is not a choice would be filler.

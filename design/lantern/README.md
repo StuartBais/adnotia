@@ -17,9 +17,9 @@ A dark charcoal canvas lit by one sentence, the step you are on, in very large w
 1. Three agents each proposed a way to combine the two: keep Lantern and carry the step as a capsule; make the lantern and the capsule one object at two sizes; or use the capsule to fix the judges' two complaints about Lantern. The complaints were that Today and Focus looked alike and that the day was hidden.
 2. Three judges scored the proposals for faithfulness to what the owner asked for, ease of use for an adult with ADHD, and craft. "Lantern, carried" won, and the other two contributed grafts.
 3. One agent wrote the spec, one built the board from it, and a second designer who had not built it reviewed and fixed it.
-4. Judges scored the board through the same three lenses for three rounds, and in a fourth round a fourth judge compared each phone with the round before and looked for anything that had broken. A fix pass followed every round.
+4. Judges scored the board through the same three lenses for three rounds, and in the fourth and fifth rounds a fourth judge also compared each phone with the round before and looked for anything that had broken. A fix pass followed every round.
 
-The judges are agents, not people. The fourth round scored it 8 for faithfulness, 8 for ease of use, 7.5 for craft and 8 for regressions; this board is the fix pass after it (draft 5 of the specification).
+The judges are agents, not people. The fifth round scored it 8.5 for faithfulness, 8.5 for ease of use, 8 for craft and 7.5 for regressions; this board is the fix pass after it (draft 6 of the specification).
 
 ## For the owner to choose
 
