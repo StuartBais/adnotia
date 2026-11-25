@@ -216,6 +216,15 @@ describe('1 · Today, running (SPEC 5.1)', () => {
     expect(said(m)).toBe('Paused');
   });
 
+  it('lands focus on the unlit block when Done on the last step takes the buttons away', async () => {
+    const m = await mount(TUE_1005);
+    button(m.container, 'Step done: Write the question').focus();
+    press(m.container, 'Step done: Write the question');
+    expect(document.activeElement?.id).toBe('b-stepdone');
+    press(m.container, 'Done: Read it once and send');
+    expect(document.activeElement).toBe(id(m, 'b-idle'));
+  });
+
   it('keeps focus on the spot through Pause and Resume', async () => {
     const m = await mount(TUE_1005);
     button(m.container, 'Pause').focus();
@@ -306,6 +315,13 @@ describe('7c · Paused (SPEC 5.7c)', () => {
     const capsule = id(m, 'b-capsule')!;
     expect(capsule.querySelector('.c1')?.textContent).toBe('PausedWrite the question');
     expect(nameOf(capsule).startsWith('Paused: Write the question, step 2 of 3')).toBe(true);
+  });
+
+  it('lands focus on the unlit block after Set aside', async () => {
+    const m = await mount(TUE_1320, 'pauseLeft');
+    button(m.container, ASIDE).focus();
+    press(m.container, ASIDE);
+    expect(document.activeElement).toBe(id(m, 'b-idle'));
   });
 
   it('lets the task go with Set aside, at its step', async () => {
@@ -402,6 +418,13 @@ describe('7 · Nothing running (SPEC 5.7)', () => {
       ...TABS,
     ]);
     expect(hintOf(button(m.container, 'Rest of today'))).toBe('Shows the rest of today.');
+  });
+
+  it('lands focus on the lit block after Start', async () => {
+    const m = await mount(TUE_0958, 'notStarted');
+    button(m.container, 'Start').focus();
+    press(m.container, 'Start');
+    expect(document.activeElement).toBe(id(m, 'b-lit'));
   });
 
   it('starts the lit item on the spot, and folds the drawer', async () => {

@@ -139,6 +139,7 @@ function lantern(view: PresentView, live: PresentLive, actions: TodayActions): B
       class: 'lit-block',
       type: 'button',
       id: 'b-lit',
+      'data-focus-home': true,
       'aria-label': litLabel(live.spoken),
       'aria-describedby': HINT_IDS.opensFocus,
       onclick: actions.onFocus,
@@ -211,6 +212,7 @@ function idleBlock(
       class: 'idle-block',
       type: 'button',
       id: 'b-idle',
+      'data-focus-home': true,
       'data-geo': 'idle-block',
       'data-half-anchor': idle.start ? undefined : true,
       'aria-label': idle.blockLabel,
@@ -271,7 +273,13 @@ function planned(heading: string, actions: TodayActions): HTMLElement {
   return h(
     'div',
     { class: 'planned', 'data-geo': 'planned' },
-    h('h1', { class: 't-idle', 'data-geo': 'planned-heading', text: heading }),
+    h('h1', {
+      class: 't-idle',
+      'data-geo': 'planned-heading',
+      'data-focus-home': true,
+      tabindex: '-1',
+      text: heading,
+    }),
     h('p', { class: 't-row', 'data-geo': 'planned-line', text: T.inboxHelp }),
     h('button', {
       class: 'pill white pad',

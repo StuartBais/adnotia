@@ -181,7 +181,23 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
     if (focusId) {
       const again = document.getElementById(focusId);
       if (again && target.contains(again)) again.focus();
+      else if (focusLost()) landFocus();
     }
+  }
+
+  /** Nothing has focus, or what had it is no longer on the page. */
+  function focusLost(): boolean {
+    const active = document.activeElement;
+    return !active || active === document.body || !active.isConnected;
+  }
+
+  /**
+   * The control that had focus went with the rebuild (Start, Set aside, Done
+   * on the last step): focus lands on what took its place, the screen's own
+   * block, rather than falling to the page.
+   */
+  function landFocus(): void {
+    container.querySelector<HTMLElement>('[data-focus-home]')?.focus({ preventScroll: true });
   }
 
   function scrollOf(root: ParentNode): Record<string, number> {
@@ -297,15 +313,27 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
 
     // Reading order: top to bottom, then the dock line, then the drawer, except
     // on the half drawer, whose list is read before capture (SPEC 11, list 7).
+    // Moving a node takes focus off anything inside it, so only the drawer
+    // moves, and focus is put back where it was.
     const wanted = position === 'half' ? 'half' : 'rest';
-    if (order !== wanted) {
-      order = wanted;
-      const sequence =
-        wanted === 'half'
+    if (order === '') {
+      container.append(
+        ...(wanted === 'half'
           ? [layer.screen, layer.fade, layer.drawer, layer.dock, layer.tabs, layer.live]
-          : [layer.screen, layer.fade, layer.dock, layer.drawer, layer.tabs, layer.live];
-      container.append(...sequence);
+          : [layer.screen, layer.fade, layer.dock, layer.drawer, layer.tabs, layer.live]),
+      );
+    } else if (order !== wanted) {
+      const active = document.activeElement;
+      container.insertBefore(layer.drawer, wanted === 'half' ? layer.dock : layer.tabs);
+      if (
+        active instanceof HTMLElement &&
+        active.isConnected &&
+        document.activeElement !== active
+      ) {
+        active.focus({ preventScroll: true });
+      }
     }
+    order = wanted;
 
     barRunning = current.kind === 'running' && (today?.kind === 'lit' || capsule !== undefined);
     patchAll(live);
