@@ -970,9 +970,10 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
    * does (SPEC 11). A level closed by a control here (a back pill, Hide, a
    * tab) takes its entries back with it, quietly. Entries are marked with
    * this mount's own mark, so one left by an earlier load is never mistaken
-   * for a level of this one.
+   * for a level of this one: back onto such an entry is back to the tab.
    */
   const mark = Math.random().toString(36).slice(2);
+  const home = location.pathname;
   let entries = 0;
   /** History moves made here whose popstate is still to come. */
   let quiet = 0;
@@ -998,8 +999,21 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
   }
 
   function onPopState(event: PopStateEvent): void {
+    if (destroyed || location.pathname !== home) return;
     const state = event.state as { bench?: unknown; depth?: unknown } | null;
-    if (destroyed || state?.bench !== mark || typeof state.depth !== 'number') return;
+    if (state?.bench !== mark || typeof state.depth !== 'number') {
+      // An entry an earlier load left (after a reload, which iOS does to a
+      // tab it discarded), or one nobody marked. The browser is on it now, so
+      // it becomes this load's tab, with nothing above it: every level closes,
+      // and the next level opened pushes its entry over this one, where back
+      // will find it. Any move still to land is relative to here now.
+      history.replaceState({ bench: mark, depth: 0 }, '');
+      quiet = 0;
+      closeLevels(levels());
+      entries = 0;
+      syncHistory();
+      return;
+    }
     if (quiet > 0) {
       // A move made here has landed; put things right if anything moved since.
       quiet--;
@@ -1008,15 +1022,20 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
       return;
     }
     // The person went back: close as many levels as they went.
-    let close = entries - state.depth;
+    const close = entries - state.depth;
     entries = state.depth;
+    closeLevels(close);
+    syncHistory();
+  }
+
+  /** Closes up to `count` levels from the top, with no history moves of their own. */
+  function closeLevels(count: number): void {
     popping = true;
     try {
-      while (close-- > 0 && levels() > 0) closeTop();
+      while (count-- > 0 && levels() > 0) closeTop();
     } finally {
       popping = false;
     }
-    syncHistory();
   }
 
   /** The open drawer folds; otherwise the top page goes. */

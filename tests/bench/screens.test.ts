@@ -1077,13 +1077,54 @@ describe('back, by Safari’s edge swipe or the back button (plan section 8)', (
     expect(id(again, 'b-lit')).not.toBeNull();
   });
 
-  it('leaves alone an entry another load of the page left behind', async () => {
+  it('takes back past a reload as back to the tab, and closes the drawer after', async () => {
     const m = await mount(TUE_1005);
     press(m.container, 'Me');
-    window.dispatchEvent(
-      new PopStateEvent('popstate', { state: { bench: 'elsewhere', depth: 0 } }),
-    );
-    expect(screenTitle(m)).toBe('Me');
+    window.dispatchEvent(new Event('pagehide'));
+    const stored = stateOf(m).bench.ui!;
+    unmount();
+    const again = await mount(TUE_1005, 'example', (state) => ({
+      ...state,
+      bench: { ...state.bench, ui: stored, away: { since: at(TUE_1005).toISOString() } },
+    }));
+    expect(screenTitle(again)).toBe('Me');
+    goBack();
+    expect(id(again, 'b-lit')).not.toBeNull();
+    // Back once more lands on the earlier load's own entry for Today.
+    goBack();
+    expect(historyDepth()).toBe(0);
+    expect(id(again, 'b-lit')).not.toBeNull();
+
+    press(again.container, HANDLE);
+    expect(again.container.dataset['drawer']).toBe('open');
+    goBack();
+    expect(again.container.dataset['drawer']).toBe('folded');
+    expect(document.activeElement).toBe(id(again, 'b-handle'));
+  });
+
+  it('closes every level when a jump back lands past the reload', async () => {
+    const m = await mount(TUE_1005);
+    press(m.container, 'Me');
+    press(m.container, 'Settings');
+    window.dispatchEvent(new Event('pagehide'));
+    const stored = stateOf(m).bench.ui!;
+    unmount();
+    const again = await mount(TUE_1005, 'example', (state) => ({
+      ...state,
+      bench: { ...state.bench, ui: stored, away: { since: at(TUE_1005).toISOString() } },
+    }));
+    expect(screenTitle(again)).toBe('Settings');
+    expect(historyDepth()).toBe(2);
+    // Three back at once, as from Safari's long-press list: past this load's
+    // Today onto the earlier load's entry for Me.
+    history.go(-3);
+    vi.advanceTimersByTime(1);
+    expect(id(again, 'b-lit')).not.toBeNull();
+    expect(historyDepth()).toBe(0);
+    press(again.container, 'Me');
+    expect(historyDepth()).toBe(1);
+    goBack();
+    expect(id(again, 'b-lit')).not.toBeNull();
   });
 });
 
