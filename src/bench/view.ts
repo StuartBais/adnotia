@@ -268,6 +268,12 @@ export interface TimedRow {
   length: string;
   /** "in 25 min", on the open drawer's next row only. */
   inLine: string | undefined;
+  /**
+   * The row's spoken name, "10:30, Call the dentist, 10 minutes", with
+   * ", in 25 minutes" after the title where the "in" line shows. SPEC 11 gives
+   * no words for it; these follow its Next line and Focus foot.
+   */
+  label: string;
 }
 
 export interface AnytimeRow {
@@ -286,14 +292,19 @@ export interface DayList {
   slot: number;
 }
 
-const timedRow = (task: TimedTask, inLine: string | undefined): TimedRow => ({
-  id: task.id,
-  time: clock24(task.when.time),
-  title: task.title,
-  minutes: task.when.durationMinutes,
-  length: duration(task.when.durationMinutes),
-  inLine,
-});
+const timedRow = (task: TimedTask, inMinutes: number | undefined): TimedRow => {
+  const time = clock24(task.when.time);
+  const soon = inMinutes === undefined ? '' : `, in ${durationSpoken(inMinutes)}`;
+  return {
+    id: task.id,
+    time,
+    title: task.title,
+    minutes: task.when.durationMinutes,
+    length: duration(task.when.durationMinutes),
+    inLine: inMinutes === undefined ? undefined : `in ${duration(inMinutes)}`,
+    label: `${time}, ${task.title}${soon}, ${durationSpoken(task.when.durationMinutes)}`,
+  };
+};
 
 export function dayList(
   state: BenchDomains,
@@ -309,9 +320,7 @@ export function dayList(
     .map((task) =>
       timedRow(
         task,
-        options.inLine && rest.next?.task.id === task.id
-          ? `in ${duration(rest.next.inMinutes)}`
-          : undefined,
+        options.inLine && rest.next?.task.id === task.id ? rest.next.inMinutes : undefined,
       ),
     );
   return {

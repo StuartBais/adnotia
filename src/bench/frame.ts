@@ -300,6 +300,7 @@ export function dayListNodes(
                 class: 'rowbtn',
                 type: 'button',
                 id: `r-${row.id}`,
+                'aria-label': row.label,
                 onclick: () => props.onRow(row.id),
               },
               h('span', { class: 't', text: row.time }),

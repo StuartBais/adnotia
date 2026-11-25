@@ -4,6 +4,7 @@ import { setOption } from '../../src/domains/options';
 import { EMAIL } from '../../src/bench/example';
 import type { BenchDomains } from '../../src/bench/state';
 import { ABOUT } from '../../src/bench/screens/places';
+import { dayList } from '../../src/bench/view';
 import {
   advance,
   button,
@@ -379,6 +380,18 @@ describe('7 · Nothing running (SPEC 5.7)', () => {
     ]);
     // Titles beside capture wrap in their lane rather than run under the disc.
     expect(list.querySelector('.rrow')?.classList.contains('lane')).toBe(true);
+    // Each timed row is named with a pause between its parts.
+    expect(readingOrder(m.container)).toContain('10:30, Call the dentist, 10 minutes');
+  });
+
+  it('names the next timed row with its "in" line where the list shows one', async () => {
+    const m = await mount(TUE_0958, 'notStarted');
+    const list = dayList(stateOf(m), at(TUE_0958), { inLine: true });
+    expect(list.later.map((row) => [row.inLine, row.label])).toEqual([
+      ['in 32 min', '10:30, Call the dentist, in 32 minutes, 10 minutes'],
+      [undefined, '11:00, Walk to the park, 20 minutes'],
+      [undefined, '14:00, Ring the bank, 15 minutes'],
+    ]);
   });
 
   it('has capture alone on the dock line, on the stone, and no capsule anywhere', async () => {
