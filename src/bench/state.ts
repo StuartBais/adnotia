@@ -960,22 +960,33 @@ export function passSlots(state: BenchDomains, now: Date): BenchDomains {
 /**
  * Coming back the same day: exactly where the person was if they were away
  * under 15 minutes, otherwise Today (owner question 4).
+ *
+ * A wake with no record of going away is one where the person never left: on
+ * iOS, pulling down Control Centre or Notification Centre blurs and refocuses
+ * the window without hiding the page, so window focus wakes with nothing
+ * written. The screen stays exactly as it is. Only a boot, which rebuilds the
+ * screen from `ui` and needs it, falls back to when `ui` was written, for a
+ * page killed before it could say it went away.
  */
-export function restoreRule(bench: BenchState, now: Date): 'exact' | 'today' {
-  if (!bench.ui) return 'today';
-  const since = Date.parse(bench.away?.since ?? bench.ui.at);
+export function restoreRule(bench: BenchState, now: Date, boot = false): 'exact' | 'today' {
+  if (boot && !bench.ui) return 'today';
+  const record = bench.away?.since ?? (boot ? bench.ui?.at : undefined);
+  if (record === undefined) return 'exact';
+  const since = Date.parse(record);
   return Number.isFinite(since) && now.getTime() - since < MARGIN ? 'exact' : 'today';
 }
 
 /**
- * On becoming visible, on pageshow and on window focus (plan section 12): a
- * forgotten clock, then the day boundary, then passed slots, then the restore
- * rule. The record of going away is spent here. Returns the state unchanged,
- * the same object, when nothing moved.
+ * On boot, on becoming visible, on pageshow and on window focus (plan section
+ * 12): a forgotten clock, then the day boundary, then passed slots, then the
+ * restore rule. Pass `boot` on the first wake after a load, when the screen is
+ * rebuilt from `ui`. The record of going away is spent here. Returns the state
+ * unchanged, the same object, when nothing moved.
  */
 export function wake(
   state: BenchDomains,
   now: Date,
+  options: { boot?: boolean } = {},
 ): { state: BenchDomains; restore: 'exact' | 'today'; closed: string | undefined } {
   const forgotten = closeForgotten(state, now);
   const turned = dayBoundary(forgotten.state, now);
@@ -983,7 +994,7 @@ export function wake(
   const restore =
     forgotten.closed !== undefined || turned !== forgotten.state
       ? 'today'
-      : restoreRule(passed.bench, now);
+      : restoreRule(passed.bench, now, options.boot);
   if (passed.bench.away === undefined) return { state: passed, restore, closed: forgotten.closed };
   const { away: _away, ...bench } = passed.bench;
   return { state: { ...passed, bench }, restore, closed: forgotten.closed };

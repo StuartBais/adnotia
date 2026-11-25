@@ -1140,8 +1140,54 @@ describe('wake (plan section 12)', () => {
     };
     expect(wake(left, at('2026-11-24T10:19:59')).restore).toBe('exact');
     expect(wake(left, at('2026-11-24T10:20:00')).restore).toBe('today');
-    const { ui: _ui, ...nowhere } = left.bench;
-    expect(restoreRule(nowhere, TUE_1005)).toBe('today');
+    expect(wake(left, at('2026-11-24T10:19:59'), { boot: true }).restore).toBe('exact');
+    expect(wake(left, at('2026-11-24T10:20:00'), { boot: true }).restore).toBe('today');
+  });
+
+  it('stays exactly where it is on a wake with no record of going away', () => {
+    // Window focus alone, as when Control Centre is pulled down over Focus on
+    // iOS: the page was never hidden, so the person never left.
+    const state = scene('example', TUE_1005);
+    const inFocus: BenchDomains = {
+      ...state,
+      bench: {
+        ...state.bench,
+        ui: {
+          at: TUE_1005.toISOString(),
+          tab: 'today',
+          stack: [],
+          focus: { returnTo: 'today' },
+          list: 'inbox',
+          scroll: {},
+        },
+      },
+    };
+    expect(wake(inFocus, at('2026-11-24T10:30:00')).restore).toBe('exact');
+    expect(restoreRule(inFocus.bench, at('2026-11-24T12:00:00'))).toBe('exact');
+  });
+
+  it('on boot with no record of going away, goes by the last page change', () => {
+    const state = scene('example', TUE_1005);
+    const killed: BenchDomains = {
+      ...state,
+      bench: {
+        ...state.bench,
+        ui: { at: TUE_1005.toISOString(), tab: 'tasks', stack: [], list: 'inbox', scroll: {} },
+      },
+    };
+    expect(wake(killed, at('2026-11-24T10:10:00'), { boot: true }).restore).toBe('exact');
+    expect(wake(killed, at('2026-11-24T10:30:00'), { boot: true }).restore).toBe('today');
+  });
+
+  it('on boot with nowhere recorded, opens on Today', () => {
+    const state = scene('example', TUE_1005);
+    const away = { ...state, bench: { ...state.bench, away: { since: TUE_1005.toISOString() } } };
+    expect(wake(away, plus(TUE_1005, 1), { boot: true }).restore).toBe('today');
+  });
+
+  it('opens on Today when the day turned, even with no record of going away', () => {
+    const state = scene('example', TUE_1005);
+    expect(wake(state, at('2026-11-25T04:01:00')).restore).toBe('today');
   });
 
   it('spends the record of going away, and changes nothing when nothing moved', () => {
