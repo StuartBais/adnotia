@@ -79,15 +79,29 @@ describe("the prototype's page", () => {
     const viewport = meta('viewport') ?? '';
     expect(viewport).toContain('width=device-width');
     expect(viewport).toContain('viewport-fit=cover');
+    // Chrome on Android then keeps the frame behind the keyboard, as Safari
+    // already does (SPEC 3, "When a field has the keyboard").
+    expect(viewport).toContain('interactive-widget=resizes-visual');
     // Zoom is not blocked.
     expect(viewport).not.toMatch(/user-scalable\s*=\s*no|maximum-scale/);
   });
 
-  it('sets the status bar style and the theme colour', () => {
-    // Present now; their Lantern values (black-translucent, #222624) arrive
-    // with the page metas when the screens are rebuilt (plan section 13).
-    expect(meta('apple-mobile-web-app-status-bar-style')).toBeTruthy();
-    expect(meta('theme-color')).toMatch(/^#[0-9a-f]{6}$/i);
+  it('is a charcoal page under a translucent status bar', () => {
+    // The canvas runs under the status bar with white glyphs (plan section
+    // 13). iOS reads this once, at launch from the home screen.
+    expect(meta('apple-mobile-web-app-status-bar-style')).toBe('black-translucent');
+    expect(meta('theme-color')?.toUpperCase()).toBe('#222624');
+    // Dark on the root; sheets and fields set light for themselves, so a light
+    // keyboard rises over the stone sheet.
+    expect(meta('color-scheme')).toBe('dark');
+    expect(meta('apple-mobile-web-app-capable')).toBe('yes');
+    expect(meta('apple-mobile-web-app-title')).toBe('Adnotia test');
+  });
+
+  it('does not turn figures into telephone links', () => {
+    // "10:30" and "116 123" are not to be guessed at; the crisis page writes
+    // its own tel: links.
+    expect(meta('format-detection')).toBe('telephone=no');
   });
 
   it('keeps itself out of search results', () => {
