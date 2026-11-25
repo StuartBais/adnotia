@@ -1161,8 +1161,10 @@ svg.i28 {
   -webkit-overflow-scrolling: touch;
 }
 /* The covered row: ring and title under one cover, on one ramp, from nothing at
-   the ring's top (10 below the row's top) to 30% stone at its foot (34 below). */
+   the ring's top (10 below the row's top) to 30% stone at its foot (34 below).
+   Only where the list has more below it (data-more, set by the layout). */
 .covered {
+  display: none;
   position: absolute;
   left: 20px;
   right: 20px;
@@ -1175,6 +1177,9 @@ svg.i28 {
     rgba(238, 240, 236, 0.3) 92%,
     rgba(238, 240, 236, 0.3) 100%
   );
+}
+.app[data-more] .covered {
+  display: block;
 }
 .list .lbl {
   padding: 0 24px;
@@ -1313,8 +1318,8 @@ svg.i28 {
 .app[data-drawer='lip'] .tabs .hair {
   display: none;
 }
-/* On the half drawer the tabs' band is the cover the list goes under. */
-.app[data-drawer='half'] .tabs {
+/* On the half drawer the tabs' band is the cover the list goes under, when it does. */
+.app[data-drawer='half'][data-more] .tabs {
   box-shadow: var(--sh-cover);
 }
 .tabs nav {

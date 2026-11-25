@@ -479,8 +479,10 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
   /**
    * The half drawer's top follows what is lit above it: Start's foot plus 16,
    * or the unlit block's under rule 3, and never above y 366 on the board. At
-   * rest, the list is cut to the last whole row above the tabs' cover, so that
-   * row is the covered one (plan section 10, "Rows").
+   * rest, a list with more below is cut to the last whole row above the tabs'
+   * cover, so that row is the covered one (plan section 10, "Rows"). A list
+   * that fits is left whole, with no covered row and no cover: SPEC 9.7 draws
+   * one only where a list stops at an edge with more below it.
    */
   function layout(position: DrawerPosition): void {
     const box = container.getBoundingClientRect();
@@ -494,17 +496,22 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
       container.style.setProperty('--half-t', `${Math.max(foot, least)}px`);
     }
     const viewport = layer.drawer.querySelector<HTMLElement>('.viewport');
-    if (!viewport) return;
-    viewport.style.removeProperty('height');
-    const list = viewport.querySelector<HTMLElement>('.list');
-    if (!list) return;
-    const room = viewport.clientHeight;
-    let cut = 0;
-    for (const row of list.querySelectorAll<HTMLElement>('[data-row]')) {
-      const bottom = row.offsetTop + row.offsetHeight;
-      if (bottom <= room) cut = Math.max(cut, bottom);
+    const list = viewport?.querySelector<HTMLElement>('.list');
+    let more = false;
+    if (viewport && list) {
+      viewport.style.removeProperty('height');
+      const room = viewport.clientHeight;
+      let cut = 0;
+      for (const row of list.querySelectorAll<HTMLElement>('[data-row]')) {
+        const bottom = row.offsetTop + row.offsetHeight;
+        if (bottom <= room) cut = Math.max(cut, bottom);
+        else more = true;
+      }
+      if (more && cut > 0) viewport.style.height = `${cut}px`;
     }
-    if (cut > 0) viewport.style.height = `${cut}px`;
+    // Read by the covered row and by the tabs' cover above the list.
+    if (more) container.dataset['more'] = '';
+    else delete container.dataset['more'];
   }
 
   // ---------------------------------------------------------------- actions
@@ -645,7 +652,9 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
       window.removeEventListener('resize', onResize);
       container.replaceChildren();
       container.classList.remove('app');
-      for (const name of ['drawer', 'ground', 'places', 'motion']) delete container.dataset[name];
+      for (const name of ['drawer', 'ground', 'places', 'motion', 'more']) {
+        delete container.dataset[name];
+      }
       container.style.removeProperty('--half-t');
     },
   };

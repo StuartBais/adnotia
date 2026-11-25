@@ -393,6 +393,77 @@ describe('7 · Nothing running (SPEC 5.7)', () => {
     expect(document.activeElement).toBe(button(m.container, 'Mark done: Renew the parking permit'));
   });
 
+  // jsdom lays nothing out, so the rows and the room are given here: each row
+  // 44 tall, one under another, in a viewport 238 tall (the half drawer at 9:58).
+  function laidOut(m: Mounted): () => void {
+    const proto = HTMLElement.prototype;
+    const saved = ['offsetTop', 'offsetHeight', 'clientHeight'].map(
+      (name) => [name, Object.getOwnPropertyDescriptor(proto, name)] as const,
+    );
+    const rowsOf = (node: HTMLElement) => [
+      ...(node.closest('.list')?.querySelectorAll('[data-row]') ?? []),
+    ];
+    Object.defineProperty(proto, 'offsetTop', {
+      configurable: true,
+      get(this: HTMLElement) {
+        return this.matches('[data-row]') ? rowsOf(this).indexOf(this) * 44 : 0;
+      },
+    });
+    Object.defineProperty(proto, 'offsetHeight', {
+      configurable: true,
+      get(this: HTMLElement) {
+        return this.matches('[data-row]') ? 44 : 0;
+      },
+    });
+    Object.defineProperty(proto, 'clientHeight', {
+      configurable: true,
+      get(this: HTMLElement) {
+        return this.matches('.viewport') ? 238 : 0;
+      },
+    });
+    m.container.getBoundingClientRect = () => new DOMRect(0, 0, 390, 844);
+    window.dispatchEvent(new Event('resize'));
+    return () => {
+      for (const [name, descriptor] of saved) {
+        if (descriptor) Object.defineProperty(proto, name, descriptor);
+      }
+    };
+  }
+
+  it('cuts a long list at rest to its last whole row, under the cover', async () => {
+    const m = await mount(TUE_0958, 'notStarted');
+    const restore = laidOut(m);
+    try {
+      expect(m.container.querySelectorAll('.list [data-row]').length).toBeGreaterThan(6);
+      expect(m.container.dataset['more']).toBe('');
+      expect(m.container.querySelector<HTMLElement>('.viewport')?.style.height).toBe('220px');
+    } finally {
+      restore();
+    }
+  });
+
+  it('leaves a list that fits whole, with no covered row and no cover', async () => {
+    const m = await mount(TUE_0958, 'notStarted', (state, now) => {
+      let tasks = state.tasks;
+      const anytime = state.tasks.filter(
+        (task) => task.parentId === undefined && task.when.kind === 'anytime',
+      );
+      // All but the email (lit, so left out of the list) and one more.
+      for (const task of anytime.filter((task) => task.title !== EMAIL).slice(1)) {
+        tasks = model.complete(tasks, task.id, now);
+      }
+      return { ...state, tasks };
+    });
+    const restore = laidOut(m);
+    try {
+      expect(m.container.querySelectorAll('.list [data-row]').length).toBe(4);
+      expect(m.container.dataset['more']).toBeUndefined();
+      expect(m.container.querySelector<HTMLElement>('.viewport')?.style.height).toBe('');
+    } finally {
+      restore();
+    }
+  });
+
   it('lists what got done today only when that reward is on', async () => {
     const off = await mount(TUE_0958, 'notStarted');
     expect(visibleText(off.container)).not.toContain('Done today');
