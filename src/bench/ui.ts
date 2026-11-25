@@ -143,6 +143,8 @@ export interface SegmentedProps<V extends string> {
   id: string;
   /** The id of the words that name the switch. */
   labelledBy: string;
+  /** The id of a line that says what the switch does, read after its name. */
+  describedBy?: string;
   options: readonly SegmentOption<V>[];
   value: V;
   onChoose: (value: V) => void;
@@ -177,7 +179,12 @@ export function segmented<V extends string>(props: SegmentedProps<V>): HTMLEleme
   });
   const group = h(
     'div',
-    { class: 'seg', role: 'radiogroup', 'aria-labelledby': props.labelledBy },
+    {
+      class: 'seg',
+      role: 'radiogroup',
+      'aria-labelledby': props.labelledBy,
+      'aria-describedby': props.describedBy,
+    },
     ...parts,
   );
   const STEP: Record<string, number> = { ArrowLeft: -1, ArrowUp: -1, ArrowRight: 1, ArrowDown: 1 };

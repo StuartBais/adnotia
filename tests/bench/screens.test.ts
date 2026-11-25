@@ -915,6 +915,23 @@ describe('Me, and Settings under it (SPEC 12; plan sections 4 and 11)', () => {
     expect(id(m, 'b-me')).not.toBeNull();
   });
 
+  it('reads each switch’s helper line after its name', async () => {
+    const m = await settings();
+    const hints = [...m.container.querySelectorAll('[role="radiogroup"]')].map((group) => [
+      nameOfGroup(m, group),
+      hintOf(group),
+    ]);
+    expect(hints).toEqual([
+      ['Places', 'Tasks, Routines, Library and Me. Today and Focus stay charcoal.'],
+      ['List what got done today', 'Adds Done today to the rest of today, after Anytime today.'],
+      [
+        'A session the app closed reads',
+        'The word on Today after the app closes a clock left running.',
+      ],
+      ['Motion', 'Reduced moves the bar once a minute, whatever the phone is set to.'],
+    ]);
+  });
+
   it('flips the places to white at once, keeping focus on the switch', async () => {
     const m = await settings();
     expect(m.container.dataset['places']).toBe('charcoal');

@@ -46,12 +46,20 @@ function setting<V extends string>(
   onChoose: (value: V) => void,
 ): HTMLElement {
   const labelId = `s-${key}`;
+  const helpId = `s-${key}-help`;
   return h(
     'div',
     { class: 'setting' },
     h('h2', { class: 't-control', id: labelId, text: label }),
-    h('p', { class: 'helper t-meta', text: help }),
-    segmented({ id: `s-${key}`, labelledBy: labelId, options, value, onChoose }),
+    h('p', { class: 'helper t-meta', id: helpId, text: help }),
+    segmented({
+      id: `s-${key}`,
+      labelledBy: labelId,
+      describedBy: helpId,
+      options,
+      value,
+      onChoose,
+    }),
   );
 }
 
