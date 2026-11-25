@@ -381,6 +381,7 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
       }
     }
     ticker?.refresh();
+    syncHistory();
   }
 
   function patchAll(live: PresentLive | undefined): void {
@@ -777,6 +778,70 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
   function openFocus(): void {}
   function openCapture(): void {}
 
+  // ---------------------------------------------------------------- history
+
+  /**
+   * One history entry for each level above the tab (plan section 8): every
+   * page pushed on the current tab, then the open drawer on top. So Safari's
+   * edge swipe and the back button close the top level, as Android's back
+   * does (SPEC 11). A level closed by a control here (a back pill, Hide, a
+   * tab) takes its entries back with it, quietly. Entries are marked with
+   * this mount's own mark, so one left by an earlier load is never mistaken
+   * for a level of this one.
+   */
+  const mark = Math.random().toString(36).slice(2);
+  let entries = 0;
+  /** History moves made here whose popstate is still to come. */
+  let quiet = 0;
+  /** Closing levels for a popstate: one sync once they are all closed. */
+  let popping = false;
+
+  function levels(): number {
+    return nav.stack.length + (isOpen() ? 1 : 0);
+  }
+
+  function syncHistory(): void {
+    if (popping || destroyed) return;
+    const want = levels();
+    if (want > entries) {
+      for (let depth = entries + 1; depth <= want; depth++) {
+        history.pushState({ bench: mark, depth }, '');
+      }
+    } else if (want < entries) {
+      quiet++;
+      history.go(want - entries);
+    }
+    entries = want;
+  }
+
+  function onPopState(event: PopStateEvent): void {
+    const state = event.state as { bench?: unknown; depth?: unknown } | null;
+    if (destroyed || state?.bench !== mark || typeof state.depth !== 'number') return;
+    if (quiet > 0) {
+      // A move made here has landed; put things right if anything moved since.
+      quiet--;
+      entries = state.depth;
+      syncHistory();
+      return;
+    }
+    // The person went back: close as many levels as they went.
+    let close = entries - state.depth;
+    entries = state.depth;
+    popping = true;
+    try {
+      while (close-- > 0 && levels() > 0) closeTop();
+    } finally {
+      popping = false;
+    }
+    syncHistory();
+  }
+
+  /** The open drawer folds; otherwise the top page goes. */
+  function closeTop(): void {
+    if (isOpen()) foldDrawer(true);
+    else if (nav.stack.length > 0) back();
+  }
+
   // ---------------------------------------------------------------- the page
 
   function themeColor(colour: string): void {
@@ -840,6 +905,8 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
 
   // ---------------------------------------------------------------- go
 
+  history.replaceState({ bench: mark, depth: 0 }, '');
+  window.addEventListener('popstate', onPopState);
   const unsubscribe = store.subscribe('domains', render);
   let ticker: Ticker | undefined;
   render();
@@ -865,6 +932,7 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
       ticker?.destroy();
       unsubscribe();
       window.removeEventListener('resize', onResize);
+      window.removeEventListener('popstate', onPopState);
       container.replaceChildren();
       container.classList.remove('app');
       for (const name of ['drawer', 'ground', 'places', 'motion', 'more']) {

@@ -9,7 +9,9 @@ import {
   advance,
   button,
   choices,
+  goBack,
   hintOf,
+  historyDepth,
   mount,
   nameOf,
   press,
@@ -857,6 +859,76 @@ describe('2 · The rest of today, the drawer open (SPEC 5.2)', () => {
     press(on.container, HANDLE);
     expect(on.container.querySelector('.drawer')?.textContent).toContain('Done today');
     expect(readingOrder(on.container)).toContain('Bins out, done');
+  });
+});
+
+describe('back, by Safari’s edge swipe or the back button (plan section 8)', () => {
+  const HANDLE = /^Next, in 25 minutes: 10:30, Call the dentist/;
+  const screenTitle = (m: Mounted) => m.container.querySelector('.screen h1')?.textContent;
+
+  it('closes the top level each time: the open drawer, then the pages under Me', async () => {
+    const m = await mount(TUE_1005);
+    press(m.container, 'Me');
+    press(m.container, 'About this prototype');
+    press(m.container, HANDLE);
+    expect(historyDepth()).toBe(3);
+
+    goBack();
+    expect(m.container.dataset['drawer']).toBe('folded');
+    expect(document.activeElement).toBe(id(m, 'b-handle'));
+    expect(screenTitle(m)).toBe('About this prototype');
+    goBack();
+    expect(screenTitle(m)).toBe('Me');
+    goBack();
+    expect(id(m, 'b-lit')).not.toBeNull();
+    expect(id(m, 't-today')?.getAttribute('aria-current')).toBe('page');
+    expect(historyDepth()).toBe(0);
+  });
+
+  it('takes back the entry of a level closed here, so back never lands on nothing', async () => {
+    const m = await mount(TUE_1005);
+    press(m.container, HANDLE);
+    expect(historyDepth()).toBe(1);
+    press(m.container, 'Hide the rest of today');
+    vi.advanceTimersByTime(1);
+    expect(historyDepth()).toBe(0);
+
+    press(m.container, 'Me');
+    press(m.container, 'If things are bad right now');
+    expect(historyDepth()).toBe(2);
+    press(m.container, 'Back to Me');
+    vi.advanceTimersByTime(1);
+    expect(historyDepth()).toBe(1);
+    // A tab clears the pages on the current one, and their entries with them.
+    press(m.container, 'Tasks');
+    vi.advanceTimersByTime(1);
+    expect(historyDepth()).toBe(0);
+    expect(screenTitle(m)).toBe('Tasks');
+  });
+
+  it('gives a page restored from before a reload its entry again', async () => {
+    const m = await mount(TUE_1005);
+    press(m.container, 'Me');
+    window.dispatchEvent(new Event('pagehide'));
+    const stored = stateOf(m).bench.ui!;
+    unmount();
+    const again = await mount(TUE_1005, 'example', (state) => ({
+      ...state,
+      bench: { ...state.bench, ui: stored, away: { since: at(TUE_1005).toISOString() } },
+    }));
+    expect(screenTitle(again)).toBe('Me');
+    expect(historyDepth()).toBe(1);
+    goBack();
+    expect(id(again, 'b-lit')).not.toBeNull();
+  });
+
+  it('leaves alone an entry another load of the page left behind', async () => {
+    const m = await mount(TUE_1005);
+    press(m.container, 'Me');
+    window.dispatchEvent(
+      new PopStateEvent('popstate', { state: { bench: 'elsewhere', depth: 0 } }),
+    );
+    expect(screenTitle(m)).toBe('Me');
   });
 });
 

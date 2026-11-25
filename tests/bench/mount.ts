@@ -77,6 +77,18 @@ export function said(mounted: Mounted): string {
   return mounted.container.querySelector('.live')?.textContent ?? '';
 }
 
+/**
+ * Safari's edge swipe, or the back button: one step back in history, and the
+ * popstate that follows it. jsdom moves through history on its timers.
+ */
+export function goBack(): void {
+  history.back();
+  vi.advanceTimersByTime(1);
+}
+
+/** How many levels above the tab the current history entry stands for. */
+export const historyDepth = (): unknown => (history.state as { depth?: unknown } | null)?.depth;
+
 const state = (mounted: Mounted) => mounted.store.document().domains as BenchDomains;
 export { state as stateOf };
 
