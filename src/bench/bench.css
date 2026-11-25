@@ -1561,9 +1561,29 @@ svg.i28 {
   min-height: 44px;
   margin: -12px 0;
 }
+/* What to try: a plain list, each line marked by a small dot. */
+.prose .tries {
+  display: grid;
+  gap: 6px;
+}
+.prose .tries li {
+  position: relative;
+  padding-left: 16px;
+  color: var(--ash);
+}
+.prose .tries li::before {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 8px;
+  width: 4px;
+  height: 4px;
+  border-radius: 2px;
+  background: currentColor;
+}
 /* On white places the prose takes the light inks: muted for what is ash on
    charcoal (ash on white is 2.2), charcoal for what is white. */
-.app[data-places='white'][data-ground='place'] .screen :is(.prose p, .prose h2),
+.app[data-places='white'][data-ground='place'] .screen :is(.prose p, .prose h2, .prose .tries li),
 .app[data-places='white'][data-ground='place'] .screen .menu .rowbtn svg,
 .app[data-places='white'][data-ground='place'] .screen .textbtn {
   color: var(--muted);

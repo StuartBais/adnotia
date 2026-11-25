@@ -957,6 +957,57 @@ describe('Me, and Settings under it (SPEC 12; plan sections 4 and 11)', () => {
     expect(visibleText(m.container)).toContain('Timer stopped');
   });
 
+  it('says in About how to keep it, what to try, and what is left out', async () => {
+    const m = await mount(TUE_1005);
+    press(m.container, 'Me');
+    press(m.container, 'About this prototype');
+    const text = visibleText(m.container);
+    for (const words of [
+      ABOUT.what,
+      ABOUT.data,
+      ABOUT.home,
+      ABOUT.statusBar,
+      ABOUT.leftOut,
+      ABOUT.font,
+      ...ABOUT.tries,
+    ]) {
+      expect(text).toContain(words);
+    }
+    // Every scenario, "Start empty" among them, then Delete everything, last.
+    const names = readingOrder(m.container);
+    expect(
+      inOrder(names, [
+        'Prototype',
+        'Load the example day',
+        'Load: not started yet',
+        'Load: a pause left',
+        'Load: a clock left running',
+        'Load: weeks away',
+        'Start empty',
+        ABOUT.deleteAll,
+      ]),
+    ).toEqual([
+      'Prototype',
+      'Load the example day',
+      'Load: not started yet',
+      'Load: a pause left',
+      'Load: a clock left running',
+      'Load: weeks away',
+      'Start empty',
+      ABOUT.deleteAll,
+    ]);
+  });
+
+  it('starts empty from About, on nothing planned', async () => {
+    const m = await mount(TUE_1005);
+    press(m.container, 'Me');
+    press(m.container, 'About this prototype');
+    press(m.container, 'Start empty');
+    expect(stateOf(m).tasks).toEqual([]);
+    expect(visibleText(m.container)).toContain('Nothing planned for today');
+    expect(m.container.dataset['drawer']).toBe('lip');
+  });
+
   it('reduces motion whatever the phone says', async () => {
     const m = await settings();
     expect(m.container.dataset['motion']).toBe('full');
