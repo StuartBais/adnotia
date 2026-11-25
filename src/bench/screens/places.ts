@@ -73,8 +73,9 @@ function row(text: string, onOpen: () => void, id: string): HTMLElement {
 
 /**
  * Me: a place, pushed on the current tab, which stays current. Its first row
- * is the crisis page, so help is two taps from any screen. Settings is built
- * with the places (plan section 19, chunk 5).
+ * is the crisis page, so help is two taps from any screen; then Settings and
+ * About this prototype. Medication and Family, which SPEC 12 puts here, are
+ * left out of the prototype, and About says so.
  */
 export function meScreen(actions: PlaceActions): Built {
   return {
@@ -87,6 +88,7 @@ export function meScreen(actions: PlaceActions): Built {
           'ul',
           { class: 'menu' },
           row(T.crisis, () => actions.onPush({ kind: 'crisis' }), 'm-crisis'),
+          row(T.settings, () => actions.onPush({ kind: 'settings' }), 'm-settings'),
           row(T.about, () => actions.onPush({ kind: 'about' }), 'm-about'),
         ),
       ),

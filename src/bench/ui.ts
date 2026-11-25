@@ -130,3 +130,67 @@ export function durationTrack(minutes: number, text: string, slot?: number): HTM
   if (slot !== undefined) style['margin-right'] = `${Math.max(0, slot - length)}px`;
   return h('span', { class: 'dur' }, text, h('span', { class: 'm', 'aria-hidden': 'true', style }));
 }
+
+// ---------------------------------------------------------------- switches
+
+export interface SegmentOption<V extends string> {
+  value: V;
+  text: string;
+}
+
+export interface SegmentedProps<V extends string> {
+  /** Each part's id is this, a dash, and its value. */
+  id: string;
+  /** The id of the words that name the switch. */
+  labelledBy: string;
+  options: readonly SegmentOption<V>[];
+  value: V;
+  onChoose: (value: V) => void;
+}
+
+/**
+ * A switch of equal parts (SPEC 9.6): a radio group, so it reads as "White,
+ * radio button, 2 of 2", with the selected part a thumb inset in the track and
+ * its label at 700. The selection is shown by the thumb and the weight, never
+ * by fill alone; each label reserves its width at 700, so nothing shifts when
+ * the selection moves. The arrow keys move it, as in any radio group.
+ */
+export function segmented<V extends string>(props: SegmentedProps<V>): HTMLElement {
+  const partId = (value: V) => `${props.id}-${value}`;
+  const parts = props.options.map((option) => {
+    const checked = option.value === props.value;
+    return h(
+      'button',
+      {
+        class: 'seg-part',
+        type: 'button',
+        role: 'radio',
+        id: partId(option.value),
+        'aria-checked': checked ? 'true' : 'false',
+        tabindex: checked ? '0' : '-1',
+        onclick: () => {
+          if (!checked) props.onChoose(option.value);
+        },
+      },
+      h('span', { 'data-text': option.text, text: option.text }),
+    );
+  });
+  const group = h(
+    'div',
+    { class: 'seg', role: 'radiogroup', 'aria-labelledby': props.labelledBy },
+    ...parts,
+  );
+  const STEP: Record<string, number> = { ArrowLeft: -1, ArrowUp: -1, ArrowRight: 1, ArrowDown: 1 };
+  group.addEventListener('keydown', (event) => {
+    const step = STEP[event.key];
+    if (step === undefined) return;
+    event.preventDefault();
+    const count = props.options.length;
+    const at = props.options.findIndex((option) => option.value === props.value);
+    const next = props.options[(at + step + count) % count];
+    if (!next || next.value === props.value) return;
+    props.onChoose(next.value);
+    group.ownerDocument.getElementById(partId(next.value))?.focus();
+  });
+  return group;
+}

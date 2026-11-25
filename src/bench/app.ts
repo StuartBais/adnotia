@@ -67,7 +67,9 @@ import {
   taskScreen,
   ABOUT,
 } from './screens/places';
+import { settingsScreen, type SettingsView } from './screens/settings';
 import { h, injectSprite } from './ui';
+import { resolve as rewardOptions, setOption } from '../domains/options';
 import {
   dayList,
   idleKey,
@@ -411,6 +413,9 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
             : today.heading,
       ]);
     }
+    if (view.kind === 'page' && view.page.kind === 'settings') {
+      return JSON.stringify(['page', view.page, settingsView(read())]);
+    }
     if (view.kind === 'page' && view.page.kind === 'task') {
       const task = read().tasks.find((item) => item.id === (view.page as { id: string }).id);
       return JSON.stringify(['page', view.page, nav.tab, task?.title]);
@@ -453,6 +458,12 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
           return crisisScreen(actions);
         case 'about':
           return aboutScreen(actions);
+        case 'settings':
+          return settingsScreen(settingsView(read()), {
+            onBack: back,
+            onMe: openMe,
+            onChange: changeSettings,
+          });
         case 'task': {
           const id = view.page.id;
           const task = read().tasks.find((item) => item.id === id);
@@ -757,6 +768,27 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
 
   function hideDrawer(): void {
     foldDrawer(true);
+  }
+
+  function settingsView(state: BenchDomains): SettingsView {
+    return {
+      ...state.bench.settings,
+      doneList: rewardOptions(state.rewards, { kind: 'day' }).doneList,
+    };
+  }
+
+  /** The owner's switches take effect at once; "List what got done today" is the real option. */
+  function changeSettings(change: Partial<SettingsView>): void {
+    const state = read();
+    const { doneList, ...bench } = change;
+    commit({
+      ...state,
+      rewards:
+        doneList === undefined
+          ? state.rewards
+          : setOption(state.rewards, { kind: 'day' }, 'doneList', doneList),
+      bench: { ...state.bench, settings: { ...state.bench.settings, ...bench } },
+    });
   }
 
   function scenario(id: ScenarioId): void {

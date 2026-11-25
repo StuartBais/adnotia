@@ -1546,6 +1546,83 @@ svg.i28 {
   color: var(--ash);
 }
 
+/* ═════════════ Switches (SPEC 9.6) ═════════════
+   On charcoal: an ash-8 track, an ash-20 thumb inset 3 pt, the selected label
+   white at 700 and the others ash at 600. On light: a stone track, a white
+   thumb with iOS's own shadow, charcoal at 700 and muted at 600. Each part is
+   a whole 44 pt target; the thumb is drawn inside it. */
+.seg {
+  display: inline-grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  height: 44px;
+  border-radius: 22px;
+  background: var(--ash-8);
+}
+.seg-part {
+  position: relative;
+  height: 44px;
+  padding: 0 18px;
+  text-align: center;
+  font-size: 15px;
+  line-height: 20px;
+  font-weight: 600;
+  color: var(--ash);
+}
+.seg-part::before {
+  content: '';
+  position: absolute;
+  inset: 3px;
+  border-radius: 19px;
+}
+.seg-part[aria-checked='true'] {
+  color: var(--white);
+  font-weight: 700;
+}
+.seg-part[aria-checked='true']::before {
+  background: var(--ash-20);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+}
+/* The label keeps room for itself at 700, so nothing moves with the thumb. */
+.seg-part > span {
+  position: relative;
+  display: inline-grid;
+}
+.seg-part > span::after {
+  content: attr(data-text);
+  height: 0;
+  overflow: hidden;
+  visibility: hidden;
+  font-weight: 700;
+}
+.app[data-places='white'][data-ground='place'] .screen .seg {
+  background: var(--stone);
+}
+.app[data-places='white'][data-ground='place'] .screen .seg-part {
+  color: var(--muted);
+}
+.app[data-places='white'][data-ground='place'] .screen .seg-part[aria-checked='true'] {
+  color: var(--charcoal);
+}
+.app[data-places='white'][data-ground='place'] .screen .seg-part[aria-checked='true']::before {
+  background: var(--white);
+  box-shadow:
+    0 3px 8px rgba(0, 0, 0, 0.12),
+    0 3px 1px rgba(0, 0, 0, 0.04);
+}
+
+/* Settings: each switch under its name and one plain line. */
+.settings {
+  display: grid;
+  gap: 28px;
+}
+.setting .helper {
+  margin-top: 2px;
+}
+.setting .seg {
+  margin-top: 12px;
+}
+
 /* ═════════════ When what was stored cannot be read ═════════════ */
 
 .fail {

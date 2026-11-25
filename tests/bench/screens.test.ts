@@ -862,6 +862,110 @@ describe('2 · The rest of today, the drawer open (SPEC 5.2)', () => {
   });
 });
 
+describe('Me, and Settings under it (SPEC 12; plan sections 4 and 11)', () => {
+  async function settings(atTime = TUE_1005, scenario: 'example' | 'clockLeftRunning' = 'example') {
+    const m = await mount(atTime, scenario);
+    press(m.container, 'Me');
+    press(m.container, 'Settings');
+    return m;
+  }
+  const radios = (m: Mounted, label: string) => {
+    const group = [...m.container.querySelectorAll('[role="radiogroup"]')].find(
+      (node) => nameOfGroup(m, node) === label,
+    )!;
+    return [...group.querySelectorAll<HTMLElement>('[role="radio"]')].map((radio) => [
+      radio.textContent,
+      radio.getAttribute('aria-checked'),
+    ]);
+  };
+  const nameOfGroup = (m: Mounted, group: Element) =>
+    m.container.querySelector(`#${group.getAttribute('aria-labelledby')}`)?.textContent;
+
+  it('has three rows: help first, then Settings and About', async () => {
+    const m = await mount(TUE_1005);
+    press(m.container, 'Me');
+    const names = readingOrder(m.container);
+    expect(
+      inOrder(names, ['Me', 'If things are bad right now', 'Settings', 'About this prototype']),
+    ).toEqual(['Me', 'If things are bad right now', 'Settings', 'About this prototype']);
+    expect(visibleText(m.container)).not.toMatch(/Medication|Family/);
+  });
+
+  it('offers the owner’s four switches, each a radio group of two', async () => {
+    const m = await settings();
+    expect(m.container.querySelector('.screen h1')?.textContent).toBe('Settings');
+    expect(radios(m, 'Places')).toEqual([
+      ['Charcoal', 'true'],
+      ['White', 'false'],
+    ]);
+    expect(radios(m, 'List what got done today')).toEqual([
+      ['Off', 'true'],
+      ['On', 'false'],
+    ]);
+    expect(radios(m, 'A session the app closed reads')).toEqual([
+      ['Paused', 'true'],
+      ['Timer stopped', 'false'],
+    ]);
+    expect(radios(m, 'Motion')).toEqual([
+      ['As the phone', 'true'],
+      ['Reduced', 'false'],
+    ]);
+    // Back to Me, and Me itself, in the header row.
+    expect(button(m.container, 'Back to Me')).toBeTruthy();
+    expect(id(m, 'b-me')).not.toBeNull();
+  });
+
+  it('flips the places to white at once, keeping focus on the switch', async () => {
+    const m = await settings();
+    expect(m.container.dataset['places']).toBe('charcoal');
+    const white = button(m.container, 'White');
+    white.focus();
+    white.click();
+    expect(m.container.dataset['places']).toBe('white');
+    expect(stateOf(m).bench.settings.places).toBe('white');
+    expect(radios(m, 'Places')).toEqual([
+      ['Charcoal', 'false'],
+      ['White', 'true'],
+    ]);
+    expect(document.activeElement?.id).toBe('s-places-white');
+    // Today stays charcoal.
+    press(m.container, 'Today');
+    expect(m.container.dataset['ground']).toBe('present');
+  });
+
+  it('moves along a switch with the arrow keys', async () => {
+    const m = await settings();
+    const charcoal = button(m.container, 'Charcoal');
+    charcoal.focus();
+    charcoal.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+    expect(stateOf(m).bench.settings.places).toBe('white');
+    expect(document.activeElement?.id).toBe('s-places-white');
+  });
+
+  it('turns on the real "List what got done today", and the open drawer lists it', async () => {
+    const m = await settings();
+    press(m.container, 'On');
+    press(m.container, /^Next, in 25 minutes/);
+    expect(m.container.querySelector('.drawer')?.textContent).toContain('Done today');
+    expect(readingOrder(m.container)).toContain('Bins out, done');
+  });
+
+  it('says "Timer stopped" on Today for a clock the app closed, when chosen', async () => {
+    const m = await settings(TUE_1005, 'clockLeftRunning');
+    press(m.container, 'Timer stopped');
+    press(m.container, 'Today');
+    expect(visibleText(m.container)).toContain('Timer stopped');
+  });
+
+  it('reduces motion whatever the phone says', async () => {
+    const m = await settings();
+    expect(m.container.dataset['motion']).toBe('full');
+    press(m.container, 'Reduced');
+    expect(m.container.dataset['motion']).toBe('reduced');
+    expect(stateOf(m).bench.settings.motion).toBe('reduced');
+  });
+});
+
 describe('back, by Safari’s edge swipe or the back button (plan section 8)', () => {
   const HANDLE = /^Next, in 25 minutes: 10:30, Call the dentist/;
   const screenTitle = (m: Mounted) => m.container.querySelector('.screen h1')?.textContent;
