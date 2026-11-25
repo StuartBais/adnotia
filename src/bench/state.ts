@@ -21,6 +21,7 @@ import {
 } from '../kernel/dates';
 import type { DomainsState } from '../kernel/store';
 import { buildScenario, type ScenarioId } from './example';
+import { lastInstantOf, loggingDayStart } from './day';
 import {
   clock24,
   dotted,
@@ -133,13 +134,6 @@ export function defaultBench(day: IsoDate): BenchState {
 }
 
 // ---------------------------------------------------------------- time
-
-/** 04:00 on a logging day: when that day begins. */
-export function loggingDayStart(day: IsoDate): Date {
-  const start = parseIsoDate(day);
-  start.setHours(SMALL_HOURS_UNTIL, 0, 0, 0);
-  return start;
-}
 
 /** When a booked slot starts. A time before 04:00 is in the night after its day. */
 export function slotStart(when: Timed): Date {
@@ -859,14 +853,6 @@ export function closeForgotten(
     },
     closed: running.id,
   };
-}
-
-/** The last instant of a logging day: one millisecond before the next day's 04:00. */
-function lastInstantOf(day: IsoDate): number {
-  const start = loggingDayStart(day);
-  const next = new Date(start.getFullYear(), start.getMonth(), start.getDate() + 1);
-  next.setHours(SMALL_HOURS_UNTIL, 0, 0, 0);
-  return next.getTime() - 1;
 }
 
 /**

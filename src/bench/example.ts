@@ -11,13 +11,8 @@ import * as model from '../domains/tasks';
 import type { Task } from '../domains/tasks';
 import * as routineModel from '../domains/routines';
 import type { Shelf } from '../domains/routines';
-import {
-  SMALL_HOURS_UNTIL,
-  fromMinutes,
-  loggingDay,
-  parseIsoDate,
-  type IsoDate,
-} from '../kernel/dates';
+import { fromMinutes, loggingDay, parseIsoDate, type IsoDate } from '../kernel/dates';
+import { loggingDayStart } from './day';
 
 const MINUTE = 60_000;
 
@@ -109,13 +104,6 @@ const ROUTINES: readonly { title: string; steps: readonly (readonly [string, num
   },
 ];
 
-/** 04:00 on a logging day: the moment that day begins. */
-function dayStart(day: IsoDate): Date {
-  const start = parseIsoDate(day);
-  start.setHours(SMALL_HOURS_UNTIL, 0, 0, 0);
-  return start;
-}
-
 /**
  * The first slot: the next :00 or :30 at least 20 minutes ahead. At 10:05 and
  * at 9:58 that is 10:30, as on the board.
@@ -129,7 +117,7 @@ function firstSlot(now: Date): Date {
 
 /** "Earlier today": two hours ago, but never before the logging day began. */
 function earlierToday(now: Date): Date {
-  const begun = dayStart(loggingDay(now)).getTime() + MINUTE;
+  const begun = loggingDayStart(loggingDay(now)).getTime() + MINUTE;
   return new Date(Math.min(now.getTime() - MINUTE, Math.max(begun, now.getTime() - 120 * MINUTE)));
 }
 
@@ -156,7 +144,7 @@ export function exampleDay(now: Date, options: { started?: boolean } = {}): Exam
   const day = loggingDay(now);
   // Everything was written down before today began, one second apart, in the
   // order it came in, so ids and creation times follow the person's order.
-  let made = dayStart(day).getTime() - 12 * 60 * MINUTE;
+  let made = loggingDayStart(day).getTime() - 12 * 60 * MINUTE;
   const at = () => new Date((made += 1000));
 
   let tasks: Task[] = [];
