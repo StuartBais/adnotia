@@ -2631,9 +2631,9 @@ svg.i28 {
   width: 56px;
   padding: 0;
 }
-.stepper .step:disabled {
-  opacity: 0.45;
-  cursor: default;
+.stepper .gap {
+  display: block;
+  height: 44px;
 }
 .wlength {
   min-width: 64px;

@@ -209,16 +209,27 @@ export function whenSheet(props: WhenProps): Built {
     h(
       'div',
       { class: 'stepper', role: 'group', 'aria-labelledby': 'w-howlong', 'data-list': true },
-      h('button', {
-        class: 'pill quiet p44 step',
-        type: 'button',
-        id: 'w-less',
-        'aria-label': SAY.less5,
-        disabled: !props.canLess,
-        text: T.minus5,
-        onclick: props.onLess,
+      // With nothing to take off, −5 is not there, rather than dimmed: a
+      // dimmed label would be read at under 4.5:1, and shown by its colour
+      // alone. Its place is kept, so the minutes and +5 stay where they are,
+      // and focus it held lands on the minutes, which say why.
+      props.canLess
+        ? h('button', {
+            class: 'pill quiet p44 step',
+            type: 'button',
+            id: 'w-less',
+            'aria-label': SAY.less5,
+            text: T.minus5,
+            onclick: props.onLess,
+          })
+        : h('span', { class: 'step gap', 'aria-hidden': 'true' }),
+      h('span', {
+        class: 'wlength',
+        id: 'w-length',
+        tabindex: '-1',
+        'data-focus-home': true,
+        text: props.length,
       }),
-      h('span', { class: 'wlength', id: 'w-length', text: props.length }),
       h('button', {
         class: 'pill quiet p44 step',
         type: 'button',

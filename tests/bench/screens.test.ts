@@ -3213,7 +3213,29 @@ describe('the sheets a task’s page raises (SPEC 9.9 and 12)', () => {
     press(m.container, 'Take 5 minutes off');
     press(m.container, 'Take 5 minutes off');
     expect(dentist(m).when).toMatchObject({ durationMinutes: 5 });
-    expect((id(m, 'w-less') as HTMLButtonElement).disabled).toBe(true);
+    // Nothing to take off: −5 is not there, its place kept, never dimmed.
+    expect(id(m, 'w-less')).toBeNull();
+    expect(m.container.querySelector('.stepper .gap')?.getAttribute('aria-hidden')).toBe('true');
+    expect(choices(m.container)).toBe(5);
+  });
+
+  it('focus on −5 as it goes lands on the minutes, which say why', async () => {
+    const m = await mount(TUE_1005);
+    press(m.container, 'Tasks');
+    press(m.container, 'Return the library books, 15 minutes');
+    press(m.container, /^When: /);
+    id(m, 'w-less')!.focus();
+    // 15, then 10, then 5: focus stays on −5 while it is there.
+    for (const left of ['10 min', '5 min']) {
+      id(m, 'w-less')!.click();
+      expect(id(m, 'w-length')?.textContent).toBe(left);
+      expect(document.activeElement).toBe(id(m, 'w-less'));
+    }
+    id(m, 'w-less')!.click();
+    expect(titled(stateOf(m), 'Return the library books').estimateMinutes).toBeUndefined();
+    expect(id(m, 'w-less')).toBeNull();
+    expect(document.activeElement).toBe(id(m, 'w-length'));
+    expect(drawnText(document.activeElement!)).toBe('Not set');
   });
 
   it('How long sets an estimate on anything not booked, and can unset it', async () => {
