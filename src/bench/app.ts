@@ -57,7 +57,7 @@ import {
 } from './state';
 import { createTicker, type Ticker } from './clock';
 import { dragDrawer, type DrawerDrag, type Stop } from './drawer';
-import { END_PAD, animateNative, canAnimate } from './motion';
+import { END_PAD, animateNative, canAnimate, springDuration } from './motion';
 import { DROP_MS, createMoves, type Scene } from './moves';
 import { KEYBOARD_GUESS, trackKeyboard } from './keyboard';
 import {
@@ -144,6 +144,13 @@ const TODAY: Nav = { tab: 'today', stack: [], list: 'inbox' };
  * values, to try on a phone (SPEC 14).
  */
 export const TAP_GUARD = { morph: 350, afterCapsule: 1000, other: 500 } as const;
+
+/**
+ * With motion on, the capsule grows into the lantern on the drawer's
+ * spring, which ends later than the 350 ms it is felt to take: the guard's
+ * second is counted from where it ends (SPEC 5.1, "a second after it ends").
+ */
+export const MORPH_MS = springDuration();
 
 /** How long an undoable tap can be taken back (SPEC 9.8; an owner decision, SPEC 14). */
 export const UNDO_MS = 6000;
@@ -1695,7 +1702,8 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
       (lastSlot === undefined || (scene !== lastScene && (lastSlot !== 'present' || across)))
     ) {
       const grew = lastSlot === 'capsule' && arrival === 'morph';
-      const length = grew ? TAP_GUARD.morph + TAP_GUARD.afterCapsule : TAP_GUARD.other;
+      const morph = animated(read()) ? MORPH_MS : TAP_GUARD.morph;
+      const length = grew ? morph + TAP_GUARD.afterCapsule : TAP_GUARD.other;
       guardUntil = Math.max(guardUntil, monotonic() + length);
     }
     lastSlot = slot;

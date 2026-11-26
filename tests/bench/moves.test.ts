@@ -8,7 +8,7 @@
 // geometry; the comparison harness holds the geometry, within 1 pt.
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { FOCUS_FADE_MS } from '../../src/bench/app';
+import { FOCUS_FADE_MS, MORPH_MS, TAP_GUARD } from '../../src/bench/app';
 import { END_PAD, springDuration } from '../../src/bench/motion';
 import { DROP_MS } from '../../src/bench/moves';
 import type { BenchDomains } from '../../src/bench/state';
@@ -650,6 +650,37 @@ describe('a motion that cannot be drawn', () => {
     expect(played).toEqual([]);
     nothingLeft(m);
     expect(m.container.dataset['drawer']).toBe('open');
+  });
+});
+
+describe('the tap guard follows the motion', () => {
+  it('holds Step done for a second after the capsule has grown into the lantern on its spring', async () => {
+    const taken: Record<string, boolean[]> = {};
+    for (const way of ['reduced', 'full'] as const) {
+      taken[way] = [];
+      for (const wait of [
+        TAP_GUARD.morph + TAP_GUARD.afterCapsule + 10,
+        MORPH_MS + TAP_GUARD.afterCapsule + 10,
+      ]) {
+        const m = await mount(TUE_1005, 'example', way === 'reduced' ? reduced : undefined);
+        settle(m);
+        press(m.container, HANDLE);
+        await drawn();
+        over(m);
+        press(m.container, 'Hide the rest of today');
+        await drawn();
+        settle(m, wait);
+        const before = stateOf(m).tasks;
+        press(m.container, /^Step done/);
+        taken[way].push(stateOf(m).tasks !== before);
+        unmount();
+      }
+    }
+    // Under Reduce Motion the morph is the 350 ms it is felt to take…
+    expect(taken['reduced']).toEqual([true, true]);
+    // …and with motion on, the spring's whole length.
+    expect(MORPH_MS).toBeGreaterThan(TAP_GUARD.morph);
+    expect(taken['full']).toEqual([false, true]);
   });
 });
 
