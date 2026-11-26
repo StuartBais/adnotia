@@ -92,6 +92,12 @@ async function start(
   if (seeded) store.updateDomains(() => seeded);
   const container = document.createElement('div');
   document.body.append(container);
+  // The page's own status-bar colour, as bench/index.html carries it, so a
+  // test reads what the prototype sets it to.
+  const theme = document.createElement('meta');
+  theme.name = 'theme-color';
+  theme.content = '#222624';
+  document.head.append(theme);
   const mono = { now: 0 };
   const bench = mountBench({
     store,
@@ -111,6 +117,7 @@ async function start(
     destroy() {
       bench.destroy();
       container.remove();
+      theme.remove();
       store.dispose();
       vi.useRealTimers();
     },

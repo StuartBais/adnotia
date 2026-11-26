@@ -58,6 +58,10 @@ const titled = (state: BenchDomains, title: string) =>
   state.tasks.find((task) => task.title === title && task.parentId === undefined)!;
 const at = (local: string) => new Date(local);
 
+/** The status bar's colour, as the page's theme-color meta says it. */
+const themeColour = () =>
+  document.querySelector('meta[name="theme-color"]')?.getAttribute('content');
+
 /** Keeps only the names in `wanted`, in the order they were read. */
 const inOrder = (names: string[], wanted: string[]) =>
   names.filter((name) => wanted.includes(name));
@@ -964,6 +968,22 @@ describe('Me, and Settings under it (SPEC 12; plan sections 4 and 11)', () => {
     expect(m.container.dataset['ground']).toBe('present');
   });
 
+  it('turns the status bar white on white places, and charcoal again in Focus and on Today', async () => {
+    const m = await settings();
+    expect(themeColour()).toBe('#222624');
+    press(m.container, 'White');
+    expect(themeColour()).toBe('#FFFFFF');
+    press(m.container, 'Tasks');
+    expect(themeColour()).toBe('#FFFFFF');
+    press(m.container, /^Now: Write the question, step 2 of 3/);
+    expect(m.container.dataset['focus']).toBe('open');
+    expect(themeColour()).toBe('#222624');
+    press(m.container, 'Back to Tasks');
+    expect(themeColour()).toBe('#FFFFFF');
+    press(m.container, 'Today');
+    expect(themeColour()).toBe('#222624');
+  });
+
   it('moves along a switch with the arrow keys', async () => {
     const m = await settings();
     const charcoal = button(m.container, 'Charcoal');
@@ -1435,9 +1455,7 @@ describe('4 · Focus (SPEC 5.4)', () => {
     }
     // Focus is the capsule opened all the way: it never shows the capsule.
     expect(m.container.querySelector('.capsule')).toBeNull();
-    expect(
-      document.querySelector('meta[name="theme-color"]')?.getAttribute('content') ?? '#222624',
-    ).toBe('#222624');
+    expect(themeColour()).toBe('#222624');
     // Today is not changed under it.
     expect(id(m, 't-today')?.getAttribute('aria-current')).toBe('page');
   });
