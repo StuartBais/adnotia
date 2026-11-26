@@ -3803,6 +3803,59 @@ describe('coming back after a reload (plan sections 4 and 8; SPEC 5.7)', () => {
     expect(title(again)).toBe('Library');
   });
 
+  it('the open drawer, over Today, a place or a page, with its entry, so back folds it first', async () => {
+    const open = (m: Mounted) => expect(m.container.dataset['drawer']).toBe('open');
+    const folded = (m: Mounted) => expect(m.container.dataset['drawer']).toBe('folded');
+    // Over Today.
+    const m = await mount(TUE_1005);
+    press(m.container, /^Next/);
+    const today = await reload(m, 5);
+    open(today);
+    expect(id(today, 't-today')?.getAttribute('aria-current')).toBe('page');
+    expect(historyDepth()).toBe(1);
+    goBack();
+    folded(today);
+    expect(id(today, 'b-lit')).not.toBeNull();
+    expect(historyDepth()).toBe(0);
+    // Over a place, which stays current under it.
+    press(today.container, 'Routines');
+    press(today.container, /^Next/);
+    const place = await reload(today, 5);
+    open(place);
+    expect(id(place, 't-routines')?.getAttribute('aria-current')).toBe('page');
+    expect(historyDepth()).toBe(1);
+    goBack();
+    folded(place);
+    expect(title(place)).toBe('Routines');
+    expect(historyDepth()).toBe(0);
+    // Over a page pushed on the place: back goes the drawer first, then the page.
+    press(place.container, 'Leaving the house, 4 steps');
+    press(place.container, /^Next/);
+    const page = await reload(place, 5);
+    open(page);
+    expect(historyDepth()).toBe(2);
+    goBack();
+    folded(page);
+    expect(title(page)).toBe('Leaving the house');
+    goBack();
+    expect(title(page)).toBe('Routines');
+    expect(historyDepth()).toBe(0);
+  });
+
+  it('after 15 minutes, a drawer left open opens over Today, still open: its place is kept for the day', async () => {
+    const m = await mount(TUE_1005);
+    press(m.container, 'Routines');
+    press(m.container, 'Leaving the house, 4 steps');
+    press(m.container, /^Next/);
+    const later = await reload(m, 20);
+    expect(id(later, 't-today')?.getAttribute('aria-current')).toBe('page');
+    expect(later.container.dataset['drawer']).toBe('open');
+    expect(historyDepth()).toBe(1);
+    goBack();
+    expect(later.container.dataset['drawer']).toBe('folded');
+    onToday(later);
+  });
+
   it('a task’s page, and the words left in its "Add a step" field', async () => {
     const m = await mount(TUE_1005);
     press(m.container, 'Tasks');
