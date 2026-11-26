@@ -502,6 +502,30 @@ describe('7 · Nothing running (SPEC 5.7)', () => {
     expect(button(m.container, 'Mark done: Renew the parking permit')).toBeTruthy();
   });
 
+  it('keeps a row ticked on the open drawer as a disc on the half one, after Hide', async () => {
+    const m = await mount(TUE_0958, 'notStarted');
+    press(m.container, 'Rest of today');
+    expect(m.container.dataset['drawer']).toBe('open');
+    press(m.container, 'Mark done: Renew the parking permit');
+    press(m.container, 'Hide the rest of today');
+    expect(m.container.dataset['drawer']).toBe('half');
+    // Inside the six seconds and after them: the disc is still the way back.
+    const disc = button(m.container, 'Undo done: Renew the parking permit');
+    expect(disc.closest('li')?.classList.contains('done')).toBe(true);
+    outlastUndo();
+    press(m.container, 'Undo done: Renew the parking permit');
+    expect(titled(stateOf(m), 'Renew the parking permit').doneAt).toBeUndefined();
+  });
+
+  it('keeps a row ticked on the half drawer as a disc when the drawer opens', async () => {
+    const m = await mount(TUE_0958, 'notStarted');
+    press(m.container, 'Mark done: Renew the parking permit');
+    press(m.container, 'Rest of today');
+    expect(m.container.dataset['drawer']).toBe('open');
+    press(m.container, 'Undo done: Renew the parking permit');
+    expect(titled(stateOf(m), 'Renew the parking permit').doneAt).toBeUndefined();
+  });
+
   it('keeps focus on the spot as a ring is ticked and its disc un-ticks it', async () => {
     const m = await mount(TUE_0958, 'notStarted');
     button(m.container, 'Mark done: Renew the parking permit').focus();

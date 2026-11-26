@@ -682,11 +682,16 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
       current.task.id === view.page.id;
     const ground = view.kind === 'today' || ownPage ? 'present' : 'place';
 
-    // Moving between lists clears the rows ticked in them.
+    // Moving between lists clears the rows ticked in them. The half drawer
+    // and the open one show the same day's list, so a tick there keeps its
+    // disc across Hide or a pull between them: with "Done today" off, the disc
+    // is the only way back once the drawer is no longer open (SPEC 9.7).
     const page = view.kind === 'page' ? JSON.stringify(view.page) : undefined;
+    const sameList = (a: DrawerPosition, b: DrawerPosition) =>
+      a === b || ((a === 'half' || a === 'open') && (b === 'half' || b === 'open'));
     if (
       shown &&
-      (shown.position !== position ||
+      (!sameList(shown.position, position) ||
         shown.tab !== nav.tab ||
         shown.page !== page ||
         shown.list !== nav.list)
