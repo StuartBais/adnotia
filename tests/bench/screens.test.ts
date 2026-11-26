@@ -3238,6 +3238,14 @@ describe('the sheets a task’s page raises (SPEC 9.9 and 12)', () => {
     expect(drawnText(document.activeElement!)).toBe('Not set');
   });
 
+  it('Done is the stone sheet’s quiet pill, never charcoal, which means only now', async () => {
+    const m = await opened();
+    press(m.container, /^When: /);
+    const done = id(m, 'w-done')!;
+    expect(done.classList.contains('quiet')).toBe(true);
+    expect(done.classList.contains('present')).toBe(false);
+  });
+
   it('How long sets an estimate on anything not booked, and can unset it', async () => {
     const m = await opened();
     press(m.container, /^When: /);

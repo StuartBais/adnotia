@@ -240,8 +240,10 @@ export function whenSheet(props: WhenProps): Built {
       }),
     ),
   );
+  // Done closes the sheet; it is not the present, so it is not charcoal
+  // (SPEC 7): the stone sheet's quiet pill, as its Delete is.
   const done = h('button', {
-    class: 'pill present pad wdone',
+    class: 'pill quiet pad wdone',
     type: 'button',
     id: 'w-done',
     text: T.done,
