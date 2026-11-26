@@ -15,7 +15,7 @@
 import { focusFootParts, type NextLine } from '../state';
 import { SAY, T, focusContextLabel, minutesSpoken, say, type SpokenMinutes } from '../strings';
 import { HINT_IDS, meButton, type Built } from '../frame';
-import { bar, dottedNodes, h, icon, patchBar, sep, spoken } from '../ui';
+import { bar, dottedNodes, h, icon, patchBar, spoken } from '../ui';
 import type { PresentLive, PresentView } from '../view';
 
 export interface FocusActions {
@@ -26,6 +26,14 @@ export interface FocusActions {
   onAddFive: () => void;
   onSetAside: () => void;
 }
+
+/**
+ * A separator with its word spaces inside it, for the context line and the
+ * foot: each is a row whose title gives way, and a row drops the spaces
+ * between its parts.
+ */
+const rowSep = (): HTMLElement =>
+  h('span', { class: 'sep', 'aria-hidden': 'true' }, '\u00a0·\u00a0');
 
 /** The static form of Focus, for a key: what it is made of, not its figures. */
 export const focusKey = (view: PresentView, back: string): unknown[] => [
@@ -130,19 +138,19 @@ export function focusScreen(
   );
 
   // The context line, a heading: "Focus · Write the school email · step 2 of 3".
+  // A row whose title gives way: a long one is cut, and "step 2 of 3" keeps
+  // its place, as the foot keeps its "in" part.
   const context = h(
     'h1',
     { class: 'fctx t-meta', 'data-geo': 'f-ctx' },
     h(
       'span',
-      { 'aria-hidden': 'true' },
+      { class: 'fctx-shown', 'aria-hidden': 'true' },
       h('b', { text: T.focus }),
-      ' ',
-      sep(),
-      ' ',
-      view.task.title,
+      rowSep(),
+      h('span', { class: 'fctx-title', text: view.task.title }),
       ...(view.position
-        ? [' ', sep(), ' ', `step ${view.position.number} of ${view.position.count}`]
+        ? [rowSep(), h('span', { text: `step ${view.position.number} of ${view.position.count}` })]
         : []),
     ),
     spoken(focusContextLabel(view.task.title, view.position)),
@@ -259,13 +267,6 @@ export interface FootProps {
   undo?: { name: string; onUndo: () => void };
 }
 
-/**
- * The foot's separator, its word spaces inside it: the line is a row whose
- * title gives way, and a row drops the spaces between its parts.
- */
-const footSep = (): HTMLElement =>
-  h('span', { class: 'sep', 'aria-hidden': 'true' }, '\u00a0·\u00a0');
-
 /** The foot, and a way to move its "in N min" and its label in place. */
 export interface Foot {
   nodes: Node[];
@@ -295,9 +296,9 @@ export function focusFoot(props: FootProps): Foot {
       'span',
       { class: 'ff-shown', 'aria-hidden': 'true' },
       h('span', { class: 'ff-head', text: parts.head }),
-      footSep(),
+      rowSep(),
       h('span', { class: 'ff-item', text: parts.item }),
-      ...(parts.when === undefined ? [] : [footSep(), when]),
+      ...(parts.when === undefined ? [] : [rowSep(), when]),
     ),
     said,
   );

@@ -1443,6 +1443,23 @@ describe('4 · Focus (SPEC 5.4)', () => {
     expect(layer.querySelectorAll('h1, h2')).toHaveLength(2);
   });
 
+  it('cuts a long title on the context line, never "step 2 of 3", and says it whole', async () => {
+    const LONG = 'Write the school email to Mrs Henderson about the trip on Friday';
+    const m = await mount(TUE_1005, 'example', (state) => ({
+      ...state,
+      tasks: state.tasks.map((task) =>
+        task.id === emailOf(state).id ? { ...task, title: LONG } : task,
+      ),
+    }));
+    press(m.container, LIT);
+    const shown = layerOf(m).querySelector('.fctx-shown')!;
+    // A row: the title is the part that gives way, and the count stands after it.
+    const parts = [...shown.children].filter((part) => !part.classList.contains('sep'));
+    expect(parts.map((part) => part.textContent)).toEqual(['Focus', LONG, 'step 2 of 3']);
+    expect(parts[1]?.className).toBe('fctx-title');
+    expect(readText(layerOf(m).querySelector('.fctx')!)).toBe(`Focus, ${LONG}, step 2 of 3`);
+  });
+
   it('keeps Today’s three on the dock line, in Today’s places', async () => {
     const m = await focused();
     expect(nameOf(id(m, 'b-stepdone')!)).toBe('Step done: Write the question');

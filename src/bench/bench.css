@@ -1057,16 +1057,29 @@ svg.i28 {
   padding: 56px 24px 16px;
   -webkit-overflow-scrolling: touch;
 }
-/* 166–186: "Focus" in ash at 650, then the task and the step count at 500. */
+/* 166–186: "Focus" in ash at 650, then the task and the step count at 500.
+   A row: a long title is cut, and the step count keeps its place. */
 .fctx {
   height: 20px;
   color: var(--ash);
   white-space: nowrap;
   overflow: hidden;
-  text-overflow: ellipsis;
 }
 .fctx b {
   font-weight: 650;
+}
+.fctx-shown {
+  display: flex;
+  min-width: 0;
+}
+.fctx-shown > * {
+  flex: none;
+}
+.fctx-shown > .fctx-title {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 /* 210–234: the done step's sage disc, in a 44 pt target, and the step in ash. */
 .fdone {
