@@ -125,6 +125,14 @@ const LANTERN_MS = 350;
 const FOCUS_MS = 400;
 /** A part that is the same in both places, cross-faded on its way while still near where it set off. */
 const PAIR_MS = 60;
+/**
+ * The capsule itself is swapped in or out where the moving layer is already
+ * on it: going, over the first 40 ms, before the layer has moved off it;
+ * arriving, over the spring's last 150 ms, by which time the layer is within
+ * about 1% of the way, so nothing is drawn twice side by side.
+ */
+const CUT_MS = 40;
+const LAND_MS = 150;
 /** Focus's context line, controls and foot fade in over the last 120 ms (SPEC 10). */
 const FOCUS_LAST = 120;
 /** Step done: the finished step rises and the next one rises into place (SPEC 10). */
@@ -760,7 +768,10 @@ export function createMoves(host: MovesHost): Moves {
     // Built in forward terms (0 the lantern, 1 the capsule): a move from
     // its start to its end, fades in ms as played forward, and the same
     // fades as progress for a finger.
-    const forward: (Track & { byProgress?: boolean })[] = [];
+    const forward: (Track & {
+      byProgress?: boolean;
+      both?: { forward: Stop[]; back: Stop[] };
+    })[] = [];
     const temp: Element[] = [];
     const out: Stop[] = [
       [0, 1],
@@ -900,15 +911,21 @@ export function createMoves(host: MovesHost): Moves {
       });
     }
 
-    // The capsule itself comes up over all of it in the last 100 ms.
+    // The capsule itself, where the layer lands on it (see CUT_MS).
     forward.push({
       el: pic(C.whole),
-      fade: [
-        [D - FIRST, 0],
-        [D, 1],
-      ],
+      both: {
+        forward: [
+          [SPRING.duration - LAND_MS, 0],
+          [SPRING.duration, 1],
+        ],
+        back: [
+          [0, 1],
+          [CUT_MS, 0],
+        ],
+      },
       scrub: [
-        [0.85, 0],
+        [0.97, 0],
         [1, 1],
       ],
     });
@@ -925,7 +942,9 @@ export function createMoves(host: MovesHost): Moves {
       }
       if (t.byProgress && t.scrub && at === undefined) {
         played.fade = progressFade(t.scrub, dir, SPRING);
-      } else if (t.fade || t.byProgress) {
+      } else if (t.both && at === undefined) {
+        played.fade = dir === 1 ? t.both.forward : t.both.back;
+      } else if (t.fade || t.byProgress || t.both) {
         played.fade =
           at === undefined && t.fade
             ? way(t.fade, dir, D)
@@ -1150,25 +1169,18 @@ export function createMoves(host: MovesHost): Moves {
         temp.push(pic);
         add({ el: pic, move: [f === F.bar ? mapTo(f.box, c.box) : lineMap(f, c), NONE] });
       }
-      // The capsule itself, over the start.
+      // The capsule itself, where the frame sets off from it (see CUT_MS);
+      // played back, it comes up as the frame lands on it.
+      const cut: Stop[] = [
+        [0, 1],
+        [CUT_MS, 0],
+      ];
       if (dir === 1) {
         const cap = placed(C.whole);
         temp.push(cap);
-        add({
-          el: cap,
-          fade: [
-            [0, 1],
-            [FIRST, 0],
-          ],
-        });
+        add({ el: cap, fade: cut });
       } else if (capsuleEl) {
-        add({
-          el: capsuleEl,
-          fade: [
-            [0, 1],
-            [FIRST, 0],
-          ],
-        });
+        add({ el: capsuleEl, fade: cut });
       }
       // Today's buttons in the slot the capsule had, which come in with Focus's controls.
       const pills =
@@ -1183,6 +1195,11 @@ export function createMoves(host: MovesHost): Moves {
       return undefined;
     }
     for (const el of focusLayers) add({ el, fade: late });
+    // Focus's own step, bar and minutes are drawn by the pictures on the way,
+    // so they are not drawn twice where Focus comes up or fades.
+    for (const p of [F.step, F.bar, F.mins]) {
+      if (p) hold.push({ el: p.el, style: { visibility: 'hidden' } });
+    }
     return {
       channel: 'present',
       tracks,
