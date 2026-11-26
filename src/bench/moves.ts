@@ -659,7 +659,7 @@ export function createMoves(host: MovesHost): Moves {
    * A tap that moves the drawer: it travels from where it was drawn to where
    * it now rests, on the drawer spring. Going down, it carries a picture of
    * what it held, which fades into what it holds now at the end; going up,
-   * the old words fade out in the first 100 ms over what it opened to.
+   * the old words fade out in the first 50 ms over what it opened to.
    */
   function drawerFlight(snap: Snapshot): Plan | undefined {
     const to = boxOf(layers.drawer, container).y;
@@ -742,12 +742,12 @@ export function createMoves(host: MovesHost): Moves {
   /**
    * The lantern and the capsule as one layer (SPEC 10): the step, the bar and
    * the minutes travel and scale from the lantern's places to the capsule's,
-   * the frame closes from around the lantern (`card`) or from the whole
-   * canvas (`canvas`) to the slot with its corners rounding from 0 to 32, the
-   * rest fades in the first 100 ms, and the capsule itself comes up over it
-   * in the last 100. Pictures all; the real lantern, capsule and dock
-   * buttons are kept out of sight until it ends. In forward terms: 0 is the
-   * lantern and 1 the capsule.
+   * the frame closes from around the lantern (`card`) or from the canvas
+   * (`canvas`) to the slot with its corners rounding from 0 to 32, the rest
+   * fades in the first 100 ms, and the capsule itself takes over where the
+   * layer lands on it (CUT_MS, LAND_MS). Pictures all; the real lantern,
+   * capsule and dock buttons are kept out of sight until it ends. In forward
+   * terms: 0 is the lantern and 1 the capsule.
    */
   function lanternLayer(o: {
     L: Parts<keyof typeof LANTERN>;
@@ -755,7 +755,6 @@ export function createMoves(host: MovesHost): Moves {
     pills: Part[];
     frame: 'card' | 'canvas';
     dir: 1 | -1;
-    duration: number;
     real: (HTMLElement | null | undefined)[];
     startAt?: number;
     /** The canvas, for `canvas`: from under the header row to the drawer's top. */
@@ -988,7 +987,6 @@ export function createMoves(host: MovesHost): Moves {
       pills,
       frame,
       dir,
-      duration: SPRING.duration,
       real,
       ...(startAt === undefined ? {} : { startAt }),
       top: header ? boxOf(header, container).y + boxOf(header, container).h + 8 : 0,
@@ -1039,7 +1037,6 @@ export function createMoves(host: MovesHost): Moves {
       pills,
       frame: 'card',
       dir: 1,
-      duration: SPRING.duration,
       real: [q<HTMLElement>(LANTERN.whole, layers.screen), capsuleEl, ...pillEls],
       top: 0,
       bottom: height(),
