@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import * as format from '../../src/bench/format';
+import * as strings from '../../src/bench/strings';
 import {
   ANNOUNCE,
   HINT,
   SAY,
-  T,
   capsuleLabel,
   focusContextLabel,
   idleItemLabel,
@@ -244,9 +244,106 @@ describe('strings.ts, against SPEC 11', () => {
   });
 
   it('holds no word the design rules out, and no exclamation mark', () => {
-    const everything = JSON.stringify({ T, HINT, SAY });
-    expect(everything).not.toMatch(
-      /!|overdue|\blate\b|missed|behind|streak|welcome back|great job/i,
-    );
+    const { texts, silent } = everythingIn(strings);
+    expect(silent, 'functions that said nothing for any sample').toEqual([]);
+    expect(texts.size).toBeGreaterThan(200);
+    const ruledOut = /!|overdue|\blate\b|missed|behind|streak|welcome back|great job|forg[eo]t/i;
+    expect([...texts].filter((text) => ruledOut.test(text))).toEqual([]);
   });
 });
+
+/**
+ * Every string strings.ts can produce: its constants, at any depth, and what
+ * each of its functions returns for every combination of sample arguments, one
+ * more than it declares so a defaulted parameter is reached too. The samples
+ * reach both sides of each branch: a step and none, an end time and none, a
+ * paused present and a running one, every kind of clock. A function that says
+ * nothing for any of them is reported, so a new one cannot slip past unread.
+ */
+function everythingIn(module: Record<string, unknown>): { texts: Set<string>; silent: string[] } {
+  const minutes = [
+    { kind: 'left', left: 18, estimate: 25, endsAt: ten23 },
+    { kind: 'left', left: 1, estimate: 1, endsAt: undefined },
+    { kind: 'over', soFar: 27, estimate: 25 },
+    { kind: 'countUp', soFar: 95 },
+  ];
+  const present = (paused: boolean, lead?: string) =>
+    minutes.map((clock, index) => ({
+      paused,
+      ...(lead === undefined ? {} : { lead }),
+      step: 'Write the question',
+      position: index % 2 === 0 ? { number: 2, count: 3 } : undefined,
+      title: 'Write the school email',
+      minutes: clock,
+      note: index % 2 === 0 ? 'When is the permission slip due?' : undefined,
+    }));
+  const samples: unknown[] = [
+    'Write the school email',
+    undefined,
+    2,
+    1,
+    0,
+    true,
+    false,
+    'today',
+    ten23,
+    ['Today', '10:30', '10 minutes'],
+    { number: 2, count: 3 },
+    ...minutes,
+    ...present(false),
+    ...present(true),
+    ...present(true, 'Timer stopped'),
+    {
+      title: 'Write the school email',
+      firstStep: 'Find the school address',
+      stepsLeft: 3,
+      minutes: 25,
+      endsAbout: ten23,
+    },
+    {
+      title: 'Bins out',
+      firstStep: undefined,
+      stepsLeft: 1,
+      minutes: undefined,
+      endsAbout: undefined,
+    },
+    {
+      title: 'Bins out',
+      firstStep: undefined,
+      stepsLeft: 0,
+      minutes: undefined,
+      endsAbout: undefined,
+    },
+  ];
+  const texts = new Set<string>();
+  const silent: string[] = [];
+  const calls = function* (arity: number): Generator<unknown[]> {
+    if (arity === 0) {
+      yield [];
+      return;
+    }
+    for (const rest of calls(arity - 1)) for (const sample of samples) yield [...rest, sample];
+  };
+  const walk = (value: unknown, path: string): void => {
+    if (typeof value === 'string') texts.add(value);
+    else if (typeof value === 'function') {
+      let spoke = false;
+      for (const args of calls(Math.min(value.length + 1, 3))) {
+        try {
+          const said: unknown = value(...args);
+          if (typeof said === 'string') {
+            texts.add(said);
+            spoke = true;
+          }
+        } catch {
+          // An argument of the wrong shape: another combination reaches it.
+        }
+      }
+      if (!spoke) silent.push(path);
+    } else if (value !== null && typeof value === 'object') {
+      for (const [key, inner] of Object.entries(value)) walk(inner, `${path}.${key}`);
+    }
+  };
+  for (const [name, value] of Object.entries(module)) walk(value, name);
+  return { texts, silent };
+}
