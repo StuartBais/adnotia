@@ -9,7 +9,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { FOCUS_FADE_MS, MORPH_MS, TAP_GUARD } from '../../src/bench/app';
-import { END_PAD, springDuration } from '../../src/bench/motion';
+import { END_PAD, springAt, springDuration } from '../../src/bench/motion';
 import { DROP_MS } from '../../src/bench/moves';
 import type { BenchDomains } from '../../src/bench/state';
 import {
@@ -650,6 +650,53 @@ describe('a motion that cannot be drawn', () => {
     expect(played).toEqual([]);
     nothingLeft(m);
     expect(m.container.dataset['drawer']).toBe('open');
+  });
+});
+
+describe('Start', () => {
+  it('brings Step done and Pause in once the drawer folding from half has passed under them', async () => {
+    let mounted: Mounted | undefined;
+    layDrawer(() => mounted);
+    const laid = vi.mocked(Element.prototype.getBoundingClientRect);
+    const board = laid.getMockImplementation()!;
+    // The dock line's buttons where the board has them, 606 to 650.
+    laid.mockImplementation(function (this: Element) {
+      if (this.classList.contains('dock-pill')) {
+        return {
+          x: 24,
+          y: 606,
+          left: 24,
+          top: 606,
+          width: 140,
+          height: 44,
+          right: 164,
+          bottom: 650,
+          toJSON: () => ({}),
+        } as DOMRect;
+      }
+      return board.call(this);
+    });
+    const m = await mount(TUE_0958, 'notStarted');
+    mounted = m;
+    settle(m);
+    expect(m.container.dataset['drawer']).toBe('half');
+    const before = played.length;
+    press(m.container, 'Start');
+    await drawn();
+    expect(m.container.dataset['drawer']).toBe('folded');
+    const mine = since(before);
+    const pills = [...m.container.querySelectorAll('.dock .dock-pill')];
+    expect(pills.length).toBe(2);
+    // The drawer's top passes 650 about nine tenths of the way from 366 to 684.
+    const under = springAt(0.2);
+    expect(under).toBeLessThan((650 - 366) / (684 - 366));
+    for (const pill of pills) {
+      const fade = mine.find((p) => p.el === pill && p.frames.some((f) => 'opacity' in f))!;
+      expect(opacityAt(fade, 200)).toBe(0);
+      expect(opacityAt(fade, springDuration())).toBe(1);
+    }
+    over(m);
+    nothingLeft(m);
   });
 });
 

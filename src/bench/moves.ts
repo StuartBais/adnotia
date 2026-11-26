@@ -760,21 +760,22 @@ export function createMoves(host: MovesHost): Moves {
     lantern: true;
   }
 
+  /** The first moment (ms) a curve is past `p` of the way. */
+  function momentAt(curve: Curve, p: number): number {
+    let lo = 0;
+    let hi = curve.duration;
+    for (let i = 0; i < 24; i++) {
+      const mid = (lo + hi) / 2;
+      if (curve.at(mid) >= p) hi = mid;
+      else lo = mid;
+    }
+    return Math.round(hi);
+  }
+
   /** A fade given by progress, played on a curve: when each stop is reached, going either way. */
   function progressFade(stops: readonly Stop[], dir: 1 | -1, curve: Curve): Stop[] {
-    const when = (p: number) => {
-      // The first moment the curve is past `p` of the way.
-      let lo = 0;
-      let hi = curve.duration;
-      for (let i = 0; i < 24; i++) {
-        const mid = (lo + hi) / 2;
-        if (curve.at(mid) >= p) hi = mid;
-        else lo = mid;
-      }
-      return Math.round(hi);
-    };
     return stops
-      .map(([p, v]) => [when(dir === 1 ? p : 1 - p), v] as const)
+      .map(([p, v]) => [momentAt(curve, dir === 1 ? p : 1 - p), v] as const)
       .sort((a, b) => a[0] - b[0]);
   }
 
@@ -1375,15 +1376,23 @@ export function createMoves(host: MovesHost): Moves {
         });
       }
     }
+    // Step done and Pause sit over the drawer's rows while it folds down from
+    // half: they come in once its top has passed under them.
     const pills = [...layers.dock.querySelectorAll<HTMLElement>('.dock-pill')];
-    for (const el of pills)
+    const from = snap.drawerY;
+    const to = boxOf(layers.drawer, container).y;
+    for (const el of pills) {
+      const box = boxOf(el, container);
+      const under = to > from + 0.5 ? (box.y + box.h - from) / (to - from) : 0;
+      const at = under > 0 ? Math.min(D - FIRST, momentAt(SPRING, Math.min(1, under))) : 0;
       tracks.push({
         el,
         fade: [
-          [0, 0],
-          [CROSS_MS, 1],
+          [at, 0],
+          [at + (at > 0 ? FIRST : CROSS_MS), 1],
         ],
       });
+    }
     return {
       channel: 'present',
       tracks,
