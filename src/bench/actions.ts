@@ -14,6 +14,7 @@
 // stands.
 
 import * as model from '../domains/tasks';
+import { loggingDay } from '../kernel/dates';
 import { stepFacts, timeFacts, type BenchDomains, type BenchState, type UndoLines } from './state';
 import { ANNOUNCE, T, keptAtStep, minutesSpoken, resumedAt, say } from './strings';
 
@@ -27,6 +28,11 @@ export interface Undo {
   inverse: (state: BenchDomains, now: Date) => BenchDomains;
   /** The step a Step done finished, so its disc in Focus can end this Undo. */
   step?: string;
+  /**
+   * After Save: Undo removes the item and opens the capture sheet again with
+   * the text still in it (SPEC 5.5). The sheet is the app's to open.
+   */
+  reopen?: { text: string; to: 'inbox' | 'today' };
 }
 
 export interface Changed {
@@ -289,5 +295,31 @@ export function untick(state: BenchDomains, id: string): Changed {
   return {
     state: { ...state, tasks: model.reopen(state.tasks, id) },
     announce: ANNOUNCE.undone,
+  };
+}
+
+/**
+ * Save, in the capture sheet (SPEC 5.5): the words go to the inbox with no
+ * date, or onto today's list, anytime, and the kept draft goes in the same
+ * write. Nothing else is asked. An empty field saves nothing. Undo removes the
+ * item, and the app opens the sheet again with the text in it.
+ */
+export function save(state: BenchDomains, text: string, to: 'inbox' | 'today', now: Date): Changed {
+  const title = text.trim();
+  if (title === '') return { state };
+  let tasks = model.capture(state.tasks, title, now);
+  const id = tasks[tasks.length - 1]!.id;
+  if (to === 'today') tasks = model.schedule(tasks, id, { kind: 'anytime', date: loggingDay(now) });
+  const { capture: _kept, ...drafts } = state.bench.drafts;
+  return {
+    state: { ...state, tasks, bench: { ...state.bench, drafts } },
+    announce: to === 'inbox' ? ANNOUNCE.saved : ANNOUNCE.savedToday,
+    undo: {
+      lines: { line1: to === 'inbox' ? T.savedToInbox : T.savedToToday, line2: title },
+      name: say.undoSave(title, to),
+      reopen: { text: title, to },
+      inverse: (current) =>
+        find(current, id) ? { ...current, tasks: model.remove(current.tasks, id) } : current,
+    },
   };
 }

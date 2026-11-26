@@ -169,6 +169,41 @@ describe('each inverse puts back what its tap changed', () => {
     expect(done.undo!.inverse(back, now)).toEqual(back);
   });
 
+  it('Save: the item goes, and the words are handed back for the sheet', () => {
+    const { state, now } = scene('example', TUE_1005);
+    const kept = {
+      ...state,
+      bench: {
+        ...state.bench,
+        drafts: { fields: {}, capture: { text: 'Ask Ana about Friday', to: 'today' as const } },
+      },
+    };
+    const saved = act.save(kept, '  Ask Ana about Friday ', 'today', now);
+    const item = top(saved.state, 'Ask Ana about Friday');
+    expect(item.when).toEqual({ kind: 'anytime', date: '2026-11-24' });
+    // One write: the item and the draft it came from.
+    expect(saved.state.bench.drafts.capture).toBeUndefined();
+    expect(saved.announce).toBe("Saved to today's list");
+    expect(saved.undo?.lines).toEqual({
+      line1: "Saved to today's list",
+      line2: 'Ask Ana about Friday',
+    });
+    expect(saved.undo?.reopen).toEqual({ text: 'Ask Ana about Friday', to: 'today' });
+    const back = saved.undo!.inverse(saved.state, now);
+    expect(back.tasks).toEqual(state.tasks);
+    expect(saved.undo!.inverse(back, now)).toEqual(back);
+  });
+
+  it('Save to the inbox: no date, said in SPEC 5.5’s words; nothing from an empty field', () => {
+    const { state, now } = scene('example', TUE_1005);
+    const saved = act.save(state, 'Ask Ana about Friday', 'inbox', now);
+    expect(top(saved.state, 'Ask Ana about Friday').when).toEqual({ kind: 'none' });
+    expect(saved.announce).toBe('Saved to inbox');
+    expect(saved.undo?.lines.line1).toBe('Saved to the inbox');
+    expect(saved.undo?.name).toBe('Undo: remove Ask Ana about Friday from the inbox');
+    expect(act.save(state, '   ', 'inbox', now)).toEqual({ state });
+  });
+
   it('Pause and an un-tick are not offered: each is one tap from its own way back', () => {
     const { state, now } = scene('example', TUE_1005);
     expect(act.pause(state, top(state, EMAIL).id, now).undo).toBeUndefined();

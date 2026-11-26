@@ -49,6 +49,9 @@ export const T = {
   // The six-second lines after a tap (SPEC 9.8).
   started: 'Started',
   savedToInbox: 'Saved to the inbox',
+  // Undrawn: SPEC 5.5 draws Save to the inbox only. Today's words follow its
+  // helper line, "Goes on today's list, anytime." A proposal.
+  savedToToday: "Saved to today's list",
   resumed: 'Resumed',
 
   // Capture.
@@ -57,6 +60,8 @@ export const T = {
   placeholder: "What's on your mind?",
   helpInbox: 'Goes to the inbox with no date. Plan it later if you like.',
   helpToday: "Goes on today's list, anytime.",
+  /** The Inbox or Today switch's name, as the board names it. */
+  whereItGoes: 'Where it goes',
   inbox: 'Inbox',
   today: 'Today',
   save: 'Save',
@@ -119,7 +124,10 @@ export const say = {
   // draws the four above and below; Start, Resume and Set aside follow them.
   undoStart: (title: string) => `Undo start: ${title}`,
   undoStartInstead: (kept: string) => `Undo: go back to ${kept}`,
-  undoSave: (text: string) => `Undo: remove ${text} from the inbox`,
+  undoSave: (text: string, to: 'inbox' | 'today' = 'inbox') =>
+    to === 'inbox'
+      ? `Undo: remove ${text} from the inbox`
+      : `Undo: remove ${text} from today's list`,
   undoResume: (title: string) => `Undo resume: ${title}`,
   undoSetAside: (title: string) => `Undo set aside: ${title}`,
   doneRow: (title: string) => `${title}, done`,
@@ -142,6 +150,8 @@ export const say = {
 /** What the live region says, in order (SPEC 11 "Announcements"). */
 export const ANNOUNCE = {
   saved: 'Saved to inbox',
+  /** Undrawn, as T.savedToToday: a proposal. */
+  savedToday: "Saved to today's list",
   paused: 'Paused',
   undone: 'Undone',
   /** "Undone. Now: Write the question": what Undo took back, then what is now the case. */
