@@ -1523,6 +1523,9 @@ svg.i28 {
   overscroll-behavior: contain;
   padding: 6px 0 96px;
   -webkit-overflow-scrolling: touch;
+  /* A row Tab scrolls to stops a row above the foot, clear of the covered row,
+     with its ring: a 44 row, and 4 for the ring. */
+  scroll-padding: 8px 0 48px;
 }
 /* The covered row: ring and title under one cover, on one ramp, from nothing at
    the ring's top (10 below the row's top) to 30% stone at its foot (34 below).
@@ -2053,6 +2056,10 @@ svg.i28 {
   overscroll-behavior: contain;
   padding: 4px 24px 96px;
   -webkit-overflow-scrolling: touch;
+  /* The body runs on under the dock line, so a control Tab scrolls to stops
+     above it with its ring: the 78 from the dock line's top to the body's
+     foot, and 8 for the ring. */
+  scroll-padding: 8px 0 calc(var(--dock-b) - var(--fold-b) + 64px + 8px);
 }
 .page-title {
   margin: 8px 0 16px;
