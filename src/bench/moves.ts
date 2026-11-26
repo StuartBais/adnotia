@@ -100,6 +100,11 @@ export interface MovesHost {
   timers: Timers;
   /** Full motion, in a browser that can play it. */
   enabled(): boolean;
+  /**
+   * A way out has ended, at its end or cut short: what it was taking out
+   * (Focus's layers, or the capture sheet) goes now rather than at its timer.
+   */
+  gone(what: 'focus' | 'sheet'): void;
   /** The dock line's slot as it would be built now: the capsule, or Today's own buttons. */
   dockNodes(kind: 'capsule' | 'present'): Node[];
 }
@@ -111,7 +116,7 @@ const SPRING: Curve = springCurve();
 /** Capture's: "about 300 ms, critically damped" (SPEC 10). */
 export const CAPTURE_RESPONSE = 0.28;
 const CAPTURE: Curve = springCurve(CAPTURE_RESPONSE);
-/** How long the capture sheet takes to drop, and so how long the leaving sheet is kept (ms). */
+/** How long the capture sheet takes to drop (ms): the drop's end takes the leaving sheet away. */
 export const DROP_MS = CAPTURE.duration;
 /** "Fade in the first 100 ms", and out in the last (SPEC 10). */
 const FIRST = 100;
@@ -599,7 +604,9 @@ export function createMoves(host: MovesHost): Moves {
     // Focus with nothing to grow from or into (its own page's "⌃ Focus", Done
     // on the last step) fades in whole or out, as under Reduce Motion.
     if (prev.focus !== next.focus && !focusMoved) {
-      plays.push(fadeWhole('focus', [layers.focus, layers.focusFoot], next.focus));
+      const fade = fadeWhole('focus', [layers.focus, layers.focusFoot], next.focus);
+      if (!next.focus) fade.onEnd = () => host.gone('focus');
+      plays.push(fade);
     }
     if (prev.sheet !== next.sheet) {
       const sheet = next.sheet ? captureOpen(next, snap) : captureClose(prev, snap);
@@ -608,8 +615,11 @@ export function createMoves(host: MovesHost): Moves {
           ? '.sheet-layer[data-capture]:not([data-leaving]) .csheet'
           : '.sheet-layer[data-capture][data-leaving]',
       );
-      if (sheet) plays.push(sheet);
-      else if (csheet) plays.push(fadeWhole('sheet', [csheet], next.sheet !== undefined));
+      // Gone, the leaving sheet goes with its way out, however that ends.
+      const going = next.sheet === undefined ? { onEnd: () => host.gone('sheet') } : {};
+      if (sheet) plays.push({ ...sheet, ...going });
+      else if (csheet)
+        plays.push({ ...fadeWhole('sheet', [csheet], next.sheet !== undefined), ...going });
     }
     if (prev.position === 'folded' && next.position === 'folded' && !next.focus) {
       const line = handleCrossfade(snap);
@@ -1221,6 +1231,7 @@ export function createMoves(host: MovesHost): Moves {
       duration: SPRING.duration,
       easing: SPRING.easing,
       progress: SPRING.at,
+      ...(dir === -1 ? { onEnd: () => host.gone('focus') } : {}),
     };
   }
 

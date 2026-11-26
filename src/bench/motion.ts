@@ -451,9 +451,12 @@ function unset(el: HTMLElement, names: readonly string[]): void {
 
 const WILL = 'will-change';
 
+/** A played motion ends this long after its last frame, so that frame is drawn (ms). */
+export const END_PAD = 50;
+
 /**
  * Plays plans and keeps one running per channel. A plan ends a moment after
- * its last frame, by a timer rather than by the browser's own events, so it
+ * its last frame (END_PAD), by a timer rather than by the browser's own events, so it
  * ends the same way in a hidden tab, in a test, and wherever a browser's
  * events would come late.
  */
@@ -514,7 +517,7 @@ export class Motions {
       }
     }
     let ended = false;
-    const timer = this.timers.set(() => run.end(), plan.duration + 50);
+    const timer = this.timers.set(() => run.end(), plan.duration + END_PAD);
     const run: Running = {
       plan,
       get ended() {

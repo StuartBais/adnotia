@@ -9,7 +9,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { FOCUS_FADE_MS } from '../../src/bench/app';
-import { springDuration } from '../../src/bench/motion';
+import { END_PAD, springDuration } from '../../src/bench/motion';
 import { DROP_MS } from '../../src/bench/moves';
 import type { BenchDomains } from '../../src/bench/state';
 import {
@@ -464,6 +464,81 @@ describe('a motion runs to its own end', () => {
       nothingLeft(m);
       unmount();
     }
+  });
+
+  it('the capsule is drawn all the way as the sheet drops, and the sheet goes with the drop', async () => {
+    const m = await mount(TUE_1005);
+    settle(m);
+    press(m.container, 'Tasks');
+    await drawn();
+    over(m);
+    press(m.container, 'Capture');
+    await drawn();
+    over(m);
+    press(m.container, 'Close');
+    await drawn();
+    const sheet = m.container.querySelector<HTMLElement>('.sheet-layer[data-capture]')!;
+    const capsule = m.container.querySelector<HTMLElement>('.dock .capsule')!;
+    const picture = sheet.querySelector<HTMLElement>(':scope > .capsule');
+    expect(picture).not.toBeNull();
+    // Through the drop and to its last frame, the capsule is drawn: its
+    // picture on the way down, the real one held until the picture is on it.
+    vi.advanceTimersByTime(DROP_MS + END_PAD - 5);
+    expect(capsule.style.opacity).toBe('0');
+    expect(picture!.isConnected).toBe(true);
+    expect(sheet.hidden).toBe(false);
+    // Then the real one, and the sheet is gone with the drop.
+    vi.advanceTimersByTime(10);
+    expect(capsule.hasAttribute('style')).toBe(false);
+    expect(picture!.isConnected).toBe(false);
+    expect(sheet.hidden).toBe(true);
+    expect(sheet.childElementCount).toBe(0);
+    over(m);
+    nothingLeft(m);
+  });
+});
+
+describe('a way out cut short by the next tap takes what was leaving with it', () => {
+  it('Focus, as “⌄ Today” is cut short', async () => {
+    const m = await mount(TUE_1005);
+    settle(m);
+    press(m.container, /^Now: Write the question/);
+    await drawn();
+    over(m);
+    press(m.container, 'Back to Today');
+    await drawn();
+    const focus = m.container.querySelector<HTMLElement>('.focus')!;
+    vi.advanceTimersByTime(80);
+    expect(focus.hidden).toBe(false);
+    press(m.container, HANDLE);
+    await drawn();
+    // Not drawn whole again until its own timer: gone with the motion that took it out.
+    expect(focus.hidden).toBe(true);
+    expect(focus.childElementCount).toBe(0);
+    over(m);
+    nothingLeft(m);
+    expect(m.container.dataset['drawer']).toBe('open');
+  });
+
+  it('the capture sheet, as its drop is cut short', async () => {
+    const m = await mount(TUE_1005);
+    settle(m);
+    press(m.container, 'Tasks');
+    await drawn();
+    over(m);
+    press(m.container, 'Capture');
+    await drawn();
+    over(m);
+    press(m.container, 'Close');
+    await drawn();
+    const sheet = m.container.querySelector<HTMLElement>('.sheet-layer[data-capture]')!;
+    vi.advanceTimersByTime(100);
+    expect(sheet.hidden).toBe(false);
+    press(m.container, 'Routines');
+    await drawn();
+    expect(sheet.hidden).toBe(true);
+    over(m);
+    nothingLeft(m);
   });
 });
 

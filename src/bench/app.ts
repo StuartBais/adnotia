@@ -57,7 +57,7 @@ import {
 } from './state';
 import { createTicker, type Ticker } from './clock';
 import { dragDrawer, type DrawerDrag, type Stop } from './drawer';
-import { animateNative, canAnimate } from './motion';
+import { END_PAD, animateNative, canAnimate } from './motion';
 import { DROP_MS, createMoves, type Scene } from './moves';
 import { KEYBOARD_GUESS, trackKeyboard } from './keyboard';
 import {
@@ -343,6 +343,7 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
       now: monotonic,
     },
     enabled: () => animated(read()),
+    gone: (what) => goneNow(what),
     dockNodes: (kind) => {
       const state = read();
       const t = now();
@@ -1517,13 +1518,37 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
     if (leaving !== undefined) clearTimeout(leaving);
     leaving = setTimeout(() => {
       leaving = undefined;
-      if (focusShown || destroyed) return;
-      for (const part of [layer.focus, layer.focusFoot]) {
-        paint(part, '', () => ({ nodes: [] }));
-        delete part.dataset['leaving'];
-        part.hidden = true;
-      }
+      focusLeft();
     }, FOCUS_FADE_MS);
+  }
+
+  /** Focus's fading layers are emptied and put away, the fade over. */
+  function focusLeft(): void {
+    if (focusShown || destroyed) return;
+    for (const part of [layer.focus, layer.focusFoot]) {
+      paint(part, '', () => ({ nodes: [] }));
+      delete part.dataset['leaving'];
+      part.hidden = true;
+    }
+  }
+
+  /**
+   * With motion on, a way out that has ended takes what it was taking out
+   * with it (moves.ts): at its own end, or cut short by the next tap, which
+   * would otherwise leave Focus or the sheet drawn whole again until its
+   * timer. Nothing happens if it has already gone.
+   */
+  function goneNow(what: 'focus' | 'sheet'): void {
+    if (what === 'focus' && leaving !== undefined) {
+      clearTimeout(leaving);
+      leaving = undefined;
+      focusLeft();
+    }
+    if (what === 'sheet' && sheetLeaving !== undefined) {
+      clearTimeout(sheetLeaving);
+      sheetLeaving = undefined;
+      sheetLeft();
+    }
   }
 
   function stopLeaving(): void {
@@ -2505,15 +2530,22 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
     for (const node of part.querySelectorAll('[id]')) node.removeAttribute('id');
     sheetField = undefined;
     if (sheetLeaving !== undefined) clearTimeout(sheetLeaving);
-    // With motion on it drops rather than fades, and is kept as long as that takes.
-    const ms = animated(read()) ? DROP_MS : SHEET_FADE_MS;
+    // With motion on it drops rather than fades, and the drop's end takes it
+    // away (goneNow): this is kept a moment longer, in case none was drawn.
+    const ms = animated(read()) ? DROP_MS + 2 * END_PAD : SHEET_FADE_MS;
     sheetLeaving = setTimeout(() => {
       sheetLeaving = undefined;
-      if (sheet || destroyed) return;
-      paint(part, '', () => ({ nodes: [] }));
-      delete part.dataset['leaving'];
-      part.hidden = true;
+      sheetLeft();
     }, ms);
+  }
+
+  /** The sheet that faded or dropped is emptied and put away. */
+  function sheetLeft(): void {
+    if (sheet || destroyed) return;
+    const part = layer.sheet;
+    paint(part, '', () => ({ nodes: [] }));
+    delete part.dataset['leaving'];
+    part.hidden = true;
   }
 
   function stopSheetLeaving(): void {
