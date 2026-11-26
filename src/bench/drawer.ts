@@ -159,8 +159,9 @@ export interface DragHost {
   /**
    * Where the drawer may rest now and where it rests, or undefined when it
    * cannot be pulled: at its lip, under Focus or a sheet, or not laid out.
+   * `y` is where it is drawn, when a tap has it on its way to where it rests.
    */
-  stops(): { stops: Stop[]; current: DrawerPosition } | undefined;
+  stops(): { stops: Stop[]; current: DrawerPosition; y?: number } | undefined;
   /** Whether this press is on the handle band or the grabber. */
   grabs(event: PointerEvent): boolean;
   /** A press became a drag, from where the drawer rests. */
@@ -281,7 +282,8 @@ export function dragDrawer(
       if (!host.grabs(event)) return;
       const rest = host.stops();
       if (!rest || rest.stops.length < 2) return;
-      const base = rest.stops.find((stop) => stop.position === rest.current)?.y ?? NaN;
+      // Where it is drawn, if a tap's journey is carrying it there; else where it rests.
+      const base = rest.y ?? rest.stops.find((stop) => stop.position === rest.current)?.y ?? NaN;
       if (!Number.isFinite(base)) return;
       from = { base, stops: rest.stops, position: rest.current };
     }

@@ -178,6 +178,8 @@ interface Rig {
   run(ms: number): void;
   reduced: { value: boolean };
   current: { value: DrawerPosition };
+  /** Where the drawer is drawn, when a tap's journey has it on its way. */
+  drawn: { value: number | undefined };
   drag: ReturnType<typeof dragDrawer>;
 }
 
@@ -198,8 +200,13 @@ function rig(stops: Stop[] = RUNNING, current: DrawerPosition = 'folded'): Rig {
   let next = 0;
   const reduced = { value: false };
   const at = { value: current };
+  const drawn = { value: undefined as number | undefined };
   const host: DragHost = {
-    stops: () => ({ stops, current: at.value }),
+    stops: () => ({
+      stops,
+      current: at.value,
+      ...(drawn.value === undefined ? {} : { y: drawn.value }),
+    }),
     grabs: (event) => (event.target as Element).closest('.handle') !== null,
     begin: (from) => log.push(`begin ${from}`),
     move: (y) => moves.push(y),
@@ -240,6 +247,7 @@ function rig(stops: Stop[] = RUNNING, current: DrawerPosition = 'folded'): Rig {
     },
     reduced,
     current: at,
+    drawn,
     drag,
   };
   rigs.push(made);
@@ -285,6 +293,15 @@ describe('the drawer under a finger', () => {
     // The handle was pressed 36 below the drawer's top; the top moves with it.
     expect(r.moves).toEqual([664, 564, 464]);
     expect(r.drag.moving()).toBe(true);
+  });
+
+  it('pressed while a tap carries it on its way, it is pulled from where it is drawn', () => {
+    const r = rig(RUNNING, 'open');
+    // A tap opened it, and it is on its way up, drawn at 400.
+    r.drawn.value = 400;
+    finger(r, r.handle, [436, 446, 456], 16, false);
+    expect(r.log).toEqual(['begin open']);
+    expect(r.moves).toEqual([410, 420]);
   });
 
   it('coalesces moves within a frame into the latest', () => {
