@@ -2555,6 +2555,96 @@ svg.i28 {
   width: calc(100% - 74px);
 }
 
+/* ═════════════ Routines (SPEC 5.9) and the Library (SPEC 12) ═════════════ */
+
+/* The helper line at 114–134, the rows from 142, 62 apart, and "+ New
+   routine" at 398–442. */
+.body.routines .helper {
+  margin-top: 4px;
+}
+.rlist {
+  margin-top: 8px;
+}
+:is(.rlist, .llist) .row {
+  margin: 0;
+}
+/* A row opens the routine: no ring, the title at x 24, "Ran today" and the
+   chevron centred on the row, the chevron's ink ending at x 366. */
+.rrow.routine .rowbtn {
+  height: 62px;
+  padding: 0;
+  align-items: center;
+  gap: 12px;
+}
+.rrow.routine .rt {
+  flex: 1;
+}
+.rrow.routine .rowbtn > svg,
+.lrow .rowbtn > svg {
+  flex: none;
+  margin-right: -4px;
+  color: var(--ash);
+}
+/* "Ran today": an ash check and the words, no disc, no brighter than the titles. */
+.ran {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 15px;
+  line-height: 20px;
+  font-weight: 500;
+  color: var(--ash);
+}
+.addstep.newroutine {
+  margin-top: 8px;
+}
+
+/* The Library: a name in 17/22 over one plain line in 15/20 (SPEC 12). */
+.lrow .rowbtn {
+  align-items: center;
+  gap: 12px;
+}
+.lrow .rt {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.lrow .rt small {
+  font-size: 15px;
+  line-height: 20px;
+  font-weight: 500;
+  color: var(--ash);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.app[data-places='white'][data-ground='place']
+  .screen
+  :is(.ran, .rrow.routine .rowbtn > svg, .lrow .rowbtn > svg, .lrow .rt small) {
+  color: var(--muted);
+}
+
+/* A routine's page: where Start would stand, what is not here yet; then its
+   steps, each with its minutes at the right where it is timed. */
+.page.routine .sentence + .sentence {
+  margin-top: 8px;
+}
+.rail.timed li {
+  grid-template-columns: 28px 1fr auto;
+}
+.rail .sm {
+  font-size: 15px;
+  line-height: 20px;
+  font-weight: 500;
+  color: var(--ash);
+  font-variant-numeric: tabular-nums;
+}
+.app[data-places='white'][data-ground='place'] .screen .rail .sm {
+  color: var(--muted);
+}
+
 /* ═════════════ A page's sheets (SPEC 9.9 and 12) ═════════════
    The capture sheet's stone panel, grabber and header row. Each reaches at
    least over the dock line, so nothing of it shows above the sheet; on a
