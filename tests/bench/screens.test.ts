@@ -4484,6 +4484,44 @@ describe('the drawer in the hand (SPEC 9.8 and 10; plan section 13)', () => {
     expect(stateOf(m).bench.drawer.running).toBe('open');
   });
 
+  it('leaving the app with a finger still on it lets it go where it is: nothing stays held', async () => {
+    layOut();
+    const m = await mount(TUE_1005);
+    pull(m, handle(m), [720, 600, 480, 300], { up: false });
+    expect(m.container.dataset['travel']).toBe('present');
+    window.dispatchEvent(new Event('pagehide'));
+    // Let go at 264, nearer open, as a touch the system took.
+    expect(m.container.dataset['travel']).toBeUndefined();
+    expect(at(m)).toBe('open');
+    expect(stateOf(m).bench.drawer.running).toBe('open');
+    expect(drawerOf(m).style.transform).toBe('');
+    expect(m.container.querySelector('.ghost')).toBeNull();
+    // The lift, should it come, changes nothing.
+    drawerOf(m).dispatchEvent(
+      new PointerEvent('pointerup', { bubbles: true, clientY: 300, pointerId: 7 }),
+    );
+    expect(at(m)).toBe('open');
+  });
+
+  it('a pull whose capture is lost with no lift lets go where it is, and the next pull is a pull', async () => {
+    layOut();
+    const m = await mount(TUE_1005, 'example', reduced);
+    pull(m, handle(m), [720, 600, 500], { up: false });
+    drawerOf(m).dispatchEvent(new PointerEvent('lostpointercapture', { pointerId: 7 }));
+    vi.advanceTimersByTime(16);
+    // Let go at 464, nearer folded; Step done takes taps again once the guard is over.
+    expect(m.container.dataset['travel']).toBeUndefined();
+    expect(at(m)).toBe('folded');
+    // Past the guard, and the moment in which a lost lift's click is eaten.
+    settle(m);
+    vi.advanceTimersByTime(500);
+    const before = stateOf(m).tasks;
+    press(m.container, /^Step done/);
+    expect(stateOf(m).tasks).not.toBe(before);
+    pull(m, handle(m), [720, 600, 480, 300]);
+    expect(at(m)).toBe('open');
+  });
+
   it('“Rest of today ⌃” and “⌄ Hide” cross-fade in one place over 150 ms when tapped', async () => {
     const m = await mount(TUE_1005);
     press(m.container, HANDLE);

@@ -2915,7 +2915,8 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
 
   /** Going to the background: when, and where the person was (plan section 12). */
   function hide(): void {
-    // A drawer on its spring lands where it was going.
+    // A drawer on its spring lands where it was going, and one still under a
+    // finger where it is: its lift may never come.
     drag?.finish();
     // What is in the field is kept, though the sheet stays open.
     if (sheet && sheetField) keepDraft(sheetField.value, sheet.to);

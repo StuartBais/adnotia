@@ -189,7 +189,10 @@ export interface DrawerDrag {
   moving(): boolean;
   /** Whether it is on its spring, with no finger on it. */
   flying(): boolean;
-  /** Stops a spring where it is and settles there at once, as at rest. */
+  /**
+   * Lands the drawer at once, as at rest: a spring where it was going, and a
+   * finger still on it where it is, at no speed, as a cancelled touch.
+   */
   finish(): void;
   destroy(): void;
 }
@@ -258,8 +261,14 @@ export function dragDrawer(
   };
 
   function onDown(event: PointerEvent): void {
-    if (gesture) return;
     if (event.pointerType === 'mouse' && event.button !== 0) return;
+    if (gesture) {
+      // A second finger is ignored while the first pulls. Otherwise the
+      // press before this one is over, its lift lost (the same pointer down
+      // again, or a press that never moved), and it lets go where it is.
+      if (gesture.dragging && event.pointerId !== gesture.pointerId) return;
+      release(gesture, 0);
+    }
     const surface = event.currentTarget as HTMLElement;
     // A press on the drawer as it springs catches it where it is. It is not
     // captured until it moves, so a tap's click goes where it was pressed.
@@ -338,6 +347,20 @@ export function dragDrawer(
     if (!g || event.pointerId !== g.pointerId) return;
     // The system took the touch: rest where it is heading, at no speed.
     release(g, 0);
+  }
+
+  /**
+   * The pointer was let go of with no lift and no cancel to say so. A lift
+   * comes before its lost capture, so a frame later, if the finger is still
+   * thought to be on the drawer, it lets go where it is, at no speed, rather
+   * than holding the drawer, and every tap the pull guards, for good.
+   */
+  function onLost(event: PointerEvent): void {
+    const g = gesture;
+    if (!g || !g.dragging || event.pointerId !== g.pointerId) return;
+    frame(() => {
+      if (gesture === g) release(g, 0);
+    });
   }
 
   function release(g: Gesture, velocity: number): void {
@@ -429,13 +452,18 @@ export function dragDrawer(
     swallow = done;
   }
 
-  for (const surface of surfaces) surface.addEventListener('pointerdown', onDown);
+  for (const surface of surfaces) {
+    surface.addEventListener('pointerdown', onDown);
+    surface.addEventListener('lostpointercapture', onLost);
+  }
 
   return {
     moving: () =>
       gesture?.dragging === true || gesture?.caught !== undefined || flight !== undefined,
     flying: () => flight !== undefined,
     finish() {
+      const g = gesture;
+      if (g) release(g, 0);
       const f = flight;
       if (!f) return;
       stopFlight();
@@ -446,7 +474,10 @@ export function dragDrawer(
       endGesture();
       stopFlight();
       swallow?.();
-      for (const surface of surfaces) surface.removeEventListener('pointerdown', onDown);
+      for (const surface of surfaces) {
+        surface.removeEventListener('pointerdown', onDown);
+        surface.removeEventListener('lostpointercapture', onLost);
+      }
     },
   };
 }

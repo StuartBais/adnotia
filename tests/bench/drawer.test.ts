@@ -503,6 +503,74 @@ describe('the drawer under a finger', () => {
     expect(clicks).toBe(1);
   });
 
+  it('finish lets a finger still on it go where it is, at no speed, and lands it', () => {
+    const r = rig();
+    // Up to 264 at speed, and the page goes before the finger lifts.
+    finger(r, r.handle, [720, 600, 480, 300], 8, false);
+    r.drag.finish();
+    expect(r.log).toEqual(['begin folded', 'settle open from folded']);
+    expect(r.moves[r.moves.length - 1]).toBe(60);
+    expect(r.drag.moving()).toBe(false);
+    expect(r.frames.size).toBe(0);
+    // Its lift, should it come after all, changes nothing.
+    r.handle.dispatchEvent(pointer('pointerup', 300));
+    r.run(1000);
+    expect(r.log).toHaveLength(2);
+  });
+
+  it('finish lands a spring held by a still finger where it was going', () => {
+    const r = rig();
+    finger(r, r.handle, [720, 600, 480, 360], 16);
+    r.run(48);
+    r.drawer.dispatchEvent(pointer('pointerdown', 300));
+    r.drag.finish();
+    expect(r.log).toEqual(['begin folded', 'settle open from folded']);
+    expect(r.drag.moving()).toBe(false);
+  });
+
+  it('a capture lost with no lift lets it go where it is, a frame later, at no speed', () => {
+    const r = rig();
+    r.reduced.value = true;
+    finger(r, r.handle, [720, 600, 480, 500], 8, false);
+    r.drawer.dispatchEvent(new PointerEvent('lostpointercapture', { pointerId: 1 }));
+    expect(r.log).toEqual(['begin folded']);
+    r.flush();
+    // Let go at 464 with no speed: nearer folded than open.
+    expect(r.log).toEqual(['begin folded', 'settle folded from folded']);
+    expect(r.drag.moving()).toBe(false);
+    // A capture lost after a lift is the lift's, and is nothing more.
+    finger(r, r.handle, [720, 600, 480, 300], 8);
+    r.drawer.dispatchEvent(new PointerEvent('lostpointercapture', { pointerId: 1 }));
+    r.flush();
+    expect(r.log).toEqual([
+      'begin folded',
+      'settle folded from folded',
+      'begin folded',
+      'settle open from folded',
+    ]);
+  });
+
+  it('a press whose lift never came does not hold up the next one', () => {
+    const r = rig();
+    r.reduced.value = true;
+    // A touch on the handle that never moved and never lifted, then a pull.
+    r.handle.dispatchEvent(pointer('pointerdown', 720, 3));
+    finger(r, r.handle, [720, 600, 480, 300], 16);
+    expect(r.log).toEqual(['begin folded', 'settle open from folded']);
+    // A pull whose lift went missing ends where it is when the same
+    // pointer comes down again, and the new press is a pull of its own.
+    finger(r, r.handle, [80, 200, 400, 700], 16, false);
+    finger(r, r.handle, [300, 200, 100], 16);
+    expect(r.log).toEqual([
+      'begin folded',
+      'settle open from folded',
+      'begin open',
+      'settle folded from open',
+      'begin folded',
+      'settle open from folded',
+    ]);
+  });
+
   it('leaves nothing listening once destroyed', () => {
     const r = rig();
     r.drag.destroy();
