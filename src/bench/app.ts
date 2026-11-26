@@ -493,6 +493,21 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
     if (['Shift', 'Control', 'Alt', 'Meta'].includes(event.key)) return;
     const target = event.target;
     if (target instanceof HTMLElement && isQuiet(target)) delete target.dataset['quiet'];
+    // Escape folds the open drawer, as Hide and back do, when nothing above
+    // it took the key: a sheet closes itself, and a field lets go of it.
+    if (
+      event.key === 'Escape' &&
+      !event.defaultPrevented &&
+      !event.isComposing &&
+      isOpen() &&
+      !sheet &&
+      !tsheet &&
+      !focusShown &&
+      !drag?.moving()
+    ) {
+      event.preventDefault();
+      hideDrawer();
+    }
   }
 
   function scrollOf(root: ParentNode): Record<string, number> {

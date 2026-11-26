@@ -4172,6 +4172,32 @@ describe('the drawer in the hand (SPEC 9.8 and 10; plan section 13)', () => {
     expect(depth()).toBe(0);
   });
 
+  it('Escape folds it as Hide does, unless a sheet over it takes the key', async () => {
+    const m = await mount(TUE_1005);
+    const escape = () =>
+      new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true });
+    // Folded, Escape is nobody's.
+    const idle = escape();
+    handle(m).dispatchEvent(idle);
+    expect(idle.defaultPrevented).toBe(false);
+    press(m.container, HANDLE);
+    expect(depth()).toBe(1);
+    const key = escape();
+    heading(m).dispatchEvent(key);
+    expect(key.defaultPrevented).toBe(true);
+    expect(at(m)).toBe('folded');
+    expect(depth()).toBe(0);
+    expect(document.activeElement).toBe(handle(m));
+    // Over the open drawer, the capture sheet closes, and the drawer stays.
+    press(m.container, HANDLE);
+    press(m.container, 'Capture');
+    expect(m.container.dataset['sheet']).toBe('place');
+    type(m, 'Ring the garage').dispatchEvent(escape());
+    expect(m.container.dataset['sheet']).toBeUndefined();
+    expect(at(m)).toBe('open');
+    expect(depth()).toBe(1);
+  });
+
   it('pulled down by Hide at its foot, it folds as Hide would', async () => {
     layOut();
     const m = await mount(TUE_1005, 'example', reduced);
