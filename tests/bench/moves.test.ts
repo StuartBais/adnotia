@@ -523,6 +523,24 @@ describe('a step that wraps in Focus travels as one line', () => {
   }
 });
 
+describe('Pause and Resume on Today', () => {
+  it('fade only what changes: what is the same at both ends is not drawn twice', async () => {
+    const m = await mount(TUE_1005);
+    settle(m);
+    for (const name of ['Pause', 'Resume']) {
+      press(m.container, name);
+      await drawn();
+      const morph = m.container.querySelector('.morph')!;
+      // Now and Paused, the bar, the minutes: their old look fades where they now stand…
+      expect(morph.querySelector(':scope > .nowline')).not.toBeNull();
+      // …and the title and the step, the same at both ends, are drawn once.
+      expect(morph.querySelector(':scope > .lantern, :scope > .step, :scope > .ttl')).toBeNull();
+      over(m);
+      nothingLeft(m);
+    }
+  });
+});
+
 describe('a motion runs to its own end', () => {
   const SPRING_END = springDuration() + 50;
 

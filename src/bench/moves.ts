@@ -1537,35 +1537,65 @@ export function createMoves(host: MovesHost): Moves {
 
   /**
    * Pause and Resume (SPEC 10): what changes cross-fades in place over 150 ms,
-   * the bar turning ash or back, Now and Paused, the pills in their slot.
-   * Nothing moves.
+   * the bar turning ash or back, Now and Paused, the minutes, the pills in
+   * their slot. Nothing moves. On Today the paused block stands 14 pt
+   * higher, as the board has it: what is the same at both ends (the title,
+   * the step, the note) is simply where the new block puts it, as under
+   * Reduce Motion, and what changes fades from its old look to its new one
+   * where the new block puts it, so nothing shows twice a few points apart.
    */
   function pauseCrossfade(prev: Scene, next: Scene, snap: Snapshot): Plan | undefined {
     const tracks: Track[] = [];
     const temp: Element[] = [];
-    const cross = (old: Part | undefined, now: HTMLElement | null | undefined) => {
-      if (old) {
-        const pic = placed(old);
-        temp.push(pic);
-        tracks.push({
-          el: pic,
-          fade: [
-            [0, 1],
-            [CROSS_MS, 0],
-          ],
-        });
-      }
-      if (now)
-        tracks.push({
-          el: now,
-          fade: [
-            [0, 0],
-            [CROSS_MS, 1],
-          ],
-        });
+    const out = (pic: HTMLElement) => {
+      temp.push(pic);
+      tracks.push({
+        el: pic,
+        fade: [
+          [0, 1],
+          [CROSS_MS, 0],
+        ],
+      });
     };
-    if (prev.lit && next.lit)
-      cross(snap.lantern.whole, q<HTMLElement>(LANTERN.whole, layers.screen));
+    const into = (el: HTMLElement) =>
+      tracks.push({
+        el,
+        fade: [
+          [0, 0],
+          [CROSS_MS, 1],
+        ],
+      });
+    const cross = (old: Part | undefined, now: HTMLElement | null | undefined) => {
+      if (old) out(placed(old));
+      if (now) into(now);
+    };
+    if (prev.lit && next.lit) {
+      const was = snap.lantern;
+      const now = fresh(LANTERN, layers.screen);
+      for (const key of [
+        'nowline',
+        'ttl',
+        'step',
+        'bar',
+        'mins',
+        'rest',
+        'note',
+        'aside',
+      ] as const) {
+        const a = was[key];
+        const b = now[key];
+        if (a && b) {
+          // The same look at both ends: nothing to fade.
+          if (a.pic.outerHTML === b.pic.outerHTML) continue;
+          out(placed({ ...a, box: { ...a.box, x: b.box.x, y: b.box.y } }));
+          into(b.el);
+        } else if (a) {
+          out(placed(a));
+        } else if (b) {
+          into(b.el);
+        }
+      }
+    }
     if (prev.focus && next.focus) cross(snap.focus.body, q<HTMLElement>(FOCUS.body, layers.focus));
     for (const p of snap.pills) cross(p, undefined);
     for (const el of layers.dock.querySelectorAll<HTMLElement>('.dock-pill')) cross(undefined, el);
