@@ -214,7 +214,7 @@ export function captureSheet(props: CaptureProps): CaptureSheet {
  * The sheet follows the finger down, and springs back if it was not far or
  * fast enough. A drag in the field, the switch or a button is theirs.
  */
-function swipeToClose(panel: HTMLElement, bands: HTMLElement[], onClose: () => void): void {
+export function swipeToClose(panel: HTMLElement, bands: HTMLElement[], onClose: () => void): void {
   let start: { y: number; at: number } | undefined;
   let last = { y: 0, at: 0 };
   const reset = () => {

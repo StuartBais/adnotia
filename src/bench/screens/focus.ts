@@ -56,7 +56,7 @@ export const focusKey = (view: PresentView, back: string): unknown[] => [
  * minutes' own words. Used up, it is empty and says so; with no estimate it
  * counts up against an hour, as it is drawn.
  */
-function meter(node: HTMLElement, minutes: SpokenMinutes): void {
+export function meter(node: HTMLElement, minutes: SpokenMinutes): void {
   const set = (name: string, value: string) => {
     if (node.getAttribute(name) !== value) node.setAttribute(name, value);
   };

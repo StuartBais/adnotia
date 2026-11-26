@@ -99,6 +99,11 @@ export interface DockProps {
     mode: 'button' | 'picture';
     onOpen: () => void;
   };
+  /**
+   * The present's own page: "⌃ Focus" in the capsule's slot, a white pill
+   * as long as the capsule (SPEC 5.8). Focus opens upward out of the page.
+   */
+  focusPill?: { onOpen: () => void };
   /** Capture sits on light: the half drawer under it, or a white place. */
   captureOnLight: boolean;
   /** A draft is kept: a white dot at the disc's top right, and its name says so. */
@@ -151,6 +156,22 @@ export function dock(props: DockProps): Built {
             icon('pause', 20),
             T.pause,
           ),
+    );
+  } else if (props.focusPill) {
+    nodes.push(
+      h(
+        'button',
+        {
+          class: 'pill white dock-pill focuspill',
+          type: 'button',
+          id: 'b-focus',
+          'data-geo': 'focuspill',
+          'aria-describedby': HINT_IDS.opensFocus,
+          onclick: props.focusPill.onOpen,
+        },
+        icon('up', 20),
+        T.focus,
+      ),
     );
   } else if (props.capsule) {
     const built = capsule({
@@ -441,10 +462,26 @@ export function hideFoot(onHide: () => void, undo?: HideUndo): Node[] {
     : [hide];
 }
 
+/**
+ * The present in a list (SPEC 9.7): on charcoal a terracotta dot and "Now",
+ * on white a charcoal pill. Paused, the word alone, with no dot and no
+ * terracotta, since no clock runs (undrawn: a proposal). Drawn, not read:
+ * the row's own name begins with it.
+ */
+export function nowTag(lead: string): HTMLElement {
+  return h('span', {
+    class: lead === T.now ? 'ntag now' : 'ntag',
+    'aria-hidden': 'true',
+    text: lead,
+  });
+}
+
 /** The day's list: Later today, Anytime today, and Done today when it is on. */
 export function dayListNodes(
   props: Pick<HalfProps, 'list' | 'onRow' | 'onTick' | 'onUntick'>,
   lane: boolean,
+  /** Tasks › Today calls the section "Done" (SPEC 5.6). */
+  doneLabel: string = T.doneToday,
 ): Node[] {
   const { list } = props;
   const nodes: Node[] = [];
@@ -464,14 +501,15 @@ export function dayListNodes(
                 class: 'rowbtn',
                 type: 'button',
                 id: `r-${row.id}`,
-                'aria-label': row.label,
+                'aria-label':
+                  row.tag === undefined ? row.label : say.presentRow(row.tag, row.label),
                 onclick: () => props.onRow(row.id),
               },
               h('span', { class: 't', text: row.time }),
               h(
                 'span',
                 { class: 'ti' },
-                row.title,
+                row.tag === undefined ? row.title : h('span', {}, row.title, nowTag(row.tag)),
                 row.inLine === undefined ? null : h('small', { text: row.inLine }),
               ),
               durationTrack(row.minutes, row.length, list.slot),
@@ -524,9 +562,13 @@ export function dayListNodes(
                 class: 'rowbtn',
                 type: 'button',
                 id: `r-${row.id}`,
+                'aria-label':
+                  row.tag === undefined ? undefined : say.presentRow(row.tag, row.title),
                 onclick: () => props.onRow(row.id),
               },
-              h('span', { class: 'rt', text: row.title }),
+              row.tag === undefined
+                ? h('span', { class: 'rt', text: row.title })
+                : h('span', { class: 'rt' }, h('span', {}, row.title, nowTag(row.tag))),
             ),
           ),
         ),
@@ -535,7 +577,7 @@ export function dayListNodes(
   }
   if (list.done && list.done.length > 0) {
     nodes.push(
-      h('h2', { class: 'lbl t-label', text: T.doneToday }),
+      h('h2', { class: 'lbl t-label', text: doneLabel }),
       h(
         'ul',
         {},
