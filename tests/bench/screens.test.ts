@@ -2780,6 +2780,22 @@ describe('6a and 6b · Tasks (SPEC 5.6)', () => {
   });
 });
 
+describe('the capsule’s scroll guard (SPEC 4, "Gestures")', () => {
+  it('takes no tap for 150 ms after the list under it scrolled', async () => {
+    const m = await mount(TUE_1005);
+    press(m.container, 'Tasks');
+    m.container.querySelector('.body')!.dispatchEvent(new Event('scroll'));
+    press(m.container, /^Now: Write the question, step 2 of 3/);
+    expect(m.container.dataset['focus']).toBeUndefined();
+    settle(m, 149);
+    press(m.container, /^Now: Write the question, step 2 of 3/);
+    expect(m.container.dataset['focus']).toBeUndefined();
+    settle(m, 1);
+    press(m.container, /^Now: Write the question, step 2 of 3/);
+    expect(m.container.dataset['focus']).toBe('open');
+  });
+});
+
 describe('3a and 3b · A task opened while another runs (SPEC 5.3)', () => {
   const DENTIST = /^(10:30, )?Call the dentist/;
   async function opened(

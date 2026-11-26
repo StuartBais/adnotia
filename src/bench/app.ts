@@ -158,6 +158,12 @@ export const DRAFT_AFTER = 300;
 /** Room between what is raised above the capture sheet and the sheet's top. */
 const RAISED_GAP = 12;
 
+/**
+ * The capsule takes no tap this soon after the list under it scrolled (ms):
+ * a tap that stops a flick is not a tap on the capsule (SPEC 4, "Gestures").
+ */
+export const SCROLL_GUARD = 150;
+
 /** The line under a field outside a sheet, kept in view above the keys with it (SPEC 3). */
 const FIELD_LINE = 22;
 
@@ -313,6 +319,8 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
   /** The note or rename field of the sheet now open. */
   let tsheetField: HTMLInputElement | HTMLTextAreaElement | undefined;
   let tsheetTimer: ReturnType<typeof setTimeout> | undefined;
+  /** When a list on screen last scrolled (monotonic), for the capsule's guard. */
+  let lastScroll = Number.NEGATIVE_INFINITY;
 
   /** A screen shorter than 740 pt, where the handle is one line (SPEC 3). */
   function compact(): boolean {
@@ -575,7 +583,7 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
             live,
             look: capsuleLook(places, position),
             mode,
-            onOpen: () => openFocus('capsule'),
+            onOpen: tapCapsule,
           }
         : undefined;
     // The present's own page: its way into Focus, where the capsule would be.
@@ -1584,6 +1592,16 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
     run(act.untick, id);
   }
 
+  /** The capsule, unless the list under it was moving: that tap only stops it (SPEC 4). */
+  function tapCapsule(): void {
+    if (monotonic() - lastScroll < SCROLL_GUARD) return;
+    openFocus('capsule');
+  }
+
+  function onScroll(): void {
+    lastScroll = monotonic();
+  }
+
   /** "⌃ Focus" on the present's own page: Focus opens upward out of it (SPEC 5.8). */
   function openFocusFromPage(): void {
     openFocus('lantern');
@@ -2527,6 +2545,8 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
   window.addEventListener('popstate', onPopState);
   container.addEventListener('focusout', onFocusOut);
   container.addEventListener('keydown', onKeyDown);
+  // Scroll events do not bubble: caught on the way down, from every list.
+  container.addEventListener('scroll', onScroll, true);
   const unsubscribe = store.subscribe('domains', render);
   let ticker: Ticker | undefined;
   render();
@@ -2561,6 +2581,7 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
       dropUndo();
       container.removeEventListener('focusout', onFocusOut);
       container.removeEventListener('keydown', onKeyDown);
+      container.removeEventListener('scroll', onScroll, true);
       ticker?.destroy();
       unsubscribe();
       window.removeEventListener('resize', onResize);
