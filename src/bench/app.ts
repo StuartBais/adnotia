@@ -164,6 +164,13 @@ interface UndoSlot {
   expired: boolean;
 }
 
+/**
+ * How long a move back in history made here may take to land before it is
+ * given up on and history is brought level from where it is (ms). Far longer
+ * than a traversal takes, so it only ever acts on one that never comes.
+ */
+export const MOVE_GIVE_UP = 1000;
+
 /** How long the live region stays empty before it says something (ms). */
 export const ANNOUNCE_AFTER = 100;
 
@@ -3014,8 +3021,16 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
   const mark = Math.random().toString(36).slice(2);
   const home = location.pathname;
   let entries = 0;
-  /** History moves made here whose popstate is still to come. */
-  let quiet = 0;
+  /**
+   * Set while a move back made here is still to land. Only one is ever in
+   * flight: a browser given two at once may run both, merge them or drop one,
+   * and counting popstates then either eats the person's next back or sends a
+   * correction past the first entry, out of the prototype. Anything that
+   * changes meanwhile waits for it, and once it lands history is brought level
+   * from where it actually is. A move that never lands (dropped, or out of
+   * range) is given up on after MOVE_GIVE_UP, the same way.
+   */
+  let moving: ReturnType<typeof setTimeout> | undefined;
   /** Levels closing and opening as one move: history follows once, after. */
   let holding = false;
 
@@ -3030,17 +3045,31 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
   }
 
   function syncHistory(): void {
-    if (holding || destroyed) return;
+    if (holding || destroyed || moving !== undefined) return;
     const want = levels();
     if (want > entries) {
       for (let depth = entries + 1; depth <= want; depth++) {
         history.pushState({ bench: mark, depth }, '');
       }
     } else if (want < entries) {
-      quiet++;
+      moving = setTimeout(() => landed(depthNow()), MOVE_GIVE_UP);
       history.go(want - entries);
     }
     entries = want;
+  }
+
+  /** How deep this load's history is, by the entry the browser is on. */
+  function depthNow(): number | undefined {
+    const state = history.state as { bench?: unknown; depth?: unknown } | null;
+    return state?.bench === mark && typeof state.depth === 'number' ? state.depth : undefined;
+  }
+
+  /** The move made here has landed at `depth`, or will not: bring history level from there. */
+  function landed(depth: number | undefined): void {
+    if (moving !== undefined) clearTimeout(moving);
+    moving = undefined;
+    if (depth !== undefined) entries = depth;
+    syncHistory();
   }
 
   function onPopState(event: PopStateEvent): void {
@@ -3053,16 +3082,16 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
       // and the next level opened pushes its entry over this one, where back
       // will find it. Any move still to land is relative to here now.
       history.replaceState({ bench: mark, depth: 0 }, '');
-      quiet = 0;
+      if (moving !== undefined) clearTimeout(moving);
+      moving = undefined;
       entries = 0;
       closeLevels(levels());
       return;
     }
-    if (quiet > 0) {
-      // A move made here has landed; put things right if anything moved since.
-      quiet--;
-      entries = state.depth;
-      syncHistory();
+    if (moving !== undefined) {
+      // The move made here has landed, wherever the browser put it; put
+      // things right from there if anything moved since.
+      landed(state.depth);
       return;
     }
     // The person went back: close as many levels as they went.
@@ -3244,6 +3273,7 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
       if (stepTimer !== undefined) clearTimeout(stepTimer);
       if (tsheetTimer !== undefined) clearTimeout(tsheetTimer);
       if (tsheetLeaving !== undefined) clearTimeout(tsheetLeaving);
+      if (moving !== undefined) clearTimeout(moving);
       keyboard.destroy();
       drag?.destroy();
       moves.destroy();

@@ -5,7 +5,7 @@ import { setOption } from '../../src/domains/options';
 import { EMAIL } from '../../src/bench/example';
 import type { BenchDomains } from '../../src/bench/state';
 import { ABOUT } from '../../src/bench/screens/places';
-import { ANNOUNCE_KEEP } from '../../src/bench/app';
+import { ANNOUNCE_KEEP, MOVE_GIVE_UP } from '../../src/bench/app';
 import { dayList } from '../../src/bench/view';
 import {
   advance,
@@ -1199,6 +1199,48 @@ describe('back, by Safari’s edge swipe or the back button (plan section 8)', (
       expect(historyDepth()).toBe(0);
     },
   );
+
+  it('puts history right when the browser drops a move back made here', async () => {
+    const m = await mount(TUE_1005);
+    press(m.container, 'Me');
+    press(m.container, 'If things are bad right now');
+    expect(historyDepth()).toBe(2);
+    // The browser does nothing with the move back for Back to Me.
+    const go = vi.spyOn(history, 'go').mockImplementationOnce(() => undefined);
+    press(m.container, 'Back to Me');
+    expect(screenTitle(m)).toBe('Me');
+    expect(historyDepth()).toBe(2);
+    // Given up on, the move is made again from where history really is.
+    vi.advanceTimersByTime(MOVE_GIVE_UP);
+    vi.advanceTimersByTime(5);
+    expect(go.mock.calls).toEqual([[-1], [-1]]);
+    go.mockRestore();
+    expect(historyDepth()).toBe(1);
+    // So the next back closes Me rather than being taken for that move.
+    goBack();
+    expect(id(m, 'b-lit')).not.toBeNull();
+    expect(historyDepth()).toBe(0);
+  });
+
+  it('moves history back one move at a time, landing each before the next', async () => {
+    const m = await mount(TUE_1005);
+    press(m.container, 'Me');
+    press(m.container, 'If things are bad right now');
+    const go = vi.spyOn(history, 'go');
+    press(m.container, 'Back to Me');
+    // A second level closed before the first move lands waits for it.
+    press(m.container, 'Today');
+    expect(go.mock.calls).toEqual([[-1]]);
+    // jsdom lands each traversal a few timer turns later.
+    vi.advanceTimersByTime(5);
+    expect(go.mock.calls).toEqual([[-1], [-1]]);
+    go.mockRestore();
+    expect(historyDepth()).toBe(0);
+    expect(id(m, 'b-lit')).not.toBeNull();
+    press(m.container, 'Me');
+    goBack();
+    expect(id(m, 'b-lit')).not.toBeNull();
+  });
 
   it('hands the open drawer’s entry to the page a row or Me opens from it', async () => {
     const m = await mount(TUE_1005);
