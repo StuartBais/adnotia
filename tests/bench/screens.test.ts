@@ -2025,6 +2025,51 @@ describe('5 · Capture (SPEC 5.5)', () => {
     expect(depth()).toBe(0);
   });
 
+  it('lands without a ring after Save, Return and back, and the next key brings it back', async () => {
+    // A tap on Save never takes focus, so the field has it to the end, and a
+    // browser draws the ring wherever focus goes from a field. SPEC 5.5 draws
+    // none on the step after Save.
+    const quiet = () => (document.activeElement as HTMLElement).dataset['quiet'] !== undefined;
+    const key = (name: string) =>
+      document.activeElement!.dispatchEvent(
+        new KeyboardEvent('keydown', { key: name, bubbles: true }),
+      );
+
+    const saved = await captured();
+    type(saved, ASK);
+    press(saved.container, 'Save');
+    expect(document.activeElement).toBe(id(saved, 'b-lit'));
+    expect(quiet()).toBe(true);
+    // Held through the Undo's six seconds and the redraw at their end.
+    vi.advanceTimersByTime(7000);
+    expect(document.activeElement).toBe(id(saved, 'b-lit'));
+    expect(quiet()).toBe(true);
+    // A modifier alone says nothing; Tab says the person is on the keys.
+    key('Shift');
+    expect(quiet()).toBe(true);
+    key('Tab');
+    expect(quiet()).toBe(false);
+    unmount();
+
+    const returned = await captured();
+    type(returned, ASK).dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }),
+    );
+    expect(document.activeElement).toBe(id(returned, 'b-lit'));
+    // The return key that saved is the field's, not a key on the step.
+    expect(quiet()).toBe(true);
+    (document.activeElement as HTMLElement).blur();
+    expect(id(returned, 'b-lit')?.dataset['quiet']).toBeUndefined();
+    unmount();
+
+    const back = await captured();
+    goBack();
+    expect(document.activeElement).toBe(id(back, 'b-lit'));
+    expect(quiet()).toBe(true);
+    key('ArrowDown');
+    expect(quiet()).toBe(false);
+  });
+
   it('the return key saves, as Save does', async () => {
     const m = await captured();
     const input = type(m, ASK);
@@ -2237,6 +2282,8 @@ describe('5 · Capture (SPEC 5.5)', () => {
       expect(id(m, 'f-step')?.textContent).toContain('Write the question');
       expect(drawnText(id(m, 'f-foot')!)).toBe(`Saved to the inbox · ${ASK}`);
       expect(nameOf(id(m, 'b-undo')!)).toBe(`Undo: remove ${ASK} from the inbox`);
+      // Back on the step with no ring round it.
+      expect(id(m, 'f-step')?.dataset['quiet']).toBe('');
     });
 
     it('back closes the sheet first, then Focus', async () => {
@@ -2293,6 +2340,7 @@ describe('5 · Capture (SPEC 5.5)', () => {
       type(m, ASK);
       press(m.container, 'Save');
       expect(document.activeElement).toBe(id(m, 'b-capture'));
+      expect(id(m, 'b-capture')?.dataset['quiet']).toBe('');
       expect(drawnText(id(m, 'b-handle')!)).toContain('Saved to the inbox');
     });
 

@@ -57,6 +57,12 @@ describe('the focus ring', () => {
     }
   });
 
+  it('is not drawn where the app put focus back quietly, on any ground', () => {
+    // After the capture sheet drops (SPEC 5.5). Above `.capture.on-light`,
+    // the one ground that sets --ring on a control focus lands on.
+    expect(ringOf('.app [data-quiet]:focus-visible')).toBe('transparent');
+  });
+
   it('stays white on the dock line in Focus, which is charcoal over a white place too', () => {
     const dock = rules.filter((rule) =>
       rule.selectors.some((s) => s.endsWith(' .dock') && /--ring:/.test(rule.body)),

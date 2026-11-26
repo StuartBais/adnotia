@@ -153,6 +153,12 @@ ol {
   outline: 2px solid var(--ring);
   outline-offset: 2px;
 }
+/* Focus the app put back after a tap, the step once the capture sheet drops
+   (SPEC 5.5 draws no ring there). The next key, or focus moving on, ends it.
+   Above every ground's own --ring, the light disc's included. */
+.app [data-quiet]:focus-visible {
+  --ring: transparent;
+}
 
 .vh {
   position: absolute;

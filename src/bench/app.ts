@@ -291,6 +291,7 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
     if (keys.get(target) === key) return;
     const active = document.activeElement;
     const focusId = active instanceof HTMLElement && target.contains(active) ? active.id : '';
+    const quiet = isQuiet(active);
     const scroll = scrollOf(target);
     const built = build();
     target.replaceChildren(...built.nodes);
@@ -302,8 +303,10 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
     }
     if (focusId) {
       const again = document.getElementById(focusId);
-      if (again && target.contains(again)) again.focus();
-      else if (focusLost()) landFocus();
+      if (again && target.contains(again)) {
+        if (quiet) focusOn(again, true);
+        else again.focus();
+      } else if (focusLost()) landFocus(quiet);
     }
   }
 
@@ -320,12 +323,49 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
    * so there it lands on the handle, whose Next line says what happened and
    * holds its Undo.
    */
-  function landFocus(): void {
+  function landFocus(quiet = false): void {
     const homes = [
       ...container.querySelectorAll<HTMLElement>('[data-focus-home]'),
       ...layer.drawer.querySelectorAll<HTMLElement>('#b-handle'),
     ];
-    homes.find((node) => !node.closest('[inert]'))?.focus({ preventScroll: true });
+    const home = homes.find((node) => !node.closest('[inert]'));
+    if (home) focusOn(home, quiet);
+  }
+
+  /**
+   * Focus put where the person will want it next, after a tap that took it
+   * away: the step after the sheet drops, say. With `quiet`, no ring is drawn
+   * (SPEC 5.5 draws none after Save). The field always shows its focus, and a
+   * browser carries that to wherever focus is moved from it, so a tap on
+   * Save, which never takes focus itself, would ring the whole lantern. The
+   * mark goes with the next key or when focus leaves, and the ring is the
+   * person's again.
+   */
+  function focusOn(node: HTMLElement, quiet: boolean): void {
+    if (!quiet) {
+      node.focus({ preventScroll: true });
+      return;
+    }
+    node.dataset['quiet'] = '';
+    node.addEventListener('blur', unquiet, { once: true });
+    node.focus({ preventScroll: true, focusVisible: false });
+  }
+
+  function unquiet(event: Event): void {
+    const node = event.currentTarget;
+    if (node instanceof HTMLElement) delete node.dataset['quiet'];
+  }
+
+  /** Whether focus is where the app put it quietly, so a rebuild keeps it quiet. */
+  function isQuiet(node: Element | null): boolean {
+    return node instanceof HTMLElement && node.dataset['quiet'] !== undefined;
+  }
+
+  /** A key on what was focused quietly: the person is moving by keys, so the ring shows. */
+  function onKeyDown(event: KeyboardEvent): void {
+    if (['Shift', 'Control', 'Alt', 'Meta'].includes(event.key)) return;
+    const target = event.target;
+    if (target instanceof HTMLElement && isQuiet(target)) delete target.dataset['quiet'];
   }
 
   function scrollOf(root: ParentNode): Record<string, number> {
@@ -579,13 +619,14 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
       );
     } else if (order !== wanted) {
       const active = document.activeElement;
+      const quiet = isQuiet(active);
       container.insertBefore(layer.drawer, wanted === 'list-first' ? layer.dock : layer.foot);
       if (
         active instanceof HTMLElement &&
         active.isConnected &&
         document.activeElement !== active
       ) {
-        active.focus({ preventScroll: true });
+        focusOn(active, quiet);
       }
     }
     order = wanted;
@@ -1522,7 +1563,7 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
       else if (isOpen()) foldDrawer(false);
       openMe();
     });
-    if (focusLost()) landFocus();
+    if (focusLost()) landFocus(true);
   }
 
   function chooseTo(to: CaptureTo): void {
@@ -1559,7 +1600,10 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
     });
   }
 
-  /** Where focus goes when the sheet drops: the step, or the disc on a place (SPEC 11). */
+  /**
+   * Where focus goes when the sheet drops: the step, or the disc on a place
+   * (SPEC 11). Quietly: the field had focus to the end, and no ring is drawn.
+   */
   function landAfterSheet(): void {
     const spot = focusShown
       ? layer.focus.querySelector<HTMLElement>('#f-step')
@@ -1567,8 +1611,8 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
         ? null
         : layer.dock.querySelector<HTMLElement>('#b-capture');
     // On Today, the screen's own block: the lit step, the unlit item, or 7b's heading.
-    if (spot) spot.focus({ preventScroll: true });
-    else landFocus();
+    if (spot) focusOn(spot, true);
+    else landFocus(true);
   }
 
   /**
@@ -1815,6 +1859,7 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
   history.replaceState({ bench: mark, depth: 0 }, '');
   window.addEventListener('popstate', onPopState);
   container.addEventListener('focusout', onFocusOut);
+  container.addEventListener('keydown', onKeyDown);
   const unsubscribe = store.subscribe('domains', render);
   let ticker: Ticker | undefined;
   render();
@@ -1845,6 +1890,7 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
       holdAwake(false);
       dropUndo();
       container.removeEventListener('focusout', onFocusOut);
+      container.removeEventListener('keydown', onKeyDown);
       ticker?.destroy();
       unsubscribe();
       window.removeEventListener('resize', onResize);
