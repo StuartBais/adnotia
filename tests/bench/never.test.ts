@@ -18,7 +18,8 @@ import {
 // What the prototype never says (design/lantern/SPEC.md section 13, "Anything
 // that shames", and docs/03-scope.md "Tone"), across every screen built so far
 // (Today, Focus, the rest of today, the places, Tasks and its four lists, a
-// task's page in each of its forms and the sheets it raises, Me, Settings,
+// task's page in each of its forms and the sheets it raises, Routines and
+// each routine's page, the Library and its pages, Me, Settings,
 // About, the crisis page and capture), every scenario, and every six-second line and
 // Undo: nothing overdue, late, missed or behind; no streak, no greeting and
 // no cheering; no exclamation mark; never "0 min left" and never seconds; no
@@ -265,6 +266,33 @@ describe('never', () => {
           press(m.container, 'Back to Tasks');
         }
       }
+    });
+  }
+
+  for (const { at, scenario } of SCENES) {
+    it(`says none of it in "${scenario}", on every routine's page, New routine and the Library's pages`, async () => {
+      const m = await mount(at, scenario);
+      for (const [tab, opens] of [
+        ['Routines', 'Back to Routines'],
+        ['Library', 'Back to Library'],
+      ] as const) {
+        press(m.container, tab);
+        holdsNothing(m, tab);
+        const names = controls(m.container)
+          .filter((node) => node.closest('.screen') && node.closest('[data-list]'))
+          .map(nameOf);
+        if (tab === 'Routines') names.push('New routine');
+        for (const name of names) {
+          press(m.container, name);
+          holdsNothing(m, `the page of ${name}`);
+          press(m.container, opens);
+        }
+      }
+      // A day later "Ran today" has gone, and nothing says when it last ran.
+      m.clock.now = new Date(new Date(at).getTime() + 24 * 60 * 60_000);
+      vi.advanceTimersByTime(60_000);
+      press(m.container, 'Routines');
+      holdsNothing(m, 'Routines, the next day');
     });
   }
 
