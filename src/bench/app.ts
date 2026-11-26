@@ -534,7 +534,15 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
     paint(layer.drawer, drawerKey(state, t, position, today), () =>
       drawer(state, t, position, today),
     );
-    paint(layer.foot, open ? 'hide' : '', () => ({ nodes: open ? hideFoot(hideDrawer) : [] }));
+    const band = open ? bandUndo() : undefined;
+    paint(layer.foot, open ? JSON.stringify(['hide', band?.undo.name]) : '', () => ({
+      nodes: open
+        ? hideFoot(
+            hideDrawer,
+            band && { ...band.undo.lines, name: band.undo.name, onUndo: takeBack },
+          )
+        : [],
+    }));
 
     // The tabs.
     paint(layer.tabs, nav.tab, () => ({ nodes: tabs(nav.tab, chooseTab) }));
@@ -822,6 +830,15 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
   /** The Undo the Next line carries: none while Focus is over it, whose foot has it. */
   function lineUndo(): UndoSlot | undefined {
     return focusShown ? undefined : undo;
+  }
+
+  /**
+   * The Undo the open drawer's Hide band carries: Save's only. The open
+   * drawer has no Next line; a tick there has its row's disc to take it back,
+   * and Save has nothing else.
+   */
+  function bandUndo(): UndoSlot | undefined {
+    return undo?.undo.reopen ? lineUndo() : undefined;
   }
 
   function exclusion(today: ReturnType<typeof todayView> | undefined): { exclude?: string } {

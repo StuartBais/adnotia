@@ -372,31 +372,73 @@ export function openDrawer(props: OpenProps): Opened {
   };
 }
 
+/** Save's six seconds on the Hide band: its two lines, and Undo. */
+export interface HideUndo {
+  line1: string;
+  line2: string;
+  name: string;
+  onUndo: () => void;
+}
+
 /**
  * "⌄ Hide", the open drawer's handle (SPEC 9.8): one button over the band
  * 684–754, where the folded handle is, its words at the right exactly where
  * "Rest of today ⌃" stands when folded. So the drawer opens and closes from
  * one spot. The left of the band is plain stone.
+ *
+ * For six seconds after Save, the band holds what the folded Next line would:
+ * "Saved to the inbox" over the words at the left, and Undo at the right in
+ * place of "⌄ Hide", as Undo takes the place of "Rest of today ⌃" when
+ * folded. The open drawer has no Next line, and Save has no row disc to fall
+ * back on (undrawn: a proposal). The band is still Hide, by name and by tap.
  */
-export function hideFoot(onHide: () => void): Node[] {
-  return [
-    h(
-      'button',
-      {
-        class: 'handle hide',
-        type: 'button',
-        id: 'b-hide',
-        'aria-label': SAY.hide,
-        onclick: onHide,
-      },
-      h(
-        'span',
-        { class: 'h-more t-label', 'aria-hidden': 'true', 'data-geo': 'hide' },
-        icon('down', 20),
-        T.hide,
-      ),
-    ),
-  ];
+export function hideFoot(onHide: () => void, undo?: HideUndo): Node[] {
+  const lines = undo
+    ? [
+        h(
+          'span',
+          { class: 'h-l1 t-label', 'aria-hidden': 'true' },
+          h('span', { text: undo.line1 }),
+        ),
+        h(
+          'span',
+          { class: 'h-l2', 'aria-hidden': 'true' },
+          h('span', { class: 'h-title', text: undo.line2 }),
+        ),
+      ]
+    : [
+        h(
+          'span',
+          { class: 'h-more t-label', 'aria-hidden': 'true', 'data-geo': 'hide' },
+          icon('down', 20),
+          T.hide,
+        ),
+      ];
+  const hide = h(
+    'button',
+    {
+      class: undo ? 'handle hide with-undo' : 'handle hide',
+      type: 'button',
+      id: 'b-hide',
+      'aria-label': SAY.hide,
+      onclick: onHide,
+    },
+    ...lines,
+  );
+  // A sibling of the band, never inside it: a button holds no button.
+  return undo
+    ? [
+        hide,
+        h('button', {
+          class: 'undo',
+          type: 'button',
+          id: 'b-undo',
+          'aria-label': undo.name,
+          text: T.undo,
+          onclick: undo.onUndo,
+        }),
+      ]
+    : [hide];
 }
 
 /** The day's list: Later today, Anytime today, and Done today when it is on. */

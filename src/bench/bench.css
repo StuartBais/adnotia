@@ -1389,7 +1389,8 @@ svg.i28 {
 .handle.with-undo .h-l2 {
   width: 252px;
 }
-.drawer .undo {
+.drawer .undo,
+.foot .undo {
   position: absolute;
   right: 24px;
   top: 18px;
@@ -1408,10 +1409,13 @@ svg.i28 {
 /* Compact: one 52 pt line, "Next 10:30 Call the dentist · in 25 min ⌃". */
 @media (max-height: 739px) {
   .handle.folded .h-l1,
-  .handle.folded .h-l2 {
+  .handle.folded .h-l2,
+  .handle.hide.with-undo .h-l1,
+  .handle.hide.with-undo .h-l2 {
     display: contents;
   }
-  .handle.folded {
+  .handle.folded,
+  .handle.hide.with-undo {
     display: flex;
     align-items: center;
     gap: 6px;
@@ -1419,8 +1423,16 @@ svg.i28 {
   }
   .handle.folded > span,
   .handle.folded .h-l1 > *,
-  .handle.folded .h-l2 > * {
+  .handle.folded .h-l2 > *,
+  .handle.hide.with-undo .h-l1 > *,
+  .handle.hide.with-undo .h-l2 > * {
     position: static;
+  }
+  .handle.hide.with-undo .h-l1 > * {
+    color: var(--muted);
+  }
+  .handle.hide.with-undo .h-title {
+    flex: 0 1 auto;
   }
   .handle.folded .h-sec {
     order: 1;
@@ -1451,10 +1463,12 @@ svg.i28 {
   .handle.folded .h-more .h-more-words {
     display: none;
   }
-  .handle.folded.with-undo {
+  .handle.folded.with-undo,
+  .handle.hide.with-undo {
     padding-right: 110px;
   }
-  .drawer .undo {
+  .drawer .undo,
+  .foot .undo {
     top: 4px;
   }
   .grab {

@@ -18,6 +18,7 @@ import {
   nameOf,
   outlastFade,
   outlastSheet,
+  outlastUndo,
   press,
   readText,
   readingOrder,
@@ -2372,6 +2373,64 @@ describe('5 · Capture (SPEC 5.5)', () => {
       expect(m.container.dataset['drawer']).toBe('open');
       expect(document.activeElement).toBe(id(m, 'b-capture'));
       expect(depth()).toBe(1);
+    });
+
+    it('over the open drawer: Save says so on the Hide band, with Undo, and the drawer stays open', async () => {
+      const m = await mount(TUE_1005);
+      press(m.container, /^Next, in 25 minutes/);
+      press(m.container, 'Capture');
+      type(m, ASK);
+      press(m.container, 'Save');
+      // Exactly where the person was: the drawer open, focus on the disc.
+      expect(m.container.dataset['drawer']).toBe('open');
+      expect(document.activeElement).toBe(id(m, 'b-capture'));
+      expect(said(m)).toBe('Saved to inbox');
+      // The open drawer has no Next line: its Hide band holds the six seconds,
+      // "Saved to the inbox" over the words, Undo where "⌄ Hide" was.
+      const hide = id(m, 'b-hide')!;
+      expect(nameOf(hide)).toBe('Hide the rest of today');
+      expect(hide.querySelector('.h-l1')?.textContent).toBe('Saved to the inbox');
+      expect(hide.querySelector('.h-title')?.textContent).toBe(ASK);
+      expect(drawnText(hide)).not.toContain('Hide');
+      const undo = id(m, 'b-undo')!;
+      expect(undo.closest('.foot')).not.toBeNull();
+      expect(nameOf(undo)).toBe(`Undo: remove ${ASK} from the inbox`);
+      expect(m.container.querySelectorAll('#b-undo')).toHaveLength(1);
+      // Read after Hide, as the folded handle's Undo is read after the handle.
+      const order = readingOrder(m.container);
+      expect(order.indexOf(`Undo: remove ${ASK} from the inbox`)).toBe(
+        order.indexOf('Hide the rest of today') + 1,
+      );
+      // The band is still Hide.
+      expect(choices(m.container)).toBeLessThanOrEqual(5);
+      outlastUndo();
+      expect(id(m, 'b-undo')).toBeNull();
+      expect(drawnText(id(m, 'b-hide')!)).toBe('Hide');
+      expect(m.container.dataset['drawer']).toBe('open');
+    });
+
+    it('over the open drawer: Undo after Save opens the sheet again over it, with the words', async () => {
+      const m = await mount(TUE_1005);
+      press(m.container, /^Next, in 25 minutes/);
+      press(m.container, 'Capture');
+      type(m, ASK);
+      press(m.container, 'Today');
+      press(m.container, 'Save');
+      expect(id(m, 'b-hide')?.querySelector('.h-l1')?.textContent).toBe("Saved to today's list");
+      press(m.container, `Undo: remove ${ASK} from today's list`);
+      expect(stateOf(m).tasks.some((task) => task.title === ASK)).toBe(false);
+      expect(m.container.dataset['drawer']).toBe('open');
+      expect(m.container.dataset['sheet']).toBe('place');
+      expect(field(m).value).toBe(ASK);
+      expect(document.activeElement).toBe(field(m));
+    });
+
+    it('over the open drawer: a tick puts nothing on the Hide band, its row’s disc the way back', async () => {
+      const m = await mount(TUE_1005);
+      press(m.container, /^Next, in 25 minutes/);
+      press(m.container, 'Mark done: Order printer ink');
+      expect(id(m, 'b-undo')).toBeNull();
+      expect(drawnText(id(m, 'b-hide')!)).toBe('Hide');
     });
   });
 
