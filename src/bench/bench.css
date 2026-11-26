@@ -1303,6 +1303,9 @@ svg.i28 {
   box-shadow: var(--sh-drawer);
   transform: translateY(var(--dy));
   --dy: calc(100% - var(--fold-b));
+  /* Pulled by a mouse in a desktop review, it must not select its words. */
+  -webkit-user-select: none;
+  user-select: none;
 }
 .app[data-drawer='lip'] .drawer {
   --dy: calc(100% - var(--lip-b));
@@ -1561,9 +1564,22 @@ svg.i28 {
 }
 /* The screen's own header row, 58–102, would show its top 2 pt above the
    drawer's edge at 60 (Me, and on a white place the back pill too). It is
-   inert under the drawer already, so it is not drawn either. */
-.app[data-drawer='open'] .screen .hdr {
+   inert under the drawer already, so it is not drawn either, at rest. Pulled
+   down, the drawer uncovers it, so then it is drawn, cut by the edge. */
+.app[data-drawer='open']:not([data-travel]) .screen .hdr {
   visibility: hidden;
+}
+/* The band above the open drawer's header row, where the grabber is. */
+.grabzone {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 16px;
+  touch-action: none;
+}
+.drawer .hdr {
+  touch-action: none;
 }
 .drawer .hdr {
   top: 16px;
@@ -1613,6 +1629,7 @@ svg.i28 {
   height: var(--handle);
   z-index: 25;
   --ring: var(--charcoal);
+  transition: opacity 150ms ease;
 }
 .foot:empty {
   display: none;
@@ -1629,6 +1646,126 @@ svg.i28 {
   .handle.hide .h-more {
     top: 19px;
   }
+}
+
+/* ═════════════ The drawer in the hand (drawer.ts; SPEC 9.8 and 10) ═════════════ */
+
+/* Where the drawer's top rests in each position, for the drag to measure:
+   the same lengths the drawer's own --dy is made of. */
+.probes {
+  position: absolute;
+  inset: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+.probes > span {
+  position: absolute;
+  left: 0;
+  width: 0;
+  height: 0;
+}
+.probes > [data-probe='open'] {
+  top: var(--open-t);
+}
+.probes > [data-probe='half'] {
+  top: var(--half-t);
+}
+.probes > [data-probe='folded'] {
+  bottom: var(--fold-b);
+}
+.probes > [data-probe='lip'] {
+  bottom: var(--lip-b);
+}
+
+/* Pulled by a mouse in a desktop review, Hide must not select its word. */
+.foot {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Under a finger or on its spring. Pictures drawn for the journey only: the
+   list rising under the folded handle, or the folded handle over a list.
+   Near its folded place the handle comes back in two steps, never both at
+   once, so the Next line never lies over the header it replaces: first its
+   stone covers what is under it (--fold-bg), then its words fade in on the
+   stone (--fold-fg). Leaving, the reverse. */
+.drawer > .ghost {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+.drawer > .ghost.top {
+  bottom: auto;
+  height: var(--handle);
+  z-index: 3;
+}
+.drawer[data-travel] > .handle.folded,
+.drawer[data-travel] > .undo {
+  z-index: 3;
+}
+.drawer[data-travel] > .grab {
+  z-index: 4;
+}
+.drawer > .ghost.top > .grab {
+  z-index: 1;
+}
+.drawer[data-travel] .handle.folded {
+  background: none;
+}
+.drawer[data-travel] .handle.folded::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--stone);
+  opacity: var(--fold-bg, 1);
+}
+/* The words themselves, not their lines: on a compact screen the two lines
+   are display: contents, which takes no opacity. */
+.drawer[data-travel] .handle.folded .h-l1 > span,
+.drawer[data-travel] .handle.folded .h-l2 > span,
+.drawer[data-travel] .handle.folded .h-more,
+.drawer[data-travel] .undo {
+  opacity: var(--fold-fg, 1);
+}
+/* The half drawer's list runs on to the drawer's foot while it moves, so it
+   never ends above the tabs on the way up; it is cut at rest again. */
+.drawer[data-travel] .viewport:not(.open) {
+  bottom: 0 !important;
+  height: auto !important;
+}
+.drawer[data-travel] .viewport:not(.open) .covered {
+  display: none;
+}
+/* What the drawer carried, where the place it rests at carries another list
+   (half and open): it fades out over the new one. */
+.drawer > .ghost.leaving {
+  z-index: 3;
+  background: var(--stone);
+  border-radius: 28px 28px 0 0;
+  animation: bench-fade-out 150ms ease-in both;
+}
+/* While it moves, Hide leaves the foot, and comes back when it rests open. */
+.app[data-travel] .foot {
+  opacity: 0;
+}
+/* Reduce Motion's form of the lantern and the capsule (SPEC 10): over Today,
+   or the present's own page, the lantern fades as the drawer rises (--lift,
+   0 folded to 1 open), and the capsule appears when it stops; pulled down,
+   the reverse. Step done and Pause, and the capsule, leave within the first
+   few points of the pull (--fold-fg and --open-fg), as they fade "in the
+   first 100 ms" of the morph, so neither lies half-drawn over the list
+   passing under the dock line. Nothing travels or scales. The phase B
+   morph replaces this under full motion (chunk 7). */
+.app[data-travel='present'] .screen .lantern {
+  opacity: calc(1 - var(--lift, 0));
+}
+.app[data-travel='present'] .dock .dock-pill {
+  opacity: var(--fold-fg, 1);
+}
+.app[data-travel='present'] .dock .capsule {
+  opacity: var(--open-fg, 1);
 }
 
 /* ═════════════ Rows (SPEC 9.7) ═════════════ */

@@ -77,7 +77,10 @@ async function start(
   seed: (state: DomainsState, now: Date) => DomainsState | undefined,
   storage: StorageAdapter = memoryStorageAdapter(),
 ): Promise<Mounted> {
-  vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+  // Frames too: the drawer follows a finger, and springs, a frame at a time.
+  vi.useFakeTimers({
+    toFake: ['setTimeout', 'clearTimeout', 'requestAnimationFrame', 'cancelAnimationFrame'],
+  });
   const clock = { now: at };
   const store = createStore({
     adapter: storage,
@@ -180,6 +183,88 @@ export function type(mounted: Mounted, text: string): HTMLInputElement {
   field.dispatchEvent(new Event('input', { bubbles: true }));
   vi.advanceTimersByTime(DRAFT_AFTER);
   return field;
+}
+
+// ---------------------------------------------------------------- the drawer in the hand
+
+/** Where the drawer's top rests at 390 × 844 with the board's insets (SPEC 9.8). */
+export const BOARD_STOPS: Readonly<Record<string, number>> = {
+  open: 60,
+  half: 366,
+  folded: 684,
+  lip: 730,
+};
+
+/**
+ * The frame laid out as on the board, which jsdom does not do: the app 390 ×
+ * 844, and the drawer's resting places where its probes would measure them.
+ * Everything else measures as jsdom does, at nothing. Undone after each test.
+ */
+export function layOut(): void {
+  const real = Element.prototype.getBoundingClientRect;
+  const box = (top: number, height: number, width: number) =>
+    ({
+      x: 0,
+      y: top,
+      left: 0,
+      top,
+      width,
+      height,
+      right: width,
+      bottom: top + height,
+      toJSON: () => ({}),
+    }) as DOMRect;
+  vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function (this: Element) {
+    if (this.classList.contains('app')) return box(0, 844, 390);
+    const probe = this instanceof HTMLElement ? this.dataset['probe'] : undefined;
+    if (probe !== undefined) return box(BOARD_STOPS[probe] ?? 0, 0, 0);
+    return real.call(this);
+  });
+}
+
+const pointer = (type: string, clientY: number) =>
+  new PointerEvent(type, { bubbles: true, cancelable: true, clientY, pointerId: 7 });
+
+/**
+ * A finger on `on`: down at the first y, then to each y after it, `every`
+ * ms apart with a frame between, then lifted unless `up` is false. With the
+ * default pace and a moment's hold before lifting, it lets go with no
+ * speed, so it rests at the place nearest where it let go. Lifted, it sends
+ * the click a mouse sends; `click: false` is a touch that moved, which
+ * sends none.
+ */
+export function pull(
+  mounted: Mounted,
+  on: Element,
+  ys: number[],
+  { every = 200, up = true, click = true }: { every?: number; up?: boolean; click?: boolean } = {},
+): void {
+  const [first, ...rest] = ys;
+  // Where a captured pointer's click goes, should what was pressed be gone.
+  const surface = on.closest('.drawer, .foot') ?? on;
+  on.dispatchEvent(pointer('pointerdown', first ?? 0));
+  for (const y of rest) {
+    mounted.mono.now += every;
+    on.dispatchEvent(pointer('pointermove', y));
+    vi.advanceTimersByTime(16);
+  }
+  if (up) {
+    mounted.mono.now += every;
+    on.dispatchEvent(pointer('pointerup', ys[ys.length - 1] ?? 0));
+    if (click) {
+      (on.isConnected ? on : surface).dispatchEvent(
+        new MouseEvent('click', { bubbles: true, cancelable: true }),
+      );
+    }
+  }
+}
+
+/** Lets the drawer's spring run for `ms`, a frame every 16 ms. */
+export function fly(mounted: Mounted, ms = 800): void {
+  for (let spent = 0; spent < ms; spent += 16) {
+    mounted.mono.now += 16;
+    vi.advanceTimersByTime(16);
+  }
 }
 
 /** How many levels above the tab the current history entry stands for. */

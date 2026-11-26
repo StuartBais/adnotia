@@ -365,6 +365,9 @@ export function openDrawer(props: OpenProps): Opened {
   return {
     nodes: [
       h('span', { class: 'grab', 'aria-hidden': 'true' }),
+      // The band above the header row, the grabber's: a pull down there
+      // folds the drawer (SPEC 9.8). Drawn as nothing, and not a control.
+      h('span', { class: 'grabzone', 'aria-hidden': 'true' }),
       h(
         'header',
         { class: 'hdr', 'data-geo': 'open-hdr' },

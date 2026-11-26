@@ -137,7 +137,7 @@ export const ABOUT = {
     'The edges: the status bar, the corners, and whether the page ever bounces.',
     'The bar burning, and the minutes straight after the phone has been locked for 5 minutes.',
     'A clock left running: start, lock the phone for 45 minutes, and come back.',
-    'The rest of today: open it from its handle, and close it with Hide or by swiping back from the edge of the screen.',
+    'The rest of today: pull its handle up and let go, slowly or with a flick, over each tab. Close it with Hide, by pulling it down, or by swiping back from the edge of the screen.',
     'Step done or a tick, then Undo on the Next line.',
     'Taps that land between the capsule and capture.',
     'Capture: the keyboard comes up with the sheet riding on it, the page never slides, and what you typed is still there after a reload.',

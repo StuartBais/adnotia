@@ -13,8 +13,9 @@
 // the minutes and the spoken labels in place. So a tick never takes away the
 // person's focus, scroll or a tap in progress.
 //
-// Built so far (plan section 19, chunks 2 to 5): the frame, Today in every
-// state, the drawer at rest at its lip, folded and half and open by tap, the
+// Built so far (plan section 19, chunks 2 to 6): the frame, Today in every
+// state, the drawer at rest at its lip, folded and half and open, by a tap or
+// under a finger that pulls it and lets it go onto its spring, the
 // capsule on the places and the open drawer, the tabs, Me with the crisis
 // page, About with the scenario buttons, Focus, a layer over the current tab
 // with its own history entry, capture: a sheet over whatever is open, riding
@@ -50,6 +51,7 @@ import {
   type View,
 } from './state';
 import { createTicker, type Ticker } from './clock';
+import { dragDrawer, type DrawerDrag, type Stop } from './drawer';
 import { KEYBOARD_GUESS, trackKeyboard } from './keyboard';
 import {
   dock,
@@ -163,6 +165,13 @@ export const PAGE_FADE_MS = 200;
 /** Lighting on Start, on Today: a colour change this long (SPEC 10, Reduce Motion). */
 export const LIGHTING_MS = 150;
 
+/**
+ * A hand-over in one place, as a cross-fade this long: "Rest of today ⌃" at
+ * the drawer's foot turning into "⌄ Hide" and back (SPEC 10, "The drawer"),
+ * and the list a pulled drawer carried giving way to the one where it rests.
+ */
+export const HANDOVER_MS = 150;
+
 /** Typing in the capture field is kept as a draft this soon after it stops (ms). */
 export const DRAFT_AFTER = 300;
 
@@ -187,6 +196,26 @@ interface TaskSheet {
   /** The control that raised it, where focus goes back when it closes. */
   opener: string;
   serial: number;
+}
+
+/**
+ * The drawer between its resting places. The list it carries is the one it
+ * set out with when that was the open or half drawer's own; from folded,
+ * whose drawer has none, a copy of the list it would open to is drawn under
+ * the handle. The folded handle, or a copy of it, fades in as the drawer
+ * nears its folded place and out as it leaves.
+ */
+interface Travel {
+  from: DrawerPosition;
+  /** The list that travels: the open drawer's, or the half drawer's. */
+  body: 'open' | 'half';
+  /** Drawn for the journey only, and gone when it ends. */
+  ghosts: HTMLElement[];
+  /** The copy of the list under the folded handle, when it set out folded. */
+  copy: HTMLElement | undefined;
+  /** What the dock line and the lantern do on the way (SPEC 10, Reduce Motion). */
+  kind: 'present' | 'place';
+  stops: Stop[];
 }
 
 /** The Screen Wake Lock, where the browser has one: feature-detected, never required. */
@@ -256,8 +285,18 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
     // The sheets a task's page raises: when, ⋯, note, rename and delete.
     tsheet: h('div', { class: 'sheet-layer', hidden: true }),
     live: h('div', { class: 'live', 'aria-live': 'polite' }),
+    // Where the drawer rests in each position, measured rather than worked
+    // out, so the safe areas, the compact handle and the half drawer's
+    // measured top all hold (plan section 8, "Geometry").
+    probes: h(
+      'div',
+      { class: 'probes', 'aria-hidden': 'true' },
+      ...(['open', 'half', 'folded', 'lip'] as const).map((position) =>
+        h('span', { 'data-probe': position }),
+      ),
+    ),
   };
-  container.append(hints());
+  container.append(hints(), layer.probes);
 
   // The keyboard, for the capture sheet to ride (plan section 13). The frame
   // is the layout viewport, so its height is what the sheet is placed in.
@@ -343,6 +382,13 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
   let tsheetTimer: ReturnType<typeof setTimeout> | undefined;
   /** When a list on screen last scrolled (monotonic), for the capsule's guard. */
   let lastScroll = Number.NEGATIVE_INFINITY;
+  /**
+   * The drawer under a finger or on its spring (drawer.ts): where it set out
+   * from, what list travels with it, and what is drawn only for the journey.
+   */
+  let travel: Travel | undefined;
+  /** The drawer under the finger (drawer.ts), from the moment the app is up. */
+  let drag: DrawerDrag | undefined;
 
   /** A screen shorter than 740 pt, where the handle is one line (SPEC 3). */
   function compact(): boolean {
@@ -479,6 +525,12 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
 
   function render(): void {
     if (destroyed) return;
+    // Anything that changes the screen while the drawer is on its spring
+    // lands it first, where it was going. Under a finger it stays put.
+    if (travel && drag?.flying()) {
+      drag.finish();
+      return;
+    }
     const state = read();
     const t = now();
     tidyNav(state);
@@ -675,12 +727,15 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
     }
     layer.fade.hidden = !(ground === 'place' && capsule !== undefined && !open);
 
-    // The drawer, and Hide at its foot when it is open.
+    // The drawer, and Hide at its foot when it is open. While the drawer
+    // travels, what it carries is left as it is until it comes to rest.
     if (position === 'lip' || showFocus || modal) layer.drawer.setAttribute('inert', '');
     else layer.drawer.removeAttribute('inert');
-    paint(layer.drawer, drawerKey(state, t, position, today), () =>
-      drawer(state, t, position, today),
-    );
+    if (!travel) {
+      paint(layer.drawer, drawerKey(state, t, position, today), () =>
+        drawer(state, t, position, today),
+      );
+    }
     const band = open ? bandUndo() : undefined;
     paint(layer.foot, open ? JSON.stringify(['hide', band?.undo.name]) : '', () => ({
       nodes: open
@@ -817,7 +872,7 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
       current.kind === 'running' &&
       (today?.kind === 'lit' || capsule !== undefined || showFocus || rides || ownPage);
     patchAll(live);
-    layout(position);
+    if (!travel) layout(position);
     fitSheet();
     // Focus has closed and what had focus went with it: back where it was
     // opened, on the capsule if it is there, otherwise the screen's own block
@@ -1416,16 +1471,18 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
 
   /**
    * The half drawer's top follows what is lit above it: Start's foot plus 16,
-   * or the unlit block's under rule 3, and never above y 366 on the board. At
-   * rest, a list with more below is cut to the last whole row above the tabs'
-   * cover, so that row is the covered one (plan section 10, "Rows"). A list
-   * that fits is left whole, with no covered row and no cover: SPEC 9.7 draws
-   * one only where a list stops at an edge with more below it.
+   * or the unlit block's under rule 3, and never above y 366 on the board.
+   * It is measured whatever the drawer's position, since a folded drawer can
+   * be pulled up to it. At rest, a list with more below is cut to the last
+   * whole row above the tabs' cover, so that row is the covered one (plan
+   * section 10, "Rows"). A list that fits is left whole, with no covered row
+   * and no cover: SPEC 9.7 draws one only where a list stops at an edge with
+   * more below it.
    */
   function layout(position: DrawerPosition): void {
     const box = container.getBoundingClientRect();
     if (box.height === 0) return; // not laid out: a test, or a hidden page
-    if (position === 'half') {
+    if (position !== 'open') {
       const header = layer.screen.querySelector('.hdr');
       const saTop = header ? header.getBoundingClientRect().top - box.top - 4 : 20;
       const least = saTop + 312;
@@ -1433,7 +1490,7 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
       const foot = anchor ? anchor.getBoundingClientRect().bottom - box.top + 16 : least;
       container.style.setProperty('--half-t', `${Math.max(foot, least)}px`);
     }
-    const viewport = layer.drawer.querySelector<HTMLElement>('.viewport');
+    const viewport = layer.drawer.querySelector<HTMLElement>(':scope > .viewport');
     const list = viewport?.querySelector<HTMLElement>('.list');
     let more = false;
     if (viewport && list) {
@@ -1491,9 +1548,13 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
     arrival = 'other';
   }
 
-  /** True while a tap on Step done, Pause or Resume is ignored, with no feedback. */
+  /**
+   * True while a tap on Step done, Pause or Resume is ignored, with no
+   * feedback: the guard's time, and while the drawer is moving, which fades
+   * them with the lantern.
+   */
   function guarded(): boolean {
-    return monotonic() < guardUntil;
+    return travel !== undefined || monotonic() < guardUntil;
   }
 
   // ---------------------------------------------------------------- undo
@@ -1755,16 +1816,17 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
 
   /**
    * Back to where the drawer rested before it opened: half on idle Today,
-   * folded elsewhere. From Hide or back, focus goes to the handle, in the
-   * same spot; when a row, Me or a tab folds it, the place it leads to has it.
+   * folded elsewhere, or where a pull down let it go (`to`). From Hide, back
+   * or a pull, focus goes to the handle, in the same spot; when a row, Me or
+   * a tab folds it, the place it leads to has it.
    */
-  function foldDrawer(toHandle: boolean): void {
+  function foldDrawer(toHandle: boolean, to?: 'half' | 'folded'): void {
     if (!isOpen()) return;
     const state = read();
     const key = drawerKeyNow(state);
     if (!key) return;
     const back =
-      beforeOpen?.key === key ? beforeOpen.position : key === 'running' ? 'folded' : 'half';
+      to ?? (beforeOpen?.key === key ? beforeOpen.position : key === 'running' ? 'folded' : 'half');
     beforeOpen = undefined;
     arrival = 'morph';
     writeDrawer(state, key, back);
@@ -1775,6 +1837,196 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
 
   function hideDrawer(): void {
     foldDrawer(true);
+  }
+
+  /**
+   * Where a pull let the drawer go: it rests there for the rest of the
+   * logging day, separately for running and idle (SPEC 9.8), as a tap on the
+   * handle or Hide would leave it, with the same history and focus.
+   */
+  function restAt(to: DrawerPosition): void {
+    const from = shown?.position;
+    if (to === from) {
+      render();
+      return;
+    }
+    if (to === 'open') {
+      openDrawer();
+      return;
+    }
+    if (from === 'open') {
+      foldDrawer(true, to === 'half' ? 'half' : 'folded');
+      return;
+    }
+    const state = read();
+    const key = drawerKeyNow(state);
+    if (key) writeDrawer(state, key, to);
+    else render();
+  }
+
+  // ---------------------------------------------------------------- the drawer in the hand
+
+  /** Over this far from its folded place, the folded handle has faded out (pt). */
+  const FOLD_FADE = 96;
+  const TRAVEL_VARS = ['--lift', '--fold-bg', '--fold-fg', '--open-fg'];
+
+  /**
+   * Where the drawer may be pulled to, and where it rests, measured from the
+   * probes; nothing at its lip, under Focus or a sheet, or before layout.
+   */
+  function stopsNow(): { stops: Stop[]; current: DrawerPosition } | undefined {
+    const at = shown?.position;
+    if (destroyed || !at || at === 'lip' || focusShown || sheet || tsheet) return undefined;
+    if (layer.drawer.hasAttribute('inert')) return undefined;
+    const box = container.getBoundingClientRect();
+    if (box.height === 0) return undefined;
+    const rule = drawerPositions(read(), now(), { view: viewOf(), largeText: compact() });
+    // A drawer held folded for an Undo can go where the rule allows, and back.
+    const allowed = [...new Set([...rule.allowed, at])].filter((position) => position !== 'lip');
+    if (allowed.length < 2) return undefined;
+    return {
+      current: at,
+      stops: allowed.map((position) => {
+        const probe = layer.probes.querySelector(`[data-probe="${position}"]`);
+        return { position, y: (probe?.getBoundingClientRect().top ?? 0) - box.top };
+      }),
+    };
+  }
+
+  /**
+   * The handle band (the folded and half handles, and the open drawer's Hide
+   * band at its foot) and the grabber; on the open drawer, its header row
+   * too, Me apart. The list is the list's, and every other control its own.
+   */
+  function grabs(event: PointerEvent): boolean {
+    const target = event.target instanceof Element ? event.target : null;
+    if (!target) return false;
+    if (target.closest('.handle, .grabzone')) return true;
+    if (target.closest('button, a, input, textarea')) return false;
+    return target.closest('.drawer .hdr') !== null;
+  }
+
+  /**
+   * Built as the drawer would be, then made a picture: nothing in it can be
+   * reached, read or found by its id.
+   */
+  function picture(nodes: Node[], kind: string): HTMLElement {
+    const copy = h('div', { class: `ghost ${kind}`, 'aria-hidden': 'true', inert: true }, ...nodes);
+    for (const node of [copy, ...copy.querySelectorAll('*')]) {
+      for (const name of ['id', 'data-geo', 'data-scroll-key', 'data-focus-home', 'data-row']) {
+        node.removeAttribute(name);
+      }
+    }
+    return copy;
+  }
+
+  /**
+   * A press became a pull. The list that travels is the one the drawer
+   * carries; from folded, a picture of the list it would open to is put
+   * under the handle (the half drawer's where it may rest half, otherwise
+   * the whole of today), and from half or open a picture of the folded
+   * handle is put over it, to fade in as it nears its folded place.
+   */
+  function beginTravel(from: DrawerPosition): void {
+    const state = read();
+    const t = now();
+    const stops = stopsNow()?.stops ?? [];
+    const view = viewOf();
+    const today = view.kind === 'today' ? todayView(state, t) : undefined;
+    const canHalf = stops.some((stop) => stop.position === 'half');
+    const body = from === 'half' || (from === 'folded' && canHalf) ? 'half' : 'open';
+    const ghosts: HTMLElement[] = [];
+    let copy: HTMLElement | undefined;
+    if (from === 'folded') {
+      const nodes = drawer(state, t, body, today).nodes.filter(
+        (node) => !(node instanceof Element && node.classList.contains('grab')),
+      );
+      copy = picture(nodes, 'body');
+      layer.drawer.prepend(copy);
+      ghosts.push(copy);
+    } else {
+      const top = picture(drawer(state, t, 'folded', today).nodes, 'top');
+      layer.drawer.append(top);
+      ghosts.push(top);
+    }
+    // Where the folded drawer leaves the lantern (Today) or the present's own
+    // page, the lantern and the dock line's own buttons fade as the drawer
+    // rises, and the capsule appears when it stops (SPEC 10, Reduce Motion).
+    const current = present(state, t);
+    const kind =
+      current.kind !== 'none' && capsuleMode(view, current, 'folded', false) === 'hidden'
+        ? 'present'
+        : 'place';
+    travel = { from, body, ghosts, copy, kind, stops };
+    layer.drawer.dataset['travel'] = '';
+    container.dataset['travel'] = kind;
+  }
+
+  function landDrawer(): void {
+    if (drag?.flying()) drag.finish();
+  }
+
+  /** A frame of the journey: the drawer's top, and what fades with it. */
+  function moveTravel(y: number): void {
+    const journey = travel;
+    if (!journey) return;
+    layer.drawer.style.transform = `translateY(${y}px)`;
+    const at = (position: DrawerPosition) =>
+      journey.stops.find((stop) => stop.position === position)?.y;
+    const folded = at('folded') ?? y;
+    const open = at('open') ?? y;
+    const clamp = (value: number) => Math.min(1, Math.max(0, value));
+    const lift = folded > open ? clamp((folded - y) / (folded - open)) : 0;
+    // How near each end it is, 1 at it and 0 a fade's length away: the
+    // first half of that the stone, the second half the words.
+    const nearFolded = clamp(1 - (folded - y) / FOLD_FADE);
+    const nearOpen = clamp(1 - (y - open) / FOLD_FADE);
+    const set = (name: string, value: number) =>
+      container.style.setProperty(name, clamp(value).toFixed(3));
+    set('--lift', lift);
+    set('--fold-bg', nearFolded * 2);
+    set('--fold-fg', nearFolded * 2 - 1);
+    set('--open-fg', nearOpen * 2 - 1);
+  }
+
+  /**
+   * At rest. The pictures go, and the drawer is what it is at that place,
+   * with its history and focus as a tap would leave them. Where the list it
+   * carried is not that place's own (half and open differ), the old one
+   * fades out over the new over 150 ms. Step done and Pause, which faded
+   * with the lantern, take no tap for a second, as after the capsule.
+   */
+  function settleTravel(to: DrawerPosition): void {
+    const journey = travel;
+    if (!journey) return;
+    const mismatch = (to === 'open' || to === 'half') && journey.body !== to;
+    const carried = mismatch
+      ? journey.copy
+        ? [journey.copy]
+        : [...layer.drawer.childNodes].filter(
+            (node) => !(node instanceof HTMLElement && journey.ghosts.includes(node)),
+          )
+      : [];
+    for (const ghost of journey.ghosts) ghost.remove();
+    travel = undefined;
+    delete layer.drawer.dataset['travel'];
+    delete container.dataset['travel'];
+    layer.drawer.style.removeProperty('transform');
+    for (const name of TRAVEL_VARS) container.style.removeProperty(name);
+    if (journey.kind === 'present') {
+      guardUntil = Math.max(guardUntil, monotonic() + TAP_GUARD.afterCapsule);
+    }
+    // The person moved the drawer: an Undo no longer holds it folded.
+    if (to !== 'folded' && undo) undo.hold = false;
+    restAt(to);
+    if (
+      carried.length > 0 &&
+      carried.every((node) => node.parentNode === null || node === journey.copy)
+    ) {
+      const leaving = picture(carried, 'leaving');
+      layer.drawer.append(leaving);
+      setTimeout(() => leaving.remove(), HANDOVER_MS + 50);
+    }
   }
 
   function settingsView(state: BenchDomains): SettingsView {
@@ -2604,6 +2856,8 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
 
   /** Going to the background: when, and where the person was (plan section 12). */
   function hide(): void {
+    // A drawer on its spring lands where it was going.
+    drag?.finish();
     // What is in the field is kept, though the sheet stays open.
     if (sheet && sheetField) keepDraft(sheetField.value, sheet.to);
     flushSheetText();
@@ -2667,10 +2921,24 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
   window.addEventListener('popstate', onPopState);
   container.addEventListener('focusout', onFocusOut);
   container.addEventListener('keydown', onKeyDown);
+  // A tap anywhere while the drawer springs lands it first, where it was
+  // going, so the tap acts on the screen as it will be: a tab tapped as the
+  // drawer opens folds it and goes, as it would once it had opened.
+  container.addEventListener('click', landDrawer, true);
   // Scroll events do not bubble: caught on the way down, from every list.
   container.addEventListener('scroll', onScroll, true);
   const unsubscribe = store.subscribe('domains', render);
   let ticker: Ticker | undefined;
+  drag = dragDrawer([layer.drawer, layer.foot], {
+    stops: stopsNow,
+    grabs,
+    begin: beginTravel,
+    move: moveTravel,
+    settle: settleTravel,
+    reduced: () => motion(read()) === 'reduced',
+    now: monotonic,
+    dimension: () => container.getBoundingClientRect().height || window.innerHeight,
+  });
   render();
   ticker = createTicker({
     onTick: ({ minute: turned }) => (turned ? minute() : patchLive()),
@@ -2699,10 +2967,12 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
       if (tsheetTimer !== undefined) clearTimeout(tsheetTimer);
       if (tsheetLeaving !== undefined) clearTimeout(tsheetLeaving);
       keyboard.destroy();
+      drag?.destroy();
       holdAwake(false);
       dropUndo();
       container.removeEventListener('focusout', onFocusOut);
       container.removeEventListener('keydown', onKeyDown);
+      container.removeEventListener('click', landDrawer, true);
       container.removeEventListener('scroll', onScroll, true);
       ticker?.destroy();
       unsubscribe();
@@ -2722,10 +2992,11 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
         'lowering',
         'tsheet',
         'typing',
+        'travel',
       ]) {
         delete container.dataset[name];
       }
-      container.style.removeProperty('--half-t');
+      for (const name of ['--half-t', ...TRAVEL_VARS]) container.style.removeProperty(name);
     },
   };
 }

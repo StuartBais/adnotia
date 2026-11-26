@@ -12,9 +12,11 @@ import {
   choices,
   controls,
   drawnText,
+  fly,
   goBack,
   hintOf,
   historyDepth,
+  layOut,
   mount,
   nameOf,
   outlastFade,
@@ -22,6 +24,7 @@ import {
   outlastUndo,
   press,
   pressTab,
+  pull,
   readText,
   readingOrder,
   reload,
@@ -4111,5 +4114,345 @@ describe('Reduce Motion between pages, and lighting on Start (SPEC 10; plan sect
     press(m.container, 'Pause');
     press(m.container, 'Resume');
     expect(m.container.querySelector('.screen .lantern.lighting')).toBeNull();
+  });
+});
+
+describe('the drawer in the hand (SPEC 9.8 and 10; plan section 13)', () => {
+  const HANDLE = 'Next, in 25 minutes: 10:30, Call the dentist. Rest of today';
+  const reduced = (state: BenchDomains): BenchDomains => ({
+    ...state,
+    bench: { ...state.bench, settings: { ...state.bench.settings, motion: 'reduced' } },
+  });
+  const handle = (m: Mounted) => id(m, 'b-handle')!;
+  const heading = (m: Mounted) => id(m, 'h-rest')!;
+  const drawerOf = (m: Mounted) => m.container.querySelector<HTMLElement>('.drawer')!;
+  /** History once the moves made by a fold have landed (jsdom moves on its timers). */
+  const depth = () => {
+    vi.advanceTimersByTime(1);
+    return historyDepth();
+  };
+  const at = (m: Mounted) => m.container.dataset['drawer'];
+
+  // The finger is pressed on the handle band 36 below the drawer's top, and
+  // on the open drawer's header 30 below it, so these let go with the top at
+  // the last y less 36 (or plus 30 less 90 for the header).
+
+  it('pulled up from folded and let go nearer open, it opens as a tap would: one entry, focus on its heading', async () => {
+    layOut();
+    const m = await mount(TUE_1005, 'example', reduced);
+    pull(m, handle(m), [720, 600, 480, 300]);
+    expect(at(m)).toBe('open');
+    expect(depth()).toBe(1);
+    expect(document.activeElement).toBe(heading(m));
+    expect(stateOf(m).bench.drawer.running).toBe('open');
+    // The lantern has folded into the capsule, on the cover with capture.
+    expect(id(m, 'b-capsule')).not.toBeNull();
+    expect(id(m, 'b-stepdone')).toBeNull();
+    // Back folds it, as after a tap.
+    goBack();
+    expect(at(m)).toBe('folded');
+    expect(depth()).toBe(0);
+  });
+
+  it('pulled down by its header row, or the grabber’s band above it, it folds: the entry goes, focus on the handle', async () => {
+    layOut();
+    const m = await mount(TUE_1005, 'example', reduced);
+    press(m.container, HANDLE);
+    expect(depth()).toBe(1);
+    pull(m, heading(m), [90, 300, 500, 700]);
+    expect(at(m)).toBe('folded');
+    expect(depth()).toBe(0);
+    expect(document.activeElement).toBe(handle(m));
+    expect(stateOf(m).bench.drawer.running).toBe('folded');
+    press(m.container, HANDLE);
+    const band = m.container.querySelector('.drawer .grabzone')!;
+    expect(band.getAttribute('aria-hidden')).toBe('true');
+    pull(m, band, [66, 300, 500, 700]);
+    expect(at(m)).toBe('folded');
+    expect(depth()).toBe(0);
+  });
+
+  it('pulled down by Hide at its foot, it folds as Hide would', async () => {
+    layOut();
+    const m = await mount(TUE_1005, 'example', reduced);
+    press(m.container, HANDLE);
+    const hide = button(m.container, 'Hide the rest of today');
+    pull(m, hide, [720, 800, 900, 1300]);
+    expect(at(m)).toBe('folded');
+    expect(depth()).toBe(0);
+    expect(document.activeElement).toBe(handle(m));
+  });
+
+  it('idle on Today, rests at each of half, folded and open where let go, kept for the day; only open has an entry', async () => {
+    layOut();
+    const m = await mount(TUE_0958, 'notStarted', reduced);
+    expect(at(m)).toBe('half');
+    const half = () => button(m.container, 'Rest of today');
+    // Half to folded: let go at 584, nearer folded (684) than half (366).
+    pull(m, half(), [389, 450, 520, 607]);
+    expect(at(m)).toBe('folded');
+    expect(stateOf(m).bench.drawer.idle).toBe('folded');
+    expect(depth()).toBe(0);
+    // Folded to half: let go at 400.
+    pull(m, handle(m), [720, 600, 500, 436]);
+    expect(at(m)).toBe('half');
+    expect(stateOf(m).bench.drawer.idle).toBe('half');
+    expect(depth()).toBe(0);
+    // Half to open: let go at 140.
+    pull(m, half(), [389, 300, 200, 163]);
+    expect(at(m)).toBe('open');
+    expect(depth()).toBe(1);
+    // Open to half, by the header: let go at 340.
+    pull(m, heading(m), [90, 200, 300, 370]);
+    expect(at(m)).toBe('half');
+    expect(stateOf(m).bench.drawer.idle).toBe('half');
+    expect(depth()).toBe(0);
+    // Open to folded, past half.
+    press(m.container, 'Rest of today');
+    pull(m, heading(m), [90, 300, 500, 700]);
+    expect(at(m)).toBe('folded');
+    expect(depth()).toBe(0);
+    // A tab away and back: the drawer rests where it was left, for the day.
+    press(m.container, 'Tasks');
+    press(m.container, 'Today');
+    expect(at(m)).toBe('folded');
+  });
+
+  it('while something runs it never rests half, wherever it is let go', async () => {
+    layOut();
+    const m = await mount(TUE_1005, 'example', reduced);
+    // Let go at 366, where idle would rest half: nearer open (306) than folded (318).
+    pull(m, handle(m), [720, 600, 500, 402]);
+    expect(at(m)).toBe('open');
+    goBack();
+    // At 400: nearer folded.
+    pull(m, handle(m), [720, 600, 500, 436]);
+    expect(at(m)).toBe('folded');
+    expect(stateOf(m).bench.drawer.running).toBe('folded');
+  });
+
+  it('a short flick carries it to where it was flung', async () => {
+    layOut();
+    const m = await mount(TUE_1005, 'example', reduced);
+    // 60 pt up in 24 ms: let go at 624, nearest folded, but heading for open.
+    pull(m, handle(m), [720, 708, 690, 660], { every: 8 });
+    expect(at(m)).toBe('open');
+  });
+
+  it('a pull that ends where it began changes nothing: no write, no entry', async () => {
+    layOut();
+    const m = await mount(TUE_1005, 'example', reduced);
+    const before = stateOf(m);
+    pull(m, handle(m), [720, 660, 700, 730]);
+    expect(at(m)).toBe('folded');
+    expect(stateOf(m)).toBe(before);
+    expect(depth()).toBe(0);
+    expect(m.container.querySelector('.ghost')).toBeNull();
+    expect(drawerOf(m).style.transform).toBe('');
+  });
+
+  it('a press on the list, or a row, scrolls the list and never pulls the drawer', async () => {
+    layOut();
+    const m = await mount(TUE_0958, 'notStarted', reduced);
+    const row = m.container.querySelector('.drawer .list .rowbtn')!;
+    pull(m, row, [500, 300, 100], { click: false });
+    expect(at(m)).toBe('half');
+    expect(m.container.dataset['travel']).toBeUndefined();
+    pull(m, m.container.querySelector('.drawer .list')!, [500, 300, 100]);
+    expect(at(m)).toBe('half');
+  });
+
+  it('a press that does not move is a tap: the handle’s button opens it', async () => {
+    layOut();
+    const m = await mount(TUE_1005, 'example', reduced);
+    pull(m, handle(m), [720, 724], { up: false });
+    expect(m.container.dataset['travel']).toBeUndefined();
+    handle(m).dispatchEvent(
+      new PointerEvent('pointerup', { bubbles: true, clientY: 724, pointerId: 7 }),
+    );
+    expect(at(m)).toBe('folded');
+    handle(m).click();
+    expect(at(m)).toBe('open');
+    expect(document.activeElement).toBe(heading(m));
+  });
+
+  it('offers no pull at its lip, under Focus, or under a sheet', async () => {
+    layOut();
+    const lip = await mount(MON_0912, 'weeksAway', reduced);
+    expect(at(lip)).toBe('lip');
+    pull(lip, drawerOf(lip), [740, 500, 300], { click: false });
+    expect(at(lip)).toBe('lip');
+    expect(lip.container.dataset['travel']).toBeUndefined();
+    unmount();
+
+    const m = await mount(TUE_1005, 'example', reduced);
+    press(m.container, /^Now: Write the question/);
+    expect(m.container.dataset['focus']).toBe('open');
+    pull(m, handle(m), [720, 500, 300], { click: false });
+    expect(at(m)).toBe('folded');
+    press(m.container, 'Back to Today');
+    outlastFade();
+    press(m.container, 'Capture');
+    pull(m, handle(m), [720, 500, 300], { click: false });
+    expect(at(m)).toBe('folded');
+    expect(m.container.dataset['travel']).toBeUndefined();
+  });
+
+  it('on its way, carries the list and fades the lantern, Step done and Pause; drawn only, never read', async () => {
+    layOut();
+    const m = await mount(TUE_1005, 'example', reduced);
+    const read = readingOrder(m.container);
+    pull(m, handle(m), [720, 600, 500], { up: false });
+    expect(m.container.dataset['travel']).toBe('present');
+    expect(drawerOf(m).style.transform).toBe('translateY(464px)');
+    // The list it would open to, under the handle: a picture, not a list.
+    const copy = drawerOf(m).querySelector('.ghost')!;
+    expect(copy.getAttribute('aria-hidden')).toBe('true');
+    expect(copy.hasAttribute('inert')).toBe(true);
+    expect(copy.querySelector('[id]')).toBeNull();
+    expect(copy.textContent).toContain('Call the dentist');
+    // 220 of 624 pt up: the lantern a third gone; the dock line's buttons,
+    // past their 48 pt, gone.
+    expect(Number(m.container.style.getPropertyValue('--lift'))).toBeCloseTo(220 / 624, 2);
+    expect(m.container.style.getPropertyValue('--fold-fg')).toBe('0.000');
+    // A screen reader meets nothing new.
+    expect(readingOrder(m.container)).toEqual(read);
+    // Step done takes no tap while the drawer moves.
+    const done = stateOf(m).tasks;
+    press(m.container, /^Step done/);
+    expect(stateOf(m).tasks).toBe(done);
+    m.container
+      .querySelector('.drawer')!
+      .dispatchEvent(new PointerEvent('pointerup', { bubbles: true, clientY: 500, pointerId: 7 }));
+    // Let go at 464, nearer folded: back to rest, the pictures gone.
+    expect(at(m)).toBe('folded');
+    expect(m.container.dataset['travel']).toBeUndefined();
+    expect(m.container.querySelector('.ghost')).toBeNull();
+    expect(m.container.style.getPropertyValue('--lift')).toBe('');
+    // Nor for a second after, as when the lantern grows out of the capsule.
+    press(m.container, /^Step done/);
+    expect(stateOf(m).tasks).toBe(done);
+    settle(m);
+    press(m.container, /^Step done/);
+    expect(stateOf(m).tasks).not.toBe(done);
+  });
+
+  it('pulled down from open, a picture of the folded handle comes back over the list near the foot', async () => {
+    layOut();
+    const m = await mount(TUE_1005, 'example', reduced);
+    press(m.container, HANDLE);
+    pull(m, heading(m), [90, 400, 690], { up: false });
+    // At 660, 24 above folded: the stone has come back, the words half way.
+    const top = drawerOf(m).querySelector('.ghost.top')!;
+    expect(top.textContent).toContain('Call the dentist');
+    expect(top.querySelector('[id]')).toBeNull();
+    expect(m.container.style.getPropertyValue('--fold-bg')).toBe('1.000');
+    expect(m.container.style.getPropertyValue('--fold-fg')).toBe('0.500');
+    // The capsule, which the folded drawer does not show over Today, has gone.
+    expect(m.container.style.getPropertyValue('--open-fg')).toBe('0.000');
+  });
+
+  it('with motion on, it travels on the spring and rests, and commits, only when it gets there', async () => {
+    layOut();
+    const m = await mount(TUE_1005);
+    expect(m.container.dataset['motion']).toBe('full');
+    pull(m, handle(m), [720, 600, 480, 300]);
+    // On its way: still folded in the record and in history.
+    expect(at(m)).toBe('folded');
+    expect(depth()).toBe(0);
+    const first = drawerOf(m).style.transform;
+    expect(first).toBe('translateY(264px)');
+    fly(m, 64);
+    const y = Number(/translateY\((.+)px\)/.exec(drawerOf(m).style.transform)?.[1]);
+    expect(y).toBeLessThan(264);
+    expect(y).toBeGreaterThan(60);
+    fly(m);
+    expect(at(m)).toBe('open');
+    expect(depth()).toBe(1);
+    expect(drawerOf(m).style.transform).toBe('');
+    expect(document.activeElement).toBe(heading(m));
+  });
+
+  it('caught on its spring, it stops under the finger', async () => {
+    layOut();
+    const m = await mount(TUE_1005);
+    pull(m, handle(m), [720, 600, 480, 300]);
+    fly(m, 48);
+    const caught = drawerOf(m).style.transform;
+    drawerOf(m).dispatchEvent(
+      new PointerEvent('pointerdown', { bubbles: true, clientY: 300, pointerId: 7 }),
+    );
+    fly(m, 200);
+    expect(drawerOf(m).style.transform).toBe(caught);
+    expect(at(m)).toBe('folded');
+    m.mono.now += 200;
+    drawerOf(m).dispatchEvent(
+      new PointerEvent('pointerup', { bubbles: true, clientY: 300, pointerId: 7 }),
+    );
+    fly(m);
+    expect(at(m)).toBe('open');
+  });
+
+  it('a tap elsewhere while it springs lands it first, where it was going, then acts', async () => {
+    layOut();
+    const m = await mount(TUE_1005);
+    pull(m, handle(m), [720, 600, 480, 300]);
+    fly(m, 32);
+    // Heading open: it opens, then the tab folds it and goes, as on the open drawer.
+    press(m.container, 'Tasks');
+    expect(m.container.dataset['travel']).toBeUndefined();
+    expect(at(m)).toBe('folded');
+    expect(id(m, 't-tasks')?.getAttribute('aria-current')).toBe('page');
+    expect(stateOf(m).bench.drawer.running).toBe('folded');
+    expect(depth()).toBe(0);
+  });
+
+  it('leaving the app mid-spring lands it where it was going', async () => {
+    layOut();
+    const m = await mount(TUE_1005);
+    pull(m, handle(m), [720, 600, 480, 300]);
+    fly(m, 32);
+    window.dispatchEvent(new Event('pagehide'));
+    expect(at(m)).toBe('open');
+    expect(stateOf(m).bench.drawer.running).toBe('open');
+  });
+
+  it('where it comes to rest on another list than it carried (half and open), the old fades out over the new', async () => {
+    layOut();
+    const m = await mount(TUE_0958, 'notStarted', reduced);
+    pull(m, button(m.container, 'Rest of today'), [389, 300, 200, 163]);
+    expect(at(m)).toBe('open');
+    const leaving = drawerOf(m).querySelector('.ghost.leaving')!;
+    expect(leaving.getAttribute('aria-hidden')).toBe('true');
+    expect(leaving.querySelector('[id]')).toBeNull();
+    // The open drawer's own heading is the one read, and has focus.
+    expect(document.activeElement).toBe(heading(m));
+    expect(readingOrder(m.container).filter((name) => name === 'Rest of today')).toEqual([
+      'Rest of today',
+    ]);
+    vi.advanceTimersByTime(200);
+    expect(drawerOf(m).querySelector('.ghost')).toBeNull();
+  });
+
+  it('pulled while an Undo holds it folded, it rests where it is let go, and stays there after', async () => {
+    layOut();
+    const m = await mount(TUE_1320, 'pauseLeft', reduced);
+    settle(m);
+    press(m.container, /^Set aside/);
+    // Idle now, it would rest half; the Undo holds it folded for six seconds.
+    expect(at(m)).toBe('folded');
+    expect(id(m, 'b-undo')).not.toBeNull();
+    pull(m, handle(m), [720, 600, 500, 436]);
+    expect(at(m)).toBe('half');
+    outlastUndo();
+    expect(at(m)).toBe('half');
+    // Pulled to folded under an Undo, it stays folded once the Undo has gone.
+    press(m.container, 'Tasks');
+    press(m.container, 'Today');
+    settle(m);
+    pull(m, button(m.container, 'Rest of today'), [389, 450, 520, 607]);
+    expect(at(m)).toBe('folded');
+    outlastUndo();
+    expect(at(m)).toBe('folded');
   });
 });
