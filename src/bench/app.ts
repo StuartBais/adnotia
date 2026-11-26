@@ -650,6 +650,9 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
     return node instanceof HTMLElement && node.dataset['quiet'] !== undefined;
   }
 
+  /** Nothing: its being there is what lets a touch show :active (bench.css, "Pressed"). */
+  function onTouchStart(): void {}
+
   /** A key on what was focused quietly: the person is moving by keys, so the ring shows. */
   function onKeyDown(event: KeyboardEvent): void {
     if (['Shift', 'Control', 'Alt', 'Meta'].includes(event.key)) return;
@@ -3315,6 +3318,9 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
   window.addEventListener('popstate', onPopState);
   container.addEventListener('focusout', onFocusOut);
   container.addEventListener('keydown', onKeyDown);
+  // WebKit on iOS applies :active at touch-down only below a touch listener,
+  // and the pressed fills are the only answer a tap gets until it acts.
+  container.addEventListener('touchstart', onTouchStart, { passive: true });
   // The person's own next key or tap spends a page's arrival, before what it
   // does: focus they kept, on a tab say, is theirs, and later rebuilds land
   // as they always do.
@@ -3376,6 +3382,7 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
       dropUndo();
       container.removeEventListener('focusout', onFocusOut);
       container.removeEventListener('keydown', onKeyDown);
+      container.removeEventListener('touchstart', onTouchStart);
       container.removeEventListener('keydown', spendArrival, true);
       container.removeEventListener('click', spendArrival, true);
       container.removeEventListener('click', landDrawer, true);

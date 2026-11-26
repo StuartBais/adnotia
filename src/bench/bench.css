@@ -3313,6 +3313,144 @@ svg.i28 {
 
 /* ═════════════ Display settings (SPEC 10) ═════════════ */
 
+/* ═════════════ Pressed (plan section 13, "CSS for the hand") ═════════════
+   With the tap highlight off, each control shows it is under the finger by a
+   plain change of fill at touch-down: no scaling, no transition, nothing
+   moved. Each pressed fill keeps the control's own words at 4.5:1 or more.
+   A control with no fill of its own takes its ground's tint (--press); a
+   filled one goes a step along its own ramp. Nothing shows pressed while
+   the drawer travels under a finger. WebKit applies :active on a touch only
+   below a touch listener, which mountBench adds. */
+
+:root {
+  --press: var(--ash-8);
+  /* Charcoal over a tint or terracotta: a step darker, as no token is. */
+  --press-tint: linear-gradient(rgba(34, 38, 36, 0.08), rgba(34, 38, 36, 0.08));
+  --press-terra: linear-gradient(rgba(34, 38, 36, 0.12), rgba(34, 38, 36, 0.12));
+}
+.drawer,
+.tabs,
+.foot,
+.c-panel,
+.ts-panel {
+  --press: var(--tint-stone);
+}
+.app[data-places='white'][data-ground='place'] .screen {
+  --press: var(--tint-white);
+}
+
+/* No fill of their own: the ground's tint. */
+.app:not([data-travel])
+  :is(
+    .rowbtn,
+    .textbtn,
+    .addstep,
+    .opt,
+    .handle,
+    .lit-block,
+    .idle-block,
+    .when,
+    .ring,
+    .disc,
+    .fdisc,
+    .hit,
+    .tab
+  ):active {
+  background-color: var(--press);
+}
+.app:not([data-travel]) :is(.ring, .disc, .fdisc, .hit):active {
+  border-radius: 22px;
+}
+.app:not([data-travel]) :is(.lit-block, .idle-block):active {
+  border-radius: 12px;
+  box-shadow: 0 0 0 12px var(--press);
+}
+.app:not([data-travel]) .rowbtn:active {
+  box-shadow:
+    -12px 0 var(--press),
+    12px 0 var(--press);
+}
+.app:not([data-travel])[data-places='white'][data-ground='place'] .screen .when:active {
+  background-color: var(--tint-stone);
+}
+
+/* On charcoal: white goes to stone, ash-20 to ash-30, charcoal to ash-15. */
+.app:not([data-travel]) :is(.pill.white, .page .start.first):active {
+  background: var(--stone);
+}
+.app:not([data-travel]) :is(.pill.ash, .pill.quiet, .me, .hpill, .circ):active,
+.app:not([data-travel]) .page .start.instead:active {
+  background: var(--ash-30);
+}
+/* The current tab is white on stone: it goes to its tint. */
+.app:not([data-travel]) .tab[aria-current='page']:active {
+  background: var(--tint-white);
+}
+.app:not([data-travel]) :is(.capsule, .pill.present):active {
+  background: var(--ash-15);
+}
+.app:not([data-travel]) .capsule.lift:active {
+  background: var(--ash-8);
+}
+.app:not([data-travel]) .notecard:active {
+  background: var(--ash-15);
+}
+.app:not([data-travel])[data-places='white'][data-ground='place'] .page .start.first:active {
+  background: var(--ash-20);
+}
+
+/* On stone and white: a tint goes a step darker; white goes to its tint. */
+.app:not([data-travel]) :is(.drawer .me, .undo):active,
+.app:not([data-travel]) .ts-panel .pill.quiet:active,
+.app:not([data-travel])[data-places='white'][data-ground='place']
+  :is(.page .start.instead, .screen .pill.quiet):active {
+  background: var(--press-tint) var(--tint-stone);
+}
+.app:not([data-travel])[data-places='white'][data-ground='place']
+  .screen
+  :is(.me, .hpill, .circ):active {
+  background: var(--tint-stone);
+}
+
+/* Terracotta: the disc and Save, a step darker. */
+.app:not([data-travel]) :is(.capture, .c-save):active {
+  background: var(--press-terra) var(--terra);
+}
+
+/* Me over a sheet: what is drawn under it shows, a step lighter or darker. */
+.app:not([data-travel]) .c-me:active {
+  background: rgba(255, 255, 255, 0.08);
+}
+.app:not([data-travel])[data-places='white'][data-ground='place']:not([data-focus]) .c-me:active,
+.app:not([data-travel])[data-drawer='open']:not([data-focus]) .c-me:active {
+  background: rgba(34, 38, 36, 0.08);
+}
+
+/* A switch's part: where its thumb would be lights under the finger, and the
+   thumb that is there goes a step along its ramp, as the pills do. */
+.app:not([data-travel])
+  :is(.seg-part, .tswitch-part):not([aria-checked='true']):not(
+    [aria-selected='true']
+  ):active::before {
+  background: var(--ash-15);
+}
+.app:not([data-travel])
+  :is(.seg-part[aria-checked='true'], .tswitch-part[aria-selected='true']):active::before {
+  background: var(--ash-30);
+}
+.app:not([data-travel]) .c-row .seg-part:not([aria-checked='true']):active::before,
+.app:not([data-travel])[data-places='white'][data-ground='place']
+  :is(.seg-part, .tswitch-part):not([aria-checked='true']):not(
+    [aria-selected='true']
+  ):active::before {
+  background: rgba(255, 255, 255, 0.5);
+}
+.app:not([data-travel]) .c-row .seg-part[aria-checked='true']:active::before,
+.app:not([data-travel])[data-places='white'][data-ground='place']
+  :is(.seg-part[aria-checked='true'], .tswitch-part[aria-selected='true']):active::before {
+  background: var(--tint-white);
+}
+
 @media (prefers-contrast: more) {
   :root {
     --hair-dark: rgba(169, 175, 171, 0.25);
