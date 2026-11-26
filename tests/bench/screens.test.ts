@@ -4566,6 +4566,13 @@ describe('the drawer in the hand (SPEC 9.8 and 10; plan section 13)', () => {
     layOut();
     const m = await mount(TUE_1005, 'example', reduced);
     pull(m, handle(m), [720, 600, 500], { up: false });
+    // The handle a touch pressed loses its hold to the drawer as the pull
+    // begins: the pull goes on.
+    handle(m).dispatchEvent(
+      new PointerEvent('lostpointercapture', { pointerId: 7, bubbles: true }),
+    );
+    vi.advanceTimersByTime(16);
+    expect(m.container.dataset['travel']).toBe('present');
     drawerOf(m).dispatchEvent(new PointerEvent('lostpointercapture', { pointerId: 7 }));
     vi.advanceTimersByTime(16);
     // Let go at 464, nearer folded; Step done takes taps again once the guard is over.

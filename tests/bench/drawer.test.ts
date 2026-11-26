@@ -532,6 +532,12 @@ describe('the drawer under a finger', () => {
     const r = rig();
     r.reduced.value = true;
     finger(r, r.handle, [720, 600, 480, 500], 8, false);
+    // What the touch pressed loses its hold as the pull takes it for the
+    // drawer: that is the pull beginning, not ending.
+    r.handle.dispatchEvent(new PointerEvent('lostpointercapture', { pointerId: 1, bubbles: true }));
+    r.flush();
+    expect(r.log).toEqual(['begin folded']);
+    expect(r.drag.moving()).toBe(true);
     r.drawer.dispatchEvent(new PointerEvent('lostpointercapture', { pointerId: 1 }));
     expect(r.log).toEqual(['begin folded']);
     r.flush();

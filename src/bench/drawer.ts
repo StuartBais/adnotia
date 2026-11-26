@@ -353,11 +353,15 @@ export function dragDrawer(
    * The pointer was let go of with no lift and no cancel to say so. A lift
    * comes before its lost capture, so a frame later, if the finger is still
    * thought to be on the drawer, it lets go where it is, at no speed, rather
-   * than holding the drawer, and every tap the pull guards, for good.
+   * than holding the drawer, and every tap the pull guards, for good. Only
+   * the surface's own capture counts: a touch is held by what it pressed
+   * until the pull takes it for the surface, and what it pressed then loses
+   * it, an event that bubbles up to here.
    */
   function onLost(event: PointerEvent): void {
     const g = gesture;
     if (!g || !g.dragging || event.pointerId !== g.pointerId) return;
+    if (event.target !== g.surface) return;
     frame(() => {
       if (gesture === g) release(g, 0);
     });
