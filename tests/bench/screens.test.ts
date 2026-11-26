@@ -2207,6 +2207,19 @@ describe('5 · Capture (SPEC 5.5)', () => {
     expect(stateOf(m).bench.drafts.capture?.text).toBe(ASK);
   });
 
+  it('Escape closes it, keeping the draft, and focus lands with its ring: the person is on the keys', async () => {
+    const m = await captured();
+    const escape = new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true });
+    type(m, ASK).dispatchEvent(escape);
+    expect(escape.defaultPrevented).toBe(true);
+    expect(m.container.dataset['sheet']).toBeUndefined();
+    expect(stateOf(m).bench.drafts.capture).toEqual({ text: ASK, to: 'inbox' });
+    expect(nameOf(disc(m))).toBe('Capture, draft kept');
+    expect(document.activeElement).toBe(id(m, 'b-lit'));
+    expect(id(m, 'b-lit')?.dataset['quiet']).toBeUndefined();
+    expect(depth()).toBe(0);
+  });
+
   it('lets an empty draft go: no dot after closing with nothing in the field', async () => {
     const m = await captured();
     type(m, ASK);

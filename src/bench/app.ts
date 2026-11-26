@@ -1515,7 +1515,8 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
       onInput: draftLater,
       onTo: chooseTo,
       onSave: saveCapture,
-      onClose: () => closeCapture(),
+      // A key that closes it says the person is on the keys: the ring shows.
+      onClose: (way) => closeCapture(true, way !== 'escape'),
       onMe: meFromSheet,
     });
     sheetField = built.field;
@@ -1529,7 +1530,7 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
    * (SPEC 11). Nothing under the sheet moved, so the person is exactly where
    * they were.
    */
-  function closeCapture(land = true): void {
+  function closeCapture(land = true, quiet = true): void {
     if (!sheet) return;
     const text = sheetField?.value;
     const to = sheet.to;
@@ -1538,7 +1539,7 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
     const before = read();
     if (text !== undefined) keepDraft(text, to);
     if (read() === before) render();
-    if (land) landAfterSheet();
+    if (land) landAfterSheet(quiet);
   }
 
   /** The sheet goes with nothing said and nowhere to land: a scenario, a long time away. */
@@ -1620,17 +1621,18 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
 
   /**
    * Where focus goes when the sheet drops: the step, or the disc on a place
-   * (SPEC 11). Quietly: the field had focus to the end, and no ring is drawn.
+   * (SPEC 11). Quietly, unless Escape closed it: the field had focus to the
+   * end, and no ring is drawn.
    */
-  function landAfterSheet(): void {
+  function landAfterSheet(quiet = true): void {
     const spot = focusShown
       ? layer.focus.querySelector<HTMLElement>('#f-step')
       : container.dataset['ground'] === 'present' && !isOpen()
         ? null
         : layer.dock.querySelector<HTMLElement>('#b-capture');
     // On Today, the screen's own block: the lit step, the unlit item, or 7b's heading.
-    if (spot) focusOn(spot, true);
-    else landFocus(true);
+    if (spot) focusOn(spot, quiet);
+    else landFocus(quiet);
   }
 
   /**

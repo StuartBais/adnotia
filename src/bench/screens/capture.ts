@@ -24,8 +24,11 @@ import type { PresentLive, PresentView } from '../view';
 
 export type CaptureTo = 'inbox' | 'today';
 
-/** How the sheet was closed: each keeps the draft (SPEC 5.5). */
-export type CloseWay = 'close' | 'above' | 'swipe';
+/**
+ * How the sheet was closed: each keeps the draft (SPEC 5.5). Escape is a
+ * hardware keyboard's, on an iPad or a desktop; the phone's has none.
+ */
+export type CloseWay = 'close' | 'above' | 'swipe' | 'escape';
 
 export interface CaptureProps {
   text: string;
@@ -175,6 +178,11 @@ export function captureSheet(props: CaptureProps): CaptureSheet {
       role: 'dialog',
       'aria-modal': 'true',
       'aria-labelledby': 'c-title',
+      onkeydown: (event: KeyboardEvent) => {
+        if (event.key !== 'Escape' || event.isComposing) return;
+        event.preventDefault();
+        props.onClose('escape');
+      },
     },
     // Above the sheet: a tap closes it, keeping the draft. Not a control of
     // its own for a screen reader, which closes the sheet with Close or back.
