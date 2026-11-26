@@ -632,6 +632,27 @@ describe('a way out cut short by the next tap takes what was leaving with it', (
   });
 });
 
+describe('a motion that cannot be drawn', () => {
+  it('is not drawn, and leaves nothing set, the drawer’s flight included', async () => {
+    let mounted: Mounted | undefined;
+    layDrawer(() => mounted);
+    const m = await mount(TUE_1005);
+    mounted = m;
+    settle(m);
+    press(m.container, HANDLE);
+    // What is on screen has been pictured; drawing the way there fails.
+    const clone = vi.spyOn(Node.prototype, 'cloneNode').mockImplementation(() => {
+      throw new Error('cannot draw');
+    });
+    await drawn();
+    expect(clone).toHaveBeenCalled();
+    clone.mockRestore();
+    expect(played).toEqual([]);
+    nothingLeft(m);
+    expect(m.container.dataset['drawer']).toBe('open');
+  });
+});
+
 describe('motions are interruptible', () => {
   it('a second tap mid-way lands on the page it would at rest, and the tap guard holds', async () => {
     const pages: string[] = [];

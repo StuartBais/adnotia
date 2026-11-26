@@ -546,6 +546,7 @@ export function createMoves(host: MovesHost): Moves {
       layers.morph.replaceChildren();
       layers.ghost.replaceChildren();
       for (const node of container.querySelectorAll('.mframe, .mdrawer')) node.remove();
+      delete container.dataset['flight'];
       return;
     }
     for (const p of built) motions.play(p);
