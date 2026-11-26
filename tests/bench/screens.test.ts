@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import * as model from '../../src/domains/tasks';
+import * as routineModel from '../../src/domains/routines';
 import { setOption } from '../../src/domains/options';
 import { EMAIL } from '../../src/bench/example';
 import type { BenchDomains } from '../../src/bench/state';
@@ -3419,5 +3420,329 @@ describe('the sheets a task’s page raises (SPEC 9.9 and 12)', () => {
       'When is the permission slip due?',
     );
     expect(m.container.querySelector('.ts-ride')).toBeNull();
+  });
+});
+
+describe('9 · Routines (SPEC 5.9)', () => {
+  const HANDLE = 'Next, in 25 minutes: 10:30, Call the dentist. Rest of today';
+  /** Each row as drawn: its title, its second line, and "Ran today" where it shows. */
+  const rowsOf = (m: Mounted) =>
+    [...m.container.querySelectorAll('.screen [data-row]')].map((row) =>
+      [...row.querySelectorAll('.rt > span, .rt > small, .ran')].map(drawnText).join(' · '),
+    );
+
+  it('lists the routines under the helper line, Morning saying only that it ran today', async () => {
+    const m = await mount(TUE_1005);
+    press(m.container, 'Routines');
+    expect(m.container.querySelector('.screen h1')?.textContent).toBe('Routines');
+    expect(id(m, 't-routines')?.getAttribute('aria-current')).toBe('page');
+    expect(drawnText(m.container.querySelector('.body .helper')!)).toBe(
+      'Open a routine to start it.',
+    );
+    expect(rowsOf(m)).toEqual([
+      'Morning · 6 steps · Ran today',
+      'Leaving the house · 4 steps',
+      'Evening wind-down · 5 steps',
+      'Sunday reset · 7 steps',
+    ]);
+    // No ring: a routine is not ticked from the list. Each row says by its
+    // chevron that it opens the routine; "Ran today" is a check and words.
+    expect(m.container.querySelectorAll('.screen .ring, .screen .disc')).toHaveLength(0);
+    expect(m.container.querySelectorAll('.screen .rrow.routine use[href="#i-right"]')).toHaveLength(
+      4,
+    );
+    expect(m.container.querySelectorAll('.screen .ran')).toHaveLength(1);
+    expect(m.container.querySelector('.screen .ran use')?.getAttribute('href')).toBe('#i-check-s');
+    expect(drawnText(id(m, 'r-new')!)).toBe('New routine');
+    // The capsule rides it, lifted on charcoal, over the fade.
+    expect(m.container.querySelector('.capsule')?.classList.contains('lift')).toBe(true);
+    expect(m.container.querySelector('.fade')?.hasAttribute('hidden')).toBe(false);
+  });
+
+  it('names each row in SPEC 11’s words, with its hint', async () => {
+    const m = await mount(TUE_1005);
+    press(m.container, 'Routines');
+    const rows = [...m.container.querySelectorAll<HTMLElement>('.screen [data-row] .rowbtn')];
+    expect(rows.map(nameOf)).toEqual([
+      'Morning, 6 steps, ran today',
+      'Leaving the house, 4 steps',
+      'Evening wind-down, 5 steps',
+      'Sunday reset, 7 steps',
+    ]);
+    expect(rows.map(hintOf)).toEqual(Array(4).fill('Opens the routine.'));
+  });
+
+  it('offers four choices, and reads them in SPEC 11’s order', async () => {
+    const m = await mount(TUE_1005);
+    press(m.container, 'Routines');
+    expect(choices(m.container)).toBe(4);
+    expect(readingOrder(m.container)).toEqual([
+      'Routines',
+      'Me',
+      'Open a routine to start it.',
+      'Morning, 6 steps, ran today',
+      'Leaving the house, 4 steps',
+      'Evening wind-down, 5 steps',
+      'Sunday reset, 7 steps',
+      'New routine',
+      'Now: Write the question, step 2 of 3 of Write the school email. 18 of 25 minutes left, ends 10:23.',
+      'Capture',
+      HANDLE,
+      ...TABS,
+    ]);
+  });
+
+  it('says "Ran today" only for a run finished today, and lets it go at 04:00', async () => {
+    const m = await mount(TUE_1005, 'example', (state, now) => {
+      // Evening wind-down begun and left unfinished: it did not run, and
+      // nothing says so either.
+      const evening = state.routines.routines[2]!;
+      return {
+        ...state,
+        routines: {
+          ...state.routines,
+          runs: routineModel.startRun(state.routines.runs, evening, now),
+        },
+      };
+    });
+    press(m.container, 'Routines');
+    expect(rowsOf(m)[0]).toBe('Morning · 6 steps · Ran today');
+    expect(rowsOf(m)[2]).toBe('Evening wind-down · 5 steps');
+    m.clock.now = at('2026-11-25T04:01:00');
+    vi.advanceTimersByTime(60_000);
+    expect(m.container.querySelector('.screen h1')?.textContent).toBe('Routines');
+    expect(m.container.querySelectorAll('.screen .ran')).toHaveLength(0);
+    expect(rowsOf(m)[0]).toBe('Morning · 6 steps');
+    expect(nameOf(id(m, 'rt-' + stateOf(m).routines.routines[0]!.id)!)).toBe('Morning, 6 steps');
+  });
+
+  it('on white places: the same list, the capsule the one dark thing', async () => {
+    const m = await mount(TUE_1005, 'example', (state) => ({
+      ...state,
+      bench: { ...state.bench, settings: { ...state.bench.settings, places: 'white' } },
+    }));
+    press(m.container, 'Routines');
+    expect(m.container.dataset['places']).toBe('white');
+    expect(m.container.dataset['ground']).toBe('place');
+    expect(m.container.querySelector('.capsule')?.classList.contains('lift')).toBe(false);
+    expect(rowsOf(m)).toHaveLength(4);
+    expect(choices(m.container)).toBe(4);
+  });
+
+  it('with nothing running carries no capsule: the list, New routine and capture', async () => {
+    const m = await mount(TUE_0958, 'notStarted');
+    press(m.container, 'Routines');
+    expect(m.container.querySelector('.capsule')).toBeNull();
+    expect(choices(m.container)).toBe(3);
+  });
+
+  it('with no routines says only its helper line, and still offers New routine', async () => {
+    const m = await mount(TUE_1005, 'empty');
+    press(m.container, 'Routines');
+    expect(rowsOf(m)).toEqual([]);
+    expect(m.container.querySelector('.screen [data-list]')).toBeNull();
+    expect(readingOrder(m.container).slice(0, 4)).toEqual([
+      'Routines',
+      'Me',
+      'Open a routine to start it.',
+      'New routine',
+    ]);
+  });
+});
+
+describe('a routine’s own page, without running (SPEC 12; owner default 10)', () => {
+  const LEAVING = 'Leaving the house, 4 steps';
+  /** A step on the rail as drawn: its number, its title, and its minutes where set. */
+  const railDrawn = (li: Element) =>
+    [...li.querySelectorAll('.mk, .s, .sm')].map(drawnText).join(' · ');
+  const opened = async (at = TUE_1005, scenario: 'example' | 'notStarted' = 'example') => {
+    const m = await mount(at, scenario);
+    press(m.container, 'Routines');
+    press(m.container, LEAVING);
+    return m;
+  };
+
+  it('opens pushed on Routines, which stays current: its name, and that running one is not here', async () => {
+    const m = await opened();
+    expect(m.container.querySelector('.screen h1')?.textContent).toBe('Leaving the house');
+    expect(id(m, 't-routines')?.getAttribute('aria-current')).toBe('page');
+    expect(nameOf(id(m, 'b-back')!)).toBe('Back to Routines');
+    const sentences = [...m.container.querySelectorAll('.page .sentence')].map(drawnText);
+    expect(sentences).toEqual([
+      'Running a routine is not in this prototype.',
+      'In the app, a routine starts from its own page, and starting it stops the timer on Write the school email. It keeps its place at step 2.',
+    ]);
+    // Nothing offers to start it: no Start, no Start this instead.
+    expect(controls(m.container).map(nameOf)).not.toContain('Start');
+    expect(controls(m.container).map(nameOf)).not.toContain('Start this instead');
+    // The capsule rides the page, as on any other page that is not the present's.
+    expect(m.container.querySelector('#b-capsule')).not.toBeNull();
+  });
+
+  it('shows its steps on the rail, with their minutes where a step is timed', async () => {
+    const m = await opened();
+    const rail = [...m.container.querySelectorAll('.rail li')];
+    expect(rail.map(railDrawn)).toEqual([
+      '1 · Keys, phone and wallet · 1 min',
+      '2 · Put shoes on · 2 min',
+      '3 · Coat on · 1 min',
+      '4 · Lock the back door · 1 min',
+    ]);
+    expect(rail.map((li) => readText(li))).toEqual([
+      'Step 1: Keys, phone and wallet, 1 minute',
+      'Step 2: Put shoes on, 2 minutes',
+      'Step 3: Coat on, 1 minute',
+      'Step 4: Lock the back door, 1 minute',
+    ]);
+    // Nothing on the rail is a control: the page keeps to its choices.
+    expect(m.container.querySelectorAll('.rail button')).toHaveLength(0);
+  });
+
+  it('offers two choices, the capsule and capture, and reads top to bottom', async () => {
+    const m = await opened();
+    expect(choices(m.container)).toBe(2);
+    expect(readingOrder(m.container)).toEqual([
+      'Back to Routines',
+      'Me',
+      'Leaving the house',
+      'Running a routine is not in this prototype.',
+      'In the app, a routine starts from its own page, and starting it stops the timer on Write the school email. It keeps its place at step 2.',
+      'Steps',
+      'Step 1: Keys, phone and wallet, 1 minute',
+      'Step 2: Put shoes on, 2 minutes',
+      'Step 3: Coat on, 1 minute',
+      'Step 4: Lock the back door, 1 minute',
+      'Now: Write the question, step 2 of 3 of Write the school email. 18 of 25 minutes left, ends 10:23.',
+      'Capture',
+      'Next, in 25 minutes: 10:30, Call the dentist. Rest of today',
+      ...TABS,
+    ]);
+  });
+
+  it('with nothing running says only where it would start, and a step with no minutes says none', async () => {
+    const m = await mount(TUE_0958, 'notStarted');
+    press(m.container, 'Routines');
+    press(m.container, 'Morning, 6 steps, ran today');
+    expect([...m.container.querySelectorAll('.page .sentence')].map(drawnText)).toEqual([
+      'Running a routine is not in this prototype.',
+      'In the app, a routine starts from its own page.',
+    ]);
+    expect(railDrawn(m.container.querySelector('.rail li')!)).toBe('1 · Open the curtains');
+    expect(readText(m.container.querySelector('.rail li')!)).toBe('Step 1: Open the curtains');
+    expect(m.container.querySelector('.capsule')).toBeNull();
+  });
+
+  it('is a level of its own in history: back goes back to Routines, as its back pill does', async () => {
+    const m = await opened();
+    expect(historyDepth()).toBe(1);
+    goBack();
+    expect(m.container.querySelector('.screen h1')?.textContent).toBe('Routines');
+    expect(historyDepth()).toBe(0);
+    press(m.container, LEAVING);
+    press(m.container, 'Back to Routines');
+    vi.advanceTimersByTime(1);
+    expect(historyDepth()).toBe(0);
+    expect(m.container.querySelector('.screen h1')?.textContent).toBe('Routines');
+  });
+
+  it('keeps help two taps away: Me over the page, then back to it', async () => {
+    const m = await opened();
+    press(m.container, 'Me');
+    expect(historyDepth()).toBe(2);
+    expect(button(m.container, 'If things are bad right now')).toBeTruthy();
+    goBack();
+    expect(m.container.querySelector('.screen h1')?.textContent).toBe('Leaving the house');
+  });
+
+  it('"+ New routine" opens a page that says making one is not in this prototype', async () => {
+    const m = await mount(TUE_1005);
+    press(m.container, 'Routines');
+    press(m.container, 'New routine');
+    expect(m.container.querySelector('.screen h1')?.textContent).toBe('New routine');
+    expect(nameOf(id(m, 'b-back')!)).toBe('Back to Routines');
+    expect([...m.container.querySelectorAll('.page .sentence')].map(drawnText)).toEqual([
+      'Making a routine is not in this prototype.',
+    ]);
+    expect(choices(m.container)).toBe(2);
+    expect(historyDepth()).toBe(1);
+    goBack();
+    expect(m.container.querySelector('.screen h1')?.textContent).toBe('Routines');
+  });
+});
+
+describe('the Library (SPEC 12)', () => {
+  const ROWS = [
+    'Sleep, Bedtimes, waking and winding down',
+    'Exercise, Moving more, in small ways',
+    'Mindfulness, Short practices, a few minutes each',
+    'Thinking tools, If-then phrases and problem-solving',
+    'How we know, What the evidence says, and how strong it is',
+  ];
+
+  it('is a place of five rows, each a name over one plain line, and the capsule rides it', async () => {
+    const m = await mount(TUE_1005);
+    press(m.container, 'Library');
+    expect(m.container.querySelector('.screen h1')?.textContent).toBe('Library');
+    expect(id(m, 't-library')?.getAttribute('aria-current')).toBe('page');
+    const rows = [...m.container.querySelectorAll<HTMLElement>('.screen [data-row]')];
+    expect(rows.map((row) => drawnText(row.querySelector('.rt > span')!))).toEqual([
+      'Sleep',
+      'Exercise',
+      'Mindfulness',
+      'Thinking tools',
+      'How we know',
+    ]);
+    expect(rows.map((row) => nameOf(row.querySelector('.rowbtn')!))).toEqual(ROWS);
+    // No tier as a letter or a badge, and none of it called evidence-based.
+    expect(visibleText(m.container)).not.toMatch(/\bTier\b|evidence-based/i);
+    expect(m.container.querySelector('.capsule')?.classList.contains('lift')).toBe(true);
+  });
+
+  it('offers three choices, and reads top to bottom', async () => {
+    const m = await mount(TUE_1005);
+    press(m.container, 'Library');
+    expect(choices(m.container)).toBe(3);
+    expect(readingOrder(m.container)).toEqual([
+      'Library',
+      'Me',
+      ...ROWS,
+      'Now: Write the question, step 2 of 3 of Write the school email. 18 of 25 minutes left, ends 10:23.',
+      'Capture',
+      'Next, in 25 minutes: 10:30, Call the dentist. Rest of today',
+      ...TABS,
+    ]);
+  });
+
+  it('opens each row’s page pushed on Library, saying it is not in this prototype', async () => {
+    const m = await mount(TUE_1005);
+    press(m.container, 'Library');
+    for (const [index, name] of ROWS.entries()) {
+      press(m.container, name);
+      const title = name.split(', ')[0];
+      expect(m.container.querySelector('.screen h1')?.textContent, name).toBe(title);
+      expect(id(m, 't-library')?.getAttribute('aria-current')).toBe('page');
+      expect(drawnText(m.container.querySelector('.page .sentence')!)).toBe(
+        'Not in this prototype.',
+      );
+      expect(choices(m.container)).toBe(2);
+      expect(historyDepth()).toBe(1);
+      // Back by the edge swipe for some, by the back pill for the rest.
+      if (index % 2 === 0) goBack();
+      else press(m.container, 'Back to Library');
+      vi.advanceTimersByTime(1);
+      expect(m.container.querySelector('.screen h1')?.textContent).toBe('Library');
+      expect(historyDepth()).toBe(0);
+    }
+  });
+
+  it('on white places: the same rows, the capsule plain charcoal', async () => {
+    const m = await mount(TUE_1005, 'example', (state) => ({
+      ...state,
+      bench: { ...state.bench, settings: { ...state.bench.settings, places: 'white' } },
+    }));
+    press(m.container, 'Library');
+    expect(m.container.dataset['places']).toBe('white');
+    expect(m.container.querySelector('.capsule')?.classList.contains('lift')).toBe(false);
+    expect(choices(m.container)).toBe(3);
   });
 });

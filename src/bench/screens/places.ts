@@ -1,8 +1,7 @@
-// The places and the pages pushed on them (design/lantern/SPEC.md sections
-// 5.6, 5.9 and 12). For now Tasks, Routines and Library are bare: a place
-// title and Me, so the capsule can be seen riding on them. Me holds "If things
-// are bad right now", two taps from anywhere, and About this prototype, where
-// the scenario buttons are.
+// Me and the pages pushed under it (design/lantern/SPEC.md section 12). Me
+// holds "If things are bad right now", two taps from anywhere, Settings, and
+// About this prototype, where the scenario buttons are. Tasks, Routines and
+// Library have screens of their own.
 
 import { CRISIS_LINES, CRISIS_REVIEWED, CRISIS_STRINGS } from '../../kernel/shell/crisis';
 import { SCENARIOS, type ScenarioId } from '../example';
@@ -17,27 +16,6 @@ export interface PlaceActions {
   onPush: (page: Page) => void;
   onScenario: (id: ScenarioId) => void;
   onDeleteAll: () => void;
-}
-
-const PLACE_TITLES: Record<Exclude<Tab, 'today'>, string> = {
-  tasks: T.tasks,
-  routines: T.routines,
-  library: T.library,
-};
-
-/** A place in the header row: its title at the left in 28/34, Me at the right. */
-export function placeScreen(tab: Exclude<Tab, 'today'>, actions: PlaceActions): Built {
-  return {
-    nodes: [
-      h(
-        'header',
-        { class: 'hdr' },
-        h('h1', { class: 'place-title t-place', text: PLACE_TITLES[tab] }),
-        meButton(actions.onMe),
-      ),
-      h('div', { class: 'body', 'data-scroll-key': tab }),
-    ],
-  };
 }
 
 /** What a back pill under a page names: the place it returns to. */
@@ -232,24 +210,6 @@ export function aboutScreen(actions: PlaceActions): Built {
             }),
           ),
         ),
-      ),
-    ],
-  };
-}
-
-/**
- * A task's own page, bare for now: its title under a back pill. The when
- * pill, Start, the steps and the running task's own page are built with the
- * places (plan section 19, chunk 5).
- */
-export function taskScreen(title: string, back: string, actions: PlaceActions): Built {
-  return {
-    nodes: [
-      pageHeader(back, actions),
-      h(
-        'div',
-        { class: 'body', 'data-scroll-key': 'task' },
-        h('h1', { class: 'page-title t-idle', text: title }),
       ),
     ],
   };

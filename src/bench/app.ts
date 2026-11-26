@@ -13,15 +13,15 @@
 // the minutes and the spoken labels in place. So a tick never takes away the
 // person's focus, scroll or a tap in progress.
 //
-// Built so far (plan section 19, chunks 2 to 4 and the first half of 5): the
-// frame, Today in every state, the drawer at rest at its lip, folded and half
-// and open by tap, the capsule on the places and the open drawer, the tabs,
-// Me with the crisis page, About with the scenario buttons, Focus, a layer
-// over the current tab with its own history entry, capture: a sheet over
-// whatever is open, riding the keyboard, with its own history entry and a
-// draft that outlives it, Tasks with its four lists, a task's own page in
-// each of its forms with "Add a step", and the sheets a page raises. Routines
-// and Library are still bare places.
+// Built so far (plan section 19, chunks 2 to 5): the frame, Today in every
+// state, the drawer at rest at its lip, folded and half and open by tap, the
+// capsule on the places and the open drawer, the tabs, Me with the crisis
+// page, About with the scenario buttons, Focus, a layer over the current tab
+// with its own history entry, capture: a sheet over whatever is open, riding
+// the keyboard, with its own history entry and a draft that outlives it,
+// Tasks with its four lists, a task's own page in each of its forms with "Add
+// a step", the sheets a page raises, Routines with each routine's page
+// (without running one, owner default 10), and the Library as a stub.
 
 import { emptyDomains, type KernelStore } from '../kernel/store';
 import * as act from './actions';
@@ -63,7 +63,9 @@ import {
   type DockProps,
 } from './frame';
 import { lampOf, todayScreen } from './screens/today';
-import { BACK_TO, aboutScreen, crisisScreen, meScreen, placeScreen, ABOUT } from './screens/places';
+import { BACK_TO, aboutScreen, crisisScreen, meScreen, ABOUT } from './screens/places';
+import { newRoutineScreen, routineScreen, routinesScreen } from './screens/routines';
+import { libraryScreen, topicScreen } from './screens/library';
 import { listScrollKey, tasksScreen } from './screens/tasks';
 import { taskScreen } from './screens/task';
 import { deleteSheet, fieldSheet, moreSheet, whenSheet, type WhenChoice } from './screens/sheets';
@@ -82,9 +84,12 @@ import {
   estimateOf,
   idleKey,
   idleLitId,
+  libraryTopic,
   presentKey,
   presentLive,
   presentView,
+  routinePageView,
+  routinesView,
   taskPageKey,
   taskPageView,
   tasksView,
@@ -437,10 +442,19 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
     return nav.tab === 'today' ? { kind: 'today' } : { kind: 'place' };
   }
 
-  /** A page whose task has gone (deleted, or from an old restore) is not shown. */
+  /**
+   * A page whose task or routine has gone (deleted, or from an old restore),
+   * or a Library topic this build does not have, is not shown.
+   */
   function tidyNav(state: BenchDomains): void {
     const ids = new Set(state.tasks.map((task) => task.id));
-    const kept = nav.stack.filter((page) => page.kind !== 'task' || ids.has(page.id));
+    const routines = new Set(state.routines.routines.map((routine) => routine.id));
+    const kept = nav.stack.filter((page) => {
+      if (page.kind === 'task') return ids.has(page.id);
+      if (page.kind === 'routine') return routines.has(page.id);
+      if (page.kind === 'library') return libraryTopic(page.topic) !== undefined;
+      return true;
+    });
     if (kept.length !== nav.stack.length) nav = { ...nav, stack: kept };
   }
 
@@ -849,7 +863,14 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
         fieldOpen(view.page.id),
       ]);
     }
-    return JSON.stringify([view.kind, view.kind === 'page' ? view.page : nav.tab]);
+    if (view.kind === 'page' && view.page.kind === 'routine') {
+      return JSON.stringify(['page', view.page, nav.tab, routinePageView(read(), view.page.id)]);
+    }
+    // "Ran today" goes at 04:00, so the list is part of its key.
+    if (view.kind === 'place' && nav.tab === 'routines') {
+      return JSON.stringify(['routines', routinesView(read(), now())]);
+    }
+    return JSON.stringify([view.kind, view.kind === 'page' ? view.page : nav.tab, nav.tab]);
   }
 
   /**
@@ -928,6 +949,18 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
             onMe: openMe,
             onChange: changeSettings,
           });
+        case 'routine': {
+          const routine = routinePageView(read(), view.page.id);
+          if (!routine) return { nodes: [] };
+          return routineScreen(routine, BACK_TO[nav.tab], { onBack: back, onMe: openMe });
+        }
+        case 'newRoutine':
+          return newRoutineScreen(BACK_TO[nav.tab], { onBack: back, onMe: openMe });
+        case 'library': {
+          const topic = libraryTopic(view.page.topic);
+          if (!topic) return { nodes: [] };
+          return topicScreen(topic.name, BACK_TO[nav.tab], { onBack: back, onMe: openMe });
+        }
         case 'task': {
           const id = view.page.id;
           const task = read().tasks.find((item) => item.id === id);
@@ -960,11 +993,22 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
             },
           });
         }
-        default:
-          return placeScreen(nav.tab === 'today' ? 'tasks' : nav.tab, actions);
       }
     }
-    return placeScreen(nav.tab === 'today' ? 'tasks' : nav.tab, actions);
+    if (nav.tab === 'routines') {
+      return routinesScreen(routinesView(read(), now()), {
+        onMe: openMe,
+        onOpen: (id) => push({ kind: 'routine', id }),
+        onNew: () => push({ kind: 'newRoutine' }),
+      });
+    }
+    if (nav.tab === 'library') {
+      return libraryScreen({
+        onMe: openMe,
+        onOpen: (topic) => push({ kind: 'library', topic }),
+      });
+    }
+    return { nodes: [] };
   }
 
   function dockKey(props: DockProps): string {
