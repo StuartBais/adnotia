@@ -1062,6 +1062,15 @@ svg.i28 {
 .ffoot[data-leaving] {
   animation: bench-fade-out 200ms ease-in both;
 }
+/* A tab switch, or a page pushed or popped: the new screen fades in over the
+   canvas. Lighting on Start: Today's colours come up over 150 ms where the
+   unlit sentence stood. */
+.screen > .enter {
+  animation: bench-fade-in 200ms ease-out both;
+}
+.screen .lantern.lighting {
+  animation: bench-fade-in 150ms ease-out both;
+}
 
 /* The content, from the context line at 166, scrolling only if a long step or
    large text would take it under the dock line. */

@@ -3903,3 +3903,58 @@ describe('coming back after a reload (plan sections 4 and 8; SPEC 5.7)', () => {
     expect(historyDepth()).toBe(0);
   });
 });
+
+describe('Reduce Motion between pages, and lighting on Start (SPEC 10; plan section 14)', () => {
+  const faded = (m: Mounted) =>
+    [...m.container.querySelectorAll('.screen > *')].map((node) =>
+      node.classList.contains('enter'),
+    );
+
+  it('fades a tab’s screen in once, as it arrives, and not as it moves after', async () => {
+    const m = await mount(TUE_1005);
+    // Nothing fades on launch: the page is simply there.
+    expect(faded(m).some(Boolean)).toBe(false);
+    press(m.container, 'Routines');
+    expect(faded(m).length).toBeGreaterThan(0);
+    expect(faded(m).every(Boolean)).toBe(true);
+    vi.advanceTimersByTime(300);
+    expect(faded(m).some(Boolean)).toBe(false);
+    advance(m, 1);
+    expect(faded(m).some(Boolean)).toBe(false);
+    press(m.container, 'Today');
+    expect(faded(m).every(Boolean)).toBe(true);
+  });
+
+  it('fades a page pushed or popped, by the back pill or by back, but not a choice in the switcher', async () => {
+    const m = await mount(TUE_1005);
+    press(m.container, 'Routines');
+    vi.advanceTimersByTime(300);
+    press(m.container, 'Leaving the house, 4 steps');
+    expect(faded(m).every(Boolean)).toBe(true);
+    vi.advanceTimersByTime(300);
+    goBack();
+    expect(faded(m).every(Boolean)).toBe(true);
+    press(m.container, 'Tasks');
+    vi.advanceTimersByTime(300);
+    pressTab(m.container, 'Done');
+    expect(faded(m).some(Boolean)).toBe(false);
+    // Opening the drawer over a place changes nothing under it.
+    press(m.container, /^Next/);
+    expect(faded(m).some(Boolean)).toBe(false);
+  });
+
+  it('lights Today on Start as a 150 ms colour change, and only then', async () => {
+    const m = await mount(TUE_0958, 'notStarted');
+    press(m.container, 'Start');
+    const lantern = m.container.querySelector('.screen .lantern')!;
+    expect(lantern.classList.contains('lighting')).toBe(true);
+    expect(faded(m).some(Boolean)).toBe(false);
+    vi.advanceTimersByTime(200);
+    expect(lantern.classList.contains('lighting')).toBe(false);
+    settle(m);
+    // Pausing and resuming change nothing that lights: it was lit already.
+    press(m.container, 'Pause');
+    press(m.container, 'Resume');
+    expect(m.container.querySelector('.screen .lantern.lighting')).toBeNull();
+  });
+});

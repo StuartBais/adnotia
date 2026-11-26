@@ -157,6 +157,12 @@ export const FOCUS_FADE_MS = 200;
 /** The capture sheet fades in and out over the same 200 ms (SPEC 10, Reduce Motion). */
 export const SHEET_FADE_MS = 200;
 
+/** A tab switch or a page pushed or popped fades the new screen in (SPEC 10, Reduce Motion). */
+export const PAGE_FADE_MS = 200;
+
+/** Lighting on Start, on Today: a colour change this long (SPEC 10, Reduce Motion). */
+export const LIGHTING_MS = 150;
+
 /** Typing in the capture field is kept as a draft this soon after it stops (ms). */
 export const DRAFT_AFTER = 300;
 
@@ -278,6 +284,10 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
   let lastScene = '';
   /** Where the person was at the last render, as written to `bench.ui`. */
   let lastWhere = '';
+  /** The tab and the pages on it at the last render, for the fade between pages. */
+  let lastPlace = '';
+  /** What Today showed at the last render, for the colour change on lighting. */
+  let lastToday: 'lit' | 'idle' | 'planned' | undefined;
   /** The next render follows a tap that grows the capsule back: a tab, back, or a fold. */
   let arrival: 'morph' | 'other' = 'other';
   /** The live Undo, if a tap in the last six seconds can be taken back. */
@@ -545,7 +555,24 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
     if (today) layer.screen.dataset['lamp'] = lampOf(today);
     else delete layer.screen.dataset['lamp'];
     const parts = { today, lists, taskPage };
+    const built = keys.get(layer.screen);
     paint(layer.screen, screenKey(view, parts), () => screen(view, parts, live));
+    // Reduce Motion, and for now every setting (SPEC 10; plan section 14,
+    // phase A): a tab switch or a page pushed or popped fades the new screen
+    // in over the canvas, and Today lighting on Start comes up as a 150 ms
+    // colour change. Nothing travels. Only what this paint built fades: a
+    // rebuild on the same page, or a choice in the Tasks switcher, does not.
+    const place = JSON.stringify([nav.tab, nav.stack]);
+    if (keys.get(layer.screen) !== built && lastPlace !== '') {
+      if (place !== lastPlace) {
+        for (const child of layer.screen.children) fadeOnce(child, 'enter', PAGE_FADE_MS);
+      } else if (lastToday === 'idle' && today?.kind === 'lit') {
+        const lantern = layer.screen.querySelector('.lantern');
+        if (lantern) fadeOnce(lantern, 'lighting', LIGHTING_MS);
+      }
+    }
+    lastPlace = place;
+    lastToday = today?.kind;
     if (inboxToEnd) {
       const inbox = layer.screen.querySelector<HTMLElement>(
         `[data-scroll-key="${listScrollKey('inbox')}"]`,
@@ -830,6 +857,16 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
     lastWhere = where;
     const state = read();
     commit({ ...state, bench: { ...state.bench, ui: uiRecord(now()) } });
+  }
+
+  /**
+   * A fade that runs once, as a node arrives. Its class goes once the fade is
+   * over, so a later animation on the same node (what is raised above the
+   * capture sheet, coming back down) never hands back to it and runs it again.
+   */
+  function fadeOnce(node: Element, name: string, ms: number): void {
+    node.classList.add(name);
+    setTimeout(() => node.classList.remove(name), ms + 50);
   }
 
   function patchAll(live: PresentLive | undefined): void {

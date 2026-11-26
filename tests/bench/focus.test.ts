@@ -93,6 +93,16 @@ describe('the Reduce Motion fades (SPEC 10)', () => {
     for (const frame of frames) expect(frame).not.toMatch(/transform|translate|scale/);
   });
 
+  it('fades a new tab or page in over 200 ms, and lights Today on Start over 150 ms', () => {
+    expect(animationOf('.screen > .enter')).toBe('bench-fade-in 200ms ease-out both');
+    expect(animationOf('.screen .lantern.lighting')).toBe('bench-fade-in 150ms ease-out both');
+    // A task's page turning charcoal as it lights: a colour change, 150 ms
+    // under Reduce Motion and 300 ms on the animated path.
+    const task = rules.find((rule) => rule.selectors.includes('.screen.task'))?.body ?? '';
+    expect(task).toMatch(/background-color 150ms/);
+    expect(task).not.toMatch(/transform|translate|top|left/);
+  });
+
   it('fades the capture sheet in and out, and what it raises, with nothing travelling', () => {
     expect(animationOf('.app[data-sheet] .csheet')).toBe('bench-fade-in 200ms ease-out both');
     expect(animationOf('.sheet-layer[data-leaving]')).toBe('bench-fade-out 200ms ease-in both');
