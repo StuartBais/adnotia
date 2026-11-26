@@ -2629,7 +2629,10 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
     if (woken.restore === 'today') {
       dropSheet();
       dropPageEdits();
-      nav = { ...TODAY, list: nav.list };
+      // As a boot after as long: the list choice and where the lists were
+      // scrolled are restored only under 15 minutes (plan section 4).
+      nav = { ...TODAY };
+      for (const name of Object.keys(remembered)) delete remembered[name];
       focusOpen = false;
       ticked.clear();
     }

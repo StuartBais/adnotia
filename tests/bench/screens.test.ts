@@ -1367,6 +1367,23 @@ describe('the frame (SPEC 3)', () => {
     expect(id(m, 'b-lit')).not.toBeNull();
   });
 
+  it('keeps the Tasks list chosen after a short time, and opens the inbox after longer, as a reload does', async () => {
+    const m = await mount(TUE_1005);
+    press(m.container, 'Tasks');
+    pressTab(m.container, 'Done');
+    window.dispatchEvent(new Event('pagehide'));
+    m.clock.now = new Date(at(TUE_1005).getTime() + 5 * 60_000);
+    window.dispatchEvent(new Event('pageshow'));
+    expect(id(m, 'l-done')?.getAttribute('aria-selected')).toBe('true');
+
+    window.dispatchEvent(new Event('pagehide'));
+    m.clock.now = new Date(at(TUE_1005).getTime() + 40 * 60_000);
+    window.dispatchEvent(new Event('pageshow'));
+    expect(id(m, 't-today')?.getAttribute('aria-current')).toBe('page');
+    press(m.container, 'Tasks');
+    expect(id(m, 'l-inbox')?.getAttribute('aria-selected')).toBe('true');
+  });
+
   it('closes a clock forgotten in the background, and opens on paused Today', async () => {
     const m = await mount(TUE_1005);
     window.dispatchEvent(new Event('pagehide'));
@@ -3772,7 +3789,10 @@ describe('coming back after a reload (plan sections 4 and 8; SPEC 5.7)', () => {
       again.container.querySelector<HTMLElement>('[data-scroll-key="tasks-today"]')!.scrollTop,
     ).toBe(120);
     expect(historyDepth()).toBe(0);
-    onToday(await reload(again, 15));
+    const later = await reload(again, 15);
+    onToday(later);
+    press(later.container, 'Tasks');
+    expect(id(later, 'l-inbox')?.getAttribute('aria-selected')).toBe('true');
   });
 
   it('the Tasks list under a pushed page, scrolled where it was when back finds it', async () => {
