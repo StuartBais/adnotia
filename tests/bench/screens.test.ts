@@ -3961,6 +3961,70 @@ describe('coming back after a reload (plan sections 4 and 8; SPEC 5.7)', () => {
     expect(historyDepth()).toBe(1);
   });
 
+  it('the when, ⋯ and delete sheets: the page comes back, the sheet waits to be opened again', async () => {
+    for (const [kind, open] of [
+      ['when', [/^When: /]],
+      ['more', ['More']],
+      ['delete', ['More', 'Delete']],
+    ] as const) {
+      const m = await mount(TUE_1005);
+      press(m.container, 'Tasks');
+      press(m.container, 'Cancel the gym trial, 2 steps');
+      for (const name of open) press(m.container, name);
+      expect(m.container.dataset['tsheet'], kind).toBe(kind);
+      expect(historyDepth(), kind).toBe(2);
+      const again = await reload(m, 5);
+      expect(title(again), kind).toBe('Cancel the gym trial');
+      expect(again.container.dataset['tsheet'], kind).toBeUndefined();
+      expect(historyDepth(), kind).toBe(1);
+      // Nothing was chosen in the sheet, so nothing changed: the task is there.
+      expect(titled(stateOf(again), 'Cancel the gym trial'), kind).toBeDefined();
+      goBack();
+      expect(title(again), kind).toBe('Tasks');
+      unmount();
+    }
+  });
+
+  it('after 15 minutes: Today, whether a note was being written or two pages were open', async () => {
+    const m = await mount(TUE_1005);
+    press(m.container, 'Tasks');
+    press(m.container, 'Fix the bike light');
+    press(m.container, 'More');
+    press(m.container, 'Add a note');
+    const note = id(m, 'ts-field') as HTMLTextAreaElement;
+    note.value = 'The front one';
+    note.dispatchEvent(new Event('input', { bubbles: true }));
+    const later = await reload(m, 20);
+    onToday(later);
+    expect(later.container.dataset['tsheet']).toBeUndefined();
+    // The words are the task's, kept however long the person was away.
+    expect(titled(stateOf(later), 'Fix the bike light').notes).toBe('The front one');
+
+    press(later.container, 'Library');
+    press(later.container, 'Sleep, Bedtimes, waking and winding down');
+    press(later.container, 'Me');
+    expect(historyDepth()).toBe(2);
+    onToday(await reload(later, 15));
+  });
+
+  it('leaves out a restored Library topic this build does not have, and opens on the Library', async () => {
+    const m = await mount(TUE_1005);
+    press(m.container, 'Library');
+    press(m.container, 'Sleep, Bedtimes, waking and winding down');
+    const again = await reload(m, 5, {
+      edit: (state) => ({
+        ...state,
+        bench: {
+          ...state.bench,
+          ui: { ...state.bench.ui!, stack: [{ kind: 'library', topic: 'astrology' }] },
+        },
+      }),
+    });
+    expect(title(again)).toBe('Library');
+    expect(id(again, 't-library')?.getAttribute('aria-current')).toBe('page');
+    expect(historyDepth()).toBe(0);
+  });
+
   it('a page killed before it could say it went away: from where it was last, if that was recent', async () => {
     const m = await mount(TUE_1005);
     press(m.container, 'Routines');
