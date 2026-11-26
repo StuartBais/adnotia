@@ -248,10 +248,12 @@ export function capsuleLabel(now: SpokenNow): string {
 export function focusContextLabel(
   title: string,
   position: { number: number; count: number } | undefined,
+  lead?: string,
 ) {
+  const head = lead === undefined ? 'Focus' : `Focus, ${lead}`;
   return position
-    ? `Focus, ${title}, step ${position.number} of ${position.count}`
-    : `Focus, ${title}`;
+    ? `${head}, ${title}, step ${position.number} of ${position.count}`
+    : `${head}, ${title}`;
 }
 
 // ---------------------------------------------------------------- nothing running

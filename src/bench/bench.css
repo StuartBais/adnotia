@@ -1081,6 +1081,10 @@ svg.i28 {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+/* Paused, said in words where the screen is named: white, as on paused Today. */
+.fctx .fctx-lead {
+  color: var(--white);
+}
 /* 210–234: the done step's sage disc, in a 44 pt target, and the step in ash. */
 .fdone {
   margin-top: 24px;

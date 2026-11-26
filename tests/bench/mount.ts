@@ -236,6 +236,22 @@ export function button(container: HTMLElement, name: string | RegExp): HTMLEleme
 export const press = (container: HTMLElement, name: string | RegExp): void =>
   button(container, name).click();
 
+/**
+ * Text as it is drawn for a sighted person: the visually hidden words kept
+ * for screen readers (.vh) and hidden parts are skipped, and words hidden
+ * only from screen readers are kept, because they are on the screen.
+ */
+export function drawnText(node: Node): string {
+  const raw = (part: Node): string => {
+    if (part instanceof Element && part.closest('.vh, [hidden], .live')) return '';
+    if (part.nodeType === Node.TEXT_NODE) return part.textContent ?? '';
+    let out = '';
+    for (const child of part.childNodes) out += raw(child);
+    return out;
+  };
+  return raw(node).replace(/\s+/g, ' ').trim();
+}
+
 /** Everything visible, as one string, for words that must or must not appear. */
 export const visibleText = (container: HTMLElement): string =>
   (container.textContent ?? '').replace(/\s+/g, ' ');

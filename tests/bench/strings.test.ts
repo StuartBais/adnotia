@@ -213,6 +213,12 @@ describe('strings.ts, against SPEC 11', () => {
     expect(focusContextLabel('Write the school email', { number: 2, count: 3 })).toBe(
       'Focus, Write the school email, step 2 of 3',
     );
+    expect(focusContextLabel('Write the school email', { number: 2, count: 3 }, 'Paused')).toBe(
+      'Focus, Paused, Write the school email, step 2 of 3',
+    );
+    expect(focusContextLabel('Renew the parking permit', undefined, 'Paused')).toBe(
+      'Focus, Paused, Renew the parking permit',
+    );
     expect(nothingRunningLabel(new Date('2026-11-24T10:30:00'))).toBe(
       'Nothing running, free until 10:30',
     );

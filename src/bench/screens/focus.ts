@@ -138,8 +138,12 @@ export function focusScreen(
   );
 
   // The context line, a heading: "Focus · Write the school email · step 2 of 3".
-  // A row whose title gives way: a long one is cut, and "step 2 of 3" keeps
-  // its place, as the foot keeps its "in" part.
+  // Paused, it says so in words after its name, in white at 650 as paused
+  // Today's Now line does: "Focus · Paused · …", or "Timer stopped" for a
+  // session the app closed when the owner's setting says so (SPEC 11). A row
+  // whose title gives way: a long one is cut, and "step 2 of 3" keeps its
+  // place, as the foot keeps its "in" part.
+  const lead = paused ? view.lead : undefined;
   const context = h(
     'h1',
     { class: 'fctx t-meta', 'data-geo': 'f-ctx' },
@@ -148,12 +152,13 @@ export function focusScreen(
       { class: 'fctx-shown', 'aria-hidden': 'true' },
       h('b', { text: T.focus }),
       rowSep(),
+      ...(lead === undefined ? [] : [h('b', { class: 'fctx-lead', text: lead }), rowSep()]),
       h('span', { class: 'fctx-title', text: view.task.title }),
       ...(view.position
         ? [rowSep(), h('span', { text: `step ${view.position.number} of ${view.position.count}` })]
         : []),
     ),
-    spoken(focusContextLabel(view.task.title, view.position)),
+    spoken(focusContextLabel(view.task.title, view.position, lead)),
   );
 
   // The step before, done: its disc un-ticks it. Without one the line is

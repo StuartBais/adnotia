@@ -9,6 +9,7 @@ import {
   advance,
   button,
   choices,
+  drawnText,
   goBack,
   hintOf,
   historyDepth,
@@ -1605,6 +1606,12 @@ describe('4 · Focus (SPEC 5.4)', () => {
     expect(said(m)).toBe('Paused');
     expect(m.container.dataset['focus']).toBe('open');
     const layer = layerOf(m);
+    // On the screen, not only in the spoken words (SPEC 11): after Focus's
+    // name on the context line, in white, as on paused Today's Now line.
+    const context = layer.querySelector('.fctx')!;
+    expect(drawnText(context)).toBe('Focus · Paused · Write the school email · step 2 of 3');
+    expect(context.querySelector('.fctx-lead')?.textContent).toBe('Paused');
+    expect(readText(context)).toBe('Focus, Paused, Write the school email, step 2 of 3');
     expect(readText(id(m, 'f-step')!)).toBe('Paused: Write the question');
     expect(layer.querySelector('.bar')?.className).toBe('bar bar-focus is-paused is-frozen');
     expect(layer.querySelector('.fmins strong')?.className).toContain('still');
@@ -1625,7 +1632,7 @@ describe('4 · Focus (SPEC 5.4)', () => {
     expect(readingOrder(m.container)).toEqual([
       'Back to Today',
       'Me',
-      'Focus, Write the school email, step 2 of 3',
+      'Focus, Paused, Write the school email, step 2 of 3',
       'Undo step done: Find the school address',
       'Paused: Write the question',
       'After this: Read it once and send',
@@ -1639,6 +1646,18 @@ describe('4 · Focus (SPEC 5.4)', () => {
       // The passed call, as paused Today's Next line names it (SPEC 9.8).
       'Anytime today: Call the dentist',
     ]);
+  });
+
+  it('says "Timer stopped" on the context line for a clock the app closed, when chosen', async () => {
+    const m = await mount(TUE_1005, 'clockLeftRunning', (state) => ({
+      ...state,
+      bench: { ...state.bench, settings: { ...state.bench.settings, closedLabel: 'stopped' } },
+    }));
+    press(m.container, /^Timer stopped: Write the question\./);
+    const context = layerOf(m).querySelector('.fctx')!;
+    expect(drawnText(context)).toBe('Focus · Timer stopped · Write the school email · step 2 of 3');
+    expect(readText(context)).toBe('Focus, Timer stopped, Write the school email, step 2 of 3');
+    expect(readText(id(m, 'f-step')!)).toBe('Timer stopped: Write the question');
   });
 
   it('opens paused with the estimate used up on the outline and "estimate 25"', async () => {
