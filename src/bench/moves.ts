@@ -839,9 +839,11 @@ export function createMoves(host: MovesHost): Moves {
       if (p) forward.push({ el: pic(p), fade: out, scrub: outScrub });
     }
     if (L.nowline) {
+      // Now travels on its own, so the line it leaves is pictured without it
+      // (by opacity, as a picture's visibility is its own at every element).
       const line = pic(L.nowline);
       for (const now of line.querySelectorAll<HTMLElement>('.nowtag, :scope > b')) {
-        now.style.setProperty('visibility', 'hidden');
+        now.style.setProperty('opacity', '0');
       }
       forward.push({ el: line, fade: out, scrub: outScrub });
     }
@@ -1747,9 +1749,13 @@ export function createMoves(host: MovesHost): Moves {
     if (transparent(pic.style.getPropertyValue('background-color'))) {
       pic.style.setProperty('background-color', CHARCOAL);
     }
+    // The lantern travels into the capsule on its own (lanternLayer), so the
+    // page it leaves is pictured without it. By opacity: every element of a
+    // picture carries its own visibility, read from the page, which would
+    // show through a hidden parent.
     if (lanternMoving) {
       for (const node of pic.querySelectorAll<HTMLElement>('.lantern'))
-        node.style.setProperty('visibility', 'hidden');
+        node.style.setProperty('opacity', '0');
     }
     layers.ghost.append(pic);
     layers.ghost.classList.toggle('over', !push);

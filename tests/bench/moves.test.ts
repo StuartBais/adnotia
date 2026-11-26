@@ -373,6 +373,41 @@ describe('every motion ends on the Reduce Motion path’s page', () => {
   });
 });
 
+/**
+ * Whether a picture's element is drawn, by its own inline styles and its
+ * ancestors' up to `root`: none at opacity 0 or display: none, and the
+ * nearest visibility set on the way up decides.
+ */
+function seen(el: HTMLElement, root: HTMLElement): boolean {
+  let visibility: string | undefined;
+  for (let at: HTMLElement | null = el; at && at !== root.parentElement; at = at.parentElement) {
+    if (at.style.opacity === '0' || at.style.display === 'none') return false;
+    visibility ??= at.style.visibility || undefined;
+  }
+  return visibility !== 'hidden';
+}
+
+describe('nothing is drawn twice', () => {
+  it('a page pushed from Today leaves without the lantern, which travels into the capsule', async () => {
+    const m = await mount(TUE_1005);
+    settle(m);
+    press(m.container, 'Me');
+    await drawn();
+    const ghost = m.container.querySelector<HTMLElement>('.ghostscreen > .mghost');
+    expect(ghost).not.toBeNull();
+    // The lantern on its way, as one layer with the capsule…
+    expect(m.container.querySelector('.morph .mframe')).not.toBeNull();
+    // …and nothing of it in the page that slides away.
+    const lantern = ghost!.querySelectorAll<HTMLElement>('.lantern, .lantern *');
+    expect(lantern.length).toBeGreaterThan(0);
+    for (const node of lantern) expect(seen(node, ghost!)).toBe(false);
+    // What else was on Today goes with it.
+    expect(seen(ghost!.querySelector<HTMLElement>('.hdr')!, ghost!)).toBe(true);
+    over(m);
+    nothingLeft(m);
+  });
+});
+
 describe('a motion runs to its own end', () => {
   /** What the last step played, from `before` on. */
   const since = (before: number) => played.slice(before);
