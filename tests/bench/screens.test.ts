@@ -1314,6 +1314,89 @@ describe('back, by Safari’s edge swipe or the back button (plan section 8)', (
   });
 });
 
+describe('where focus lands as a page comes and goes (SPEC 11, reading order)', () => {
+  /** A control pressed as a keyboard or VoiceOver presses it: it had focus first. */
+  const pressFocused = (m: Mounted, name: string | RegExp) => {
+    button(m.container, name).focus();
+    press(m.container, name);
+  };
+  const focused = () => document.activeElement as HTMLElement | null;
+  const titleOf = (m: Mounted) => m.container.querySelector<HTMLElement>('.screen h1')!;
+
+  it('lands on the title of Me, and of each page under it, rather than the handle', async () => {
+    const m = await mount(TUE_1005);
+    pressFocused(m, 'Me');
+    expect(focused()).toBe(titleOf(m));
+    expect(focused()?.textContent).toBe('Me');
+    for (const [row, title] of [
+      ['If things are bad right now', 'If things are bad right now'],
+      ['Settings', 'Settings'],
+      ['About this prototype', 'About this prototype'],
+    ] as const) {
+      pressFocused(m, row);
+      expect(focused()?.textContent, row).toBe(title);
+      expect(focused()?.tagName).toBe('H1');
+      // Back to Me lands on the row the page was opened from.
+      pressFocused(m, 'Back to Me');
+      expect(focused()?.textContent, `back from ${row}`).toBe(row);
+    }
+  });
+
+  it('lands back on the row a page was opened from, in Tasks, Routines and the Library', async () => {
+    const m = await mount(TUE_1005);
+    press(m.container, 'Tasks');
+    pressFocused(m, 'Fix the bike light');
+    expect(focused()?.id).toBe('p-title');
+    pressFocused(m, 'Back to Tasks');
+    expect(nameOf(focused()!)).toBe('Fix the bike light');
+
+    press(m.container, 'Routines');
+    pressFocused(m, 'Leaving the house, 4 steps');
+    pressFocused(m, 'Back to Routines');
+    expect(nameOf(focused()!)).toBe('Leaving the house, 4 steps');
+
+    press(m.container, 'Library');
+    pressFocused(m, 'Sleep, Bedtimes, waking and winding down');
+    pressFocused(m, 'Back to Library');
+    expect(nameOf(focused()!)).toBe('Sleep, Bedtimes, waking and winding down');
+  });
+
+  it('lands on the row after the edge swipe back too', async () => {
+    const m = await mount(TUE_1005);
+    press(m.container, 'Me');
+    pressFocused(m, 'Settings');
+    goBack();
+    expect(nameOf(focused()!)).toBe('Settings');
+  });
+
+  it('lands on Me’s title from Focus and from the open drawer', async () => {
+    const m = await mount(TUE_1005);
+    press(m.container, /^Now: Write the question\. Step 2 of 3/);
+    settle(m);
+    pressFocused(m, 'Me');
+    expect(m.container.dataset['focus']).toBeUndefined();
+    expect(focused()).toBe(titleOf(m));
+    expect(focused()?.textContent).toBe('Me');
+
+    press(m.container, 'Today');
+    press(m.container, /^Next, in 25 minutes/);
+    expect(m.container.dataset['drawer']).toBe('open');
+    pressFocused(m, 'Me');
+    expect(focused()).toBe(titleOf(m));
+  });
+
+  it('lands on the place’s title when a task opened from it is deleted', async () => {
+    const m = await mount(TUE_1005);
+    press(m.container, 'Tasks');
+    press(m.container, 'Cancel the gym trial, 2 steps');
+    press(m.container, 'More');
+    press(m.container, 'Delete');
+    pressFocused(m, 'Delete');
+    expect(focused()).toBe(titleOf(m));
+    expect(focused()?.textContent).toBe('Tasks');
+  });
+});
+
 describe('the Now capsule (SPEC 4)', () => {
   const capsuleOf = (m: Mounted) => m.container.querySelector<HTMLElement>('.capsule');
 

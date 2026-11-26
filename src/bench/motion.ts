@@ -198,6 +198,7 @@ const DROPPED = [
   'data-geo',
   'data-scroll-key',
   'data-focus-home',
+  'data-focus-title',
   'data-row',
   'data-half-anchor',
   'data-probe',

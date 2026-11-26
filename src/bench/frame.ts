@@ -46,6 +46,14 @@ export function hints(): HTMLElement {
 // ---------------------------------------------------------------- header
 
 /**
+ * A place's title, or a page's under Me: where focus lands when the page
+ * arrives and what had focus went with the change (SPEC 11, "The order is top
+ * to bottom"). Reached by a script, never by Tab. Its id lets focus on it
+ * survive a rebuild of the same page, as p-title does on a task's page.
+ */
+export const TITLE = { id: 'p-head', tabindex: '-1', 'data-focus-title': true } as const;
+
+/**
  * Me, at the right of the header row on every screen: two taps from help. The
  * open drawer carries its own, over a screen made inert, so it has its own id.
  */

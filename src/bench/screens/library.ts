@@ -5,7 +5,7 @@
 // written in words inside it, never as a letter or a badge; there is none to
 // write yet.
 
-import { backPill, meButton, type Built } from '../frame';
+import { TITLE, backPill, meButton, type Built } from '../frame';
 import { T } from '../strings';
 import { h, icon } from '../ui';
 import { LIBRARY } from '../view';
@@ -21,7 +21,7 @@ export function libraryScreen(actions: LibraryActions): Built {
       h(
         'header',
         { class: 'hdr' },
-        h('h1', { class: 'place-title t-place', text: T.library }),
+        h('h1', { class: 'place-title t-place', ...TITLE, text: T.library }),
         meButton(actions.onMe),
       ),
       h(

@@ -5,7 +5,7 @@
 // two equal parts (SPEC 9.6). Each takes effect at once.
 
 import { T } from '../strings';
-import { backPill, meButton, type Built } from '../frame';
+import { TITLE, backPill, meButton, type Built } from '../frame';
 import { h, segmented, type SegmentOption } from '../ui';
 import type { BenchSettings } from '../state';
 
@@ -76,7 +76,7 @@ export function settingsScreen(view: SettingsView, actions: SettingsActions): Bu
       h(
         'div',
         { class: 'body', 'data-scroll-key': 'settings' },
-        h('h1', { class: 'page-title t-idle', text: T.settings }),
+        h('h1', { class: 'page-title t-idle', ...TITLE, text: T.settings }),
         h(
           'div',
           { class: 'settings' },

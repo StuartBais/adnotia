@@ -399,6 +399,16 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
   const patches = new Map<HTMLElement, Built['patch']>();
   /** Rows ticked since the list was opened: they stay in place as discs. */
   const ticked = new Set<string>();
+  /** The page on screen, as the tab and the pages pushed on it. */
+  let pageNow: string | undefined;
+  /**
+   * A page just arrived: pushed, gone back to, or a tab's root. Where focus
+   * lands if the control that had it went with the change: going back, the
+   * row or button that opened the page; otherwise the page's title (SPEC 11,
+   * "The order is top to bottom"). Spent once focus is put anywhere, and by
+   * the person's next key or tap, and at the end of the task that made it.
+   */
+  let landing: { page: string; opener?: string } | undefined;
   let shown:
     { position: DrawerPosition; tab: Tab; page: string | undefined; list: TaskList } | undefined;
   /** Taps on Step done, Pause and Resume are ignored until this moment (monotonic). */
@@ -520,8 +530,12 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
       if (top !== undefined) node.scrollTop = top;
     }
     if (focusId) {
+      // A new page on the screen: where it says, even when the old page's
+      // focused control has a namesake on the new one (the title, say).
+      const arrival = target === layer.screen ? arrivedHome() : undefined;
       const again = document.getElementById(focusId);
-      if (again && target.contains(again)) {
+      if (arrival) landFocus(quiet);
+      else if (again && target.contains(again)) {
         if (quiet) focusOn(again, true);
         else again.focus();
       } else if (focusLost()) landFocus(quiet);
@@ -542,12 +556,69 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
    * holds its Undo.
    */
   function landFocus(quiet = false): void {
+    const arrival = arrivedHome();
+    landing = undefined;
+    if (arrival) return focusOn(arrival, quiet);
     const homes = [
       ...container.querySelectorAll<HTMLElement>('[data-focus-home]'),
       ...layer.drawer.querySelectorAll<HTMLElement>('#b-handle'),
     ];
     const home = homes.find((node) => !node.closest('[inert]'));
     if (home) focusOn(home, quiet);
+  }
+
+  /**
+   * Where focus lands on a page that has just arrived: the opener the person
+   * came back to, if it is still there, or the page's title. Today has no
+   * title to land on; its own blocks are its homes.
+   */
+  function arrivedHome(): HTMLElement | undefined {
+    if (!landing || landing.page !== pageNow) return undefined;
+    const opener = landing.opener ? document.getElementById(landing.opener) : null;
+    const title = layer.screen.querySelector<HTMLElement>('[data-focus-title]');
+    return [opener, title].find(
+      (node): node is HTMLElement =>
+        node instanceof HTMLElement && container.contains(node) && !node.closest('[inert]'),
+    );
+  }
+
+  /** The control that opens `page`, by its id: the row in its list, or Me. */
+  function openerOf(page: Page): string {
+    switch (page.kind) {
+      case 'task':
+        return `r-${page.id}`;
+      case 'routine':
+        return `rt-${page.id}`;
+      case 'newRoutine':
+        return 'r-new';
+      case 'library':
+        return `lib-${page.topic}`;
+      case 'me':
+        return 'b-me';
+      default:
+        return `m-${page.kind}`;
+    }
+  }
+
+  /** Whether the page has changed since the last render, and how: a back is noted with what it left. */
+  function notePage(): void {
+    const key = JSON.stringify([nav.tab, nav.stack]);
+    if (pageNow !== undefined && key !== pageNow) {
+      const [tab, stack] = JSON.parse(pageNow) as [Tab, Page[]];
+      const wentBack =
+        tab === nav.tab &&
+        nav.stack.length < stack.length &&
+        nav.stack.every((page, at) => JSON.stringify(page) === JSON.stringify(stack[at]));
+      const left = wentBack ? stack[nav.stack.length] : undefined;
+      const arrival = { page: key, ...(left ? { opener: openerOf(left) } : {}) };
+      landing = arrival;
+      // It holds for the change that made it, which lands focus in the same
+      // task, and not for a later rebuild on the same page.
+      queueMicrotask(() => {
+        if (landing === arrival) landing = undefined;
+      });
+    }
+    pageNow = key;
   }
 
   /**
@@ -681,6 +752,8 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
       current.kind !== 'none' &&
       current.task.id === view.page.id;
     const ground = view.kind === 'today' || ownPage ? 'present' : 'place';
+
+    notePage();
 
     // Moving between lists clears the rows ticked in them. The half drawer
     // and the open one show the same day's list, so a tick there keeps its
@@ -1038,9 +1111,11 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
     // (or, on a place after Done or Set aside, the handle). Judged here, once
     // every layer's inert is settled: Done on the dock line loses its focus
     // while the drawer is still inert under Focus.
+    // Closed for Me, Focus lands on the page Me opened.
     if (wasFocus && !showFocus && (focusIn(layer.focus, layer.focusFoot) || focusLost())) {
       const capsuleButton = layer.dock.querySelector<HTMLElement>('#b-capsule, #b-focus');
-      if (capsuleButton) capsuleButton.focus({ preventScroll: true });
+      if (arrivedHome()) landFocus();
+      else if (capsuleButton) capsuleButton.focus({ preventScroll: true });
       else landFocus();
     }
     holdAwake(showFocus);
@@ -2104,7 +2179,14 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
   function picture(nodes: Node[], kind: string): HTMLElement {
     const copy = h('div', { class: `ghost ${kind}`, 'aria-hidden': 'true', inert: true }, ...nodes);
     for (const node of [copy, ...copy.querySelectorAll('*')]) {
-      for (const name of ['id', 'data-geo', 'data-scroll-key', 'data-focus-home', 'data-row']) {
+      for (const name of [
+        'id',
+        'data-geo',
+        'data-scroll-key',
+        'data-focus-home',
+        'data-focus-title',
+        'data-row',
+      ]) {
         node.removeAttribute(name);
       }
     }
@@ -3233,6 +3315,14 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
   window.addEventListener('popstate', onPopState);
   container.addEventListener('focusout', onFocusOut);
   container.addEventListener('keydown', onKeyDown);
+  // The person's own next key or tap spends a page's arrival, before what it
+  // does: focus they kept, on a tab say, is theirs, and later rebuilds land
+  // as they always do.
+  const spendArrival = () => {
+    landing = undefined;
+  };
+  container.addEventListener('keydown', spendArrival, true);
+  container.addEventListener('click', spendArrival, true);
   // A tap anywhere while the drawer springs lands it first, where it was
   // going, so the tap acts on the screen as it will be: a tab tapped as the
   // drawer opens folds it and goes, as it would once it had opened.
@@ -3286,6 +3376,8 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
       dropUndo();
       container.removeEventListener('focusout', onFocusOut);
       container.removeEventListener('keydown', onKeyDown);
+      container.removeEventListener('keydown', spendArrival, true);
+      container.removeEventListener('click', spendArrival, true);
       container.removeEventListener('click', landDrawer, true);
       container.removeEventListener('scroll', onScroll, true);
       ticker?.destroy();

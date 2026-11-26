@@ -16,7 +16,7 @@
 // in this prototype either.
 
 import { duration, stepCount } from '../format';
-import { HINT_IDS, backPill, meButton, type Built } from '../frame';
+import { HINT_IDS, TITLE, backPill, meButton, type Built } from '../frame';
 import { T, routineInApp, say } from '../strings';
 import { h, icon } from '../ui';
 import type { RoutinePageView, RoutineRow } from '../view';
@@ -33,7 +33,7 @@ export function routinesScreen(rows: readonly RoutineRow[], actions: RoutinesAct
       h(
         'header',
         { class: 'hdr' },
-        h('h1', { class: 'place-title t-place', text: T.routines }),
+        h('h1', { class: 'place-title t-place', ...TITLE, text: T.routines }),
         meButton(actions.onMe),
       ),
       h(

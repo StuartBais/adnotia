@@ -7,7 +7,7 @@ import { CRISIS_LINES, CRISIS_REVIEWED, CRISIS_STRINGS } from '../../kernel/shel
 import { SCENARIOS, type ScenarioId } from '../example';
 import type { Page, Tab } from '../state';
 import { T } from '../strings';
-import { backPill, meButton, type Built } from '../frame';
+import { TITLE, backPill, meButton, type Built } from '../frame';
 import { h, icon } from '../ui';
 
 export interface PlaceActions {
@@ -58,7 +58,11 @@ function row(text: string, onOpen: () => void, id: string): HTMLElement {
 export function meScreen(actions: PlaceActions): Built {
   return {
     nodes: [
-      h('header', { class: 'hdr' }, h('h1', { class: 'place-title t-place', text: T.me })),
+      h(
+        'header',
+        { class: 'hdr' },
+        h('h1', { class: 'place-title t-place', ...TITLE, text: T.me }),
+      ),
       h(
         'div',
         { class: 'body', 'data-scroll-key': 'me' },
@@ -88,7 +92,7 @@ export function crisisScreen(actions: PlaceActions): Built {
       h(
         'div',
         { class: 'body', 'data-scroll-key': 'crisis' },
-        h('h1', { class: 'page-title t-idle', text: CRISIS_STRINGS.title }),
+        h('h1', { class: 'page-title t-idle', ...TITLE, text: CRISIS_STRINGS.title }),
         h(
           'div',
           { class: 'prose' },
@@ -172,7 +176,7 @@ export function aboutScreen(actions: PlaceActions): Built {
       h(
         'div',
         { class: 'body', 'data-scroll-key': 'about' },
-        h('h1', { class: 'page-title t-idle', text: T.about }),
+        h('h1', { class: 'page-title t-idle', ...TITLE, text: T.about }),
         h(
           'div',
           { class: 'prose' },

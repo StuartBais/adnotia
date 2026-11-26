@@ -19,7 +19,7 @@
 
 import { duration, durationSpoken } from '../format';
 import { T, say } from '../strings';
-import { dayListNodes, meButton, type Built } from '../frame';
+import { TITLE, dayListNodes, meButton, type Built } from '../frame';
 import { durationTrack, h, icon, sep } from '../ui';
 import type { TaskList } from '../state';
 import type { TaskRow, TasksView } from '../view';
@@ -56,7 +56,7 @@ export function tasksScreen(
   const header = h(
     'header',
     { class: 'hdr' },
-    h('h1', { class: 'place-title t-place', text: T.tasks }),
+    h('h1', { class: 'place-title t-place', ...TITLE, text: T.tasks }),
     meButton(actions.onMe),
   );
   const body = h(
