@@ -567,6 +567,62 @@ describe('Pause and Resume on Today', () => {
   });
 });
 
+describe('Focus is drawn inside its frame', () => {
+  /** The board's boxes for the capsule, Focus and Focus's foot, at 390 × 844. */
+  function boxes(): void {
+    layOut();
+    const laid = vi.mocked(Element.prototype.getBoundingClientRect);
+    const board = laid.getMockImplementation()!;
+    const box = (x: number, y: number, w: number, h: number) =>
+      ({ x, y, left: x, top: y, width: w, height: h, right: x + w, bottom: y + h }) as DOMRect;
+    laid.mockImplementation(function (this: Element) {
+      if (this.classList.contains('capsule') && this.closest('.dock')) return box(24, 606, 268, 64);
+      if (this.classList.contains('focus')) return box(0, 0, 390, 844);
+      if (this.classList.contains('ffoot')) return box(0, 684, 390, 160);
+      return board.call(this);
+    });
+  }
+
+  it('going back into the capsule on a place, Focus’s layers are cut to the shrinking frame', async () => {
+    boxes();
+    const m = await mount(TUE_1005);
+    settle(m);
+    press(m.container, 'Routines');
+    await drawn();
+    over(m);
+    press(m.container, /^Now: Write the question/);
+    await drawn();
+    over(m);
+    const before = played.length;
+    press(m.container, 'Back to Routines');
+    await drawn();
+    const mine = since(before);
+    const cut = (selector: string) =>
+      mine.find((p) => p.el.matches(selector) && p.frames.some((f) => 'clipPath' in f));
+    const focus = cut('.focus');
+    const foot = cut('.ffoot');
+    // From the whole screen to the capsule, x 24–292 and y 606–670, round 32.
+    expect(focus?.frames.map((f) => f['clipPath'])).toEqual([
+      'inset(0px 0px 0px 0px round 0px)',
+      'inset(606px 98px 174px 24px round 32px)',
+    ]);
+    expect(foot?.frames.map((f) => f['clipPath'])).toEqual([
+      'inset(-684px 0px 0px 0px round 0px)',
+      'inset(-78px 98px 174px 24px round 32px)',
+    ]);
+    // On the frame's own spring, so the cut is where the frame is at every frame.
+    const frame = mine.find(
+      (p) => p.el.closest('.mframe') && p.frames.some((f) => 'transform' in f),
+    );
+    for (const one of [focus!, foot!]) {
+      expect(one.options.easing).toBe(frame?.options.easing);
+      expect(one.options.duration).toBe(frame?.options.duration);
+    }
+    over(m);
+    nothingLeft(m);
+  });
+});
+
 describe('a motion runs to its own end', () => {
   const SPRING_END = springDuration() + 50;
 

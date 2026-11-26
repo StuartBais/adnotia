@@ -41,6 +41,7 @@ import {
   along,
   backwards,
   boxOf,
+  cutTo,
   frameNode,
   frameTracks,
   freeze,
@@ -1135,6 +1136,9 @@ export function createMoves(host: MovesHost): Moves {
       tracks.push({
         ...rest,
         ...(rest.move ? { move: swap(rest.move, dir) } : {}),
+        ...(rest.clip
+          ? { clip: dir === 1 ? rest.clip : ([rest.clip[1], rest.clip[0]] as const) }
+          : {}),
         ...(by ? { fade: progressFade(by, dir, SPRING) } : {}),
         ...(rest.fade && !by ? { fade: way(rest.fade, dir, D) } : {}),
       });
@@ -1209,7 +1213,16 @@ export function createMoves(host: MovesHost): Moves {
       container.insertBefore(frame, layers.focus);
       temp.push(frame);
       const from: FrameAt = { box: C.whole.box, r: C.whole.box.h / 2 };
-      for (const piece of frameTracks(frame, from, { box: fullBox(), r: 0 })) add(piece);
+      const to: FrameAt = { box: fullBox(), r: 0 };
+      for (const piece of frameTracks(frame, from, to)) add(piece);
+      // Focus's own layers are cut to the frame, so nothing of Focus is
+      // drawn outside it: going back, its header, context and done lines go
+      // with the shrinking frame over their 120 ms, rather than standing over
+      // the place the frame uncovers.
+      for (const el of focusLayers) {
+        const box = boxOf(el, container);
+        add({ el, clip: [cutTo(box, from), cutTo(box, to)] });
+      }
       // Focus's step, bar and minutes, at Focus's size, carried from the
       // capsule's places. A step that wraps in Focus travels as its first
       // line, cut where the capsule cuts it, and its whole takes over near

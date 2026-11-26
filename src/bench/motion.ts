@@ -331,6 +331,43 @@ export function frameTracks(frame: HTMLElement, from: FrameAt, to: FrameAt): Tra
   }));
 }
 
+/**
+ * An element cut to a frame: insets from its own edges, and the frame's
+ * corner radius. An inset is negative where the frame runs past the edge.
+ */
+export interface Cut {
+  t: number;
+  r: number;
+  b: number;
+  l: number;
+  round: number;
+}
+
+/** The cut that shows of `el` (its box) only what lies inside `frame`. */
+export function cutTo(el: Box, frame: FrameAt): Cut {
+  const f = frame.box;
+  return {
+    t: f.y - el.y,
+    r: el.x + el.w - (f.x + f.w),
+    b: el.y + el.h - (f.y + f.h),
+    l: f.x - el.x,
+    round: Math.max(0, Math.min(frame.r, f.w / 2, f.h / 2)),
+  };
+}
+
+export function cutCss(c: Cut): string {
+  const n = (v: number) => `${round(v, 2)}px`;
+  return `inset(${n(c.t)} ${n(c.r)} ${n(c.b)} ${n(c.l)} round ${n(c.round)})`;
+}
+
+const lerpCut = (a: Cut, b: Cut, p: number): Cut => ({
+  t: lerp(a.t, b.t, p),
+  r: lerp(a.r, b.r, p),
+  b: lerp(a.b, b.b, p),
+  l: lerp(a.l, b.l, p),
+  round: lerp(a.round, b.round, p),
+});
+
 // ---------------------------------------------------------------- tracks
 
 /** (moment, value): a moment in ms when played, or a progress from 0 to 1 when scrubbed. */
@@ -342,6 +379,11 @@ export interface Track {
   move?: readonly [Xf, Xf];
   /** Its opacity through a played motion: (ms from the start, value), in order. */
   fade?: readonly Stop[];
+  /**
+   * Its clip at the start and at the end, on the motion's easing: what it
+   * shows of itself, cut to a frame that moves on the same spring.
+   */
+  clip?: readonly [Cut, Cut];
   /** Its opacity through a scrubbed one: (progress, value), in order. */
   scrub?: readonly Stop[];
   /** Its own easing for `move`, in place of the motion's. */
@@ -508,6 +550,15 @@ export class Motions {
         });
         if (played) animations.push(played);
       }
+      if (track.clip) {
+        const [a, b] = track.clip;
+        const played = this.animate(track.el, [{ clipPath: cutCss(a) }, { clipPath: cutCss(b) }], {
+          duration: track.duration ?? plan.duration,
+          easing: track.easing ?? plan.easing,
+          fill: 'both',
+        });
+        if (played) animations.push(played);
+      }
       if (track.fade && track.fade.length > 0) {
         const played = this.animate(track.el, keyframes(track.fade, plan.duration), {
           duration: plan.duration,
@@ -606,12 +657,14 @@ export function scrub(plan: Omit<Plan, 'channel' | 'duration' | 'easing'>): Scru
           track.el.style.setProperty('transform', xfCss(lerpXf(track.move[0], track.move[1], p)));
         if (track.scrub)
           track.el.style.setProperty('opacity', String(round(along(track.scrub, p), 3)));
+        if (track.clip)
+          track.el.style.setProperty('clip-path', cutCss(lerpCut(track.clip[0], track.clip[1], p)));
       }
     },
     end() {
       if (ended) return;
       ended = true;
-      for (const track of plan.tracks) unset(track.el, ['transform', 'opacity', WILL]);
+      for (const track of plan.tracks) unset(track.el, ['transform', 'opacity', 'clip-path', WILL]);
       for (const node of plan.temp ?? []) node.remove();
       for (const { el, style } of plan.hold ?? []) unset(el, Object.keys(style));
       plan.onEnd?.();
