@@ -32,6 +32,9 @@ for (const path of [welcomePath, appPath]) {
 
 const welcome = readFileSync(welcomePath, 'utf8');
 const app = readFileSync(appPath, 'utf8');
+const benchPath = join(dist, 'bench', 'index.html');
+const bench = existsSync(benchPath) ? readFileSync(benchPath, 'utf8') : undefined;
+if (bench === undefined) fail('No dist/bench/index.html: the prototype was not built.');
 
 // ---------------------------------------------------------------- the redirect
 
@@ -79,6 +82,9 @@ if (scriptSrc.includes('unsafe-inline')) {
 for (const [what, page, shouldHave] of [
   ['The welcome page', welcome, false],
   ['The app', app, true],
+  // The prototype is reached by its address and is not the app: it neither
+  // installs as the app nor registers the app's worker.
+  ...(bench === undefined ? [] : [['The prototype', bench, false]]),
 ]) {
   for (const [name, pattern] of [
     ['a service-worker registration', /registerSW/],
@@ -102,11 +108,35 @@ for (const [what, page, shouldHave] of [
 const swPath = join(dist, 'sw.js');
 if (existsSync(swPath)) {
   const sw = readFileSync(swPath, 'utf8');
-  if (!/denylist/.test(sw)) {
+  const list = /\{denylist:(\[.*?\])\}\)/.exec(sw)?.[1];
+  if (list === undefined) {
     fail(
       'The service worker has no navigation denylist, so it will answer a request for\n' +
         '    / with the cached app shell and the welcome page disappears.',
     );
+  } else {
+    // Each regular expression literal in the minified array, escapes and
+    // character classes included, rebuilt to test paths the way Workbox's
+    // NavigationRoute does: the path with its query string.
+    const literal = /\/((?:\\.|\[(?:\\.|[^\]\\])*\]|[^/\\[\n])+)\/([a-z]*)/g;
+    const denied = [...list.matchAll(literal)].map(([, body, flags]) => new RegExp(body, flags));
+    const answered = (path) => !denied.some((pattern) => pattern.test(path));
+    for (const path of ['/', '/index.html', '/?from=app']) {
+      if (answered(path)) {
+        fail(`The service worker answers ${path} with the app shell: the welcome page disappears.`);
+      }
+    }
+    for (const path of ['/bench', '/bench/', '/bench/index.html', '/bench?x=1']) {
+      if (answered(path)) {
+        fail(
+          `The service worker answers ${path} with the app shell, so the prototype opens as\n` +
+            '    the app on any phone that has opened the app.',
+        );
+      }
+    }
+    for (const path of ['/app/', '/app/index.html', '/benchmark']) {
+      if (!answered(path)) fail(`The service worker no longer answers ${path} offline.`);
+    }
   }
 }
 

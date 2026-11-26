@@ -242,8 +242,15 @@ export default defineConfig(({ mode }) => {
                * person to open the app would find the welcome page replaced by
                * it — online and offline, for as long as the registration lived,
                * with nothing in the build to say so.
+               *
+               * The prototype's entry has no slash after `bench` when typed by
+               * hand, and Workbox tests the path with its query string, so the
+               * last entry takes `/bench`, `/bench/…` and `/bench?…` alike. With
+               * the slash required, `/bench` was answered with the app's shell
+               * on any phone that had opened the app, and the edge's redirect to
+               * `/bench/` never ran.
                */
-              navigateFallbackDenylist: [/^\/$/, /^\/index\.html$/, /^\/\?/, /^\/bench\//],
+              navigateFallbackDenylist: [/^\/$/, /^\/index\.html$/, /^\/\?/, /^\/bench(?:[/?]|$)/],
               // There is nothing to fetch at runtime, so there is nothing to cache
               // at runtime either.
               runtimeCaching: [],
