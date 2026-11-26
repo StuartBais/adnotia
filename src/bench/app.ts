@@ -79,7 +79,7 @@ import { settingsScreen, type SettingsView } from './screens/settings';
 import { focusFoot, focusKey, focusScreen, type FocusActions } from './screens/focus';
 import { captureSheet, type CaptureTo } from './screens/capture';
 import { ANNOUNCE, T, say } from './strings';
-import { h, injectSprite } from './ui';
+import { h, icon, injectSprite } from './ui';
 import { resolve as rewardOptions, setOption } from '../domains/options';
 import {
   dayList,
@@ -387,6 +387,10 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
    * from, what list travels with it, and what is drawn only for the journey.
    */
   let travel: Travel | undefined;
+  /** Where the drawer rested at the last render, for the cross-fade at its foot. */
+  let lastPosition: DrawerPosition | undefined;
+  /** A journey has just ended: the foot's words fade in, with nothing to fade out. */
+  let arrived = false;
   /** The drawer under the finger (drawer.ts), from the moment the app is up. */
   let drag: DrawerDrag | undefined;
 
@@ -731,6 +735,8 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
     // travels, what it carries is left as it is until it comes to rest.
     if (position === 'lip' || showFocus || modal) layer.drawer.setAttribute('inert', '');
     else layer.drawer.removeAttribute('inert');
+    const moreShown = layer.drawer.querySelector(':scope > .handle.folded .h-more') !== null;
+    const hideShown = layer.foot.querySelector('.handle.hide .h-more') !== null;
     if (!travel) {
       paint(layer.drawer, drawerKey(state, t, position, today), () =>
         drawer(state, t, position, today),
@@ -745,6 +751,11 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
           )
         : [],
     }));
+
+    if (!travel && lastPosition !== undefined && lastPosition !== position) {
+      handover(lastPosition, position, { journey: arrived, moreShown, hideShown });
+    }
+    lastPosition = position;
 
     // The tabs.
     paint(layer.tabs, nav.tab, () => ({ nodes: tabs(nav.tab, chooseTab) }));
@@ -2018,7 +2029,12 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
     }
     // The person moved the drawer: an Undo no longer holds it folded.
     if (to !== 'folded' && undo) undo.hold = false;
-    restAt(to);
+    arrived = true;
+    try {
+      restAt(to);
+    } finally {
+      arrived = false;
+    }
     if (
       carried.length > 0 &&
       carried.every((node) => node.parentNode === null || node === journey.copy)
@@ -2027,6 +2043,49 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
       layer.drawer.append(leaving);
       setTimeout(() => leaving.remove(), HANDOVER_MS + 50);
     }
+  }
+
+  /**
+   * "Rest of today ⌃" at the foot turns into "⌄ Hide" in the same place over
+   * 150 ms as the drawer opens, and back as it folds (SPEC 10, "The drawer").
+   * After a tap both are on screen for the cross-fade; after a pull the
+   * drawer carried the old words away with it, so the new ones fade in.
+   */
+  function handover(
+    from: DrawerPosition,
+    to: DrawerPosition,
+    was: { journey: boolean; moreShown: boolean; hideShown: boolean },
+  ): void {
+    if (to === 'open') {
+      const words = layer.foot.querySelector('.handle.hide .h-more');
+      if (words) fadeOnce(words, 'xin', HANDOVER_MS);
+      if (!was.journey && was.moreShown) footPicture('rest');
+      return;
+    }
+    if (from !== 'open' || was.journey) return;
+    const words = layer.drawer.querySelector(':scope > .handle.folded .h-more');
+    if (words) fadeOnce(words, 'xin', HANDOVER_MS);
+    if (was.hideShown) footPicture('hide');
+  }
+
+  /** The words that were at the foot, fading out where they stood. */
+  function footPicture(kind: 'rest' | 'hide'): void {
+    const words =
+      kind === 'rest'
+        ? h(
+            'span',
+            { class: 'h-more t-label' },
+            h('span', { class: 'h-more-words', text: T.restOfToday }),
+            icon('up', 20),
+          )
+        : h('span', { class: 'h-more t-label' }, icon('down', 20), T.hide);
+    const picture = h(
+      'span',
+      { class: `xghost handle ${kind === 'rest' ? 'folded' : 'hide'}`, 'aria-hidden': 'true' },
+      words,
+    );
+    layer.foot.append(picture);
+    setTimeout(() => picture.remove(), HANDOVER_MS + 50);
   }
 
   function settingsView(state: BenchDomains): SettingsView {

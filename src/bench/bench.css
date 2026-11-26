@@ -1620,7 +1620,9 @@ svg.i28 {
 }
 
 /* "⌄ Hide": one button over the folded handle's band, 684–754, its words at
-   715–735 with their ink ending at x 366, where "Rest of today ⌃" stands. */
+   715–735 with their ink ending at x 366, where "Rest of today ⌃" stands.
+   Only its buttons take a touch: the words fading out after a tap, here for
+   150 ms, never stand in the way of the handle under them. */
 .foot {
   position: absolute;
   left: 0;
@@ -1629,7 +1631,11 @@ svg.i28 {
   height: var(--handle);
   z-index: 25;
   --ring: var(--charcoal);
+  pointer-events: none;
   transition: opacity 150ms ease;
+}
+.foot > button {
+  pointer-events: auto;
 }
 .foot:empty {
   display: none;
@@ -1681,6 +1687,15 @@ svg.i28 {
 .foot {
   -webkit-user-select: none;
   user-select: none;
+}
+/* "Rest of today ⌃" and "⌄ Hide" hand over in one place, over 150 ms: the
+   words arriving fade in, and those leaving fade out where they stood. */
+.handle .h-more.xin {
+  animation: bench-fade-in 150ms ease-out both;
+}
+.foot > .xghost {
+  pointer-events: none;
+  animation: bench-fade-out 150ms ease-in both;
 }
 
 /* Under a finger or on its spring. Pictures drawn for the journey only: the

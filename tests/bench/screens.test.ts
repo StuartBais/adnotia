@@ -4417,6 +4417,40 @@ describe('the drawer in the hand (SPEC 9.8 and 10; plan section 13)', () => {
     expect(stateOf(m).bench.drawer.running).toBe('open');
   });
 
+  it('“Rest of today ⌃” and “⌄ Hide” cross-fade in one place over 150 ms when tapped', async () => {
+    const m = await mount(TUE_1005);
+    press(m.container, HANDLE);
+    const foot = m.container.querySelector('.foot')!;
+    // Hide's words fade in, and the words that stood there fade out.
+    expect(foot.querySelector('#b-hide .h-more')?.classList.contains('xin')).toBe(true);
+    const leaving = foot.querySelector('.xghost')!;
+    expect(leaving.getAttribute('aria-hidden')).toBe('true');
+    expect(drawnText(leaving)).toBe('Rest of today');
+    // Drawn, not read: the open drawer's heading is the one "Rest of today".
+    expect(readingOrder(m.container).filter((name) => name === 'Rest of today')).toEqual([
+      'Rest of today',
+    ]);
+    vi.advanceTimersByTime(200);
+    expect(foot.querySelector('.xghost')).toBeNull();
+    expect(foot.querySelector('.xin')).toBeNull();
+    // And back.
+    press(m.container, 'Hide the rest of today');
+    expect(drawnText(foot.querySelector('.xghost')!)).toBe('Hide');
+    expect(handle(m).querySelector('.h-more')?.classList.contains('xin')).toBe(true);
+    vi.advanceTimersByTime(200);
+    expect(foot.querySelector('.xghost')).toBeNull();
+    expect(foot.children.length).toBe(0);
+  });
+
+  it('after a pull, Hide fades in alone: the old words went up with the drawer', async () => {
+    layOut();
+    const m = await mount(TUE_1005, 'example', reduced);
+    pull(m, handle(m), [720, 600, 480, 300]);
+    const foot = m.container.querySelector('.foot')!;
+    expect(foot.querySelector('#b-hide .h-more')?.classList.contains('xin')).toBe(true);
+    expect(foot.querySelector('.xghost')).toBeNull();
+  });
+
   it('where it comes to rest on another list than it carried (half and open), the old fades out over the new', async () => {
     layOut();
     const m = await mount(TUE_0958, 'notStarted', reduced);
