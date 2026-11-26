@@ -128,6 +128,34 @@ describe('trackKeyboard', () => {
     expect(kb()).toBe('291px');
   });
 
+  it('keeps an open sheet where the keyboard was when the keyboard goes without it', () => {
+    // Safari's Done above the keys puts the keyboard away and leaves the
+    // sheet open. Were the sheet to drop to the foot, the next tap on its
+    // field would bring the keyboard up over the field, and iOS would pan.
+    const viewport = new FakeViewport();
+    const keyboard = track(viewport);
+    keyboard.expect();
+    viewport.keyboard(336);
+    viewport.keyboard(0);
+    expect(kb()).toBe('336px');
+    expect(keyboard.inset()).toBe(336);
+    // The tap on the field: the keyboard comes back up under the field.
+    viewport.keyboard(336);
+    expect(kb()).toBe('336px');
+    // The sheet goes: the keyboard alone again, and it is down.
+    viewport.keyboard(0);
+    keyboard.release();
+    expect(kb()).toBe('');
+  });
+
+  it('keeps the guess for an open sheet whose keyboard never came', () => {
+    const viewport = new FakeViewport();
+    const keyboard = track(viewport);
+    keyboard.expect();
+    viewport.keyboard(0);
+    expect(kb()).toBe(`${Math.round(HEIGHT * KEYBOARD_GUESS)}px`);
+  });
+
   it('takes the keyboard as it is when it is already up', () => {
     const viewport = new FakeViewport();
     const keyboard = track(viewport);

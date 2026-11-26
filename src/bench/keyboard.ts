@@ -14,6 +14,12 @@
 // measured height or a share of the screen, held until the keyboard is
 // measured. Where there is no visual viewport (an old browser, jsdom), the
 // guess stands and nothing else happens.
+//
+// The keyboard can go while the sheet stays: Safari's Done above the keys,
+// or a tap off the field. The sheet stays where the keyboard was, so a tap
+// on the field brings the keyboard back up under it rather than over it,
+// and nothing moves under the finger in between. It drops only when the
+// sheet goes.
 
 /** What this needs of `window.visualViewport`. */
 export interface ViewportLike {
@@ -66,7 +72,8 @@ export interface KeyboardOptions {
 export interface Keyboard {
   /**
    * A sheet with a field is about to take the keyboard: lift it to where the
-   * keyboard will be, and keep it there until the keyboard is measured.
+   * keyboard will be, and keep it there until the keyboard is measured. Until
+   * `release()`, a keyboard that goes leaves the sheet where it was.
    */
   expect(): void;
   /** The sheet has gone: `--kb` follows the keyboard alone again. */
@@ -80,8 +87,8 @@ export function trackKeyboard(options: KeyboardOptions): Keyboard {
   const { root, viewport } = options;
   /** The keyboard as last measured, while it was up. */
   let seen = 0;
-  /** The guess held until the keyboard is measured, or 0. */
-  let held = 0;
+  /** A sheet with a field is open: between `expect()` and `release()`. */
+  let lifted = false;
   let current = -1;
 
   const set = (value: number) => {
@@ -94,15 +101,18 @@ export function trackKeyboard(options: KeyboardOptions): Keyboard {
 
   const measured = (): number | null => keyboardInset(options.layoutHeight(), viewport);
 
+  /** Where an open sheet waits with no keyboard under it: where the keyboard was, or will be. */
+  const held = (): number =>
+    seen > 0 ? seen : Math.round(options.layoutHeight() * KEYBOARD_GUESS);
+
   const update = () => {
     const inset = measured();
     if (inset === null) return;
     if (inset > 0) {
       seen = inset;
-      held = 0;
       set(inset);
     } else {
-      set(held);
+      set(lifted ? held() : 0);
     }
   };
 
@@ -111,17 +121,12 @@ export function trackKeyboard(options: KeyboardOptions): Keyboard {
 
   return {
     expect() {
+      lifted = true;
       const now = measured();
-      if (now !== null && now > 0) {
-        held = 0;
-        set(now);
-        return;
-      }
-      held = seen > 0 ? seen : Math.round(options.layoutHeight() * KEYBOARD_GUESS);
-      set(held);
+      set(now !== null && now > 0 ? now : held());
     },
     release() {
-      held = 0;
+      lifted = false;
       const now = measured();
       set(now ?? 0);
     },
@@ -131,6 +136,7 @@ export function trackKeyboard(options: KeyboardOptions): Keyboard {
       viewport?.removeEventListener('scroll', update);
       root.style.removeProperty('--kb');
       current = -1;
+      lifted = false;
     },
   };
 }

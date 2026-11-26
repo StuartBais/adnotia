@@ -163,6 +163,7 @@ export const ABOUT = {
     'Step done or a tick, then Undo on the Next line.',
     'Taps that land between the capsule and capture.',
     'Capture: the keyboard comes up with the sheet riding on it, the page never slides, and what you typed is still there after a reload.',
+    'Capture, then Done above the keys, then the field again: the keyboard comes back up under the field, and nothing slides.',
     'Reduce Motion and Increase Contrast, on and off.',
     'VoiceOver across Today, Focus, capture and the rest of today.',
     'Charcoal against white places, in daylight and at night.',
