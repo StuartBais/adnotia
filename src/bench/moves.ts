@@ -128,8 +128,6 @@ const FIRST = 100;
  */
 const LANTERN_MS = 350;
 const FOCUS_MS = 400;
-/** A part that is the same in both places, cross-faded on its way while still near where it set off. */
-const PAIR_MS = 60;
 /**
  * The capsule itself is swapped in or out where the moving layer is already
  * on it: going, over the first 40 ms, before the layer has moved off it;
@@ -662,6 +660,30 @@ export function createMoves(host: MovesHost): Moves {
   const lineMap = (from: Part, to: Part): Xf =>
     mapTo(from.box, to.box, { s: to.font / from.font, line: from.line, lineOver: to.line });
 
+  /** Whether a part runs over more than one line. */
+  const wraps = (p: Part) => p.box.h > p.line * 1.5;
+
+  /**
+   * A picture of `from`'s first line alone, where `from` stood, cut where
+   * `to` cuts it: on one line, ending in an ellipsis where `to` does, so
+   * that scaled onto `to` it reads as `to` reads. A step that wraps at one
+   * end and not at the other travels as this, never as two lines lying
+   * across whatever is under it at the other end.
+   */
+  function firstLine(from: Part, to: Part): HTMLElement {
+    const node = placed(from);
+    const style = node.style;
+    // `text-wrap`, read from the page, would wrap it again after `white-space`.
+    style.removeProperty('text-wrap');
+    style.setProperty('white-space', 'nowrap');
+    style.setProperty('overflow', 'hidden');
+    style.setProperty('text-overflow', 'ellipsis');
+    style.setProperty('height', `${from.line}px`);
+    const cut = to.el.scrollWidth > to.el.clientWidth + 1;
+    style.setProperty('width', cut ? `${(to.box.w * from.font) / to.font}px` : 'max-content');
+    return node;
+  }
+
   /**
    * The transform that keeps `box` where it stands relative to `lead` while
    * `lead` moves by `xf` from its own top left.
@@ -889,16 +911,12 @@ export function createMoves(host: MovesHost): Moves {
         continue;
       }
       const move = lineMap(from, to);
-      if (from === L.step && from.box.h > from.line * 1.5) {
+      if (from === L.step && wraps(from)) {
         // A step that wraps on Today travels as its first line, cut where
         // the capsule cuts it, the whole of it fading on the way.
         forward.push({ el: pic(from), fade: out, scrub: outScrub });
-        const first = pic(from);
-        first.style.setProperty('white-space', 'nowrap');
-        first.style.setProperty('overflow', 'hidden');
-        first.style.setProperty('text-overflow', 'ellipsis');
-        first.style.setProperty('height', `${from.line}px`);
-        first.style.setProperty('width', `${(to.box.w * from.font) / to.font}px`);
+        const first = firstLine(from, to);
+        temp.push(first);
         forward.push({
           el: first,
           move: [NONE, move],
@@ -1083,11 +1101,21 @@ export function createMoves(host: MovesHost): Moves {
   // ---------------------------------------------------------------- 3. the capsule and Focus
 
   /**
+   * Where, on the way from the capsule or the lantern to Focus, what is drawn
+   * at Focus's size takes over from what is drawn at the other end's: near
+   * Focus, as a share of the way. Focus's step may wrap where the other end's
+   * is one line, and its second line lies across the bar anywhere else.
+   */
+  const NEAR_FOCUS: readonly [number, number] = [0.8, 0.95];
+
+  /**
    * Focus is the capsule opened all the way (SPEC 10): the frame grows from
    * the capsule to the screen, the step, the bar and the minutes travel to
    * their places at full size, and the rest of Focus comes up over the last
    * 120 ms. From Today the lantern's own parts travel there, cross-fading
-   * into Focus's in the first 100 ms. "⌄ Today" is the same, played back.
+   * into Focus's as they come near it. "⌄ Today" is the same, played back:
+   * what fades with the way travelled is placed by progress, so going back
+   * it happens in the same places, not at the same times.
    */
   function focusMorph(prev: Scene, next: Scene, snap: Snapshot): Plan | undefined {
     const dir: 1 | -1 = next.focus ? 1 : -1;
@@ -1097,12 +1125,31 @@ export function createMoves(host: MovesHost): Moves {
     const tracks: Track[] = [];
     const temp: Element[] = [];
     const hold: { el: HTMLElement; style: Record<string, string> }[] = [];
-    const add = (track: Track) => {
+    // Built in forward terms, from the capsule or the lantern to Focus: a
+    // move from its start to its end; a fade in ms as played forward (`fade`),
+    // or as progress along the way (`by`).
+    const add = (track: Track & { by?: readonly Stop[] }) => {
+      const { by, ...rest } = track;
       tracks.push({
-        ...track,
-        ...(track.move ? { move: swap(track.move, dir) } : {}),
-        ...(track.fade ? { fade: way(track.fade, dir, D) } : {}),
+        ...rest,
+        ...(rest.move ? { move: swap(rest.move, dir) } : {}),
+        ...(by ? { fade: progressFade(by, dir, SPRING) } : {}),
+        ...(rest.fade && !by ? { fade: way(rest.fade, dir, D) } : {}),
       });
+    };
+    const [near, there] = NEAR_FOCUS;
+    const giveWay: Stop[] = [
+      [near, 1],
+      [there, 0],
+    ];
+    const takeOver: Stop[] = [
+      [near, 0],
+      [there, 1],
+    ];
+    const pic = (p: Part) => {
+      const node = placed(p);
+      temp.push(node);
+      return node;
     };
     // The capsule end, or the lantern end.
     const atToday = dir === 1 ? prev.lit : next.lit;
@@ -1115,7 +1162,8 @@ export function createMoves(host: MovesHost): Moves {
       [D, 1],
     ];
     if (atToday && L.step) {
-      // Lantern and Focus, both large: each part cross-fades into the other on the way.
+      // Lantern and Focus, both large: each part travels as the lantern's,
+      // and Focus's takes over near Focus.
       const pairs: [Part | undefined, Part | undefined][] = [
         [L.step, F.step],
         [L.bar, F.bar],
@@ -1125,33 +1173,14 @@ export function createMoves(host: MovesHost): Moves {
         if (!a || !b) continue;
         const map = a === L.bar ? mapTo(a.box, b.box) : lineMap(a, b);
         const back = a === L.bar ? mapTo(b.box, a.box) : lineMap(b, a);
-        const pa = placed(a);
-        const pb = placed(b);
-        temp.push(pa, pb);
-        add({
-          el: pa,
-          move: [NONE, map],
-          fade: [
-            [0, 1],
-            [PAIR_MS, 0],
-          ],
-        });
-        add({
-          el: pb,
-          move: [back, NONE],
-          fade: [
-            [0, 0],
-            [PAIR_MS, 1],
-          ],
-        });
+        add({ el: pic(a), move: [NONE, map], by: giveWay });
+        add({ el: pic(b), move: [back, NONE], by: takeOver });
       }
       for (const key of ['nowline', 'ttl', 'note', 'aside', 'rest'] as const) {
         const p = L[key];
         if (!p) continue;
-        const pic = placed(p);
-        temp.push(pic);
         add({
-          el: pic,
+          el: pic(p),
           fade: [
             [0, 1],
             [FIRST, 0],
@@ -1179,39 +1208,54 @@ export function createMoves(host: MovesHost): Moves {
       temp.push(frame);
       const from: FrameAt = { box: C.whole.box, r: C.whole.box.h / 2 };
       for (const piece of frameTracks(frame, from, { box: fullBox(), r: 0 })) add(piece);
-      const pairs: [Part | undefined, Part | undefined][] = [
-        [F.step, C.step],
+      // Focus's step, bar and minutes, at Focus's size, carried from the
+      // capsule's places. A step that wraps in Focus travels as its first
+      // line, cut where the capsule cuts it, and its whole takes over near
+      // Focus.
+      if (C.step) {
+        const move = [lineMap(F.step, C.step), NONE] as const;
+        const first = firstLine(F.step, C.step);
+        temp.push(first);
+        if (wraps(F.step)) {
+          add({ el: first, move, by: giveWay });
+          add({ el: pic(F.step), move, by: takeOver });
+        } else {
+          add({ el: first, move });
+        }
+      }
+      for (const [f, c] of [
         [F.bar, C.bar],
         [F.mins, C.mins],
-      ];
-      for (const [f, c] of pairs) {
+      ] as const) {
         if (!f || !c) continue;
-        const pic = placed(f);
-        temp.push(pic);
-        add({ el: pic, move: [f === F.bar ? mapTo(f.box, c.box) : lineMap(f, c), NONE] });
+        add({ el: pic(f), move: [f === F.bar ? mapTo(f.box, c.box) : lineMap(f, c), NONE] });
       }
       // The capsule itself, where the frame sets off from it (see CUT_MS);
-      // played back, it comes up as the frame lands on it.
-      const cut: Stop[] = [
-        [0, 1],
-        [CUT_MS, 0],
-      ];
+      // going back, it comes up over the pictures where they land on it,
+      // in the spring's last LAND_MS, as the lantern's way into it does.
       if (dir === 1) {
-        const cap = placed(C.whole);
-        temp.push(cap);
-        add({ el: cap, fade: cut });
+        tracks.push({
+          el: pic(C.whole),
+          fade: [
+            [0, 1],
+            [CUT_MS, 0],
+          ],
+        });
       } else if (capsuleEl) {
-        add({ el: capsuleEl, fade: cut });
+        tracks.push({
+          el: capsuleEl,
+          fade: [
+            [SPRING.duration - LAND_MS, 0],
+            [SPRING.duration, 1],
+          ],
+        });
       }
       // Today's buttons in the slot the capsule had, which come in with Focus's controls.
       const pills =
         dir === 1
           ? [...layers.dock.querySelectorAll<HTMLElement>('.dock-pill')]
-          : snap.pills.map((p) => placed(p));
-      for (const el of pills) {
-        if (dir === -1) temp.push(el);
-        add({ el, fade: late });
-      }
+          : snap.pills.map((p) => pic(p));
+      for (const el of pills) add({ el, fade: late });
     } else {
       return undefined;
     }

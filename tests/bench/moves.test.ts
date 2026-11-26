@@ -431,9 +431,99 @@ describe('the capsule is drawn once', () => {
   });
 });
 
+/** What was played from `before` on. */
+const since = (before: number) => played.slice(before);
+
+/** A fade's opacity `ms` into its motion, from the keyframes it was played with. */
+function opacityAt(one: Played, ms: number): number {
+  const duration = Number(one.options.duration);
+  const at = Math.min(1, Math.max(0, ms / duration));
+  const frames = one.frames.map((f) => [Number(f.offset), Number(f.opacity)] as const);
+  let value = frames[0]?.[1] ?? 1;
+  for (let i = 1; i < frames.length; i++) {
+    const [o0, v0] = frames[i - 1]!;
+    const [o1, v1] = frames[i]!;
+    if (at >= o1) value = v1;
+    else if (at > o0) return v0 + ((v1 - v0) * (at - o0)) / (o1 - o0);
+  }
+  return value;
+}
+
+describe('a step that wraps in Focus travels as one line', () => {
+  /** Focus's step laid out on two lines, as “Write the question” is at 44 pt. */
+  function twoLines(): void {
+    layOut();
+    const laid = vi.mocked(Element.prototype.getBoundingClientRect);
+    const board = laid.getMockImplementation()!;
+    laid.mockImplementation(function (this: Element) {
+      if (this.classList.contains('fstep') && this.closest('.focus')) {
+        return {
+          x: 24,
+          y: 140,
+          left: 24,
+          top: 140,
+          width: 342,
+          height: 100,
+          right: 366,
+          bottom: 240,
+          toJSON: () => ({}),
+        } as DOMRect;
+      }
+      return board.call(this);
+    });
+  }
+
+  /** What the step is drawn as, `ms` into the motion: each picture of it that shows, and on how many lines. */
+  function stepDrawn(m: Mounted, mine: Played[], ms: number): ('one' | 'two')[] {
+    const pictures = [
+      ...m.container.querySelectorAll<HTMLElement>('.morph > .fstep, .morph > .step'),
+    ];
+    return pictures
+      .filter((pic) => {
+        const fade = mine.find((p) => p.el === pic && p.frames.some((f) => 'opacity' in f));
+        return fade ? opacityAt(fade, ms) > 0.01 : true;
+      })
+      .map((pic) =>
+        pic.classList.contains('fstep') && pic.style.whiteSpace !== 'nowrap' ? 'two' : 'one',
+      );
+  }
+
+  for (const from of ['capsule', 'lantern'] as const) {
+    it(`between Focus and the ${from}, on two lines only near Focus, either way`, async () => {
+      twoLines();
+      const m = await mount(TUE_1005);
+      settle(m);
+      if (from === 'capsule') {
+        press(m.container, 'Routines');
+        await drawn();
+        over(m);
+      }
+      let before = played.length;
+      press(m.container, /^Now: Write the question/);
+      await drawn();
+      let mine = since(before);
+      // Opening, it is one line most of the way, and two once there.
+      expect(stepDrawn(m, mine, 60)).not.toContain('two');
+      expect(stepDrawn(m, mine, 60).length).toBeGreaterThan(0);
+      expect(stepDrawn(m, mine, springDuration())).toEqual(['two']);
+      over(m);
+      before = played.length;
+      press(m.container, from === 'capsule' ? 'Back to Routines' : 'Back to Today');
+      await drawn();
+      mine = since(before);
+      // Going back, the same in reverse: two lines only as it sets off.
+      expect(stepDrawn(m, mine, 0)).toContain('two');
+      for (const ms of [120, 250, 400, springDuration()]) {
+        expect(stepDrawn(m, mine, ms)).not.toContain('two');
+        expect(stepDrawn(m, mine, ms).length).toBeGreaterThan(0);
+      }
+      over(m);
+      nothingLeft(m);
+    });
+  }
+});
+
 describe('a motion runs to its own end', () => {
-  /** What the last step played, from `before` on. */
-  const since = (before: number) => played.slice(before);
   const SPRING_END = springDuration() + 50;
 
   it('“⌄ Today” is not cut short when Focus’s fading layers are emptied', async () => {
