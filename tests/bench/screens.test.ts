@@ -3760,6 +3760,119 @@ describe('coming back after a reload (plan sections 4 and 8; SPEC 5.7)', () => {
     expect(historyDepth()).toBe(0);
   };
 
+  it('the tab, its list and where the list was scrolled; Today after 15 minutes', async () => {
+    const m = await mount(TUE_1005);
+    press(m.container, 'Tasks');
+    pressTab(m.container, 'Today');
+    m.container.querySelector<HTMLElement>('[data-scroll-key="tasks-today"]')!.scrollTop = 120;
+    const again = await reload(m, 14);
+    expect(title(again)).toBe('Tasks');
+    expect(id(again, 'l-today')?.getAttribute('aria-selected')).toBe('true');
+    expect(
+      again.container.querySelector<HTMLElement>('[data-scroll-key="tasks-today"]')!.scrollTop,
+    ).toBe(120);
+    expect(historyDepth()).toBe(0);
+    onToday(await reload(again, 15));
+  });
+
+  it('a routine’s page pushed on Routines, with its entry, so back goes to the list', async () => {
+    const m = await mount(TUE_1005);
+    press(m.container, 'Routines');
+    press(m.container, 'Leaving the house, 4 steps');
+    const again = await reload(m, 10);
+    expect(title(again)).toBe('Leaving the house');
+    expect(id(again, 't-routines')?.getAttribute('aria-current')).toBe('page');
+    expect(historyDepth()).toBe(1);
+    goBack();
+    expect(title(again)).toBe('Routines');
+    press(again.container, 'Leaving the house, 4 steps');
+    onToday(await reload(again, 30));
+  });
+
+  it('two pages deep: Me over a Library topic, each back a page', async () => {
+    const m = await mount(TUE_1005);
+    press(m.container, 'Library');
+    press(m.container, 'Sleep, Bedtimes, waking and winding down');
+    press(m.container, 'Me');
+    const again = await reload(m, 5);
+    expect(title(again)).toBe('Me');
+    expect(historyDepth()).toBe(2);
+    goBack();
+    expect(title(again)).toBe('Sleep');
+    goBack();
+    expect(title(again)).toBe('Library');
+  });
+
+  it('a task’s page, and the words left in its "Add a step" field', async () => {
+    const m = await mount(TUE_1005);
+    press(m.container, 'Tasks');
+    press(m.container, 'Cancel the gym trial, 2 steps');
+    id(m, 'p-addstep')!.click();
+    const input = id(m, 'p-stepfield') as HTMLInputElement;
+    input.value = 'Find the contract';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    const again = await reload(m, 5);
+    expect(title(again)).toBe('Cancel the gym trial');
+    expect((id(again, 'p-stepfield') as HTMLInputElement).value).toBe('Find the contract');
+    expect(historyDepth()).toBe(1);
+    // After longer, Today; the words are still kept for the field.
+    const later = await reload(again, 20);
+    onToday(later);
+    press(later.container, 'Tasks');
+    press(later.container, 'Cancel the gym trial, 2 steps');
+    expect((id(later, 'p-stepfield') as HTMLInputElement).value).toBe('Find the contract');
+  });
+
+  it('Focus, over the tab it was opened on, which "⌄" names', async () => {
+    const m = await mount(TUE_1005);
+    press(m.container, 'Routines');
+    press(m.container, /^Now: Write the question, step 2 of 3/);
+    expect(m.container.dataset['focus']).toBe('open');
+    const again = await reload(m, 5);
+    expect(again.container.dataset['focus']).toBe('open');
+    expect(button(again.container, 'Back to Routines')).toBeTruthy();
+    expect(historyDepth()).toBe(1);
+    goBack();
+    expect(again.container.dataset['focus']).toBeUndefined();
+    expect(title(again)).toBe('Routines');
+    press(again.container, /^Now: Write the question, step 2 of 3/);
+    const later = await reload(again, 15);
+    expect(later.container.dataset['focus']).toBeUndefined();
+    onToday(later);
+  });
+
+  it('capture’s words and where they go; the sheet waits for a tap, which brings the keyboard', async () => {
+    const m = await mount(TUE_1005);
+    press(m.container, 'Capture');
+    type(m, 'Ask Ana about Friday');
+    press(m.container, 'Today');
+    const again = await reload(m, 5);
+    expect(again.container.dataset['sheet']).toBeUndefined();
+    press(again.container, 'Capture, draft kept');
+    expect((id(again, 'c-field') as HTMLInputElement).value).toBe('Ask Ana about Friday');
+    expect(id(again, 'c-to-today')?.getAttribute('aria-checked')).toBe('true');
+    // A draft is kept however long the person was away; only where they open changes.
+    const later = await reload(again, 60);
+    onToday(later);
+    expect(nameOf(id(later, 'b-capture')!)).toBe('Capture, draft kept');
+  });
+
+  it('a note being written in its sheet: the words are the task’s, the sheet waits for a tap', async () => {
+    const m = await mount(TUE_1005);
+    press(m.container, 'Tasks');
+    press(m.container, 'Fix the bike light');
+    press(m.container, 'More');
+    press(m.container, 'Add a note');
+    const note = id(m, 'ts-field') as HTMLTextAreaElement;
+    note.value = 'The front one';
+    note.dispatchEvent(new Event('input', { bubbles: true }));
+    const again = await reload(m, 5);
+    expect(title(again)).toBe('Fix the bike light');
+    expect(again.container.dataset['tsheet']).toBeUndefined();
+    expect(titled(stateOf(again), 'Fix the bike light').notes).toBe('The front one');
+    expect(historyDepth()).toBe(1);
+  });
+
   it('a page killed before it could say it went away: from where it was last, if that was recent', async () => {
     const m = await mount(TUE_1005);
     press(m.container, 'Routines');
@@ -3771,5 +3884,22 @@ describe('coming back after a reload (plan sections 4 and 8; SPEC 5.7)', () => {
     vi.advanceTimersByTime(1);
     press(again.container, 'Library');
     onToday(await reload(again, 15, { hide: false }));
+  });
+
+  it('leaves out a restored page whose routine has gone, and opens on its tab', async () => {
+    const m = await mount(TUE_1005);
+    press(m.container, 'Routines');
+    press(m.container, 'Sunday reset, 7 steps');
+    const again = await reload(m, 5, {
+      edit: (state) => ({
+        ...state,
+        routines: {
+          ...state.routines,
+          routines: state.routines.routines.filter((routine) => routine.title !== 'Sunday reset'),
+        },
+      }),
+    });
+    expect(title(again)).toBe('Routines');
+    expect(historyDepth()).toBe(0);
   });
 });
