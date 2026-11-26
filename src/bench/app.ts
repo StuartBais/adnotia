@@ -13,7 +13,7 @@
 // the minutes and the spoken labels in place. So a tick never takes away the
 // person's focus, scroll or a tap in progress.
 //
-// Built so far (plan section 19, chunks 2 to 6): the frame, Today in every
+// Built so far (plan section 19, chunks 2 to 7): the frame, Today in every
 // state, the drawer at rest at its lip, folded and half and open, by a tap or
 // under a finger that pulls it and lets it go onto its spring, the
 // capsule on the places and the open drawer, the tabs, Me with the crisis
@@ -23,6 +23,11 @@
 // Tasks with its four lists, a task's own page in each of its forms with "Add
 // a step", the sheets a page raises, Routines with each routine's page
 // (without running one, owner default 10), and the Library as a stub.
+//
+// Motion has two paths (SPEC 10). Reduce Motion's fades are drawn here and in
+// bench.css. With motion on, in a browser that plays Web Animations, the app
+// carries [data-anim] and moves.ts draws the way between one page and the
+// next after each render: the page itself is never held up for it.
 
 import { emptyDomains, type KernelStore } from '../kernel/store';
 import * as act from './actions';
@@ -52,6 +57,8 @@ import {
 } from './state';
 import { createTicker, type Ticker } from './clock';
 import { dragDrawer, type DrawerDrag, type Stop } from './drawer';
+import { animateNative, canAnimate } from './motion';
+import { DROP_MS, createMoves, type Scene } from './moves';
 import { KEYBOARD_GUESS, trackKeyboard } from './keyboard';
 import {
   dock,
@@ -280,8 +287,13 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
     // (SPEC 11, list 4).
     focus: h('div', { class: 'focus', hidden: true }),
     focusFoot: h('div', { class: 'ffoot', hidden: true }),
+    // The animated path's own layers (moves.ts): the page a slide leaves,
+    // and what travels between the lantern, the capsule and Focus. Drawn
+    // only, and empty at rest.
+    ghost: h('div', { class: 'ghostscreen', 'aria-hidden': 'true', inert: true }),
+    morph: h('div', { class: 'morph', 'aria-hidden': 'true', inert: true }),
     // Capture's sheet, above everything, the dock line included (SPEC 5.5).
-    sheet: h('div', { class: 'sheet-layer', hidden: true }),
+    sheet: h('div', { class: 'sheet-layer', 'data-capture': true, hidden: true }),
     // The sheets a task's page raises: when, ⋯, note, rename and delete.
     tsheet: h('div', { class: 'sheet-layer', hidden: true }),
     live: h('div', { class: 'live', 'aria-live': 'polite' }),
@@ -307,6 +319,55 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
     onChange: () => {
       fitSheet();
       keepFieldInView();
+    },
+  });
+
+  // The animated path (moves.ts): with motion on, in a browser that can
+  // play it, what changed is drawn on its way after each render.
+  const moves = createMoves({
+    container,
+    layers: {
+      screen: layer.screen,
+      ghost: layer.ghost,
+      morph: layer.morph,
+      dock: layer.dock,
+      drawer: layer.drawer,
+      focus: layer.focus,
+      focusFoot: layer.focusFoot,
+      sheet: layer.sheet,
+    },
+    animate: animateNative,
+    timers: {
+      set: (callback, ms) => setTimeout(callback, ms),
+      clear: (handle) => clearTimeout(handle as ReturnType<typeof setTimeout>),
+      now: monotonic,
+    },
+    enabled: () => animated(read()),
+    dockNodes: (kind) => {
+      const state = read();
+      const t = now();
+      const view = presentView(state, t);
+      if (!view) return [];
+      const live = presentLive(view, t, motion(state) === 'reduced');
+      const built = dock({
+        ...(kind === 'present'
+          ? { present: presentButtons(view) }
+          : {
+              capsule: {
+                view,
+                live,
+                look: capsuleLook(state.bench.settings.places, 'open'),
+                mode: 'picture' as const,
+                onOpen: () => undefined,
+              },
+            }),
+        captureOnLight: false,
+        draftKept: false,
+        onCapture: () => undefined,
+      });
+      return built.nodes.filter(
+        (node) => node instanceof HTMLElement && !node.classList.contains('capture'),
+      );
     },
   });
 
@@ -400,6 +461,11 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
     return height > 0 && height < 740;
   }
 
+  /** Full motion, in a browser that can play it: the animated path (moves.ts). */
+  function animated(state: BenchDomains): boolean {
+    return !destroyed && motion(state) === 'full' && canAnimate();
+  }
+
   function motion(state: BenchDomains): 'full' | 'reduced' {
     if (state.bench.settings.motion === 'reduced') return 'reduced';
     const query =
@@ -419,6 +485,7 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
     for (const [name, top] of Object.entries(scroll)) {
       if (name.startsWith('tasks-')) remembered[name] = top;
     }
+    moves.beforePaint(target);
     const built = build();
     target.replaceChildren(...built.nodes);
     keys.set(target, key);
@@ -605,6 +672,54 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
     }
     shown = { position, tab: nav.tab, page, list: nav.list };
 
+    // The present, as it is now, and what Today shows.
+    const presentNow = presentView(state, t);
+    const live = presentNow && presentLive(presentNow, t, byMinute);
+    const today = view.kind === 'today' ? todayView(state, t) : undefined;
+    // What the dock line's slot holds. On the open drawer the lantern has
+    // folded into the capsule, which sits on the cover with capture (SPEC
+    // 5.2). In Focus it holds Today's buttons in Today's places (SPEC 3).
+    const mode = capsuleMode(showFocus ? { kind: 'focus' } : view, current, position, false);
+    const lit = today?.kind === 'lit' && !open;
+    const onDock = showFocus
+      ? presentNow
+      : lit && today?.kind === 'lit'
+        ? today.present
+        : undefined;
+    const hasCapsule = !lit && mode !== 'hidden' && presentNow !== undefined && live !== undefined;
+    const hasFocusPill = !showFocus && ownPage && !open;
+    // Capture's sheet, and what it is over: what is lit stays lit above it
+    // over Today or Focus; over a place the capsule rides it (SPEC 5.5).
+    const over = !sheetOpen
+      ? undefined
+      : showFocus
+        ? ('focus' as const)
+        : today?.kind === 'lit' && !open
+          ? ('today' as const)
+          : ('place' as const);
+
+    // The animated path (moves.ts) looks at the page as it was, before
+    // anything below changes it, and draws the way to what it becomes.
+    const scene: Scene = {
+      tab: nav.tab,
+      place: JSON.stringify([nav.tab, nav.stack]),
+      depth: nav.stack.length,
+      present: presentNow?.task.id,
+      kind: presentNow?.kind,
+      step: presentNow?.steps.current?.id,
+      today: today?.kind,
+      position,
+      focus: showFocus,
+      slot: onDock ? 'present' : hasCapsule ? 'capsule' : hasFocusPill ? 'focus' : 'none',
+      lit: lit && !showFocus,
+      sheet: over,
+    };
+    const before = moves.last;
+    moves.begin(scene);
+    const anim = animated(state);
+    if (anim) container.dataset['anim'] = '';
+    else delete container.dataset['anim'];
+
     container.dataset['drawer'] = position;
     container.dataset['ground'] = ground;
     container.dataset['places'] = places;
@@ -613,12 +728,7 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
     else delete container.dataset['focus'];
     themeColor(!showFocus && ground === 'place' && places === 'white' ? WHITE : CHARCOAL);
 
-    // The present, as it is now.
-    const presentNow = presentView(state, t);
-    const live = presentNow && presentLive(presentNow, t, byMinute);
-
     // The page.
-    const today = view.kind === 'today' ? todayView(state, t) : undefined;
     const lists =
       view.kind === 'place' && nav.tab === 'tasks'
         ? tasksView(state, t, nav.list, { keep: ticked, undone })
@@ -641,8 +751,11 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
     const place = JSON.stringify([nav.tab, nav.stack]);
     if (keys.get(layer.screen) !== built && lastPlace !== '') {
       if (place !== lastPlace) {
-        for (const child of layer.screen.children) fadeOnce(child, 'enter', PAGE_FADE_MS);
-      } else if (lastToday === 'idle' && today?.kind === 'lit') {
+        // With motion on, a page pushed or popped on a tab slides (moves.ts).
+        if (!moves.slides(before, scene)) {
+          for (const child of layer.screen.children) fadeOnce(child, 'enter', PAGE_FADE_MS);
+        }
+      } else if (lastToday === 'idle' && today?.kind === 'lit' && !anim) {
         const lantern = layer.screen.querySelector('.lantern');
         if (lantern) fadeOnce(lantern, 'lighting', LIGHTING_MS);
       }
@@ -685,18 +798,9 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
       for (const part of [layer.focus, layer.focusFoot]) part.setAttribute('inert', '');
     }
 
-    // The dock line. On the open drawer the lantern has folded into the
-    // capsule, which sits on the cover with capture (SPEC 5.2). In Focus it
-    // holds Today's buttons in Today's places (SPEC 3).
-    const mode = capsuleMode(showFocus ? { kind: 'focus' } : view, current, position, false);
-    const lit = today?.kind === 'lit' && !open;
-    const onDock = showFocus
-      ? presentNow
-      : lit && today?.kind === 'lit'
-        ? today.present
-        : undefined;
+    // The dock line.
     const capsule =
-      !lit && mode !== 'hidden' && presentNow && live
+      hasCapsule && presentNow && live
         ? {
             view: presentNow,
             live,
@@ -706,7 +810,7 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
           }
         : undefined;
     // The present's own page: its way into Focus, where the capsule would be.
-    const focusPill = !showFocus && ownPage && !open ? { onOpen: openFocusFromPage } : undefined;
+    const focusPill = hasFocusPill ? { onOpen: openFocusFromPage } : undefined;
     const props: DockProps = {
       ...(onDock ? { present: presentButtons(onDock) } : {}),
       ...(capsule ? { capsule } : {}),
@@ -739,6 +843,8 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
     paint(layer.dock, dockKey(props), () => dock(props));
     if (modal) layer.dock.setAttribute('inert', '');
     else layer.dock.removeAttribute('inert');
+    // With motion on, moves.ts draws the way between them over this, and the
+    // class stays so the page is the same either way.
     if (morph) {
       for (const node of layer.dock.querySelectorAll('.capsule, .dock-pill')) {
         node.classList.add('enter');
@@ -779,13 +885,7 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
     // above it; over a place, the capsule rides the sheet's top edge, as a
     // picture. Where what is lit does not fit above the sheet, the capsule
     // rides there too (measured in fitSheet).
-    const from = !sheetOpen
-      ? undefined
-      : showFocus
-        ? 'focus'
-        : today?.kind === 'lit' && !open
-          ? 'today'
-          : 'place';
+    const from = over;
     if (from) container.dataset['sheet'] = from;
     else delete container.dataset['sheet'];
     let rides = false;
@@ -854,6 +954,7 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
       container.append(
         ...(wanted === 'list-first'
           ? [
+              layer.ghost,
               layer.screen,
               layer.fade,
               layer.focus,
@@ -862,11 +963,13 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
               layer.foot,
               layer.tabs,
               layer.focusFoot,
+              layer.morph,
               layer.sheet,
               layer.tsheet,
               layer.live,
             ]
           : [
+              layer.ghost,
               layer.screen,
               layer.fade,
               layer.focus,
@@ -875,6 +978,7 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
               layer.foot,
               layer.tabs,
               layer.focusFoot,
+              layer.morph,
               layer.sheet,
               layer.tsheet,
               layer.live,
@@ -1910,8 +2014,10 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
     // A drawer held folded for an Undo can go where the rule allows, and back.
     const allowed = [...new Set([...rule.allowed, at])].filter((position) => position !== 'lip');
     if (allowed.length < 2) return undefined;
+    const drawn = moves.drawerY();
     return {
       current: at,
+      ...(drawn === undefined ? {} : { y: drawn }),
       stops: allowed.map((position) => {
         const probe = layer.probes.querySelector(`[data-probe="${position}"]`);
         return { position, y: (probe?.getBoundingClientRect().top ?? 0) - box.top };
@@ -1986,6 +2092,9 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
     travel = { from, body, ghosts, copy, kind, stops };
     layer.drawer.dataset['travel'] = '';
     container.dataset['travel'] = kind;
+    // With motion on, the lantern and the capsule follow the drawer as one
+    // layer (moves.ts), in place of the fade below (SPEC 10).
+    moves.beginTravel(from);
   }
 
   function landDrawer(): void {
@@ -2007,6 +2116,17 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
     // first half of that the stone, the second half the words.
     const nearFolded = clamp(1 - (folded - y) / FOLD_FADE);
     const nearOpen = clamp(1 - (y - open) / FOLD_FADE);
+    moves.moveTravel(lift);
+    if (moves.travelling) {
+      // With motion on, the lantern and the capsule are drawn by moves.ts,
+      // and only the folded handle's own fade is left: set on the handle
+      // alone, so a frame restyles it and not the whole page.
+      for (const node of layer.drawer.querySelectorAll<HTMLElement>('.handle.folded, .undo')) {
+        node.style.setProperty('--fold-bg', clamp(nearFolded * 2).toFixed(3));
+        node.style.setProperty('--fold-fg', clamp(nearFolded * 2 - 1).toFixed(3));
+      }
+      return;
+    }
     const set = (name: string, value: number) =>
       container.style.setProperty(name, clamp(value).toFixed(3));
     set('--lift', lift);
@@ -2039,6 +2159,11 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
     delete container.dataset['travel'];
     layer.drawer.style.removeProperty('transform');
     for (const name of TRAVEL_VARS) container.style.removeProperty(name);
+    for (const node of layer.drawer.querySelectorAll<HTMLElement>('.handle.folded, .undo')) {
+      node.style.removeProperty('--fold-bg');
+      node.style.removeProperty('--fold-fg');
+      if (node.getAttribute('style') === '') node.removeAttribute('style');
+    }
     if (journey.kind === 'present') {
       guardUntil = Math.max(guardUntil, monotonic() + TAP_GUARD.afterCapsule);
     }
@@ -2046,9 +2171,11 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
     if (to !== 'folded' && undo) undo.hold = false;
     arrived = true;
     try {
-      restAt(to);
+      // The drawer is where it rests: nothing more is drawn on the way.
+      moves.quietly(() => restAt(to));
     } finally {
       arrived = false;
+      moves.endTravel();
     }
     if (
       carried.length > 0 &&
@@ -2129,9 +2256,12 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
     dropPageEdits();
     dropUndo();
     focusOpen = false;
-    commit(loadScenario(read(), id, now()));
-    ticked.clear();
-    go({ ...TODAY });
+    moves.endAll();
+    moves.quietly(() => {
+      commit(loadScenario(read(), id, now()));
+      ticked.clear();
+      go({ ...TODAY });
+    });
   }
 
   function deleteAll(): void {
@@ -2141,9 +2271,12 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
     dropUndo();
     focusOpen = false;
     const t = now();
-    commit(migrateBench(emptyDomains(), t));
-    ticked.clear();
-    go({ ...TODAY });
+    moves.endAll();
+    moves.quietly(() => {
+      commit(migrateBench(emptyDomains(), t));
+      ticked.clear();
+      go({ ...TODAY });
+    });
   }
 
   // ---------------------------------------------------------------- capture
@@ -2372,13 +2505,15 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
     for (const node of part.querySelectorAll('[id]')) node.removeAttribute('id');
     sheetField = undefined;
     if (sheetLeaving !== undefined) clearTimeout(sheetLeaving);
+    // With motion on it drops rather than fades, and is kept as long as that takes.
+    const ms = animated(read()) ? DROP_MS : SHEET_FADE_MS;
     sheetLeaving = setTimeout(() => {
       sheetLeaving = undefined;
       if (sheet || destroyed) return;
       paint(part, '', () => ({ nodes: [] }));
       delete part.dataset['leaving'];
       part.hidden = true;
-    }, SHEET_FADE_MS);
+    }, ms);
   }
 
   function stopSheetLeaving(): void {
@@ -2931,8 +3066,9 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
   /** Going to the background: when, and where the person was (plan section 12). */
   function hide(): void {
     // A drawer on its spring lands where it was going, and one still under a
-    // finger where it is: its lift may never come.
+    // finger where it is: its lift may never come. Whatever moves ends.
     drag?.finish();
+    moves.endAll();
     // What is in the field is kept, though the sheet stays open.
     if (sheet && sheetField) keepDraft(sheetField.value, sheet.to);
     flushSheetText();
@@ -2965,8 +3101,13 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
       focusOpen = false;
       ticked.clear();
     }
-    if (woken.state !== state) commit(woken.state);
-    else render();
+    // Coming back after long enough to open on Today is not a journey.
+    const show = () => {
+      if (woken.state !== state) commit(woken.state);
+      else render();
+    };
+    if (woken.restore === 'today') moves.quietly(show);
+    else show();
   }
 
   /**
@@ -3043,6 +3184,7 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
       if (tsheetLeaving !== undefined) clearTimeout(tsheetLeaving);
       keyboard.destroy();
       drag?.destroy();
+      moves.destroy();
       holdAwake(false);
       dropUndo();
       container.removeEventListener('focusout', onFocusOut);
@@ -3068,6 +3210,8 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
         'tsheet',
         'typing',
         'travel',
+        'anim',
+        'flight',
       ]) {
         delete container.dataset[name];
       }

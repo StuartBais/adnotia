@@ -84,10 +84,16 @@ describe('the Reduce Motion fades (SPEC 10)', () => {
       .filter((value) => value !== undefined)
       .at(-1);
 
+  // Each is the Reduce Motion path's; with motion on, in a browser that plays
+  // it, the app carries [data-anim] and moves.ts draws these on their way.
   it('fades Focus in whole and out again, and the capsule in, over 200 ms, with nothing travelling', () => {
-    expect(animationOf('.app[data-focus] .focus')).toBe('bench-fade-in 200ms ease-out both');
+    expect(animationOf('.app:not([data-anim])[data-focus] .focus')).toBe(
+      'bench-fade-in 200ms ease-out both',
+    );
     expect(animationOf('.dock .enter')).toBe('bench-fade-in 200ms ease-out both');
-    expect(animationOf('.focus[data-leaving]')).toBe('bench-fade-out 200ms ease-in both');
+    expect(animationOf('.app:not([data-anim]) .focus[data-leaving]')).toBe(
+      'bench-fade-out 200ms ease-in both',
+    );
     const frames = css.match(/@keyframes bench-fade-(?:in|out)\s*\{[^@]*?\}\s*\}/g) ?? [];
     expect(frames).toHaveLength(2);
     for (const frame of frames) expect(frame).not.toMatch(/transform|translate|scale/);
@@ -104,12 +110,34 @@ describe('the Reduce Motion fades (SPEC 10)', () => {
   });
 
   it('fades the capture sheet in and out, and what it raises, with nothing travelling', () => {
-    expect(animationOf('.app[data-sheet] .csheet')).toBe('bench-fade-in 200ms ease-out both');
-    expect(animationOf('.sheet-layer[data-leaving]')).toBe('bench-fade-out 200ms ease-in both');
-    expect(animationOf(".app[data-sheet='today'] .lantern")).toBe(
+    expect(animationOf('.app:not([data-anim])[data-sheet] .csheet')).toBe(
       'bench-fade-in 200ms ease-out both',
     );
-    expect(animationOf('.app[data-lowering] .lantern')).toBe('bench-fade-back 200ms ease-out both');
+    expect(animationOf('.app:not([data-anim]) .sheet-layer[data-leaving]')).toBe(
+      'bench-fade-out 200ms ease-in both',
+    );
+    // A page's own sheets fade out on either path; only capture's drops.
+    expect(animationOf('.sheet-layer[data-leaving]:not([data-capture])')).toBe(
+      'bench-fade-out 200ms ease-in both',
+    );
+    expect(animationOf(".app:not([data-anim])[data-sheet='today'] .lantern")).toBe(
+      'bench-fade-in 200ms ease-out both',
+    );
+    expect(animationOf('.app:not([data-anim])[data-lowering] .lantern')).toBe(
+      'bench-fade-back 200ms ease-out both',
+    );
+    // Nothing else in the stylesheet animates them under [data-anim].
+    for (const rule of rules.filter((item) => /animation:/.test(item.body))) {
+      for (const selector of rule.selectors) {
+        expect(selector.replaceAll(':not([data-anim])', '')).not.toContain('[data-anim]');
+      }
+    }
+    // And with motion on only capture's own sheet stops fading out.
+    for (const rule of rules.filter((item) => /animation:/.test(item.body))) {
+      for (const selector of rule.selectors.filter((s) => s.includes('[data-leaving]'))) {
+        expect(selector).toMatch(/:not\(\[data-anim\]\)|:not\(\[data-capture\]\)/);
+      }
+    }
     const back = /@keyframes bench-fade-back\s*\{([^@]*?\})\s*\}/.exec(css)?.[1] ?? '';
     expect(back).toMatch(/opacity:\s*0/);
     expect(back).not.toMatch(/transform|translate|scale/);

@@ -1040,9 +1040,10 @@ svg.i28 {
   display: none;
 }
 
-/* Reduce Motion, and for now every motion setting (plan section 14, phase A):
-   Focus fades in whole and out again over 200 ms, and the capsule, or Step
-   done and Pause, fade in already in their slot. Nothing travels or scales. */
+/* Reduce Motion (plan section 14, phase A): Focus fades in whole and out
+   again over 200 ms, and the capsule, or Step done and Pause, fade in already
+   in their slot. Nothing travels or scales. With motion on, in a browser that
+   plays it ([data-anim]), moves.ts draws these on their way instead. */
 @keyframes bench-fade-in {
   from {
     opacity: 0;
@@ -1053,13 +1054,13 @@ svg.i28 {
     opacity: 0;
   }
 }
-.app[data-focus] .focus,
-.app[data-focus] .ffoot,
+.app:not([data-anim])[data-focus] .focus,
+.app:not([data-anim])[data-focus] .ffoot,
 .dock .enter {
   animation: bench-fade-in 200ms ease-out both;
 }
-.focus[data-leaving],
-.ffoot[data-leaving] {
+.app:not([data-anim]) .focus[data-leaving],
+.app:not([data-anim]) .ffoot[data-leaving] {
   animation: bench-fade-out 200ms ease-in both;
 }
 /* A tab switch, or a page pushed or popped: the new screen fades in over the
@@ -1566,7 +1567,7 @@ svg.i28 {
    drawer's edge at 60 (Me, and on a white place the back pill too). It is
    inert under the drawer already, so it is not drawn either, at rest. Pulled
    down, the drawer uncovers it, so then it is drawn, cut by the edge. */
-.app[data-drawer='open']:not([data-travel]) .screen .hdr {
+.app[data-drawer='open']:not([data-travel]):not([data-flight]) .screen .hdr {
   visibility: hidden;
 }
 /* The band above the open drawer's header row, where the grabber is. */
@@ -1781,6 +1782,88 @@ svg.i28 {
 }
 .app[data-travel='present'] .dock .capsule {
   opacity: var(--open-fg, 1);
+}
+
+/* ═════════════ The animated path (moves.ts; SPEC 10, plan section 14 phase B) ═════════════
+   Layers that hold only pictures, for as long as a motion runs, and are empty
+   at rest. Above Focus and its foot, under the dock line: what travels between
+   the lantern, the capsule and Focus. Under the page, or over it going back:
+   the page a slide leaves. */
+.morph,
+.ghostscreen {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.morph {
+  z-index: 29;
+}
+.ghostscreen {
+  z-index: 1;
+}
+.ghostscreen.over {
+  z-index: 2;
+}
+.morph:empty,
+.ghostscreen:empty {
+  display: none;
+}
+/* A frame that rounds its corners by transforms alone (motion.ts, frameNode). */
+.mframe {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 0;
+  height: 0;
+}
+.mframe > .mf {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform-origin: 0 0;
+  background: var(--mf);
+}
+.mframe > .band {
+  width: 100px;
+  height: 100px;
+}
+.mframe > .disc {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+}
+/* The bar's tick as an element of its own, so it can fade while the bar travels. */
+.morph .m-notick .fill::after {
+  display: none;
+}
+.mtick {
+  position: absolute;
+  right: -1px;
+  top: -4px;
+  width: 2px;
+  height: calc(var(--h) + 8px);
+  border-radius: 1px;
+  background: var(--white);
+  box-shadow: var(--halo);
+}
+/* What the drawer held, carried on its way after a tap. */
+.drawer > .mdrawer {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  border-radius: inherit;
+  background: var(--stone);
+  pointer-events: none;
+}
+/* The page a slide leaves, as it looked: its own ground, frozen on it. */
+.ghostscreen > .mghost {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+/* Focus's ground on its way, under Focus as Focus comes up over it. */
+.app > .mframe {
+  z-index: 26;
 }
 
 /* ═════════════ Rows (SPEC 9.7) ═════════════ */
@@ -2952,12 +3035,16 @@ svg.i28 {
   position: absolute;
   inset: 0;
 }
-/* Reduce Motion, and for now every setting: the sheet fades in and out. */
-.app[data-sheet] .csheet {
+/* Reduce Motion: the sheet fades in and out. With motion on the disc grows
+   into it, and it drops (moves.ts). */
+.app:not([data-anim])[data-sheet] .csheet {
   animation: bench-fade-in 200ms ease-out both;
 }
 .sheet-layer[data-leaving] {
   pointer-events: none;
+}
+.app:not([data-anim]) .sheet-layer[data-leaving],
+.sheet-layer[data-leaving]:not([data-capture]) {
   animation: bench-fade-out 200ms ease-in both;
 }
 /* Above the sheet: a tap closes it. Nothing is drawn; the screen shows through.
@@ -3183,13 +3270,13 @@ svg.i28 {
 }
 
 /* Reduce Motion: what is raised fades in where it now stands, going up and
-   coming back down. Nothing travels. */
-.app[data-sheet='today'] .lantern,
-.app[data-sheet='focus'] .fbody {
+   coming back down. Nothing travels. With motion on it slides (moves.ts). */
+.app:not([data-anim])[data-sheet='today'] .lantern,
+.app:not([data-anim])[data-sheet='focus'] .fbody {
   animation: bench-fade-in 200ms ease-out both;
 }
-.app[data-lowering] .lantern,
-.app[data-lowering] .fbody {
+.app:not([data-anim])[data-lowering] .lantern,
+.app:not([data-anim])[data-lowering] .fbody {
   animation: bench-fade-back 200ms ease-out both;
 }
 @keyframes bench-fade-back {
