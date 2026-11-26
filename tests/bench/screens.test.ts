@@ -716,6 +716,14 @@ describe('7b · Nothing planned (SPEC 5.7b)', () => {
     expect(m.container.querySelector('h1')?.textContent).toBe('Tasks');
   });
 
+  it('lands focus on the Tasks title, never on the page, when the inbox opens from the keyboard', async () => {
+    const m = await mount(MON_0912, 'weeksAway');
+    button(m.container, 'Open the inbox').focus();
+    press(m.container, 'Open the inbox');
+    expect(document.activeElement).not.toBe(document.body);
+    expect(document.activeElement).toBe(m.container.querySelector('.screen h1'));
+  });
+
   it('is the same with nothing at all', async () => {
     const m = await mount(TUE_1005, 'empty');
     expect(visibleText(m.container)).toContain('Nothing planned for today');
@@ -3340,6 +3348,44 @@ describe('Add a step (SPEC 5.3 and 3, "When a field has the keyboard")', () => {
     await Promise.resolve();
     expect(stateOf(m).bench.drafts.fields[`step:${dentist(m).id}`]).toBeUndefined();
     expect(id(m, 'p-addstep')?.hidden).toBe(false);
+  });
+});
+
+describe('Add a step from a keyboard (SPEC 11)', () => {
+  async function opened() {
+    const m = await mount(TUE_1005);
+    press(m.container, /^Next/);
+    press(m.container, /^10:30, Call the dentist/);
+    return m;
+  }
+  const field = (m: Mounted) => id(m, 'p-stepfield') as HTMLInputElement;
+  const key = (m: Mounted, name: string) =>
+    field(m).dispatchEvent(new KeyboardEvent('keydown', { key: name, bubbles: true }));
+
+  it('lets go of an empty field with Escape onto Add a step, never the page', async () => {
+    const m = await opened();
+    id(m, 'p-addstep')!.focus();
+    id(m, 'p-addstep')!.click();
+    field(m).value = 'Find the card';
+    key(m, 'Enter');
+    expect(document.activeElement).toBe(field(m));
+    key(m, 'Escape');
+    await Promise.resolve();
+    expect(document.activeElement).toBe(id(m, 'p-addstep'));
+    expect(id(m, 'p-addstep')?.hidden).toBe(false);
+    expect(field(m).closest('.field')?.hasAttribute('hidden')).toBe(true);
+  });
+
+  it('lets go of a field holding words with Escape onto the page’s title, keeping them', async () => {
+    const m = await opened();
+    id(m, 'p-addstep')!.click();
+    field(m).value = 'Ring at nine';
+    field(m).dispatchEvent(new Event('input', { bubbles: true }));
+    key(m, 'Escape');
+    await Promise.resolve();
+    expect(document.activeElement).not.toBe(document.body);
+    expect(document.activeElement).toBe(id(m, 'p-title'));
+    expect(field(m).value).toBe('Ring at nine');
   });
 });
 

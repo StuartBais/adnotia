@@ -303,8 +303,18 @@ function addStep(props: TaskPageProps): HTMLElement {
       event.preventDefault();
       actions.onStepEnter(field.value);
     } else if (event.key === 'Escape') {
+      // The field lets go of the key, and focus goes somewhere the person can
+      // carry on from, never to the page: Add a step, when the field is
+      // empty and closes, otherwise the page's title, the words kept below it.
       event.preventDefault();
-      field.blur();
+      if (field.value.trim() === '') {
+        button.hidden = false;
+        button.focus({ preventScroll: true });
+      } else {
+        const home = field.closest('.screen')?.querySelector<HTMLElement>('[data-focus-home]');
+        if (home) home.focus({ preventScroll: true });
+        else field.blur();
+      }
     }
   });
   field.addEventListener('blur', () => {
