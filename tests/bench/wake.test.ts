@@ -97,14 +97,34 @@ describe('the screen stays awake in Focus', () => {
     expect(request).toHaveBeenCalledTimes(2);
   });
 
-  it('asks again after the browser let go of it by itself', async () => {
+  it('asks again at once after the browser let go of it by itself, with nothing drawn', async () => {
     stubWakeLock();
     const m = await mount(TUE_1005);
     press(m.container, LIT);
     await settled();
     held[0]?.lose();
+    expect(request).toHaveBeenCalledTimes(2);
+    await settled();
+    // Drawn again, it holds the new one and asks no more.
     press(m.container, 'Add 5 minutes');
     expect(request).toHaveBeenCalledTimes(2);
+    // Let go of once Focus closes, and not asked for again.
+    press(m.container, 'Back to Today');
+    expect(held[1]?.release).toHaveBeenCalledTimes(1);
+    held[1]?.lose();
+    expect(request).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not ask again when the browser lets go on the way to the background', async () => {
+    stubWakeLock();
+    const m = await mount(TUE_1005);
+    press(m.container, LIT);
+    await settled();
+    const visibility = vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('hidden');
+    held[0]?.lose();
+    expect(request).toHaveBeenCalledTimes(1);
+    visibility.mockRestore();
+    expect(m.container.dataset['focus']).toBe('open');
   });
 
   it('lets go of a lock that arrives after Focus has closed', async () => {

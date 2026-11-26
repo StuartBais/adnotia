@@ -930,8 +930,14 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
           return;
         }
         lock = sentinel;
+        // The browser can let go while the page stays visible (low power, a
+        // system setting): asked for again at once, rather than at the next
+        // render, which on a still Focus can be a minute away. On the way to
+        // the background the page is no longer visible, so nothing is asked.
         sentinel.addEventListener?.('release', () => {
-          if (lock === sentinel) lock = undefined;
+          if (lock !== sentinel) return;
+          lock = undefined;
+          if (lockWanted) holdAwake(true);
         });
       },
       () => {
