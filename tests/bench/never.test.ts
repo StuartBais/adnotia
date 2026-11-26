@@ -9,16 +9,18 @@ import {
   press,
   said,
   settle,
+  type,
   unmount,
   type Mounted,
 } from './mount';
 
 // What the prototype never says (design/lantern/SPEC.md section 13, "Anything
 // that shames", and docs/03-scope.md "Tone"), across every screen built so far
-// (Today, Focus, the rest of today, the places, Me, Settings, About and the
-// crisis page), every scenario, and every six-second line and Undo: nothing overdue, late, missed or behind; no streak, no
-// greeting and no cheering; no exclamation mark; never "0 min left" and never
-// seconds; no count on a tab; and no figure for time away.
+// (Today, Focus, the rest of today, the places, Me, Settings, About, the
+// crisis page and capture), every scenario, and every six-second line and
+// Undo: nothing overdue, late, missed or behind; no streak, no greeting and
+// no cheering; no exclamation mark; never "0 min left" and never seconds; no
+// count on a tab; and no figure for time away.
 
 afterEach(unmount);
 
@@ -189,6 +191,34 @@ describe('never', () => {
     outlastUndo();
     press(m.container, 'Start');
     undo('Start');
+  });
+
+  it('says none of it in capture, its six seconds, its Undo and its kept draft', async () => {
+    const m = await mount('2026-11-24T10:05:00', 'example');
+    press(m.container, 'Capture');
+    holdsNothing(m, 'capture over Today');
+    type(m, 'Ask Ana about Friday');
+    press(m.container, 'Today');
+    holdsNothing(m, 'capture, Today chosen');
+    press(m.container, 'Save');
+    said(m);
+    holdsNothing(m, 'the Next line after Save');
+    press(m.container, /^Undo: remove /);
+    said(m);
+    holdsNothing(m, 'capture opened again by Undo');
+    press(m.container, 'Close');
+    holdsNothing(m, 'Today with a draft kept');
+    press(m.container, /^Now: /);
+    settle(m);
+    press(m.container, 'Capture, draft kept');
+    holdsNothing(m, 'capture over Focus');
+    press(m.container, 'Save');
+    said(m);
+    holdsNothing(m, 'Focus’s foot after Save');
+    press(m.container, 'Back to Today');
+    press(m.container, 'Tasks');
+    press(m.container, 'Capture');
+    holdsNothing(m, 'capture over a place, the capsule riding');
   });
 
   it('says none of it after going back by Safari’s edge swipe', async () => {

@@ -9,6 +9,7 @@ import {
   advance,
   button,
   choices,
+  controls,
   drawnText,
   goBack,
   hintOf,
@@ -16,12 +17,14 @@ import {
   mount,
   nameOf,
   outlastFade,
+  outlastSheet,
   press,
   readText,
   readingOrder,
   said,
   settle,
   stateOf,
+  type,
   unmount,
   visibleText,
   type Mounted,
@@ -1896,5 +1899,454 @@ describe('4 · Focus (SPEC 5.4)', () => {
     expect(historyDepth()).toBe(1);
     goBack();
     expect(again.container.dataset['focus']).toBeUndefined();
+  });
+});
+
+describe('5 · Capture (SPEC 5.5)', () => {
+  const LIT = /^Now: Write the question\. Step 2 of 3/;
+  const ASK = 'Ask Ana about Friday';
+  const sheetOf = (m: Mounted) => m.container.querySelector<HTMLElement>('.sheet-layer')!;
+  const field = (m: Mounted) => id(m, 'c-field') as HTMLInputElement;
+  const disc = (m: Mounted) => id(m, 'b-capture')!;
+  /** History as it stands once the moves made by a close have landed (jsdom moves on its timers). */
+  const depth = () => {
+    vi.advanceTimersByTime(1);
+    return historyDepth();
+  };
+  const inboxTitles = (m: Mounted) =>
+    model
+      .inbox(stateOf(m).tasks)
+      .filter((task) => task.parentId === undefined)
+      .map((task) => task.title);
+
+  async function captured(local = TUE_1005, scenario: 'example' | 'weeksAway' = 'example') {
+    const m = await mount(local, scenario);
+    press(m.container, 'Capture');
+    return m;
+  }
+
+  it('opens from the disc with the field focused in the same tap, so the keyboard comes up', async () => {
+    const m = await mount(TUE_1005);
+    disc(m).click();
+    // Straight after the click, with nothing awaited: iOS raises the keyboard
+    // only for a field focused inside the tap's own handler.
+    expect(document.activeElement).toBe(field(m));
+    expect(field(m).value).toBe('');
+    expect(field(m).placeholder).toBe("What's on your mind?");
+    expect(field(m).getAttribute('enterkeyhint')).toBe('enter');
+    expect(field(m).closest('form')).toBeNull();
+    // Lifted to where the keyboard will be, before the keyboard says so.
+    expect(document.documentElement.style.getPropertyValue('--kb')).not.toBe('');
+  });
+
+  it('is modal over Today, which stays lit above it: the lantern raised, the capsule nowhere', async () => {
+    const m = await captured();
+    expect(m.container.dataset['sheet']).toBe('today');
+    const dialog = sheetOf(m).querySelector('[role="dialog"]')!;
+    expect(dialog.getAttribute('aria-modal')).toBe('true');
+    expect(nameOf(dialog)).toBe('Capture');
+    for (const under of ['.screen', '.fade', '.dock', '.drawer', '.foot', '.tabs']) {
+      expect(m.container.querySelector(under)?.hasAttribute('inert'), under).toBe(true);
+    }
+    expect(sheetOf(m).hasAttribute('inert')).toBe(false);
+    // The lantern keeps burning above the sheet, its title joined to the Now line.
+    expect(drawnText(m.container.querySelector('.lantern .nowline')!)).toContain(
+      'step 2 of 3 · Write the school email',
+    );
+    expect(m.container.querySelector('.screen')?.getAttribute('data-lamp')).toBe('lit');
+    expect(m.container.dataset['ride']).toBeUndefined();
+    expect(m.container.querySelector('#b-capsule')).toBeNull();
+  });
+
+  it('says what it is in SPEC 5.5’s words', async () => {
+    const m = await captured();
+    const sheet = drawnText(sheetOf(m));
+    for (const words of [
+      'Capture',
+      'Close',
+      'Goes to the inbox with no date. Plan it later if you like.',
+      'Inbox',
+      'Today',
+      'Save',
+    ]) {
+      expect(sheet).toContain(words);
+    }
+    expect(nameOf(id(m, 'c-to-inbox')!)).toBe('Inbox');
+    expect(id(m, 'c-to-inbox')?.getAttribute('aria-checked')).toBe('true');
+    expect(id(m, 'c-to-today')?.getAttribute('aria-checked')).toBe('false');
+    expect(nameOf(m.container.querySelector('[role="radiogroup"]')!)).toBe('Where it goes');
+  });
+
+  it('offers four choices, and reads them in SPEC 11’s order, Me last', async () => {
+    const m = await captured();
+    expect(choices(m.container)).toBe(4);
+    expect(readingOrder(m.container)).toEqual([
+      'Capture',
+      'Close',
+      'Capture',
+      'Goes to the inbox with no date. Plan it later if you like.',
+      'Inbox',
+      'Today',
+      'Save',
+      'Me',
+    ]);
+    expect(hintOf(id(m, 'c-me')!)).toBe('Keeps your draft.');
+  });
+
+  it('is a level of its own in history: back closes it and keeps the draft', async () => {
+    const m = await captured();
+    expect(depth()).toBe(1);
+    type(m, ASK);
+    goBack();
+    expect(m.container.dataset['sheet']).toBeUndefined();
+    expect(stateOf(m).bench.drafts.capture).toEqual({ text: ASK, to: 'inbox' });
+    expect(nameOf(disc(m))).toBe('Capture, draft kept');
+    expect(document.activeElement).toBe(id(m, 'b-lit'));
+  });
+
+  it('Save files the words in the inbox, drops the sheet, says so and goes back to the step', async () => {
+    const m = await captured();
+    type(m, ASK);
+    press(m.container, 'Save');
+    expect(inboxTitles(m)).toContain(ASK);
+    const saved = titled(stateOf(m), ASK);
+    expect(saved.when).toEqual({ kind: 'none' });
+    expect(m.container.dataset['sheet']).toBeUndefined();
+    expect(said(m)).toBe('Saved to inbox');
+    expect(document.activeElement).toBe(id(m, 'b-lit'));
+    // The Next line: "Saved to the inbox" over the words, with Undo at its right.
+    const handle = id(m, 'b-handle')!;
+    expect(drawnText(handle)).toContain('Saved to the inbox');
+    expect(drawnText(handle)).toContain(ASK);
+    expect(nameOf(id(m, 'b-undo')!)).toBe(`Undo: remove ${ASK} from the inbox`);
+    // Nothing is kept: the words went where they were going.
+    expect(stateOf(m).bench.drafts.capture).toBeUndefined();
+    expect(nameOf(disc(m))).toBe('Capture');
+    expect(depth()).toBe(0);
+  });
+
+  it('the return key saves, as Save does', async () => {
+    const m = await captured();
+    const input = type(m, ASK);
+    const enter = new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true });
+    input.dispatchEvent(enter);
+    expect(enter.defaultPrevented).toBe(true);
+    expect(inboxTitles(m)).toContain(ASK);
+    expect(m.container.dataset['sheet']).toBeUndefined();
+  });
+
+  it('Today files it on today’s list, anytime, and the helper line says so first', async () => {
+    const m = await captured();
+    type(m, ASK);
+    const today = id(m, 'c-to-today')!;
+    // A tap on the switch keeps the field focused, so the keyboard stays up.
+    const down = new MouseEvent('mousedown', { bubbles: true, cancelable: true });
+    today.dispatchEvent(down);
+    expect(down.defaultPrevented).toBe(true);
+    press(m.container, 'Today');
+    expect(document.activeElement).toBe(field(m));
+    expect(id(m, 'c-to-today')?.getAttribute('aria-checked')).toBe('true');
+    expect(drawnText(sheetOf(m))).toContain("Goes on today's list, anytime.");
+    expect(drawnText(sheetOf(m))).not.toContain('Goes to the inbox');
+    // The choice is kept with the words.
+    expect(stateOf(m).bench.drafts.capture).toEqual({ text: ASK, to: 'today' });
+    press(m.container, 'Save');
+    expect(titled(stateOf(m), ASK).when).toEqual({ kind: 'anytime', date: '2026-11-24' });
+    expect(said(m)).toBe("Saved to today's list");
+    expect(drawnText(id(m, 'b-handle')!)).toContain("Saved to today's list");
+  });
+
+  it('moves between Inbox and Today with the arrow keys, keeping focus on the switch', async () => {
+    const m = await captured();
+    id(m, 'c-to-inbox')!.focus();
+    id(m, 'c-to-inbox')!.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }),
+    );
+    expect(id(m, 'c-to-today')?.getAttribute('aria-checked')).toBe('true');
+    expect(document.activeElement).toBe(id(m, 'c-to-today'));
+  });
+
+  it('files nothing from an empty field, and the sheet stays', async () => {
+    const m = await captured();
+    const before = stateOf(m).tasks.length;
+    type(m, '   ');
+    press(m.container, 'Save');
+    expect(stateOf(m).tasks).toHaveLength(before);
+    expect(m.container.dataset['sheet']).toBe('today');
+    expect(id(m, 'b-undo')).toBeNull();
+  });
+
+  it('Undo removes the item and opens the sheet again with the words in it', async () => {
+    const m = await captured();
+    type(m, ASK);
+    press(m.container, 'Save');
+    press(m.container, `Undo: remove ${ASK} from the inbox`);
+    expect(inboxTitles(m)).not.toContain(ASK);
+    expect(m.container.dataset['sheet']).toBe('today');
+    expect(document.activeElement).toBe(field(m));
+    expect(field(m).value).toBe(ASK);
+    expect(said(m)).toBe('Undone. Now: Write the question');
+    expect(depth()).toBe(1);
+  });
+
+  it('Undo after Save to Today opens on Today again', async () => {
+    const m = await captured();
+    type(m, ASK);
+    press(m.container, 'Today');
+    press(m.container, 'Save');
+    press(m.container, `Undo: remove ${ASK} from today's list`);
+    expect(stateOf(m).tasks.some((task) => task.title === ASK)).toBe(false);
+    expect(id(m, 'c-to-today')?.getAttribute('aria-checked')).toBe('true');
+  });
+
+  it('Close keeps the words as a draft: a dot on the disc, its name says so, and the next tap has them', async () => {
+    const m = await captured();
+    type(m, ASK);
+    press(m.container, 'Close');
+    expect(m.container.dataset['sheet']).toBeUndefined();
+    expect(depth()).toBe(0);
+    expect(stateOf(m).bench.drafts.capture).toEqual({ text: ASK, to: 'inbox' });
+    expect(nameOf(disc(m))).toBe('Capture, draft kept');
+    expect(disc(m).querySelector('.draft-dot')?.getAttribute('aria-hidden')).toBe('true');
+    // Back on the step, exactly where the person was.
+    expect(document.activeElement).toBe(id(m, 'b-lit'));
+    expect(id(m, 't-today')?.getAttribute('aria-current')).toBe('page');
+    outlastSheet();
+    expect(sheetOf(m).hidden).toBe(true);
+    press(m.container, 'Capture, draft kept');
+    expect(field(m).value).toBe(ASK);
+    expect(document.activeElement).toBe(field(m));
+    // The draft is in the field now, not behind the disc.
+    expect(nameOf(disc(m))).toBe('Capture');
+  });
+
+  it('a tap above the sheet closes it and keeps the draft', async () => {
+    const m = await captured();
+    type(m, ASK);
+    (sheetOf(m).querySelector('.c-above') as HTMLElement).click();
+    expect(m.container.dataset['sheet']).toBeUndefined();
+    expect(stateOf(m).bench.drafts.capture?.text).toBe(ASK);
+  });
+
+  it('a swipe down its top band closes it and keeps the draft; a short one does not', async () => {
+    const m = await captured();
+    type(m, ASK);
+    const panel = sheetOf(m).querySelector<HTMLElement>('.c-panel')!;
+    const head = panel.querySelector<HTMLElement>('.c-head')!;
+    const drag = (to: number) => {
+      head.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, clientY: 300 }));
+      panel.dispatchEvent(new MouseEvent('pointermove', { bubbles: true, clientY: 300 + to }));
+      panel.dispatchEvent(new MouseEvent('pointerup', { bubbles: true, clientY: 300 + to }));
+    };
+    drag(12);
+    expect(m.container.dataset['sheet']).toBe('today');
+    expect(panel.style.transform).toBe('');
+    drag(90);
+    expect(m.container.dataset['sheet']).toBeUndefined();
+    expect(stateOf(m).bench.drafts.capture?.text).toBe(ASK);
+  });
+
+  it('lets an empty draft go: no dot after closing with nothing in the field', async () => {
+    const m = await captured();
+    type(m, ASK);
+    type(m, '');
+    press(m.container, 'Close');
+    expect(stateOf(m).bench.drafts.capture).toBeUndefined();
+    expect(nameOf(disc(m))).toBe('Capture');
+  });
+
+  it('keeps help two taps away: Me above the sheet keeps the draft and opens Me', async () => {
+    const m = await captured();
+    type(m, ASK);
+    press(m.container, 'Me');
+    expect(m.container.dataset['sheet']).toBeUndefined();
+    expect(m.container.querySelector('.screen h1')?.textContent).toBe('Me');
+    expect(sheetOf(m).contains(document.activeElement)).toBe(false);
+    expect(stateOf(m).bench.drafts.capture?.text).toBe(ASK);
+    // The sheet's entry became Me's.
+    expect(depth()).toBe(1);
+    press(m.container, 'If things are bad right now');
+    expect(visibleText(m.container)).toContain('If things are bad right now');
+  });
+
+  it('keeps the draft through a reload, as a dot on the disc, never pushed at the person', async () => {
+    const m = await captured();
+    // Typing stops; a moment later the words are kept, the sheet still open.
+    type(m, ASK);
+    expect(stateOf(m).bench.drafts.capture?.text).toBe(ASK);
+    window.dispatchEvent(new Event('pagehide'));
+    const drafts = stateOf(m).bench.drafts;
+    unmount();
+    const again = await mount(TUE_1005, 'example', (state) => ({
+      ...state,
+      bench: { ...state.bench, drafts },
+    }));
+    // The sheet is not opened by itself: the keyboard comes only with a tap.
+    expect(again.container.dataset['sheet']).toBeUndefined();
+    expect(nameOf(id(again, 'b-capture')!)).toBe('Capture, draft kept');
+    press(again.container, 'Capture, draft kept');
+    expect(field(again).value).toBe(ASK);
+  });
+
+  it('keeps what was typed when the app is hidden with the sheet open', async () => {
+    const m = await captured();
+    const input = field(m);
+    input.value = ASK;
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    // Hidden before the moment after typing: the words are kept all the same.
+    document.dispatchEvent(new Event('visibilitychange'));
+    window.dispatchEvent(new Event('pagehide'));
+    expect(stateOf(m).bench.drafts.capture?.text).toBe(ASK);
+  });
+
+  describe('from Focus', () => {
+    async function inFocus() {
+      const m = await mount(TUE_1005);
+      press(m.container, LIT);
+      settle(m);
+      press(m.container, 'Capture');
+      return m;
+    }
+
+    it('keeps the step lit above the sheet, and Focus stays open under it', async () => {
+      const m = await inFocus();
+      expect(m.container.dataset['sheet']).toBe('focus');
+      expect(m.container.dataset['focus']).toBe('open');
+      expect(document.activeElement).toBe(field(m));
+      for (const under of ['.focus', '.ffoot', '.dock']) {
+        expect(m.container.querySelector(under)?.hasAttribute('inert'), under).toBe(true);
+      }
+      expect(m.container.querySelector('#b-capsule')).toBeNull();
+      expect(depth()).toBe(2);
+    });
+
+    it('closes back to the step in Focus', async () => {
+      const m = await inFocus();
+      press(m.container, 'Close');
+      expect(m.container.dataset['focus']).toBe('open');
+      expect(document.activeElement).toBe(id(m, 'f-step'));
+      expect(depth()).toBe(1);
+    });
+
+    it('saves back to Focus on the same step, its foot offering Undo', async () => {
+      const m = await inFocus();
+      type(m, ASK);
+      press(m.container, 'Save');
+      expect(m.container.dataset['focus']).toBe('open');
+      expect(document.activeElement).toBe(id(m, 'f-step'));
+      expect(id(m, 'f-step')?.textContent).toContain('Write the question');
+      expect(drawnText(id(m, 'f-foot')!)).toBe(`Saved to the inbox · ${ASK}`);
+      expect(nameOf(id(m, 'b-undo')!)).toBe(`Undo: remove ${ASK} from the inbox`);
+    });
+
+    it('back closes the sheet first, then Focus', async () => {
+      const m = await inFocus();
+      goBack();
+      expect(m.container.dataset['sheet']).toBeUndefined();
+      expect(m.container.dataset['focus']).toBe('open');
+      goBack();
+      expect(m.container.dataset['focus']).toBeUndefined();
+    });
+
+    it('Me above the sheet folds Focus away and opens Me', async () => {
+      const m = await inFocus();
+      press(m.container, 'Me');
+      expect(m.container.dataset['focus']).toBeUndefined();
+      expect(m.container.querySelector('.screen h1')?.textContent).toBe('Me');
+      expect(depth()).toBe(1);
+    });
+  });
+
+  describe('from a place', () => {
+    it('carries the capsule on the sheet’s top edge, as a picture only', async () => {
+      const m = await mount(TUE_1005);
+      press(m.container, 'Tasks');
+      press(m.container, 'Capture');
+      expect(m.container.dataset['sheet']).toBe('place');
+      expect(m.container.dataset['ride']).toBe('');
+      const picture = sheetOf(m).querySelector<HTMLElement>('.c-ride .capsule')!;
+      expect(picture.getAttribute('aria-hidden')).toBe('true');
+      expect(picture.hasAttribute('inert')).toBe(true);
+      expect(picture.getAttribute('tabindex')).toBe('-1');
+      expect(picture.tagName).toBe('DIV');
+      expect(drawnText(picture)).toContain('18 min left');
+      // The capsule on the dock line is under the sheet, and nothing reaches it.
+      expect(controls(m.container).some((node) => node.id === 'b-capsule')).toBe(false);
+      expect(choices(m.container)).toBe(4);
+    });
+
+    it('closes back to the disc, and the capsule is a button again', async () => {
+      const m = await mount(TUE_1005);
+      press(m.container, 'Tasks');
+      press(m.container, 'Capture');
+      press(m.container, 'Close');
+      expect(document.activeElement).toBe(id(m, 'b-capture'));
+      expect(m.container.dataset['ride']).toBeUndefined();
+      expect(id(m, 'b-capsule')?.tagName).toBe('BUTTON');
+      expect(id(m, 't-tasks')?.getAttribute('aria-current')).toBe('page');
+    });
+
+    it('saves back to the disc', async () => {
+      const m = await mount(TUE_1005);
+      press(m.container, 'Tasks');
+      press(m.container, 'Capture');
+      type(m, ASK);
+      press(m.container, 'Save');
+      expect(document.activeElement).toBe(id(m, 'b-capture'));
+      expect(drawnText(id(m, 'b-handle')!)).toContain('Saved to the inbox');
+    });
+
+    it('rides no timer on the crisis page, where capture stays', async () => {
+      const m = await mount(TUE_1005);
+      press(m.container, 'Me');
+      press(m.container, 'If things are bad right now');
+      press(m.container, 'Capture');
+      expect(m.container.dataset['sheet']).toBe('place');
+      expect(sheetOf(m).querySelector('.capsule')).toBeNull();
+      expect(m.container.dataset['ride']).toBeUndefined();
+    });
+
+    it('has no Me above it on Me itself, where there is none to keep', async () => {
+      const m = await mount(TUE_1005);
+      press(m.container, 'Me');
+      press(m.container, 'Capture');
+      expect(id(m, 'c-me')).toBeNull();
+    });
+
+    it('over the open drawer: Me above the sheet is the drawer’s, and closing keeps the drawer open', async () => {
+      const m = await mount(TUE_1005);
+      press(m.container, /^Next, in 25 minutes/);
+      press(m.container, 'Capture');
+      expect(m.container.dataset['sheet']).toBe('place');
+      expect(m.container.dataset['ride']).toBe('');
+      expect(depth()).toBe(2);
+      press(m.container, 'Close');
+      expect(m.container.dataset['drawer']).toBe('open');
+      expect(document.activeElement).toBe(id(m, 'b-capture'));
+      expect(depth()).toBe(1);
+    });
+  });
+
+  it('on nothing planned, files to Today and the day is planned after all', async () => {
+    const m = await captured(MON_0912, 'weeksAway');
+    type(m, ASK);
+    press(m.container, 'Today');
+    press(m.container, 'Save');
+    expect(m.container.querySelector('.screen')?.getAttribute('data-lamp')).toBe('idle');
+    // Focus goes to the screen's own block, which is now the lit item.
+    expect(document.activeElement).toBe(id(m, 'b-idle'));
+    expect(drawnText(id(m, 'b-handle')!)).toContain("Saved to today's list");
+  });
+
+  it('fades out as a picture that nothing can find or tap', async () => {
+    const m = await captured();
+    press(m.container, 'Close');
+    const layer = sheetOf(m);
+    expect(layer.hasAttribute('data-leaving')).toBe(true);
+    expect(layer.hasAttribute('inert')).toBe(true);
+    expect(layer.querySelector('[id]')).toBeNull();
+    outlastSheet();
+    expect(layer.hidden).toBe(true);
+    expect(layer.childElementCount).toBe(0);
   });
 });

@@ -19,6 +19,7 @@ import {
   said,
   settle,
   stateOf,
+  type,
   unmount,
   visibleText,
   type Mounted,
@@ -320,6 +321,20 @@ describe('the Next line for six seconds (SPEC 9.8)', () => {
     expect(m.container.dataset['drawer']).toBe('folded');
 
     press(m.container, 'Done: Read it once and send');
+    outlastUndo();
+    expect(m.container.dataset['drawer']).toBe('half');
+  });
+
+  it('after Save on idle Today, folds the half drawer to show its Undo, then lets it rest half', async () => {
+    // Save's Undo has no disc to fall back on, so the Next line must show it.
+    const m = await mount(TUE_0958, 'notStarted');
+    expect(m.container.dataset['drawer']).toBe('half');
+    press(m.container, 'Capture');
+    type(m, 'Ask Ana about Friday');
+    press(m.container, 'Save');
+    expect(m.container.dataset['drawer']).toBe('folded');
+    expect(handle(m).querySelector('.h-l1')?.textContent).toBe('Saved to the inbox');
+    expect(nameOf(id(m, 'b-undo')!)).toBe('Undo: remove Ask Ana about Friday from the inbox');
     outlastUndo();
     expect(m.container.dataset['drawer']).toBe('half');
   });

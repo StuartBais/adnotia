@@ -895,6 +895,18 @@ svg.i28 {
   box-shadow: var(--sh-disc-light);
   --ring: var(--charcoal);
 }
+/* A draft kept (SPEC 9.4): a 12 pt white dot in a 2 pt charcoal ring, at the
+   disc's top right, where its edge meets the corner. */
+.draft-dot {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 8px;
+  background: var(--white);
+  box-shadow: inset 0 0 0 2px var(--charcoal);
+}
 
 /* ═════════════ The Now capsule (SPEC 4): x 24–292, y 606–670 ═════════════ */
 
@@ -995,9 +1007,10 @@ svg.i28 {
   position: absolute;
   inset: 0;
   z-index: 26;
+  --fly: calc(var(--sa-top) + 276px); /* the lamp, at (190, 330) */
   background:
     radial-gradient(
-      ellipse 360px 300px at 190px calc(var(--sa-top) + 276px),
+      ellipse 360px 300px at 190px var(--fly),
       var(--lamp) 0%,
       rgba(50, 54, 52, 0.66) 38%,
       rgba(50, 54, 52, 0.22) 72%,
@@ -1957,6 +1970,262 @@ svg.i28 {
 }
 .setting .seg {
   margin-top: 12px;
+}
+
+/* ═════════════ Capture (SPEC 5.5): the sheet, riding the keyboard ═════════════
+   Above everything, the dock line included. The sheet's foot sits on the
+   keyboard, `--kb` from the foot of the screen (keyboard.ts), and its stone
+   runs on down behind the keys. With no keyboard it rests on the home
+   indicator's inset. On a 390 x 844 screen with the keyboard 336 tall: the
+   sheet from 280, its title row 296–340, the field 344–400, the helper line
+   412–430 and the row 442–486, 22 above the keys at 508. */
+
+.sheet-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+}
+.sheet-layer[hidden] {
+  display: none;
+}
+.csheet {
+  position: absolute;
+  inset: 0;
+}
+/* Reduce Motion, and for now every setting: the sheet fades in and out. */
+.app[data-sheet] .csheet {
+  animation: bench-fade-in 200ms ease-out both;
+}
+.sheet-layer[data-leaving] {
+  pointer-events: none;
+  animation: bench-fade-out 200ms ease-in both;
+}
+/* Above the sheet: a tap closes it. Nothing is drawn; the screen shows through.
+   The pointer is what makes iOS send a tap on it as a click. */
+.c-above {
+  position: absolute;
+  inset: 0;
+  cursor: pointer;
+}
+.c-panel {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 8px 24px calc(max(var(--kb, 0px), var(--sa-bot)) + 22px);
+  background: var(--stone);
+  color: var(--charcoal);
+  --ring: var(--charcoal);
+  color-scheme: light;
+  border-radius: 24px 24px 0 0;
+  box-shadow: var(--sh-sheet);
+}
+.c-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 44px;
+  margin-top: 8px;
+  touch-action: none;
+}
+/* Close: the quieter of the two, its ink ending at x 366. */
+.c-close {
+  margin-right: -4px;
+  padding: 0 4px;
+}
+.textbtn.quiet {
+  color: var(--muted);
+}
+.c-field {
+  display: block;
+  width: 100%;
+  height: 56px;
+  margin: 4px 0 0;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 16px;
+  background: var(--white);
+  color: var(--charcoal);
+  caret-color: var(--charcoal);
+  font-family: inherit;
+  -webkit-appearance: none;
+  appearance: none;
+  /* The field always has focus while the sheet is up; its caret says so, as on
+     the board. Its own ring would ring the one field there is. */
+  --ring: transparent;
+}
+.c-field::placeholder {
+  color: var(--muted);
+  opacity: 1;
+}
+.c-help {
+  margin-top: 12px;
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: 500;
+  color: var(--muted);
+}
+.c-row {
+  margin-top: 12px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+/* Inbox or Today on stone: a tint-stone track, a white thumb with iOS's own
+   shadow, charcoal at 700 and muted at 600; two equal parts, x 24–200. */
+.c-row .seg {
+  width: 176px;
+  background: var(--tint-stone);
+}
+.c-row .seg-part {
+  padding: 0;
+  color: var(--muted);
+}
+.c-row .seg-part[aria-checked='true'] {
+  color: var(--charcoal);
+}
+.c-row .seg-part[aria-checked='true']::before {
+  background: var(--white);
+  box-shadow:
+    0 3px 8px rgba(0, 0, 0, 0.12),
+    0 3px 1px rgba(0, 0, 0, 0.04);
+}
+/* Save, x 270–366: the one terracotta control apart from the disc. */
+.c-save {
+  flex: none;
+  width: 96px;
+  height: 44px;
+  border-radius: 22px;
+  display: grid;
+  place-items: center;
+  background: var(--terra);
+  color: var(--charcoal);
+  font-size: 17px;
+  line-height: 22px;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+}
+/* Me above the sheet: a clear target over the Me drawn under it, which still
+   shows, so it looks as it does on the screen it was opened from. */
+.c-me {
+  position: absolute;
+  top: var(--hdr-t);
+  right: 24px;
+  width: 52px;
+  height: 44px;
+  border-radius: 22px;
+}
+.app[data-drawer='open']:not([data-focus]) .c-me {
+  top: calc(var(--open-t) + 16px);
+}
+.app[data-places='white'][data-ground='place']:not([data-focus]) .c-me,
+.app[data-drawer='open']:not([data-focus]) .c-me {
+  --ring: var(--charcoal);
+}
+/* The capsule riding the sheet's top edge, as a picture: 14 above it, as it
+   rests 14 above the drawer. */
+.c-ride {
+  display: none;
+  position: absolute;
+  left: 24px;
+  right: 24px;
+  bottom: calc(100% + 14px);
+  height: 64px;
+}
+.app[data-ride] .c-ride {
+  display: block;
+}
+
+/* From Today: the lantern moved up into the top third, without the note or
+   "Focus ›", the task's title joining the Now line, the lamp following it to
+   (170, 190). The Now line 112–132, the step 144–190, the bar 206–216, the
+   minutes 228–256. */
+.nowline .nowtitle {
+  display: none;
+}
+.app[data-sheet='today'] .lantern {
+  top: calc(var(--sa-top) + 58px);
+  bottom: auto;
+}
+.app[data-sheet='today'] .lantern :is(.ttl, .note, .flabel),
+.app[data-sheet='today'] .lantern > .aside {
+  display: none;
+}
+.app[data-sheet='today'] .lantern .nowline {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.app[data-sheet='today'] .lantern .nowtitle {
+  display: inline;
+}
+.app[data-sheet='today'] .lantern .lit-block .step {
+  margin-top: 12px;
+}
+.app[data-sheet='today'] .lantern .lit-block .bar {
+  margin-top: 16px;
+}
+.app[data-sheet='today'] .lantern .lit-block .mins {
+  margin-top: 12px;
+}
+.app[data-sheet='today'] .screen.today[data-lamp='lit'] {
+  --ly: calc(var(--sa-top) + 136px);
+}
+
+/* From Focus: the context line 112–132, the step at 40 on 144–190, the bar
+   edge to edge on 206–218, the minutes on one line 228–258, and the lamp at
+   (190, 180). The done step, "After this", +5 min and the note wait below. */
+.app[data-sheet='focus'] .focus {
+  --fly: calc(var(--sa-top) + 126px);
+}
+.app[data-sheet='focus'] .fbody {
+  padding-top: 2px;
+  overflow: hidden;
+}
+.app[data-sheet='focus'] .fbody > :is(.fdone, .fafter, .note),
+.app[data-sheet='focus'] .frow > .pill {
+  display: none;
+}
+.app[data-sheet='focus'] .fstep {
+  margin-top: 12px;
+  font-size: 40px;
+  line-height: 46px;
+  letter-spacing: -0.024em;
+}
+.app[data-sheet='focus'] .fbody > .bar {
+  margin-top: 16px;
+}
+.app[data-sheet='focus'] .frow {
+  margin-top: 10px;
+  min-height: 0;
+}
+.app[data-sheet='focus'] .fmins-shown {
+  flex-direction: row;
+  align-items: baseline;
+  gap: 9px;
+}
+
+/* Where it does not fit above the sheet, it is put away and the capsule rides
+   the sheet's edge instead. */
+.app[data-sheet='today'][data-ride] .lantern,
+.app[data-sheet='focus'][data-ride] .fbody {
+  visibility: hidden;
+}
+
+/* Reduce Motion: what is raised fades in where it now stands, going up and
+   coming back down. Nothing travels. */
+.app[data-sheet='today'] .lantern,
+.app[data-sheet='focus'] .fbody {
+  animation: bench-fade-in 200ms ease-out both;
+}
+.app[data-lowering] .lantern,
+.app[data-lowering] .fbody {
+  animation: bench-fade-back 200ms ease-out both;
+}
+@keyframes bench-fade-back {
+  from {
+    opacity: 0;
+  }
 }
 
 /* ═════════════ When what was stored cannot be read ═════════════ */

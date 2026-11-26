@@ -74,6 +74,12 @@ function nowLine(view: PresentView): HTMLElement {
     ? [' ', sep(), ` step ${view.position.number} of ${view.position.count}`]
     : [];
   const label = h('span', { class: 'flabel' }, T.focus, icon('right', 20));
+  // Shown only with the lantern raised above the capture sheet, where the
+  // task's title joins the Now line so the lantern fits (SPEC 5.5).
+  const title =
+    view.steps.current === undefined
+      ? null
+      : h('span', { class: 'nowtitle' }, ' ', sep(), ' ', view.task.title);
   return paused
     ? h(
         'span',
@@ -81,6 +87,7 @@ function nowLine(view: PresentView): HTMLElement {
         icon('pause', 16),
         h('b', { text: view.lead }),
         ...position,
+        title,
         label,
       )
     : h(
@@ -88,6 +95,7 @@ function nowLine(view: PresentView): HTMLElement {
         { class: 'nowline' },
         h('span', { class: 'nowtag', text: T.now }),
         ...position,
+        title,
         label,
       );
 }

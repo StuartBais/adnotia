@@ -13,12 +13,13 @@
 // the minutes and the spoken labels in place. So a tick never takes away the
 // person's focus, scroll or a tap in progress.
 //
-// Built so far (plan section 19, chunks 2 and 3): the frame, Today in every
+// Built so far (plan section 19, chunks 2 to 4): the frame, Today in every
 // state, the drawer at rest at its lip, folded and half and open by tap, the
 // capsule on the places and the open drawer, the tabs with bare places, Me
-// with the crisis page, About with the scenario buttons, and Focus, a layer
-// over the current tab with its own history entry. Capture comes next; its
-// disc is in place and does nothing yet.
+// with the crisis page, About with the scenario buttons, Focus, a layer over
+// the current tab with its own history entry, and capture: a sheet over
+// whatever is open, riding the keyboard, with its own history entry and a
+// draft that outlives it.
 
 import { emptyDomains, type KernelStore } from '../kernel/store';
 import * as act from './actions';
@@ -47,6 +48,7 @@ import {
   type View,
 } from './state';
 import { createTicker, type Ticker } from './clock';
+import { trackKeyboard } from './keyboard';
 import {
   dock,
   foldedDrawer,
@@ -70,6 +72,7 @@ import {
 } from './screens/places';
 import { settingsScreen, type SettingsView } from './screens/settings';
 import { focusFoot, focusKey, focusScreen, type FocusActions } from './screens/focus';
+import { captureSheet, type CaptureTo } from './screens/capture';
 import { ANNOUNCE, T } from './strings';
 import { h, injectSprite } from './ui';
 import { resolve as rewardOptions, setOption } from '../domains/options';
@@ -139,6 +142,15 @@ export const ANNOUNCE_AFTER = 100;
 /** Focus fades in whole, and out, over this long (SPEC 10, Reduce Motion). */
 export const FOCUS_FADE_MS = 200;
 
+/** The capture sheet fades in and out over the same 200 ms (SPEC 10, Reduce Motion). */
+export const SHEET_FADE_MS = 200;
+
+/** Typing in the capture field is kept as a draft this soon after it stops (ms). */
+export const DRAFT_AFTER = 300;
+
+/** Room between what is raised above the capture sheet and the sheet's top. */
+const RAISED_GAP = 12;
+
 /** The Screen Wake Lock, where the browser has one: feature-detected, never required. */
 interface WakeLockLike {
   release(): Promise<void>;
@@ -201,9 +213,20 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
     // (SPEC 11, list 4).
     focus: h('div', { class: 'focus', hidden: true }),
     focusFoot: h('div', { class: 'ffoot', hidden: true }),
+    // Capture's sheet, above everything, the dock line included (SPEC 5.5).
+    sheet: h('div', { class: 'sheet-layer', hidden: true }),
     live: h('div', { class: 'live', 'aria-live': 'polite' }),
   };
   container.append(hints());
+
+  // The keyboard, for the capture sheet to ride (plan section 13). The frame
+  // is the layout viewport, so its height is what the sheet is placed in.
+  const keyboard = trackKeyboard({
+    root: document.documentElement,
+    viewport: window.visualViewport ?? undefined,
+    layoutHeight: () => container.getBoundingClientRect().height || window.innerHeight,
+    onChange: () => fitSheet(),
+  });
 
   const keys = new Map<HTMLElement, string>();
   const patches = new Map<HTMLElement, Built['patch']>();
@@ -227,8 +250,26 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
   /** The Focus layer fading out after it closed (SPEC 10, Reduce Motion). */
   let leaving: ReturnType<typeof setTimeout> | undefined;
   let barRunning = false;
+  /** Where the sheet was opened over, at the last render. */
+  let sheetFrom: string | undefined;
   let destroyed = false;
   let announcing: ReturnType<typeof setTimeout> | undefined;
+  /**
+   * The capture sheet, while it is open: a level of its own over whatever is
+   * open (plan section 8). Held in memory only; what it holds is kept as a
+   * draft in the store.
+   */
+  let sheet: { to: CaptureTo; serial: number } | undefined;
+  let sheetSerial = 0;
+  /** Whether the sheet was shown at the last render. */
+  let sheetShown = false;
+  /** The sheet fading out after it closed. */
+  let sheetLeaving: ReturnType<typeof setTimeout> | undefined;
+  /** The raised lantern, or Today's step in Focus, coming back down: it fades in again. */
+  let lowering: ReturnType<typeof setTimeout> | undefined;
+  let draftTimer: ReturnType<typeof setTimeout> | undefined;
+  /** Whether what is raised above the sheet fits, as last measured; else the capsule rides. */
+  let raisedFits = true;
 
   /** A screen shorter than 740 pt, where the handle is one line (SPEC 3). */
   function compact(): boolean {
@@ -323,6 +364,9 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
     const wasFocus = focusShown;
     const showFocus = focusOpen;
     focusShown = showFocus;
+    // The capture sheet is modal: everything under it is inert, Me excepted,
+    // which the sheet carries over its own (SPEC 5.5).
+    const sheetOpen = sheet !== undefined;
     const byMinute = motion(state) === 'reduced';
     const places = state.bench.settings.places;
 
@@ -369,11 +413,11 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
     // The open drawer covers the screen, and Focus covers everything but the
     // dock line: what is under either is not read or reached.
     for (const under of [layer.screen, layer.fade]) {
-      if (open || showFocus) under.setAttribute('inert', '');
+      if (open || showFocus || sheetOpen) under.setAttribute('inert', '');
       else under.removeAttribute('inert');
     }
     for (const under of [layer.foot, layer.tabs]) {
-      if (showFocus) under.setAttribute('inert', '');
+      if (showFocus || sheetOpen) under.setAttribute('inert', '');
       else under.removeAttribute('inert');
     }
 
@@ -387,6 +431,9 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
       paint(layer.focusFoot, footKey(state, t), () => footOf(state, t));
     } else if (wasFocus) {
       startLeaving();
+    }
+    if (showFocus && sheetOpen) {
+      for (const part of [layer.focus, layer.focusFoot]) part.setAttribute('inert', '');
     }
 
     // The dock line. On the open drawer the lantern has folded into the
@@ -417,7 +464,11 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
         (open ||
           (ground === 'present' && position === 'half') ||
           (ground === 'place' && places === 'white')),
-      draftKept: state.bench.drafts.capture !== undefined && state.bench.drafts.capture.text !== '',
+      // While the sheet is up, its draft is in it, not kept behind the disc.
+      draftKept:
+        !sheetOpen &&
+        state.bench.drafts.capture !== undefined &&
+        state.bench.drafts.capture.text.trim() !== '',
       onCapture: openCapture,
     };
     const slot = props.present ? 'present' : props.capsule ? 'capsule' : 'none';
@@ -428,6 +479,8 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
       lastSlot !== undefined && lastSlot !== slot && (slot === 'capsule' || lastSlot === 'capsule');
     guardArrival(props, view, open, showFocus);
     paint(layer.dock, dockKey(props), () => dock(props));
+    if (sheetOpen) layer.dock.setAttribute('inert', '');
+    else layer.dock.removeAttribute('inert');
     if (morph) {
       for (const node of layer.dock.querySelectorAll('.capsule, .dock-pill')) {
         node.classList.add('enter');
@@ -436,7 +489,7 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
     layer.fade.hidden = !(ground === 'place' && capsule !== undefined && !open);
 
     // The drawer, and Hide at its foot when it is open.
-    if (position === 'lip' || showFocus) layer.drawer.setAttribute('inert', '');
+    if (position === 'lip' || showFocus || sheetOpen) layer.drawer.setAttribute('inert', '');
     else layer.drawer.removeAttribute('inert');
     paint(layer.drawer, drawerKey(state, t, position, today), () =>
       drawer(state, t, position, today),
@@ -445,6 +498,50 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
 
     // The tabs.
     paint(layer.tabs, nav.tab, () => ({ nodes: tabs(nav.tab, chooseTab) }));
+
+    // Capture's sheet (SPEC 5.5). Over Today or Focus, what is lit stays lit
+    // above it; over a place, the capsule rides the sheet's top edge, as a
+    // picture. Where what is lit does not fit above the sheet, the capsule
+    // rides there too (measured in fitSheet).
+    const from = !sheetOpen
+      ? undefined
+      : showFocus
+        ? 'focus'
+        : today?.kind === 'lit' && !open
+          ? 'today'
+          : 'place';
+    if (from) container.dataset['sheet'] = from;
+    else delete container.dataset['sheet'];
+    let rides = false;
+    if (sheet && from) {
+      stopSheetLeaving();
+      const ride =
+        presentNow &&
+        live &&
+        (from !== 'place' || capsuleMode(view, current, position, true) === 'picture')
+          ? {
+              view: presentNow,
+              live,
+              look: from === 'place' ? capsuleLook(places, position) : ('lifted' as const),
+            }
+          : undefined;
+      rides = ride !== undefined && (from === 'place' || !raisedFits);
+      // Me is above the sheet wherever the screen under it has Me.
+      const me = showFocus || open || !(view.kind === 'page' && view.page.kind === 'me');
+      const rideKey = ride
+        ? [presentKey(ride.view), ride.look, capsuleShape(ride.view, ride.live)]
+        : null;
+      paint(layer.sheet, JSON.stringify(['sheet', sheet.serial, me, rideKey]), () =>
+        sheetOf(ride, me),
+      );
+    } else if (sheetShown) {
+      startSheetLeaving();
+    }
+    if (sheetShown && !sheetOpen && (sheetFrom === 'today' || sheetFrom === 'focus')) lower();
+    sheetShown = sheetOpen;
+    sheetFrom = from;
+    if (rides) container.dataset['ride'] = '';
+    else delete container.dataset['ride'];
 
     // Reading order: top to bottom, then the dock line, then the drawer, except
     // where the drawer's list is read before capture: on the half drawer (SPEC
@@ -464,6 +561,7 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
               layer.foot,
               layer.tabs,
               layer.focusFoot,
+              layer.sheet,
               layer.live,
             ]
           : [
@@ -475,6 +573,7 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
               layer.foot,
               layer.tabs,
               layer.focusFoot,
+              layer.sheet,
               layer.live,
             ]),
       );
@@ -492,9 +591,11 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
     order = wanted;
 
     barRunning =
-      current.kind === 'running' && (today?.kind === 'lit' || capsule !== undefined || showFocus);
+      current.kind === 'running' &&
+      (today?.kind === 'lit' || capsule !== undefined || showFocus || rides);
     patchAll(live);
     layout(position);
+    fitSheet();
     // Focus has closed and what had focus went with it: back where it was
     // opened, on the capsule if it is there, otherwise the screen's own block
     // (or, on a place after Done or Set aside, the handle). Judged here, once
@@ -1040,12 +1141,17 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
    * to the background ends it. Where no Next line is on screen, a ticked
    * row's disc is the way back.
    */
-  function offerUndo(next: act.Undo): void {
+  function offerUndo(next: act.Undo, fromHalf = false): void {
     dropUndo();
     const slot: UndoSlot = {
       undo: next,
       // A drawer folded at the tap holds its Next line for the six seconds.
-      hold: shown?.position === 'folded' || shown?.position === 'lip',
+      // Save's Undo has no other way back, so a half drawer folds to hold it
+      // too (undrawn: a proposal; a list's tick has its disc instead).
+      hold:
+        shown?.position === 'folded' ||
+        shown?.position === 'lip' ||
+        (fromHalf && shown?.position === 'half'),
       timer: undefined,
       expired: false,
     };
@@ -1077,16 +1183,36 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
     dropUndo();
     const t = now();
     const before = read();
-    commit(slot.undo.inverse(before, t));
+    const reopen = slot.undo.reopen;
+    const after = slot.undo.inverse(before, t);
+    commit(reopen ? withDraft(after, reopen) : after);
     if (read() === before) render();
     const view = presentView(read(), t);
     announce(ANNOUNCE.undoneThen(view ? `${view.lead}: ${view.step}` : T.nothingRunning));
+    // After Save: the item is gone and the sheet is back, the text in it.
+    if (reopen) return openCapture();
     // Where the pill was: Focus's foot, or the handle.
     const spot = focusShown
       ? layer.focusFoot.querySelector<HTMLElement>('#f-foot')
       : container.querySelector<HTMLElement>('#b-handle');
     if (spot) spot.focus({ preventScroll: true });
     else landFocus();
+  }
+
+  /**
+   * The text Save filed, back as the draft the sheet opens with. A draft kept
+   * since is not lost: it follows the text.
+   */
+  function withDraft(state: BenchDomains, reopen: NonNullable<act.Undo['reopen']>): BenchDomains {
+    const kept = state.bench.drafts.capture?.text.trim();
+    const text = kept && kept !== reopen.text ? `${reopen.text} ${kept}` : reopen.text;
+    return {
+      ...state,
+      bench: {
+        ...state.bench,
+        drafts: { ...state.bench.drafts, capture: { text, to: reopen.to } },
+      },
+    };
   }
 
   /**
@@ -1263,6 +1389,7 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
   }
 
   function scenario(id: ScenarioId): void {
+    dropSheet();
     dropUndo();
     focusOpen = false;
     commit(loadScenario(read(), id, now()));
@@ -1272,6 +1399,7 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
 
   function deleteAll(): void {
     if (!confirm(ABOUT.deleteConfirm)) return;
+    dropSheet();
     dropUndo();
     focusOpen = false;
     const t = now();
@@ -1280,9 +1408,238 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
     go({ ...TODAY });
   }
 
-  // Built in the chunk that follows (plan section 19): capture (4). Its disc
-  // is where it belongs.
-  function openCapture(): void {}
+  // ---------------------------------------------------------------- capture
+
+  /** The field of the sheet now open, if one is. */
+  let sheetField: HTMLInputElement | undefined;
+
+  /**
+   * The capture disc: the sheet over whatever is open, its field focused in
+   * the same call as the tap, which is the only time iOS raises the keyboard.
+   * The sheet is lifted to where the keyboard will be first, so the page
+   * never pans to show the field. A kept draft is back in the field, with
+   * its Inbox or Today (SPEC 5.5).
+   */
+  function openCapture(): void {
+    if (sheet || destroyed) return;
+    const kept = read().bench.drafts.capture;
+    sheet = { to: kept?.to ?? 'inbox', serial: ++sheetSerial };
+    sheetField = undefined;
+    raisedFits = true;
+    // Opened again as the last one closed: what it raises fades in from here.
+    if (lowering !== undefined) clearTimeout(lowering);
+    lowering = undefined;
+    delete container.dataset['lowering'];
+    keyboard.expect();
+    together(() => render());
+    const field = layer.sheet.querySelector<HTMLInputElement>('#c-field');
+    if (!field) return;
+    field.focus({ preventScroll: true });
+    const end = field.value.length;
+    try {
+      field.setSelectionRange(end, end);
+    } catch {
+      // A field that cannot place its caret still takes the typing.
+    }
+  }
+
+  function sheetOf(
+    ride: { view: PresentView; live: PresentLive; look: 'lifted' | 'plain' } | undefined,
+    me: boolean,
+  ): Built {
+    const open = sheet;
+    const built = captureSheet({
+      text: sheetField?.value ?? read().bench.drafts.capture?.text ?? '',
+      to: open?.to ?? 'inbox',
+      ...(ride ? { ride } : {}),
+      me,
+      onInput: draftLater,
+      onTo: chooseTo,
+      onSave: saveCapture,
+      onClose: () => closeCapture(),
+      onMe: meFromSheet,
+    });
+    sheetField = built.field;
+    return built;
+  }
+
+  /**
+   * Close, a swipe down, a tap above the sheet, or back: the sheet drops and
+   * what was typed is kept as a draft, shown by the dot on the disc. Focus
+   * goes back to the step, in Focus or on Today, or to the disc on a place
+   * (SPEC 11). Nothing under the sheet moved, so the person is exactly where
+   * they were.
+   */
+  function closeCapture(land = true): void {
+    if (!sheet) return;
+    const text = sheetField?.value;
+    const to = sheet.to;
+    sheet = undefined;
+    keyboard.release();
+    const before = read();
+    if (text !== undefined) keepDraft(text, to);
+    if (read() === before) render();
+    if (land) landAfterSheet();
+  }
+
+  /** The sheet goes with nothing said and nowhere to land: a scenario, a long time away. */
+  function dropSheet(): void {
+    if (!sheet) return;
+    if (sheetField) keepDraft(sheetField.value, sheet.to);
+    sheet = undefined;
+    keyboard.release();
+  }
+
+  /**
+   * Save, or the return key: the item is filed, the sheet drops, "Saved to
+   * inbox" is said, focus goes back to the step (or the disc on a place), and
+   * the Next line, or Focus's foot, offers Undo for six seconds. An empty
+   * field files nothing, and the sheet stays.
+   */
+  function saveCapture(): void {
+    if (!sheet) return;
+    const text = sheetField?.value ?? '';
+    if (text.trim() === '') return;
+    if (draftTimer !== undefined) clearTimeout(draftTimer);
+    draftTimer = undefined;
+    const result = act.save(read(), text, sheet.to, now());
+    sheet = undefined;
+    keyboard.release();
+    if (result.undo) offerUndo(result.undo, true);
+    commit(result.state);
+    if (result.announce) announce(result.announce);
+    landAfterSheet();
+  }
+
+  /**
+   * Me above the sheet: the sheet closes, keeping the draft, and Me opens as
+   * it would from the screen under it, so help stays two taps away (SPEC 5.5).
+   */
+  function meFromSheet(): void {
+    together(() => {
+      closeCapture(false);
+      if (focusOpen) closeFocus();
+      else if (isOpen()) foldDrawer(false);
+      openMe();
+    });
+    if (focusLost()) landFocus();
+  }
+
+  function chooseTo(to: CaptureTo): void {
+    if (!sheet) return;
+    sheet = { ...sheet, to };
+    if (sheetField) keepDraft(sheetField.value, to);
+  }
+
+  /** Typing is kept a moment after it stops, so a reload or a lost tab keeps it. */
+  function draftLater(): void {
+    if (draftTimer !== undefined) clearTimeout(draftTimer);
+    draftTimer = setTimeout(() => {
+      draftTimer = undefined;
+      if (sheet && sheetField) keepDraft(sheetField.value, sheet.to);
+    }, DRAFT_AFTER);
+  }
+
+  /** The draft as the field holds it: kept, or let go when the field is empty. */
+  function keepDraft(text: string, to: CaptureTo): void {
+    if (draftTimer !== undefined) clearTimeout(draftTimer);
+    draftTimer = undefined;
+    const state = read();
+    const kept = state.bench.drafts.capture;
+    if (text.trim() === '') {
+      if (!kept) return;
+      const { capture: _gone, ...drafts } = state.bench.drafts;
+      commit({ ...state, bench: { ...state.bench, drafts } });
+      return;
+    }
+    if (kept?.text === text && kept.to === to) return;
+    commit({
+      ...state,
+      bench: { ...state.bench, drafts: { ...state.bench.drafts, capture: { text, to } } },
+    });
+  }
+
+  /** Where focus goes when the sheet drops: the step, or the disc on a place (SPEC 11). */
+  function landAfterSheet(): void {
+    const spot = focusShown
+      ? layer.focus.querySelector<HTMLElement>('#f-step')
+      : container.dataset['ground'] === 'present' && !isOpen()
+        ? null
+        : layer.dock.querySelector<HTMLElement>('#b-capture');
+    // On Today, the screen's own block: the lit step, the unlit item, or 7b's heading.
+    if (spot) spot.focus({ preventScroll: true });
+    else landFocus();
+  }
+
+  /**
+   * Whether what stays lit above the sheet, the lantern on Today or the step
+   * in Focus, clears the sheet's top. Where it does not (an SE's height, a
+   * long step), it is put away and the capsule rides the sheet's edge as a
+   * picture instead (plan section 11, "5. Capture"). Measured after each
+   * render and each move of the keyboard; nothing is measured in a test.
+   */
+  function fitSheet(): void {
+    const from = container.dataset['sheet'];
+    if (from !== 'today' && from !== 'focus') return;
+    if (container.getBoundingClientRect().height === 0) return;
+    const panel = layer.sheet.querySelector('.c-panel');
+    const raised =
+      from === 'today'
+        ? layer.screen.querySelector('.lantern')
+        : layer.focus.querySelector('.frow');
+    if (!panel || !raised) return;
+    const fits =
+      raised.getBoundingClientRect().bottom + RAISED_GAP <= panel.getBoundingClientRect().top;
+    if (fits === raisedFits) return;
+    raisedFits = fits;
+    const ride = !fits && layer.sheet.querySelector('.c-ride') !== null;
+    if (ride) container.dataset['ride'] = '';
+    else delete container.dataset['ride'];
+    if (ride && present(read(), now()).kind === 'running') {
+      barRunning = true;
+      ticker?.refresh();
+    }
+  }
+
+  /** The sheet fades out as a picture: its ids go, so nothing finds it, and it takes no taps. */
+  function startSheetLeaving(): void {
+    const part = layer.sheet;
+    // The field lets go of the keyboard; whoever closed the sheet says where focus goes.
+    const active = document.activeElement;
+    if (active instanceof HTMLElement && part.contains(active)) active.blur();
+    part.setAttribute('inert', '');
+    part.dataset['leaving'] = '';
+    keys.delete(part);
+    patches.delete(part);
+    for (const node of part.querySelectorAll('[id]')) node.removeAttribute('id');
+    sheetField = undefined;
+    if (sheetLeaving !== undefined) clearTimeout(sheetLeaving);
+    sheetLeaving = setTimeout(() => {
+      sheetLeaving = undefined;
+      if (sheet || destroyed) return;
+      paint(part, '', () => ({ nodes: [] }));
+      delete part.dataset['leaving'];
+      part.hidden = true;
+    }, SHEET_FADE_MS);
+  }
+
+  function stopSheetLeaving(): void {
+    if (sheetLeaving !== undefined) clearTimeout(sheetLeaving);
+    sheetLeaving = undefined;
+    layer.sheet.removeAttribute('inert');
+    delete layer.sheet.dataset['leaving'];
+    layer.sheet.hidden = false;
+  }
+
+  /** What was raised above the sheet fades in again where it rests (SPEC 10, Reduce Motion). */
+  function lower(): void {
+    container.dataset['lowering'] = '';
+    if (lowering !== undefined) clearTimeout(lowering);
+    lowering = setTimeout(() => {
+      lowering = undefined;
+      delete container.dataset['lowering'];
+    }, SHEET_FADE_MS);
+  }
 
   // ---------------------------------------------------------------- history
 
@@ -1305,7 +1662,7 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
   let holding = false;
 
   function levels(): number {
-    return nav.stack.length + (focusOpen ? 1 : 0) + (isOpen() ? 1 : 0);
+    return nav.stack.length + (focusOpen ? 1 : 0) + (isOpen() ? 1 : 0) + (sheet ? 1 : 0);
   }
 
   function syncHistory(): void {
@@ -1375,9 +1732,10 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
     syncHistory();
   }
 
-  /** Focus closes; otherwise the open drawer folds; otherwise the top page goes. */
+  /** The sheet closes, keeping its draft; otherwise Focus; then the open drawer; then the top page. */
   function closeTop(): void {
-    if (focusOpen) closeFocus();
+    if (sheet) closeCapture();
+    else if (focusOpen) closeFocus();
     else if (isOpen()) foldDrawer(true);
     else if (nav.stack.length > 0) back();
   }
@@ -1402,6 +1760,8 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
 
   /** Going to the background: when, and where the person was (plan section 12). */
   function hide(): void {
+    // What is in the field is kept, though the sheet stays open.
+    if (sheet && sheetField) keepDraft(sheetField.value, sheet.to);
     dropUndo();
     away = true;
     holdAwake(false);
@@ -1420,6 +1780,7 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
     const state = read();
     const woken = wake(state, now());
     if (woken.restore === 'today') {
+      dropSheet();
       nav = { ...TODAY, list: nav.list };
       focusOpen = false;
       ticked.clear();
@@ -1477,6 +1838,10 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
       destroyed = true;
       if (announcing !== undefined) clearTimeout(announcing);
       if (leaving !== undefined) clearTimeout(leaving);
+      if (sheetLeaving !== undefined) clearTimeout(sheetLeaving);
+      if (lowering !== undefined) clearTimeout(lowering);
+      if (draftTimer !== undefined) clearTimeout(draftTimer);
+      keyboard.destroy();
       holdAwake(false);
       dropUndo();
       container.removeEventListener('focusout', onFocusOut);
@@ -1486,7 +1851,17 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
       window.removeEventListener('popstate', onPopState);
       container.replaceChildren();
       container.classList.remove('app');
-      for (const name of ['drawer', 'ground', 'places', 'motion', 'more', 'focus']) {
+      for (const name of [
+        'drawer',
+        'ground',
+        'places',
+        'motion',
+        'more',
+        'focus',
+        'sheet',
+        'ride',
+        'lowering',
+      ]) {
         delete container.dataset[name];
       }
       container.style.removeProperty('--half-t');

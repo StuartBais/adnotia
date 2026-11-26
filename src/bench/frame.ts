@@ -22,6 +22,7 @@ export const HINT_IDS = {
   capture: 'hint-capture',
   rest: 'hint-rest',
   me: 'hint-me',
+  meDraft: 'hint-me-draft',
   inbox: 'hint-inbox',
   timer: 'hint-timer',
 } as const;
@@ -34,6 +35,7 @@ export function hints(): HTMLElement {
     h('span', { id: HINT_IDS.capture, text: HINT.capture }),
     h('span', { id: HINT_IDS.rest, text: HINT.showsRestOfToday }),
     h('span', { id: HINT_IDS.me, text: HINT.me }),
+    h('span', { id: HINT_IDS.meDraft, text: HINT.meKeepsDraft }),
     h('span', { id: HINT_IDS.inbox, text: HINT.opensNewest }),
     h('span', { id: HINT_IDS.timer, text: HINT.timerKeepsRunning }),
   );
@@ -99,6 +101,7 @@ export interface DockProps {
   };
   /** Capture sits on light: the half drawer under it, or a white place. */
   captureOnLight: boolean;
+  /** A draft is kept: a white dot at the disc's top right, and its name says so. */
   draftKept: boolean;
   onCapture: () => void;
 }
@@ -173,6 +176,7 @@ export function dock(props: DockProps): Built {
         onclick: props.onCapture,
       },
       icon('plus', 28),
+      props.draftKept ? h('span', { class: 'draft-dot', 'aria-hidden': 'true' }) : null,
     ),
   );
   return { nodes, ...(patch ? { patch } : {}) };

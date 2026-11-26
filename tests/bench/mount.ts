@@ -3,7 +3,14 @@
 
 import { vi } from 'vitest';
 import { createStore, memoryStorageAdapter, type KernelStore } from '../../src/kernel/store';
-import { ANNOUNCE_AFTER, FOCUS_FADE_MS, UNDO_MS, mountBench } from '../../src/bench/app';
+import {
+  ANNOUNCE_AFTER,
+  DRAFT_AFTER,
+  FOCUS_FADE_MS,
+  SHEET_FADE_MS,
+  UNDO_MS,
+  mountBench,
+} from '../../src/bench/app';
 import type { ScenarioId } from '../../src/bench/example';
 import { loadScenario, migrateBench, type BenchDomains } from '../../src/bench/state';
 
@@ -118,6 +125,24 @@ export function outlastFade(): void {
   vi.advanceTimersByTime(FOCUS_FADE_MS);
 }
 
+/** Lets the capture sheet's 200 ms fade out run its course, as it closes (SPEC 10). */
+export function outlastSheet(): void {
+  vi.advanceTimersByTime(SHEET_FADE_MS);
+}
+
+/**
+ * Typing into the capture field: its words, then the input event a keyboard
+ * sends, then the moment after which the draft is kept.
+ */
+export function type(mounted: Mounted, text: string): HTMLInputElement {
+  const field = mounted.container.querySelector<HTMLInputElement>('#c-field');
+  if (!field) throw new Error('No capture field: the sheet is not open');
+  field.value = text;
+  field.dispatchEvent(new Event('input', { bubbles: true }));
+  vi.advanceTimersByTime(DRAFT_AFTER);
+  return field;
+}
+
 /** How many levels above the tab the current history entry stands for. */
 export const historyDepth = (): unknown => (history.state as { depth?: unknown } | null)?.depth;
 
@@ -129,10 +154,18 @@ export { state as stateOf };
 const hiddenFromReaders = (node: Element): boolean =>
   node.closest('[aria-hidden="true"], [hidden], [inert], .live') !== null;
 
-/** A control's accessible name: its label, or its text read without hidden parts. */
+/** A control's accessible name: its label, what labels it, or its text read without hidden parts. */
 export function nameOf(node: Element): string {
   const label = node.getAttribute('aria-label');
   if (label !== null) return label;
+  const by = node.getAttribute('aria-labelledby');
+  if (by !== null) {
+    return by
+      .split(/\s+/)
+      .map((id) => node.ownerDocument.getElementById(id)?.textContent ?? '')
+      .join(' ')
+      .trim();
+  }
   return readText(node);
 }
 
@@ -197,8 +230,9 @@ export function controls(container: HTMLElement): HTMLElement[] {
  * The main choices on a screen (SPEC 3 "Counting the five choices"): the
  * frame is not counted (the tabs, Me, a back control, "⋯" and the drawer's
  * handle, which on the open drawer is Hide), and a list counts once however
- * many rows it has. The six-second Undo, on the Next line or Focus's foot, is
- * counted as frame (SPEC 5.4).
+ * many rows it has, as a switch of parts does ("Inbox or Today", SPEC 5.5).
+ * The six-second Undo, on the Next line or Focus's foot, is counted as frame
+ * (SPEC 5.4), and so is Me carried above the capture sheet.
  */
 export function choices(container: HTMLElement): number {
   let lists = 0;
@@ -206,8 +240,8 @@ export function choices(container: HTMLElement): number {
   let count = 0;
   for (const node of controls(container)) {
     if (node.closest('nav') || node.classList.contains('me')) continue;
-    if (['b-handle', 'b-hide', 'b-back', 'f-back', 'b-undo'].includes(node.id)) continue;
-    const list = node.closest('.list');
+    if (['b-handle', 'b-hide', 'b-back', 'f-back', 'b-undo', 'c-me'].includes(node.id)) continue;
+    const list = node.closest('.list, [role="radiogroup"]');
     if (list) {
       if (!seen.has(list)) {
         seen.add(list);

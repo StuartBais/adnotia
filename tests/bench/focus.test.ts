@@ -49,6 +49,7 @@ describe('the focus ring', () => {
       '.drawer',
       '.tabs',
       '.capture.on-light',
+      '.c-panel',
       ".app[data-places='white'][data-ground='place'] .screen",
       ".app[data-places='white'][data-ground='place']:not([data-focus]) .dock",
     ]) {
@@ -84,5 +85,17 @@ describe('the Reduce Motion fades (SPEC 10)', () => {
     const frames = css.match(/@keyframes bench-fade-(?:in|out)\s*\{[^@]*?\}\s*\}/g) ?? [];
     expect(frames).toHaveLength(2);
     for (const frame of frames) expect(frame).not.toMatch(/transform|translate|scale/);
+  });
+
+  it('fades the capture sheet in and out, and what it raises, with nothing travelling', () => {
+    expect(animationOf('.app[data-sheet] .csheet')).toBe('bench-fade-in 200ms ease-out both');
+    expect(animationOf('.sheet-layer[data-leaving]')).toBe('bench-fade-out 200ms ease-in both');
+    expect(animationOf(".app[data-sheet='today'] .lantern")).toBe(
+      'bench-fade-in 200ms ease-out both',
+    );
+    expect(animationOf('.app[data-lowering] .lantern')).toBe('bench-fade-back 200ms ease-out both');
+    const back = /@keyframes bench-fade-back\s*\{([^@]*?\})\s*\}/.exec(css)?.[1] ?? '';
+    expect(back).toMatch(/opacity:\s*0/);
+    expect(back).not.toMatch(/transform|translate|scale/);
   });
 });
