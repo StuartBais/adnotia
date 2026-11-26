@@ -1199,17 +1199,18 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
    * to the background ends it. Where no Next line is on screen, a ticked
    * row's disc is the way back.
    */
-  function offerUndo(next: act.Undo, fromHalf = false): void {
+  function offerUndo(next: act.Undo, foldHalf = false): void {
     dropUndo();
     const slot: UndoSlot = {
       undo: next,
       // A drawer folded at the tap holds its Next line for the six seconds.
-      // Save's Undo has no other way back, so a half drawer folds to hold it
-      // too (undrawn: a proposal; a list's tick has its disc instead).
+      // Save's Undo has no other way back, so Save asks a half drawer to fold
+      // and hold it too (undrawn: a proposal; a list's tick has its disc
+      // instead). The open drawer keeps it on its Hide band.
       hold:
         shown?.position === 'folded' ||
         shown?.position === 'lip' ||
-        (fromHalf && shown?.position === 'half'),
+        (foldHalf && shown?.position === 'half'),
       timer: undefined,
       expired: false,
     };
@@ -1563,7 +1564,7 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
     const result = act.save(read(), text, sheet.to, now());
     sheet = undefined;
     keyboard.release();
-    if (result.undo) offerUndo(result.undo, true);
+    if (result.undo) offerUndo(result.undo, /* foldHalf */ true);
     commit(result.state);
     if (result.announce) announce(result.announce);
     landAfterSheet();
