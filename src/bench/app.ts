@@ -2326,7 +2326,15 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
       tsheet = undefined;
       tsheetField = undefined;
       if (stepField === id) stepField = undefined;
-      commit(act.remove(read(), id).state);
+      const before = read();
+      const after = act.remove(before, id).state;
+      // An Undo about what went (the task or one of its steps) has nothing
+      // left to take back, and its lines no longer hold: it ends with them.
+      // An Undo about anything else stands.
+      const kept = new Set(after.tasks.map((task) => task.id));
+      const gone = before.tasks.filter((task) => !kept.has(task.id)).map((task) => task.id);
+      if (undo?.undo.about.some((about) => gone.includes(about))) dropUndo();
+      commit(after);
     });
     if (focusLost()) landFocus(true);
   }

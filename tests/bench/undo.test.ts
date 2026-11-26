@@ -136,6 +136,20 @@ describe('each inverse puts back what its tap changed', () => {
     const back = instead.undo!.inverse(instead.state, later(now, 3));
     expect(top(back, 'Call the dentist').sessions).toEqual([]);
     expect(model.running(back.tasks)?.title).toBe(EMAIL);
+    // It is about both tasks, so deleting either ends it.
+    expect(instead.undo?.about).toEqual([dentist.id, top(state, EMAIL).id]);
+  });
+
+  it('names the tasks each Undo is about, so a Delete of one can end it', () => {
+    const { state, now } = scene('example', TUE_1005);
+    const email = top(state, EMAIL);
+    const question = stepOf(state, 'Write the question');
+    expect(act.stepDone(state, email.id, now).undo?.about).toEqual([email.id, question.id]);
+    const ink = top(state, 'Order printer ink');
+    expect(act.tick(state, ink.id, now).undo?.about).toEqual([ink.id]);
+    expect(act.setAside(state, email.id, now).undo?.about).toEqual([email.id]);
+    const saved = act.save(state, 'Ask Ana about Friday', 'inbox', now);
+    expect(saved.undo?.about).toEqual([top(saved.state, 'Ask Ana about Friday').id]);
   });
 
   it('Resume: paused again, with the session as it was and the mark the app made', async () => {

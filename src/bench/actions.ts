@@ -26,6 +26,12 @@ export interface Undo {
   name: string;
   /** Takes the change back, on the state as it is when Undo is pressed. */
   inverse: (state: BenchDomains, now: Date) => BenchDomains;
+  /**
+   * The tasks the change was about, and the lines name. Deleting one of them
+   * ends the Undo: what it would take back is gone, and its lines would say a
+   * thing that is no longer so.
+   */
+  about: readonly string[];
   /** The step a Step done finished, so its disc in Focus can end this Undo. */
   step?: string;
   /** The task a tick finished, so its row's disc takes it back the same way. */
@@ -77,7 +83,12 @@ function begin(
   state: BenchDomains,
   id: string,
   now: Date,
-): { state: BenchDomains; inverse: Undo['inverse']; stopped: model.Task | undefined } {
+): {
+  state: BenchDomains;
+  inverse: Undo['inverse'];
+  about: readonly string[];
+  stopped: model.Task | undefined;
+} {
   const stopped = model.running(state.tasks);
   const startedAt = now.toISOString();
   const marks: Marks = {
@@ -92,6 +103,7 @@ function begin(
       bench: clearMarks(state.bench, id),
     },
     stopped: other,
+    about: other ? [id, other.id] : [id],
     inverse(current, at) {
       if (!find(current, id)) return current;
       let tasks = model.discardSession(current.tasks, id, startedAt);
@@ -123,6 +135,7 @@ export function start(state: BenchDomains, id: string, now: Date): Changed {
         lines: { line1: `${T.started} ${task.title}`, line2: kept },
         name: say.undoStartInstead(kept),
         inverse: begun.inverse,
+        about: begun.about,
       },
     };
   }
@@ -132,6 +145,7 @@ export function start(state: BenchDomains, id: string, now: Date): Changed {
       lines: { line1: T.started, line2: task.title },
       name: say.undoStart(task.title),
       inverse: begun.inverse,
+      about: begun.about,
     },
   };
 }
@@ -150,6 +164,7 @@ export function resume(state: BenchDomains, id: string, now: Date): Changed {
       lines: { line1: T.resumed, line2: resumedAt(task.title, step) },
       name: say.undoResume(task.title),
       inverse: begun.inverse,
+      about: begun.about,
     },
   };
 }
@@ -187,6 +202,7 @@ export function stepDone(state: BenchDomains, id: string, now: Date): Changed {
           ? { line1: T.stepDone, line2: step.title }
           : { line1: T.done, line2: task.title },
         name: step ? say.undoStepDone(step.title) : say.undoDone(task.title),
+        about: step ? [id, step.id] : [id],
         inverse(current, at) {
           let back = current.tasks;
           if (step && find(current, step.id)) back = model.reopen(back, step.id);
@@ -205,6 +221,7 @@ export function stepDone(state: BenchDomains, id: string, now: Date): Changed {
       lines: { line1: T.stepDone, line2: step.title },
       name: say.undoStepDone(step.title),
       step: step.id,
+      about: [id, step.id],
       inverse: (current) =>
         find(current, step.id)
           ? { ...current, tasks: model.reopen(current.tasks, step.id) }
@@ -223,6 +240,7 @@ export function setAside(state: BenchDomains, id: string, now: Date): Changed {
     undo: {
       lines: { line1: T.setAside, line2: task.title },
       name: say.undoSetAside(task.title),
+      about: [id],
       inverse(current) {
         const { setAside: _gone, ...bench } = current.bench;
         return {
@@ -290,6 +308,7 @@ export function tick(state: BenchDomains, id: string, now: Date): Changed {
       lines: { line1: T.done, line2: task.title },
       name: say.undoDone(task.title),
       ticked: id,
+      about: [id],
       inverse(current, at) {
         if (!find(current, id)) return current;
         let tasks = model.reopen(current.tasks, id);
@@ -330,6 +349,7 @@ export function save(state: BenchDomains, text: string, to: 'inbox' | 'today', n
       lines: { line1: to === 'inbox' ? T.savedToInbox : T.savedToToday, line2: title },
       name: say.undoSave(title, to),
       reopen: { text: title, to },
+      about: [id],
       inverse: (current) =>
         find(current, id) ? { ...current, tasks: model.remove(current.tasks, id) } : current,
     },

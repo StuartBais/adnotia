@@ -3291,6 +3291,44 @@ describe('the sheets a task’s page raises (SPEC 9.9 and 12)', () => {
     expect(rowTitles(m)).not.toContain('Cancel the gym trial');
   });
 
+  it('Delete ends an Undo about the task it deletes, which would say what is no longer so', async () => {
+    const m = await opened();
+    press(m.container, 'Start this instead');
+    expect(id(m, 'b-undo')).not.toBeNull();
+    press(m.container, 'More');
+    press(m.container, 'Delete');
+    press(m.container, 'Delete');
+    expect(stateOf(m).tasks.some((task) => task.title === 'Call the dentist')).toBe(false);
+    expect(id(m, 'b-undo')).toBeNull();
+    const handle = id(m, 'b-handle')!;
+    expect(drawnText(handle)).not.toContain('Started Call the dentist');
+    // The email stays stopped at step 2: nothing was taken back.
+    expect(model.running(stateOf(m).tasks)).toBeUndefined();
+
+    // After a tick, the same: the row's page deleted, its Undo goes with it.
+    press(m.container, 'Tasks');
+    press(m.container, 'Mark done: Fix the bike light');
+    expect(nameOf(id(m, 'b-undo')!)).toBe('Undo done: Fix the bike light');
+    press(m.container, 'Fix the bike light');
+    press(m.container, 'More');
+    press(m.container, 'Delete');
+    press(m.container, 'Delete');
+    expect(id(m, 'b-undo')).toBeNull();
+  });
+
+  it('Delete leaves an Undo about another task standing', async () => {
+    const m = await mount(TUE_1005);
+    press(m.container, 'Tasks');
+    press(m.container, 'Mark done: Fix the bike light');
+    press(m.container, 'Cancel the gym trial, 2 steps');
+    press(m.container, 'More');
+    press(m.container, 'Delete');
+    press(m.container, 'Delete');
+    expect(nameOf(id(m, 'b-undo')!)).toBe('Undo done: Fix the bike light');
+    press(m.container, 'Undo done: Fix the bike light');
+    expect(titled(stateOf(m), 'Fix the bike light').doneAt).toBeUndefined();
+  });
+
   it('opens over the running task’s own page with nothing riding its edge', async () => {
     const m = await mount(TUE_1005);
     press(m.container, 'Tasks');
