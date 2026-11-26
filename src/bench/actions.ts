@@ -28,6 +28,8 @@ export interface Undo {
   inverse: (state: BenchDomains, now: Date) => BenchDomains;
   /** The step a Step done finished, so its disc in Focus can end this Undo. */
   step?: string;
+  /** The task a tick finished, so its row's disc takes it back the same way. */
+  ticked?: string;
   /**
    * After Save: Undo removes the item and opens the capture sheet again with
    * the text still in it (SPEC 5.5). The sheet is the app's to open.
@@ -272,18 +274,28 @@ export function reopenStep(state: BenchDomains, stepId: string): Changed {
   };
 }
 
-/** A ring ticked in a list: the task is done, and stays in place as a disc. */
+/**
+ * A ring ticked in a list: the task is done, and stays in place as a disc. In
+ * Tasks › Today the present is listed too, so its ring can finish a running
+ * task; Undo then runs its clock again, as Undo after Done does.
+ */
 export function tick(state: BenchDomains, id: string, now: Date): Changed {
   const task = find(state, id);
   if (!task || task.doneAt !== undefined) return { state };
+  const wasRunning = model.running(state.tasks)?.id === id;
   return {
     state: { ...state, tasks: model.complete(state.tasks, id, now) },
     announce: ANNOUNCE.done(task.title),
     undo: {
       lines: { line1: T.done, line2: task.title },
       name: say.undoDone(task.title),
-      inverse: (current) =>
-        find(current, id) ? { ...current, tasks: model.reopen(current.tasks, id) } : current,
+      ticked: id,
+      inverse(current, at) {
+        if (!find(current, id)) return current;
+        let tasks = model.reopen(current.tasks, id);
+        if (wasRunning && !model.running(tasks)) tasks = model.startWork(tasks, id, at);
+        return { ...current, tasks };
+      },
     },
   };
 }
@@ -320,6 +332,110 @@ export function save(state: BenchDomains, text: string, to: 'inbox' | 'today', n
       reopen: { text: title, to },
       inverse: (current) =>
         find(current, id) ? { ...current, tasks: model.remove(current.tasks, id) } : current,
+    },
+  };
+}
+
+// ---------------------------------------------------------------- a task's page
+
+/**
+ * "Add a step", on a task's page (SPEC 5.3): the words become the task's last
+ * step. The field stays open for the next one, and what it held is no longer
+ * a draft. Not taken back: SPEC 9.8 gives it no six seconds, and the step is
+ * on screen to see.
+ */
+export function addStep(state: BenchDomains, id: string, text: string, now: Date): Changed {
+  const title = text.trim();
+  if (title === '' || !find(state, id)) return { state };
+  const { [stepDraftKey(id)]: _kept, ...fields } = state.bench.drafts.fields;
+  return {
+    state: {
+      ...state,
+      tasks: model.addStep(state.tasks, id, title, now),
+      bench: { ...state.bench, drafts: { ...state.bench.drafts, fields } },
+    },
+  };
+}
+
+/** Where "Add a step" keeps what it holds while it is closed (plan section 13). */
+export const stepDraftKey = (id: string): string => `step:${id}`;
+
+/**
+ * The when sheet's choice (SPEC 12). A booked time keeps the slot's length
+ * and the estimate equal (gap G6, owner question 8). A slot that passed is
+ * no longer a passed slot once it is planned again.
+ */
+export function setWhen(state: BenchDomains, id: string, when: model.When): Changed {
+  const task = find(state, id);
+  if (!task) return { state };
+  let tasks = model.schedule(state.tasks, id, when);
+  if (when.kind === 'timed') tasks = model.setEstimate(tasks, id, when.durationMinutes);
+  // A booked item given another day keeps its length, as its estimate.
+  else if (task.when.kind === 'timed' && task.estimateMinutes === undefined) {
+    tasks = model.setEstimate(tasks, id, task.when.durationMinutes);
+  }
+  return {
+    state: {
+      ...state,
+      tasks,
+      bench: { ...state.bench, passed: state.bench.passed.filter((passed) => passed !== id) },
+    },
+  };
+}
+
+/**
+ * "How long" (SPEC 12): for a booked item, the slot's length and the
+ * estimate together, kept equal; for anything else, the estimate. A booked
+ * slot is never shorter than 5 minutes; an estimate taken below 5 is unset.
+ */
+export function setLength(state: BenchDomains, id: string, minutes: number | undefined): Changed {
+  const task = find(state, id);
+  if (!task) return { state };
+  if (task.when.kind === 'timed') {
+    const length = Math.max(5, minutes ?? 5);
+    let tasks = model.schedule(state.tasks, id, { ...task.when, durationMinutes: length });
+    tasks = model.setEstimate(tasks, id, length);
+    return { state: { ...state, tasks } };
+  }
+  const estimate = minutes === undefined || minutes < 5 ? undefined : minutes;
+  return { state: { ...state, tasks: model.setEstimate(state.tasks, id, estimate) } };
+}
+
+/** The note sheet: the words as they stand. An empty note is no note. */
+export function setNote(state: BenchDomains, id: string, text: string): Changed {
+  const task = find(state, id);
+  if (!task) return { state };
+  const notes = text.trim() === '' ? undefined : text;
+  if ((task.notes ?? undefined) === notes) return { state };
+  return { state: { ...state, tasks: model.setNotes(state.tasks, id, notes) } };
+}
+
+/** Rename: an empty title keeps the one it had. */
+export function rename(state: BenchDomains, id: string, text: string): Changed {
+  const task = find(state, id);
+  const title = text.trim();
+  if (!task || title === '' || title === task.title) return { state };
+  return { state: { ...state, tasks: model.rename(state.tasks, id, title) } };
+}
+
+/**
+ * Delete, after its confirm (plan section 11): the task goes, and its steps
+ * with it. What the prototype kept about it goes too. SPEC 9.8 gives Delete
+ * no Undo, and the confirm says so.
+ */
+export function remove(state: BenchDomains, id: string): Changed {
+  if (!find(state, id)) return { state };
+  const { [stepDraftKey(id)]: _draft, ...fields } = state.bench.drafts.fields;
+  const bench = clearMarks(state.bench, id);
+  return {
+    state: {
+      ...state,
+      tasks: model.remove(state.tasks, id),
+      bench: {
+        ...bench,
+        passed: bench.passed.filter((passed) => passed !== id),
+        drafts: { ...bench.drafts, fields },
+      },
     },
   };
 }

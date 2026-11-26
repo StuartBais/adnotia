@@ -205,11 +205,91 @@ describe('each inverse puts back what its tap changed', () => {
     expect(act.save(state, '   ', 'inbox', now)).toEqual({ state });
   });
 
+  it('A tick of the running task, in Tasks › Today: open again, its clock running', () => {
+    const { state, now } = scene('example', TUE_1005);
+    const email = top(state, EMAIL);
+    const ticked = act.tick(state, email.id, now);
+    expect(model.running(ticked.state.tasks)).toBeUndefined();
+    expect(ticked.undo?.ticked).toBe(email.id);
+    const back = ticked.undo!.inverse(ticked.state, later(now, 1));
+    expect(top(back, EMAIL).doneAt).toBeUndefined();
+    expect(model.running(back.tasks)?.id).toBe(email.id);
+  });
+
   it('Pause and an un-tick are not offered: each is one tap from its own way back', () => {
     const { state, now } = scene('example', TUE_1005);
     expect(act.pause(state, top(state, EMAIL).id, now).undo).toBeUndefined();
     const ticked = act.tick(state, top(state, 'Order printer ink').id, now).state;
     expect(act.untick(ticked, top(state, 'Order printer ink').id).undo).toBeUndefined();
+  });
+});
+
+describe('the edits a task’s page makes (SPEC 5.3 and 12)', () => {
+  it('Add a step: the words become its last step, and the field’s draft goes', () => {
+    const { state, now } = scene('example', TUE_1005);
+    const gym = top(state, 'Cancel the gym trial');
+    const drafted = {
+      ...state,
+      bench: {
+        ...state.bench,
+        drafts: { ...state.bench.drafts, fields: { [act.stepDraftKey(gym.id)]: 'Ask' } },
+      },
+    };
+    const added = act.addStep(drafted, gym.id, '  Ask for a refund  ', now);
+    expect(model.stepsOf(added.state.tasks, gym.id).map((step) => step.title)).toEqual([
+      'Find the membership email',
+      'Ring the front desk',
+      'Ask for a refund',
+    ]);
+    expect(added.state.bench.drafts.fields).toEqual({});
+    expect(added.undo).toBeUndefined();
+    expect(act.addStep(state, gym.id, '   ', now)).toEqual({ state });
+  });
+
+  it('When: a booked time keeps its length and the estimate equal; another day keeps its length', () => {
+    const { state } = scene('example', TUE_1005);
+    const ink = top(state, 'Order printer ink');
+    const booked = act.setWhen(state, ink.id, {
+      kind: 'timed',
+      date: '2026-11-24',
+      time: '15:00',
+      durationMinutes: 20,
+    }).state;
+    expect(top(booked, 'Order printer ink').estimateMinutes).toBe(20);
+    const dentist = top(state, 'Call the dentist');
+    const moved = act.setWhen(state, dentist.id, { kind: 'anytime', date: '2026-11-25' }).state;
+    expect(top(moved, 'Call the dentist').estimateMinutes).toBe(10);
+  });
+
+  it('How long: a booked slot and its estimate together, never under 5; an estimate unset below 5', () => {
+    const { state } = scene('example', TUE_1005);
+    const dentist = top(state, 'Call the dentist');
+    const longer = act.setLength(state, dentist.id, 25).state;
+    expect(top(longer, 'Call the dentist').when).toMatchObject({ durationMinutes: 25 });
+    expect(top(longer, 'Call the dentist').estimateMinutes).toBe(25);
+    const shortest = act.setLength(state, dentist.id, undefined).state;
+    expect(top(shortest, 'Call the dentist').when).toMatchObject({ durationMinutes: 5 });
+    const books = top(state, 'Return the library books');
+    expect(top(act.setLength(state, books.id, 0).state, books.title).estimateMinutes).toBe(
+      undefined,
+    );
+  });
+
+  it('A note and a name: an empty note is none, an empty name keeps the old one', () => {
+    const { state } = scene('example', TUE_1005);
+    const email = top(state, EMAIL);
+    expect(top(act.setNote(state, email.id, '  ').state, EMAIL).notes).toBeUndefined();
+    expect(act.rename(state, email.id, '  ')).toEqual({ state });
+    expect(
+      top(act.rename(state, email.id, 'Write to the school').state, 'Write to the school'),
+    ).toBeDefined();
+  });
+
+  it('Delete: the task and its steps go, and what the prototype kept about it', () => {
+    const { state } = scene('example', TUE_1005);
+    const gym = top(state, 'Cancel the gym trial');
+    const gone = act.remove(state, gym.id).state;
+    expect(gone.tasks.some((task) => task.id === gym.id || task.parentId === gym.id)).toBe(false);
   });
 });
 
