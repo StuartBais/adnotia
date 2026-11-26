@@ -5,6 +5,7 @@ import { setOption } from '../../src/domains/options';
 import { EMAIL } from '../../src/bench/example';
 import type { BenchDomains } from '../../src/bench/state';
 import { ABOUT } from '../../src/bench/screens/places';
+import { ANNOUNCE_KEEP } from '../../src/bench/app';
 import { dayList } from '../../src/bench/view';
 import {
   advance,
@@ -235,6 +236,26 @@ describe('1 · Today, running (SPEC 5.1)', () => {
     press(m.container, 'Pause');
     expect(m.container.querySelector('.live')?.textContent).toBe('');
     expect(said(m)).toBe('Paused');
+  });
+
+  it('empties the live region once it has spoken, so Paused is not left there to be read', async () => {
+    const m = await mount(TUE_1005);
+    press(m.container, 'Pause');
+    expect(said(m)).toBe('Paused');
+    press(m.container, 'Resume');
+    // Resume says nothing of its own (SPEC 11, "Announcements"), and the
+    // region no longer says Paused once the clock runs and the words are old.
+    vi.advanceTimersByTime(ANNOUNCE_KEEP);
+    expect(m.container.querySelector('.live')?.textContent).toBe('');
+    // Every announcement goes the same way.
+    press(m.container, 'Step done: Write the question');
+    expect(said(m)).toBe('Step done. Now: Read it once and send');
+    vi.advanceTimersByTime(ANNOUNCE_KEEP - 1);
+    expect(m.container.querySelector('.live')?.textContent).toBe(
+      'Step done. Now: Read it once and send',
+    );
+    vi.advanceTimersByTime(1);
+    expect(m.container.querySelector('.live')?.textContent).toBe('');
   });
 
   it('lands focus on the unlit block when Done on the last step takes the buttons away', async () => {

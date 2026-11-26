@@ -167,6 +167,15 @@ interface UndoSlot {
 /** How long the live region stays empty before it says something (ms). */
 export const ANNOUNCE_AFTER = 100;
 
+/**
+ * How long the live region keeps what it said (ms): as long as the six-second
+ * words on the Next line. Then it is emptied, because a screen reader finds the
+ * region by swiping too, and words left in it say a state that has passed:
+ * "Paused" while the clock runs (SPEC 11, "Labels use the same words as the
+ * screen").
+ */
+export const ANNOUNCE_KEEP = UNDO_MS;
+
 /** Focus fades in whole, and out, over this long (SPEC 10, Reduce Motion). */
 export const FOCUS_FADE_MS = 200;
 
@@ -1838,13 +1847,18 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
    * Says `text` through the live region. The region is emptied first and
    * filled a moment later, so the same words twice in a row (Pause, Resume,
    * Pause) are a change a screen reader reads again, not text left as it was.
+   * It is emptied again ANNOUNCE_KEEP later, so nothing stale stays to be read.
    */
   function announce(text: string): void {
     if (announcing !== undefined) clearTimeout(announcing);
     layer.live.textContent = '';
     announcing = setTimeout(() => {
-      announcing = undefined;
-      if (!destroyed) layer.live.textContent = text;
+      if (destroyed) return;
+      layer.live.textContent = text;
+      announcing = setTimeout(() => {
+        announcing = undefined;
+        if (!destroyed) layer.live.textContent = '';
+      }, ANNOUNCE_KEEP);
     }, ANNOUNCE_AFTER);
   }
 
