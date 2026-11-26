@@ -1197,8 +1197,10 @@ export function createMoves(host: MovesHost): Moves {
     for (const el of focusLayers) add({ el, fade: late });
     // Focus's own step, bar and minutes are drawn by the pictures on the way,
     // so they are not drawn twice where Focus comes up or fades.
+    // By opacity, not visibility: the step has focus as Focus opens (SPEC
+    // 11), and an element out of sight by visibility cannot keep it.
     for (const p of [F.step, F.bar, F.mins]) {
-      if (p) hold.push({ el: p.el, style: { visibility: 'hidden' } });
+      if (p) hold.push({ el: p.el, style: { opacity: '0' } });
     }
     return {
       channel: 'present',
