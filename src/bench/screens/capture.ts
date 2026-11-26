@@ -146,10 +146,14 @@ export function captureSheet(props: CaptureProps): CaptureSheet {
     h('h2', { class: 't-sheet', id: 'c-title', text: T.capture }),
     close,
   );
+  // The band above the title, with the grabber in it: where a thumb pulls the
+  // sheet down. Its own element, so the browser leaves the pan to the sheet.
+  const grip = h('span', { class: 'c-grip', 'aria-hidden': 'true' });
   const panel = h(
     'div',
     { class: 'c-panel', 'data-geo': 'sheet' },
     ride ? h('div', { class: 'c-ride', 'aria-hidden': 'true' }, ride.el) : null,
+    grip,
     h('span', { class: 'grab', 'aria-hidden': 'true' }),
     head,
     field,
@@ -162,7 +166,7 @@ export function captureSheet(props: CaptureProps): CaptureSheet {
       save,
     ),
   );
-  swipeToClose(panel, head, () => props.onClose('swipe'));
+  swipeToClose(panel, [grip, head], () => props.onClose('swipe'));
 
   const dialog = h(
     'div',
@@ -202,7 +206,7 @@ export function captureSheet(props: CaptureProps): CaptureSheet {
  * The sheet follows the finger down, and springs back if it was not far or
  * fast enough. A drag in the field, the switch or a button is theirs.
  */
-function swipeToClose(panel: HTMLElement, band: HTMLElement, onClose: () => void): void {
+function swipeToClose(panel: HTMLElement, bands: HTMLElement[], onClose: () => void): void {
   let start: { y: number; at: number } | undefined;
   let last = { y: 0, at: 0 };
   const reset = () => {
@@ -212,7 +216,7 @@ function swipeToClose(panel: HTMLElement, band: HTMLElement, onClose: () => void
   panel.addEventListener('pointerdown', (event) => {
     const target = event.target as Element | null;
     if (target?.closest('button, input, .seg')) return;
-    if (!(target === panel || band.contains(target) || target?.classList.contains('grab'))) return;
+    if (!(target === panel || bands.some((band) => band.contains(target)))) return;
     const id = (event as PointerEvent).pointerId;
     start = { y: event.clientY, at: event.timeStamp };
     last = { y: event.clientY, at: event.timeStamp };

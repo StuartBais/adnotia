@@ -2179,15 +2179,30 @@ describe('5 · Capture (SPEC 5.5)', () => {
     type(m, ASK);
     const panel = sheetOf(m).querySelector<HTMLElement>('.c-panel')!;
     const head = panel.querySelector<HTMLElement>('.c-head')!;
-    const drag = (to: number) => {
-      head.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, clientY: 300 }));
+    const drag = (from: HTMLElement, to: number) => {
+      from.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, clientY: 300 }));
       panel.dispatchEvent(new MouseEvent('pointermove', { bubbles: true, clientY: 300 + to }));
       panel.dispatchEvent(new MouseEvent('pointerup', { bubbles: true, clientY: 300 + to }));
     };
-    drag(12);
+    drag(head, 12);
     expect(m.container.dataset['sheet']).toBe('today');
     expect(panel.style.transform).toBe('');
-    drag(90);
+    // A drag in the field is the field's.
+    drag(field(m), 90);
+    expect(m.container.dataset['sheet']).toBe('today');
+    drag(head, 90);
+    expect(m.container.dataset['sheet']).toBeUndefined();
+    expect(stateOf(m).bench.drafts.capture?.text).toBe(ASK);
+  });
+
+  it('a swipe down from the grabber closes it too: the band above the title is the sheet’s', async () => {
+    const m = await captured();
+    type(m, ASK);
+    const panel = sheetOf(m).querySelector<HTMLElement>('.c-panel')!;
+    const grip = panel.querySelector<HTMLElement>('.c-grip')!;
+    expect(grip.getAttribute('aria-hidden')).toBe('true');
+    grip.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, clientY: 284 }));
+    panel.dispatchEvent(new MouseEvent('pointerup', { bubbles: true, clientY: 384 }));
     expect(m.container.dataset['sheet']).toBeUndefined();
     expect(stateOf(m).bench.drafts.capture?.text).toBe(ASK);
   });

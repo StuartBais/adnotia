@@ -2048,6 +2048,16 @@ svg.i28 {
   margin-top: 8px;
   touch-action: none;
 }
+/* The band from the sheet's top edge to its title, with the grabber in it:
+   a pull down here is the sheet's, never the browser's (SPEC 9.9). */
+.c-grip {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 16px;
+  touch-action: none;
+}
 /* Close: the quieter of the two, its ink ending at x 366. */
 .c-close {
   margin-right: -4px;
