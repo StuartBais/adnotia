@@ -7,6 +7,7 @@ import {
   memoryStorageAdapter,
   type DomainsState,
   type KernelStore,
+  type StorageAdapter,
 } from '../../src/kernel/store';
 import {
   ANNOUNCE_AFTER,
@@ -21,6 +22,8 @@ import { loadScenario, migrateBench, type BenchDomains } from '../../src/bench/s
 
 export interface Mounted {
   store: KernelStore;
+  /** What the store persists to: what a reload boots from. */
+  storage: StorageAdapter;
   container: HTMLElement;
   /** The moment the prototype is told it is. Move it, then tick. */
   clock: { now: Date };
@@ -50,7 +53,8 @@ export async function mount(
 /**
  * A reload: the page goes away as Safari's would (pagehide, unless `hide` is
  * false, as for a page killed before it could say so), and a fresh load
- * `minutesAway` later boots from exactly what was stored, history and all.
+ * `minutesAway` later boots from exactly what reached storage, history and
+ * all. A write still waiting on the store's debounce is lost, as it would be.
  */
 export async function reload(
   mounted: Mounted,
@@ -58,21 +62,25 @@ export async function reload(
   options: { hide?: boolean; edit?: (state: BenchDomains) => BenchDomains } = {},
 ): Promise<Mounted> {
   if (options.hide ?? true) window.dispatchEvent(new Event('pagehide'));
-  const stored = mounted.store.document().domains as BenchDomains;
+  // Let what pagehide sent to storage land. Only promises stand between the
+  // flush and the adapter, so this runs no timer the page holds.
+  await new Promise<void>((resolve) => setImmediate(resolve));
   const at = new Date(mounted.clock.now.getTime() + minutesAway * 60_000);
   if (current === mounted) unmount();
   else mounted.destroy();
-  return start(at, () => (options.edit ? options.edit(stored) : stored));
+  const { edit } = options;
+  return start(at, (state) => (edit ? edit(state as BenchDomains) : undefined), mounted.storage);
 }
 
 async function start(
   at: Date,
   seed: (state: DomainsState, now: Date) => DomainsState | undefined,
+  storage: StorageAdapter = memoryStorageAdapter(),
 ): Promise<Mounted> {
   vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
   const clock = { now: at };
   const store = createStore({
-    adapter: memoryStorageAdapter(),
+    adapter: storage,
     key: 'adnotia-bench',
     now: () => clock.now,
   });
@@ -93,6 +101,7 @@ async function start(
   mono.now = 10_000;
   current = {
     store,
+    storage,
     container,
     clock,
     mono,

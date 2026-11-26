@@ -3930,12 +3930,15 @@ describe('coming back after a reload (plan sections 4 and 8; SPEC 5.7)', () => {
     const m = await mount(TUE_1005);
     press(m.container, 'Routines');
     press(m.container, 'New routine');
-    // No pagehide: the last page change is the only record.
+    // No pagehide: the last page change is the only record, once the store's
+    // debounce has written it, as it has a moment after the tap.
+    vi.advanceTimersByTime(500);
     const again = await reload(m, 10, { hide: false });
     expect(title(again)).toBe('New routine');
     press(again.container, 'Back to Routines');
     vi.advanceTimersByTime(1);
     press(again.container, 'Library');
+    vi.advanceTimersByTime(500);
     onToday(await reload(again, 15, { hide: false }));
   });
 
