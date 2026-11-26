@@ -324,8 +324,13 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
   const undone = new Map<string, string>();
   /** The inbox is opening: once painted it is scrolled to its newest end (SPEC 5.6). */
   let inboxToEnd = false;
-  /** Where each of the Tasks lists was scrolled, so back from a page finds it there. */
-  const remembered: Record<string, number> = {};
+  /**
+   * Where each of the Tasks lists was scrolled, so back from a page finds it
+   * there, after a reload under 15 minutes as well (plan section 4).
+   */
+  const remembered: Record<string, number> = Object.fromEntries(
+    Object.entries(pendingScroll ?? {}).filter(([name]) => name.startsWith('tasks-')),
+  );
   /** The task whose "Add a step" field has the keyboard (SPEC 3, plan section 13). */
   let stepField: string | undefined;
   let stepTimer: ReturnType<typeof setTimeout> | undefined;
@@ -2591,7 +2596,9 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
       stack: [...nav.stack],
       ...(focusOpen ? { focus: { returnTo: nav.tab } } : {}),
       list: nav.list,
-      scroll: scrollOf(container),
+      // What is on screen, and the Tasks lists under a pushed page, which
+      // back would find where they were.
+      scroll: { ...remembered, ...scrollOf(container) },
     };
   }
 

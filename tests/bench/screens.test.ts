@@ -3775,6 +3775,21 @@ describe('coming back after a reload (plan sections 4 and 8; SPEC 5.7)', () => {
     onToday(await reload(again, 15));
   });
 
+  it('the Tasks list under a pushed page, scrolled where it was when back finds it', async () => {
+    const m = await mount(TUE_1005);
+    press(m.container, 'Tasks');
+    const inbox = () => m.container.querySelector<HTMLElement>('[data-scroll-key="tasks-inbox"]')!;
+    inbox().scrollTop = 80;
+    press(m.container, 'Cancel the gym trial, 2 steps');
+    const again = await reload(m, 5);
+    expect(title(again)).toBe('Cancel the gym trial');
+    goBack();
+    expect(title(again)).toBe('Tasks');
+    expect(
+      again.container.querySelector<HTMLElement>('[data-scroll-key="tasks-inbox"]')!.scrollTop,
+    ).toBe(80);
+  });
+
   it('a routine’s page pushed on Routines, with its entry, so back goes to the list', async () => {
     const m = await mount(TUE_1005);
     press(m.container, 'Routines');
