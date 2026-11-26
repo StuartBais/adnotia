@@ -164,7 +164,8 @@ export function captureSheet(props: CaptureProps): CaptureSheet {
     h(
       'div',
       { class: 'c-row', 'data-geo': 'c-row' },
-      h('span', { class: 'vh', id: 'c-to-name', text: T.whereItGoes }),
+      // The switch's name, hidden so it is read once, as the group's name.
+      h('span', { hidden: true, id: 'c-to-name', text: T.whereItGoes }),
       switcher,
       save,
     ),

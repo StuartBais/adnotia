@@ -148,10 +148,11 @@ function unlitBody(props: TaskPageProps): Built {
     );
     if (instead) {
       // Its hint, in SPEC 11's words, then the sentence under it, which is
-      // read in its place too (SPEC 11, list 3).
+      // read in its place too (SPEC 11, list 3). The hint is hidden, so it is
+      // read only as the button's hint, not again as text where it stands.
       nodes.push(
         h('span', {
-          class: 'vh',
+          hidden: true,
           id: 'p-instead',
           text: say.startInsteadHint(instead.title, instead.step),
         }),

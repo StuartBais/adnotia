@@ -192,7 +192,9 @@ const CONTROLS = 'button, a[href], input, textarea, select';
 
 /**
  * What a screen reader reads, in order: controls by name, headings and
- * paragraphs by their text (SPEC 11 "Reading order"). Hidden and inert parts
+ * paragraphs by their text (SPEC 11 "Reading order"), and any other text it
+ * would come to on its way, so words kept for a hint or a label that are
+ * also read where they stand show up as read twice. Hidden and inert parts
  * are skipped.
  */
 export function readingOrder(container: HTMLElement): string[] {
@@ -212,8 +214,16 @@ export function readingOrder(container: HTMLElement): string[] {
       const text = node.matches('li[aria-label]') ? nameOf(node) : readText(node);
       if (text) out.push(text);
       if (!node.querySelector(CONTROLS)) return;
+      for (const child of node.children) walk(child);
+      return;
     }
-    for (const child of node.children) walk(child);
+    for (const child of node.childNodes) {
+      if (child instanceof Element) walk(child);
+      else if (child.nodeType === Node.TEXT_NODE) {
+        const text = (child.textContent ?? '').replace(/\s+/g, ' ').trim();
+        if (text) out.push(text);
+      }
+    }
   };
   walk(container);
   return out;
