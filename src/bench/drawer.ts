@@ -16,7 +16,10 @@
 // finger, because that movement is the person's own, and then it is simply
 // there, with no travel (SPEC 10).
 //
-// A press on the drawer while it springs catches it where it is.
+// A press on the drawer while it springs catches it where it is, under the
+// finger. If the finger then moves, it pulls the drawer on from there. If it
+// lifts without moving, it was a tap: the drawer goes on to where it was
+// going, and the tap keeps its click, so it acts on whatever it was on.
 //
 // The rules are pure functions, tested on their own. The controller takes its
 // time and its frames from whoever mounts it, so a test can run it with a
@@ -182,7 +185,7 @@ export interface DragOptions {
 }
 
 export interface DrawerDrag {
-  /** Whether the drawer is under a finger or on its spring. */
+  /** Whether the drawer is under a finger, caught or pulled, or on its spring. */
   moving(): boolean;
   /** Whether it is on its spring, with no finger on it. */
   flying(): boolean;
@@ -200,6 +203,11 @@ interface Gesture {
   stops: Stop[];
   from: DrawerPosition;
   dragging: boolean;
+  /**
+   * The spring this press caught, held where it was until the finger moves
+   * (a pull from there) or lifts (a tap, and the spring goes on).
+   */
+  caught: Flight | undefined;
   samples: { y: number; at: number }[];
   y: number;
 }
@@ -253,30 +261,33 @@ export function dragDrawer(
     if (gesture) return;
     if (event.pointerType === 'mouse' && event.button !== 0) return;
     const surface = event.currentTarget as HTMLElement;
-    // A press on the drawer as it springs catches it where it is.
+    // A press on the drawer as it springs catches it where it is. It is not
+    // captured until it moves, so a tap's click goes where it was pressed.
     const caught = flight;
-    if (!caught && !host.grabs(event)) return;
-    const rest = host.stops();
-    if (!rest || rest.stops.length < 2) return;
+    let from: { base: number; stops: Stop[]; position: DrawerPosition };
     if (caught) {
       stopFlight();
+      from = { base: caught.y, stops: caught.stops, position: caught.from };
+    } else {
+      if (!host.grabs(event)) return;
+      const rest = host.stops();
+      if (!rest || rest.stops.length < 2) return;
+      const base = rest.stops.find((stop) => stop.position === rest.current)?.y ?? NaN;
+      if (!Number.isFinite(base)) return;
+      from = { base, stops: rest.stops, position: rest.current };
     }
-    const base = caught
-      ? caught.y
-      : (rest.stops.find((stop) => stop.position === rest.current)?.y ?? NaN);
-    if (!Number.isFinite(base)) return;
     gesture = {
       pointerId: event.pointerId,
       surface,
       startY: event.clientY,
-      base,
-      stops: caught ? caught.stops : rest.stops,
-      from: caught ? caught.from : rest.current,
-      dragging: caught !== undefined,
+      base: from.base,
+      stops: from.stops,
+      from: from.position,
+      dragging: false,
+      caught,
       samples: [{ y: event.clientY, at: host.now() }],
-      y: base,
+      y: from.base,
     };
-    if (caught) capture(gesture);
     win.addEventListener('pointermove', onMove);
     win.addEventListener('pointerup', onUp);
     win.addEventListener('pointercancel', onCancel);
@@ -301,7 +312,8 @@ export function dragDrawer(
       if (Math.abs(dy) < SLOP) return;
       g.dragging = true;
       capture(g);
-      host.begin(g.from);
+      // A caught spring is a journey already under way.
+      if (!g.caught) host.begin(g.from);
     }
     g.samples.push({ y: event.clientY, at: host.now() });
     if (g.samples.length > 12) g.samples.shift();
@@ -330,7 +342,12 @@ export function dragDrawer(
 
   function release(g: Gesture, velocity: number): void {
     endGesture();
-    if (!g.dragging) return;
+    if (!g.dragging) {
+      // Caught and let go without moving: a tap. The drawer goes on, from
+      // where it was held, to where it was going, and nothing eats the click.
+      if (g.caught) resume(g.caught);
+      return;
+    }
     host.move(g.y);
     swallowClick();
     const stop = nearest(project(g.y, velocity), g.stops);
@@ -346,6 +363,11 @@ export function dragDrawer(
       stops: g.stops,
       y: g.y,
     };
+    fly();
+  }
+
+  function resume(caught: Flight): void {
+    flight = { ...caught, spring: spring(caught.y, caught.stop.y, 0), start: host.now() };
     fly();
   }
 
@@ -410,7 +432,8 @@ export function dragDrawer(
   for (const surface of surfaces) surface.addEventListener('pointerdown', onDown);
 
   return {
-    moving: () => gesture?.dragging === true || flight !== undefined,
+    moving: () =>
+      gesture?.dragging === true || gesture?.caught !== undefined || flight !== undefined,
     flying: () => flight !== undefined,
     finish() {
       const f = flight;

@@ -4418,6 +4418,48 @@ describe('the drawer in the hand (SPEC 9.8 and 10; plan section 13)', () => {
     expect(at(m)).toBe('open');
   });
 
+  it('a tap on the handle as it springs back lands it, and the tap opens it as at rest', async () => {
+    layOut();
+    const m = await mount(TUE_1005);
+    // Pulled up 30 pt and let go: back toward folded on the spring.
+    pull(m, handle(m), [720, 700, 690]);
+    fly(m, 48);
+    expect(m.container.dataset['travel']).toBe('present');
+    const tap = handle(m);
+    tap.dispatchEvent(
+      new PointerEvent('pointerdown', { bubbles: true, clientY: 715, pointerId: 7 }),
+    );
+    fly(m, 64);
+    expect(at(m)).toBe('folded');
+    m.mono.now += 20;
+    tap.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, clientY: 715, pointerId: 7 }));
+    tap.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+    expect(m.container.dataset['travel']).toBeUndefined();
+    expect(at(m)).toBe('open');
+    expect(depth()).toBe(1);
+    expect(document.activeElement).toBe(heading(m));
+  });
+
+  it('a tap on a row of the open drawer as it springs down lands it, then opens the row', async () => {
+    layOut();
+    const m = await mount(TUE_1005);
+    press(m.container, HANDLE);
+    // Pulled down to 100 and let go there: back up toward open.
+    pull(m, heading(m), [90, 130, 160]);
+    fly(m, 32);
+    const row = m.container.querySelector<HTMLElement>('.drawer .list .rowbtn')!;
+    row.dispatchEvent(
+      new PointerEvent('pointerdown', { bubbles: true, clientY: 300, pointerId: 7 }),
+    );
+    m.mono.now += 60;
+    row.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, clientY: 300, pointerId: 7 }));
+    row.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+    expect(m.container.dataset['travel']).toBeUndefined();
+    // The row's page, pushed over the folded drawer, as a tap at rest does.
+    expect(at(m)).toBe('folded');
+    expect(m.container.querySelector('.screen.task')).not.toBeNull();
+  });
+
   it('a tap elsewhere while it springs lands it first, where it was going, then acts', async () => {
     layOut();
     const m = await mount(TUE_1005);

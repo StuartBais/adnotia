@@ -427,6 +427,37 @@ describe('the drawer under a finger', () => {
     expect(r.log).toEqual(['begin folded', 'settle folded from folded']);
   });
 
+  it('a tap while it springs holds it, then lets it go on to where it was going, and keeps its click', () => {
+    const r = rig();
+    let clicks = 0;
+    r.handle.addEventListener('click', () => clicks++);
+    // Flung toward open; a tap on the handle, which moved up with it.
+    finger(r, r.handle, [720, 600, 480, 360], 16);
+    r.run(64);
+    const caught = r.moves[r.moves.length - 1] ?? 0;
+    expect(caught).toBeGreaterThan(60);
+    r.handle.dispatchEvent(pointer('pointerdown', 300));
+    expect(r.drag.moving()).toBe(true);
+    expect(r.drag.flying()).toBe(false);
+    // Held under the finger, and a wobble short of a pull is still a tap.
+    r.clock.now += 40;
+    r.handle.dispatchEvent(pointer('pointermove', 300 + SLOP - 2));
+    r.run(64);
+    expect(r.moves[r.moves.length - 1]).toBe(caught);
+    r.handle.dispatchEvent(pointer('pointerup', 300 + SLOP - 2));
+    r.handle.click();
+    expect(clicks).toBe(1);
+    // On from where it was held, every frame nearer, to where it was going.
+    expect(r.drag.flying()).toBe(true);
+    const before = r.moves.length;
+    r.run(1000);
+    const rest = r.moves.slice(before);
+    expect(rest.every((y, i) => y <= (i === 0 ? caught : (rest[i - 1] ?? y)))).toBe(true);
+    expect(rest[rest.length - 1]).toBe(60);
+    // One journey: one begin, one settle.
+    expect(r.log).toEqual(['begin folded', 'settle open from folded']);
+  });
+
   it('a cancelled touch rests where it was heading, at no speed', () => {
     const r = rig();
     r.reduced.value = true;
