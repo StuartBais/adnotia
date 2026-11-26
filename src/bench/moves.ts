@@ -1491,7 +1491,48 @@ export function createMoves(host: MovesHost): Moves {
       hold.push(...hidden(b.el));
       return true;
     };
-    pair(O.step, N.doneText);
+    // The finished step goes into the done line. Wrapping where the done
+    // line is one line, it goes as its first line, cut where the done line
+    // cuts it, the whole of it fading where it sets off, so its second line
+    // never lies across "After this" on the way.
+    if (O.step && N.doneText && wraps(O.step) && !wraps(N.doneText)) {
+      const a = O.step;
+      const b = N.doneText;
+      const whole = placed(a);
+      const first = firstLine(a, b);
+      const done = placed(b);
+      temp.push(whole, first, done);
+      tracks.push(
+        {
+          el: whole,
+          move: [NONE, lineMap(a, b)],
+          fade: [
+            [0, 1],
+            [FIRST, 0],
+          ],
+        },
+        {
+          el: first,
+          move: [NONE, lineMap(a, b)],
+          fade: [
+            [0, 0],
+            [FIRST, 1],
+            [STEP_MS, 0],
+          ],
+        },
+        {
+          el: done,
+          move: [lineMap(b, a), NONE],
+          fade: [
+            [0, 0],
+            [STEP_MS, 1],
+          ],
+        },
+      );
+      hold.push(...hidden(b.el));
+    } else {
+      pair(O.step, N.doneText);
+    }
     const after = O.after?.el.querySelector('b') ? O.after : undefined;
     const rose =
       after && after.text.replace(/^\s*After this:?\s*/, '').trim() === N.step.text.trim();

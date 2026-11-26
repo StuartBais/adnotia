@@ -488,6 +488,32 @@ describe('a step that wraps in Focus travels as one line', () => {
       );
   }
 
+  it('Step done in Focus: the finished step goes into the done line as one line', async () => {
+    twoLines();
+    const m = await mount(TUE_1005);
+    settle(m);
+    press(m.container, /^Now: Write the question/);
+    await drawn();
+    over(m);
+    const before = played.length;
+    press(m.container, /^Step done/);
+    await drawn();
+    const mine = since(before);
+    const finished = (ms: number) =>
+      [...m.container.querySelectorAll<HTMLElement>('.morph > .fstep')]
+        .filter((pic) => pic.textContent?.includes('Write the question'))
+        .filter((pic) => {
+          const fade = mine.find((p) => p.el === pic && p.frames.some((f) => 'opacity' in f));
+          return fade ? opacityAt(fade, ms) > 0.01 : true;
+        })
+        .map((pic) => (pic.style.whiteSpace === 'nowrap' ? 'one' : 'two'));
+    expect(finished(0)).toContain('two');
+    for (const ms of [120, 180, 240]) expect(finished(ms)).not.toContain('two');
+    expect(finished(120)).toEqual(['one']);
+    over(m);
+    nothingLeft(m);
+  });
+
   for (const from of ['capsule', 'lantern'] as const) {
     it(`between Focus and the ${from}, on two lines only near Focus, either way`, async () => {
       twoLines();
