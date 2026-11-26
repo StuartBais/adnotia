@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { SCENARIOS, type ScenarioId } from '../../src/bench/example';
+import { EMAIL, SCENARIOS, type ScenarioId } from '../../src/bench/example';
 import { setOption } from '../../src/domains/options';
 import {
   controls,
@@ -7,6 +7,7 @@ import {
   nameOf,
   outlastUndo,
   press,
+  pressTab,
   said,
   settle,
   type,
@@ -16,8 +17,9 @@ import {
 
 // What the prototype never says (design/lantern/SPEC.md section 13, "Anything
 // that shames", and docs/03-scope.md "Tone"), across every screen built so far
-// (Today, Focus, the rest of today, the places, Me, Settings, About, the
-// crisis page and capture), every scenario, and every six-second line and
+// (Today, Focus, the rest of today, the places, Tasks and its four lists, a
+// task's page in each of its forms and the sheets it raises, Me, Settings,
+// About, the crisis page and capture), every scenario, and every six-second line and
 // Undo: nothing overdue, late, missed or behind; no streak, no greeting and
 // no cheering; no exclamation mark; never "0 min left" and never seconds; no
 // count on a tab; and no figure for time away.
@@ -240,5 +242,93 @@ describe('never', () => {
     m.clock.now = new Date('2026-12-14T09:12:00');
     window.dispatchEvent(new Event('pageshow'));
     holdsNothing(m, 'Today, after weeks');
+  });
+
+  for (const { at, scenario } of SCENES) {
+    it(`says none of it in "${scenario}", in Tasks and on every task's page`, async () => {
+      const m = await mount(at, scenario);
+      press(m.container, 'Tasks');
+      for (const list of ['Inbox', 'Today', 'Coming up', 'Done']) {
+        pressTab(m.container, list);
+        holdsNothing(m, `Tasks › ${list}`);
+        const rows = controls(m.container).filter(
+          (node) => node.classList.contains('rowbtn') && node.closest('.screen'),
+        );
+        for (const index of [0, rows.length - 1]) {
+          const row = controls(m.container).filter(
+            (node) => node.classList.contains('rowbtn') && node.closest('.screen'),
+          )[index];
+          if (!row) continue;
+          const name = nameOf(row);
+          row.click();
+          holdsNothing(m, `the page of ${name}`);
+          press(m.container, 'Back to Tasks');
+        }
+      }
+    });
+  }
+
+  it('says none of it on a task’s page, after Start this instead, its six seconds and its Undo', async () => {
+    const m = await mount('2026-11-24T10:05:00', 'example');
+    press(m.container, /^Next/);
+    press(m.container, /^10:30, Call the dentist/);
+    holdsNothing(m, 'a task opened while another runs');
+    press(m.container, 'Start this instead');
+    said(m);
+    holdsNothing(m, 'the page lit, its Undo showing');
+    press(m.container, /^Undo: go back to /);
+    said(m);
+    holdsNothing(m, 'the page after Undo');
+    m.clock.now = new Date('2026-11-24T10:40:00');
+    vi.advanceTimersByTime(60_000);
+    holdsNothing(m, 'the page once its slot has begun');
+  });
+
+  it('says none of it in the sheets a page raises', async () => {
+    const m = await mount('2026-11-24T10:05:00', 'example');
+    press(m.container, 'Tasks');
+    press(m.container, 'Cancel the gym trial, 2 steps');
+    press(m.container, /^When: /);
+    holdsNothing(m, 'the when sheet');
+    press(m.container, 'Today at a time');
+    press(m.container, 'Add 5 minutes');
+    said(m);
+    holdsNothing(m, 'the when sheet, a time chosen');
+    press(m.container, 'Done');
+    press(m.container, 'More');
+    holdsNothing(m, 'the ⋯ sheet');
+    press(m.container, 'Add a note');
+    holdsNothing(m, 'the note sheet');
+    press(m.container, 'Close');
+    press(m.container, 'More');
+    press(m.container, 'Rename');
+    holdsNothing(m, 'the rename sheet');
+    press(m.container, 'Close');
+    press(m.container, 'More');
+    press(m.container, 'Delete');
+    holdsNothing(m, 'the confirm before Delete');
+    press(m.container, 'Delete');
+    holdsNothing(m, 'Tasks, after Delete');
+  });
+
+  it('says none of it on the running task’s page, paused, and done', async () => {
+    const m = await mount('2026-11-24T10:05:00', 'example');
+    press(m.container, 'Tasks');
+    pressTab(m.container, 'Today');
+    press(m.container, 'Now: Write the school email');
+    holdsNothing(m, 'the running task’s own page');
+    m.clock.now = new Date('2026-11-24T10:40:00');
+    vi.advanceTimersByTime(60_000);
+    holdsNothing(m, 'the running task’s own page, its estimate used up');
+    press(m.container, 'Focus');
+    press(m.container, 'Pause');
+    press(m.container, 'Back to Tasks');
+    holdsNothing(m, 'the paused task’s own page');
+    press(m.container, 'Back to Tasks');
+    press(m.container, 'Mark done: Write the school email');
+    pressTab(m.container, 'Done');
+    press(m.container, EMAIL);
+    expect(m.container.querySelector('.doneline')).not.toBeNull();
+    holdsNothing(m, 'a done task’s page');
   });
 });
