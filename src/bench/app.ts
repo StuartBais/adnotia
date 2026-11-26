@@ -2298,31 +2298,39 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
     });
   }
 
+  // A new day, or none, then Today: one change, so history follows once. The
+  // commit's own render drops a page whose task has gone, and Today drops the
+  // rest; two moves back in one task are two traversals the browser may run,
+  // merge or drop as it likes.
   function scenario(id: ScenarioId): void {
-    dropSheet();
-    dropPageEdits();
-    dropUndo();
-    focusOpen = false;
-    moves.endAll();
-    moves.quietly(() => {
-      commit(loadScenario(read(), id, now()));
-      ticked.clear();
-      go({ ...TODAY });
+    together(() => {
+      dropSheet();
+      dropPageEdits();
+      dropUndo();
+      focusOpen = false;
+      moves.endAll();
+      moves.quietly(() => {
+        commit(loadScenario(read(), id, now()));
+        ticked.clear();
+        go({ ...TODAY });
+      });
     });
   }
 
   function deleteAll(): void {
     if (!confirm(ABOUT.deleteConfirm)) return;
-    dropSheet();
-    dropPageEdits();
-    dropUndo();
-    focusOpen = false;
-    const t = now();
-    moves.endAll();
-    moves.quietly(() => {
-      commit(migrateBench(emptyDomains(), t));
-      ticked.clear();
-      go({ ...TODAY });
+    together(() => {
+      dropSheet();
+      dropPageEdits();
+      dropUndo();
+      focusOpen = false;
+      const t = now();
+      moves.endAll();
+      moves.quietly(() => {
+        commit(migrateBench(emptyDomains(), t));
+        ticked.clear();
+        go({ ...TODAY });
+      });
     });
   }
 

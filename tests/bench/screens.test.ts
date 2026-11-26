@@ -1174,6 +1174,32 @@ describe('back, by Safari’s edge swipe or the back button (plan section 8)', (
     expect(document.activeElement).toBe(id(again, 'b-handle'));
   });
 
+  it.each([ABOUT.deleteAll, 'Start empty', 'Load: weeks away'])(
+    'takes history back once when About, over a task’s page, runs %s',
+    async (name) => {
+      const m = await mount(TUE_1005);
+      press(m.container, 'Tasks');
+      press(m.container, 'Fix the bike light');
+      press(m.container, 'Me');
+      press(m.container, 'About this prototype');
+      expect(historyDepth()).toBe(3);
+      const go = vi.spyOn(history, 'go');
+      press(m.container, name);
+      // The task's page went with the day, and Today came back: one move.
+      expect(go.mock.calls).toEqual([[-3]]);
+      go.mockRestore();
+      vi.advanceTimersByTime(1);
+      expect(historyDepth()).toBe(0);
+      expect(id(m, 't-today')?.getAttribute('aria-current')).toBe('page');
+      // Nothing is left owed, so the next back closes the next level.
+      press(m.container, 'Me');
+      expect(historyDepth()).toBe(1);
+      goBack();
+      expect(screenTitle(m)).not.toBe('Me');
+      expect(historyDepth()).toBe(0);
+    },
+  );
+
   it('hands the open drawer’s entry to the page a row or Me opens from it', async () => {
     const m = await mount(TUE_1005);
     press(m.container, HANDLE);
