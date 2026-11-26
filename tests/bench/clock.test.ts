@@ -144,6 +144,20 @@ describe('createTicker', () => {
     expect(events.filter((e) => e === 'wake')).toHaveLength(1);
   });
 
+  it('wakes again for a second return inside a second of the first', () => {
+    start();
+    setVisibility('hidden');
+    vi.advanceTimersByTime(5_000);
+    setVisibility('visible');
+    vi.advanceTimersByTime(400);
+    setVisibility('hidden');
+    vi.advanceTimersByTime(400);
+    setVisibility('visible');
+    window.dispatchEvent(new Event('pageshow'));
+    window.dispatchEvent(new Event('focus'));
+    expect(events).toEqual(['hide', 'wake', 'hide', 'wake']);
+  });
+
   it('wakes on pageshow or focus alone, in case visibilitychange never came', () => {
     start();
     vi.advanceTimersByTime(5_000);

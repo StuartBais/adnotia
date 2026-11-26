@@ -97,6 +97,32 @@ describe('the screen stays awake in Focus', () => {
     expect(request).toHaveBeenCalledTimes(2);
   });
 
+  it('asks again for a second return inside a second of the first, and keeps no record of going', async () => {
+    stubWakeLock();
+    const m = await mount(TUE_1005);
+    press(m.container, LIT);
+    await settled();
+    const at = (ms: number) => new Date(new Date(TUE_1005).getTime() + ms);
+    window.dispatchEvent(new Event('pagehide'));
+    m.clock.now = at(60_000);
+    window.dispatchEvent(new Event('pageshow'));
+    expect(request).toHaveBeenCalledTimes(2);
+    await settled();
+    // Away and back again at once: a swipe along the home bar and back.
+    m.clock.now = at(60_400);
+    window.dispatchEvent(new Event('pagehide'));
+    m.clock.now = at(60_800);
+    window.dispatchEvent(new Event('pageshow'));
+    expect(request).toHaveBeenCalledTimes(3);
+    const bench = (m.store.document().domains as { bench?: { away?: unknown } }).bench;
+    expect(bench?.away).toBeUndefined();
+    // A window focus long after, with no hide (Control Centre), finds nobody
+    // away: Focus stays, and the session runs on.
+    m.clock.now = at(17 * 60_000);
+    window.dispatchEvent(new Event('focus'));
+    expect(m.container.dataset['focus']).toBe('open');
+  });
+
   it('asks again at once after the browser let go of it by itself, with nothing drawn', async () => {
     stubWakeLock();
     const m = await mount(TUE_1005);

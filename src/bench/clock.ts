@@ -97,6 +97,11 @@ export function createTicker(options: TickerOptions): Ticker {
     stop();
     if (asleep) return;
     asleep = true;
+    // A burst is the events of one return. Once the page has gone away again,
+    // the next show is another return, however soon it comes: without this, a
+    // second return within a second of the first was never woken from, which
+    // left the away record standing and the wake lock let go.
+    lastWake = Number.NEGATIVE_INFINITY;
     options.onHide();
   }
 
