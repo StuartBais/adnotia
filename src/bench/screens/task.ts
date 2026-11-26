@@ -163,9 +163,14 @@ function unlitBody(props: TaskPageProps): Built {
       );
     }
   }
-  nodes.push(h('h2', { class: 'lbl t-label steps-lbl', text: T.steps }));
+  // Steps heads what is under it: the steps, or Add a step. A done task
+  // with none has nothing to head, so it has no heading.
+  const offer = view.kind !== 'done';
+  if (view.steps.length > 0 || offer) {
+    nodes.push(h('h2', { class: 'lbl t-label steps-lbl', text: T.steps }));
+  }
   if (view.steps.length > 0) nodes.push(plainRail(view.steps));
-  if (view.kind !== 'done') nodes.push(addStep(props));
+  if (offer) nodes.push(addStep(props));
   return { nodes, ...(patch ? { patch } : {}) };
 }
 

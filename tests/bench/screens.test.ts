@@ -3030,9 +3030,12 @@ describe('8 · The running task’s own page (SPEC 5.8)', () => {
     expect(drawnText(m.container.querySelector('.doneline')!)).toBe('Done');
     expect(id(m, 'p-when')).toBeNull();
     expect(id(m, 'p-addstep')).toBeNull();
+    // No steps and nothing to add: no Steps heading over nothing.
+    expect(m.container.querySelector('.steps-lbl')).toBeNull();
     press(m.container, 'Not done after all');
     expect(titled(stateOf(m), 'Bins out').doneAt).toBeUndefined();
     expect(id(m, 'p-start')).not.toBeNull();
+    expect(m.container.querySelector('.steps-lbl')).not.toBeNull();
   });
 });
 
