@@ -8,6 +8,7 @@
 
 import * as model from '../domains/tasks';
 import type { Task } from '../domains/tasks';
+import { runsOn } from '../domains/routines';
 import { addDays, loggingDay, type IsoDate } from '../kernel/dates';
 import {
   barState,
@@ -621,6 +622,92 @@ export const taskPageKey = (view: TaskPageView): unknown[] => [
   view.instead,
   view.present && presentKey(view.present),
 ];
+
+// ---------------------------------------------------------------- Routines
+
+/** A row in Routines (SPEC 5.9): its title, how many steps, and whether it ran today. */
+export interface RoutineRow {
+  id: string;
+  title: string;
+  steps: number;
+  /** A run finished on today's logging day. Goes at 04:00, and says nothing else. */
+  ranToday: boolean;
+}
+
+/** Which routines ran today: a run of theirs finished on today's logging day. */
+function ranToday(state: BenchDomains, now: Date): Set<string> {
+  return new Set(
+    runsOn(state.routines.runs, loggingDay(now))
+      .filter((run) => run.finishedAt !== undefined)
+      .map((run) => run.routineId),
+  );
+}
+
+/** The adult's routines, in their own order, with nothing counted but their steps. */
+export function routinesView(state: BenchDomains, now: Date): RoutineRow[] {
+  const ran = ranToday(state, now);
+  return state.routines.routines.map((routine) => ({
+    id: routine.id,
+    title: routine.title,
+    steps: routine.steps.length,
+    ranToday: ran.has(routine.id),
+  }));
+}
+
+export interface RoutineStepView {
+  title: string;
+  number: number;
+  /** "2 min", where the step is timed. */
+  minutes: number | undefined;
+}
+
+/**
+ * A routine's own page, without running (owner default 10): its name, its
+ * steps with their minutes, and, where Start would stand, what the app does
+ * there, including what starting would do to a task that runs (SPEC 5.9, 12).
+ */
+export interface RoutinePageView {
+  id: string;
+  title: string;
+  steps: RoutineStepView[];
+  /** The task that runs now, which starting the routine would stop. */
+  instead: { title: string; step: number | undefined } | undefined;
+}
+
+export function routinePageView(state: BenchDomains, id: string): RoutinePageView | undefined {
+  const routine = state.routines.routines.find((item) => item.id === id);
+  if (!routine) return undefined;
+  const running = model.running(state.tasks);
+  return {
+    id,
+    title: routine.title,
+    steps: routine.steps.map((step, index) => ({
+      title: step.title,
+      number: index + 1,
+      minutes: step.minutes !== undefined && step.minutes > 0 ? step.minutes : undefined,
+    })),
+    instead: running
+      ? { title: running.title, step: stepFacts(state.tasks, running).position?.number }
+      : undefined,
+  };
+}
+
+// ---------------------------------------------------------------- Library
+
+/**
+ * The five rows of the Library (SPEC 12). The names are SPEC's; the lines
+ * under them are proposals, except where SPEC says in brackets what a row
+ * holds. Each opens a page that says it is not in this prototype.
+ */
+export const LIBRARY: readonly { topic: string; name: string; line: string }[] = [
+  { topic: 'sleep', name: 'Sleep', line: 'Bedtimes, waking and winding down' },
+  { topic: 'exercise', name: 'Exercise', line: 'Moving more, in small ways' },
+  { topic: 'mindfulness', name: 'Mindfulness', line: 'Short practices, a few minutes each' },
+  { topic: 'thinking', name: 'Thinking tools', line: 'If-then phrases and problem-solving' },
+  { topic: 'evidence', name: 'How we know', line: 'What the evidence says, and how strong it is' },
+];
+
+export const libraryTopic = (topic: string) => LIBRARY.find((item) => item.topic === topic);
 
 /** Estimates, for the running page's meta line: the one the bar measures. */
 export { estimateOf };

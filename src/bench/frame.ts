@@ -25,6 +25,7 @@ export const HINT_IDS = {
   meDraft: 'hint-me-draft',
   inbox: 'hint-inbox',
   timer: 'hint-timer',
+  routine: 'hint-routine',
 } as const;
 
 export function hints(): HTMLElement {
@@ -38,6 +39,7 @@ export function hints(): HTMLElement {
     h('span', { id: HINT_IDS.meDraft, text: HINT.meKeepsDraft }),
     h('span', { id: HINT_IDS.inbox, text: HINT.opensNewest }),
     h('span', { id: HINT_IDS.timer, text: HINT.timerKeepsRunning }),
+    h('span', { id: HINT_IDS.routine, text: HINT.opensRoutine }),
   );
 }
 

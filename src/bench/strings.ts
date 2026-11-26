@@ -81,6 +81,8 @@ export const T = {
   about: 'About this prototype',
   notInPrototype: 'Not in this prototype.',
   routineNotInPrototype: 'Running a routine is not in this prototype.',
+  /** Undrawn: what "+ New routine" opens without running routines (plan section 11). A proposal. */
+  newRoutineNotInPrototype: 'Making a routine is not in this prototype.',
 
   // Tasks (SPEC 5.6). The helper lines for Coming up and Done, and the line
   // for a Today with nothing on it, are undrawn: proposals.
@@ -182,6 +184,11 @@ export const say = {
     lead === undefined ? `Step ${number}: ${title}` : `${lead}, step ${number}: ${title}`,
   /** A done step that is read, not tapped: on a page that is not lit. */
   railDone: (number: number, title: string) => `Step ${number}, done: ${title}`,
+  /** A routine's step, read on its page: "Step 2: Put shoes on, 2 minutes". */
+  routineStep: (number: number, title: string, minutes: number | undefined) =>
+    minutes === undefined
+      ? `Step ${number}: ${title}`
+      : `Step ${number}: ${title}, ${durationSpoken(minutes)}`,
   /** The when pill: "When: Today, 10:30, 10 minutes, in 25 minutes". Undrawn words. */
   when: (parts: readonly string[]) => `When: ${parts.join(', ')}`,
   /** Page 8's meta line: "Today, 25 minute estimate, 7 minutes so far" (SPEC 11). */
@@ -227,6 +234,20 @@ export function startInsteadSentence(title: string, step: number | undefined): s
   return step === undefined
     ? `Starting this stops the timer on ${title}.`
     : `Starting this stops the timer on ${title}. It keeps its place at step ${step}.`;
+}
+
+/**
+ * Where Start would stand on a routine's own page, while running routines are
+ * out of the prototype (owner default 10): what SPEC 5.9 says starting one
+ * does, said of the app, so nothing here promises a Start the prototype lacks.
+ * Undrawn: a proposal.
+ */
+export function routineInApp(instead?: { title: string; step: number | undefined }): string {
+  const where = 'In the app, a routine starts from its own page';
+  if (instead === undefined) return `${where}.`;
+  return instead.step === undefined
+    ? `${where}, and starting it stops the timer on ${instead.title}.`
+    : `${where}, and starting it stops the timer on ${instead.title}. It keeps its place at step ${instead.step}.`;
 }
 
 /** The six-second line after "Start this instead": "Write the school email at step 2". */
