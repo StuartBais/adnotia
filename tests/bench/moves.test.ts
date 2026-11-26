@@ -408,6 +408,29 @@ describe('nothing is drawn twice', () => {
   });
 });
 
+describe('the capsule is drawn once', () => {
+  it('opening capture over a place, the capsule riding the sheet waits for its picture to rise', async () => {
+    const m = await mount(TUE_1005);
+    settle(m);
+    press(m.container, 'Tasks');
+    await drawn();
+    over(m);
+    press(m.container, 'Capture');
+    await drawn();
+    const ride = m.container.querySelector<HTMLElement>('.sheet-layer[data-capture] .c-ride');
+    expect(ride).not.toBeNull();
+    // Its picture rises from the slot, in the sheet's layer…
+    const pictures = [...m.container.querySelectorAll<HTMLElement>('.sheet-layer > .capsule')];
+    expect(pictures).toHaveLength(1);
+    // …and neither the capsule in the slot nor the one riding the sheet shows meanwhile.
+    expect(ride!.style.opacity).toBe('0');
+    expect(m.container.querySelector<HTMLElement>('.dock .capsule')!.style.opacity).toBe('0');
+    over(m);
+    nothingLeft(m);
+    expect(ride!.hasAttribute('style')).toBe(false);
+  });
+});
+
 describe('a motion runs to its own end', () => {
   /** What the last step played, from `before` on. */
   const since = (before: number) => played.slice(before);

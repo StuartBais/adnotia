@@ -1617,14 +1617,16 @@ export function createMoves(host: MovesHost): Moves {
         [D * 0.65, 1],
       ],
     });
-    // Over a place the capsule rides up from its slot to the sheet's edge.
+    // Over a place the capsule rides up from its slot to the sheet's edge:
+    // its picture travels, and the one riding the sheet, which comes up with
+    // the sheet's content, is kept out of sight until the picture is on it.
     const ride = q('.sheet-layer[data-capture]:not([data-leaving]) .c-ride .capsule');
     const capsuleEl = q('.dock .capsule');
     if (ride && snap.capsule.whole && drawn(ride)) {
       const pic = placed(snap.capsule.whole, layers.sheet);
       temp.push(pic);
       tracks.push({ el: pic, move: [NONE, mapTo(snap.capsule.whole.box, boxOf(ride, container))] });
-      hold.push(...hidden(capsuleEl));
+      hold.push(...hidden(capsuleEl), ...hidden(ride.closest<HTMLElement>('.c-ride')));
     }
     if (next.sheet === 'today') raise(snap.lantern, fresh(LANTERN, layers.screen), tracks, temp, 1);
     if (next.sheet === 'focus') raise(snap.focus, fresh(FOCUS, layers.focus), tracks, temp, 1);
