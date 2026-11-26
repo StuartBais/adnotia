@@ -231,6 +231,10 @@ describe('text on the bench’s grounds', () => {
     expect(checked).toBeGreaterThan(30);
   });
 
+  /** Charcoal objects that sit on a light ground, each a whole class name. */
+  const CHARCOAL_OBJECT =
+    /\.(?:capsule|nowtag|focuspill|c-ride|ts-ride|ntag\.now|start\.first)(?![\w-])/;
+
   it('never sets ash or terracotta as text on a light ground: white places, stone or a tint', () => {
     const light =
       /data-places='white'\]\[data-ground='place'\]|^\.drawer|^\.tabs|^\.c-panel|^\.foot/;
@@ -242,8 +246,10 @@ describe('text on the bench’s grounds', () => {
       if (/background(?:-color)?:\s*var\(/.test(rule.body)) continue;
       for (const selector of rule.selectors.filter((s) => light.test(s))) {
         // A charcoal object on a light ground carries the present's inks: the
-        // capsule, the Now tag, the Focus pill and the plain Start pill.
-        if (/capsule|nowtag|ntag|focuspill|start|\.c-ride|ts-ride|now\b/.test(selector)) continue;
+        // capsule and the pictures of it that ride a sheet, the Now tag, the
+        // Focus pill and the charcoal Start. Named as whole classes, so the
+        // quiet "Start this instead" and a plain tag are still held here.
+        if (CHARCOAL_OBJECT.test(selector)) continue;
         expect(['--charcoal', '--muted', '--white'], `${selector} { color: ${ink} }`).toContain(
           ink,
         );
