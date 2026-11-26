@@ -443,7 +443,8 @@ export function createMoves(host: MovesHost): Moves {
     );
   }
 
-  function open(prev: Scene, next?: Scene): void {
+  /** Opens a batch: what runs is ended (all of it, or only `ends`), and what is on screen pictured. */
+  function open(prev: Scene, next?: Scene, ends?: readonly string[]): void {
     if (batch) return;
     // What runs now is ended first, so what is measured is the page at rest.
     const y = motions.get('drawer') ? boxOf(layers.drawer, container).y : undefined;
@@ -452,7 +453,8 @@ export function createMoves(host: MovesHost): Moves {
       lantern && (lantern.plan as LanternPlan).lantern
         ? { at: lantern.progress(), to: lantern.plan.to ?? 1 }
         : undefined;
-    motions.end();
+    if (ends) motions.end(...ends);
+    else motions.end();
     batch = snapshot(prev, next);
     if (next && slides(prev, next)) batch.ghost = freezeScreen();
     if (next && next.position !== prev.position) batch.drawer = freezeDrawer();
@@ -479,9 +481,19 @@ export function createMoves(host: MovesHost): Moves {
     if (destroyed || !host.enabled() || quiet > 0 || !last) return;
     if (!batch) {
       // The Next line or Focus's foot rebuilt in place: a cross-fade, with
-      // nothing else changed.
+      // nothing else changed. Focus's foot emptied as Focus goes is not one.
       if (target !== layers.drawer && target !== layers.focusFoot) return;
-      open(last, last);
+      if (target === layers.focusFoot && (!last.focus || target.hasAttribute('data-leaving')))
+        return;
+      // Only its own cross-fade gives way. Whatever else is moving goes on as
+      // it was, and the words change at once under it rather than cross-fade
+      // over something on its way.
+      const channel = target === layers.drawer ? 'line' : 'foot';
+      if (motions.busy(['line', 'foot'])) {
+        motions.end(channel);
+        return;
+      }
+      open(last, last, [channel]);
     }
     const snap = batch;
     if (!snap) return;

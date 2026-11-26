@@ -8,6 +8,8 @@
 // geometry; the comparison harness holds the geometry, within 1 pt.
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { FOCUS_FADE_MS } from '../../src/bench/app';
+import { springDuration } from '../../src/bench/motion';
 import { DROP_MS } from '../../src/bench/moves';
 import type { BenchDomains } from '../../src/bench/state';
 import {
@@ -33,6 +35,8 @@ interface Played {
   el: Element;
   frames: Keyframe[];
   options: KeyframeAnimationOptions;
+  /** Cancelled: the motion it belongs to has ended. */
+  cancelled: boolean;
 }
 
 let played: Played[] = [];
@@ -44,8 +48,13 @@ beforeEach(() => {
     configurable: true,
     writable: true,
     value(this: Element, frames: Keyframe[], options: KeyframeAnimationOptions) {
-      played.push({ el: this, frames, options });
-      return { cancel() {} };
+      const one: Played = { el: this, frames, options, cancelled: false };
+      played.push(one);
+      return {
+        cancel() {
+          one.cancelled = true;
+        },
+      };
     },
   });
 });
@@ -345,6 +354,42 @@ describe('every motion ends on the Reduce Motion path’s page', () => {
         fly(m);
       },
     ]);
+  });
+});
+
+describe('a motion runs to its own end', () => {
+  /** What the last step played, from `before` on. */
+  const since = (before: number) => played.slice(before);
+  const SPRING_END = springDuration() + 50;
+
+  it('“⌄ Today” is not cut short when Focus’s fading layers are emptied', async () => {
+    for (const from of ['capsule', 'lantern'] as const) {
+      const m = await mount(TUE_1005);
+      settle(m);
+      if (from === 'capsule') {
+        press(m.container, 'Routines');
+        await drawn();
+        over(m);
+      }
+      press(m.container, /^Now: Write the question/);
+      await drawn();
+      over(m);
+      const before = played.length;
+      press(m.container, from === 'capsule' ? 'Back to Routines' : 'Back to Today');
+      await drawn();
+      const mine = since(before);
+      expect(mine.length).toBeGreaterThan(0);
+      // Focus's own layers are emptied once its Reduce Motion fade would be over…
+      vi.advanceTimersByTime(FOCUS_FADE_MS + 20);
+      expect(m.container.querySelector('.focus')!.childElementCount).toBe(0);
+      // …and the way back into the capsule or the lantern goes on being drawn.
+      expect(mine.filter((p) => p.cancelled)).toEqual([]);
+      expect(m.container.querySelector('.app > .mframe, .morph > .mframe')).not.toBeNull();
+      vi.advanceTimersByTime(SPRING_END - FOCUS_FADE_MS);
+      expect(mine.every((p) => p.cancelled)).toBe(true);
+      nothingLeft(m);
+      unmount();
+    }
   });
 });
 

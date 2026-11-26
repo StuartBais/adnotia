@@ -466,6 +466,12 @@ export class Motions {
     return run && !run.ended ? run : undefined;
   }
 
+  /** Whether anything runs on a channel other than these. */
+  busy(except: readonly string[] = []): boolean {
+    for (const [name, run] of this.running) if (!run.ended && !except.includes(name)) return true;
+    return false;
+  }
+
   /** Ends whatever runs on these channels, or on all of them. */
   end(...channels: string[]): void {
     const names = channels.length > 0 ? channels : [...this.running.keys()];
