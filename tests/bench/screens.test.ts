@@ -24,6 +24,7 @@ import {
   pressTab,
   readText,
   readingOrder,
+  reload,
   said,
   settle,
   stateOf,
@@ -3744,5 +3745,31 @@ describe('the Library (SPEC 12)', () => {
     expect(m.container.dataset['places']).toBe('white');
     expect(m.container.querySelector('.capsule')?.classList.contains('lift')).toBe(false);
     expect(choices(m.container)).toBe(3);
+  });
+});
+
+describe('coming back after a reload (plan sections 4 and 8; SPEC 5.7)', () => {
+  // Under 15 minutes away, exactly where the person was, level by level: the
+  // tab, its list and its scroll, the pages pushed on it, Focus, and what an
+  // open sheet held. After that, Today. Each reload goes away as Safari does
+  // and boots from exactly what was stored.
+  const title = (m: Mounted) => m.container.querySelector('.screen h1')?.textContent;
+  const onToday = (m: Mounted) => {
+    expect(id(m, 'b-lit')).not.toBeNull();
+    expect(id(m, 't-today')?.getAttribute('aria-current')).toBe('page');
+    expect(historyDepth()).toBe(0);
+  };
+
+  it('a page killed before it could say it went away: from where it was last, if that was recent', async () => {
+    const m = await mount(TUE_1005);
+    press(m.container, 'Routines');
+    press(m.container, 'New routine');
+    // No pagehide: the last page change is the only record.
+    const again = await reload(m, 10, { hide: false });
+    expect(title(again)).toBe('New routine');
+    press(again.container, 'Back to Routines');
+    vi.advanceTimersByTime(1);
+    press(again.container, 'Library');
+    onToday(await reload(again, 15, { hide: false }));
   });
 });

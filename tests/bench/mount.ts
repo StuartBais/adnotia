@@ -2,7 +2,12 @@
 // screen reader do. Shared by screens.test.ts and never.test.ts.
 
 import { vi } from 'vitest';
-import { createStore, memoryStorageAdapter, type KernelStore } from '../../src/kernel/store';
+import {
+  createStore,
+  memoryStorageAdapter,
+  type DomainsState,
+  type KernelStore,
+} from '../../src/kernel/store';
 import {
   ANNOUNCE_AFTER,
   DRAFT_AFTER,
@@ -35,20 +40,45 @@ export async function mount(
   scenario: ScenarioId | 'nothing' = 'example',
   edit?: (state: BenchDomains, now: Date) => BenchDomains,
 ): Promise<Mounted> {
+  return start(new Date(at), (state, now) => {
+    if (scenario === 'nothing') return undefined;
+    const loaded = loadScenario(migrateBench(state, now), scenario, now);
+    return edit ? edit(loaded, now) : loaded;
+  });
+}
+
+/**
+ * A reload: the page goes away as Safari's would (pagehide, unless `hide` is
+ * false, as for a page killed before it could say so), and a fresh load
+ * `minutesAway` later boots from exactly what was stored, history and all.
+ */
+export async function reload(
+  mounted: Mounted,
+  minutesAway: number,
+  options: { hide?: boolean; edit?: (state: BenchDomains) => BenchDomains } = {},
+): Promise<Mounted> {
+  if (options.hide ?? true) window.dispatchEvent(new Event('pagehide'));
+  const stored = mounted.store.document().domains as BenchDomains;
+  const at = new Date(mounted.clock.now.getTime() + minutesAway * 60_000);
+  if (current === mounted) unmount();
+  else mounted.destroy();
+  return start(at, () => (options.edit ? options.edit(stored) : stored));
+}
+
+async function start(
+  at: Date,
+  seed: (state: DomainsState, now: Date) => DomainsState | undefined,
+): Promise<Mounted> {
   vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
-  const clock = { now: new Date(at) };
+  const clock = { now: at };
   const store = createStore({
     adapter: memoryStorageAdapter(),
     key: 'adnotia-bench',
     now: () => clock.now,
   });
   await store.load();
-  if (scenario !== 'nothing') {
-    let state = migrateBench(store.document().domains, clock.now);
-    state = loadScenario(state, scenario, clock.now);
-    if (edit) state = edit(state, clock.now);
-    store.updateDomains(() => state);
-  }
+  const seeded = seed(store.document().domains, clock.now);
+  if (seeded) store.updateDomains(() => seeded);
   const container = document.createElement('div');
   document.body.append(container);
   const mono = { now: 0 };

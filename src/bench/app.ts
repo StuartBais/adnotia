@@ -276,6 +276,8 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
   /** What the dock line's slot held, and where, at the last render. */
   let lastSlot: 'present' | 'capsule' | 'none' | undefined;
   let lastScene = '';
+  /** Where the person was at the last render, as written to `bench.ui`. */
+  let lastWhere = '';
   /** The next render follows a tap that grows the capsule back: a tab, back, or a fold. */
   let arrival: 'morph' | 'other' = 'other';
   /** The live Undo, if a tap in the last six seconds can be taken back. */
@@ -813,6 +815,21 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
       undo = undefined;
       render();
     }
+    rememberWhere(showFocus);
+  }
+
+  /**
+   * Where the person is, written on a page change as well as on hide (plan
+   * section 6), so a page iOS kills before it can say it went away still
+   * comes back where it was, if that was under 15 minutes ago. Never on a
+   * scroll, since every write clones the whole document.
+   */
+  function rememberWhere(inFocus: boolean): void {
+    const where = JSON.stringify([nav.tab, nav.stack, nav.list, inFocus]);
+    if (where === lastWhere) return;
+    lastWhere = where;
+    const state = read();
+    commit({ ...state, bench: { ...state.bench, ui: uiRecord(now()) } });
   }
 
   function patchAll(live: PresentLive | undefined): void {
