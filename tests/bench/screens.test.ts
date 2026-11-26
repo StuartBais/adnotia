@@ -3677,7 +3677,7 @@ describe('the Library (SPEC 12)', () => {
     'Exercise, Moving more, in small ways',
     'Mindfulness, Short practices, a few minutes each',
     'Thinking tools, If-then phrases and problem-solving',
-    'How we know, What the evidence says, and how strong it is',
+    'How we know, The evidence, and how strong it is',
   ];
 
   it('is a place of five rows, each a name over one plain line, and the capsule rides it', async () => {

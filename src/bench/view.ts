@@ -704,7 +704,7 @@ export const LIBRARY: readonly { topic: string; name: string; line: string }[] =
   { topic: 'exercise', name: 'Exercise', line: 'Moving more, in small ways' },
   { topic: 'mindfulness', name: 'Mindfulness', line: 'Short practices, a few minutes each' },
   { topic: 'thinking', name: 'Thinking tools', line: 'If-then phrases and problem-solving' },
-  { topic: 'evidence', name: 'How we know', line: 'What the evidence says, and how strong it is' },
+  { topic: 'evidence', name: 'How we know', line: 'The evidence, and how strong it is' },
 ];
 
 export const libraryTopic = (topic: string) => LIBRARY.find((item) => item.topic === topic);
