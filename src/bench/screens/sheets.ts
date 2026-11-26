@@ -165,7 +165,11 @@ export function whenSheet(props: WhenProps): Built {
     event.preventDefault();
     const at = WHEN_ROWS.findIndex((row) => row.choice === props.choice);
     const next = WHEN_ROWS[(at + step + WHEN_ROWS.length) % WHEN_ROWS.length];
-    if (next) props.onChoose(next.choice);
+    if (!next) return;
+    props.onChoose(next.choice);
+    // The sheet is drawn again around the choice: focus goes with the check,
+    // onto the row now chosen, as a radio group's arrow keys move both.
+    group.ownerDocument.getElementById(`w-${next.choice}`)?.focus();
   });
 
   // The time or the day the chosen row asks for, as the phone's own pickers:

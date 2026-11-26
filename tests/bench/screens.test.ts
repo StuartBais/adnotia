@@ -3169,6 +3169,39 @@ describe('the sheets a task’s page raises (SPEC 9.9 and 12)', () => {
     expect(drawnText(id(m, 'p-when')!)).toBe('Today, 10:30 · 10 min · in 25 min');
   });
 
+  it('the arrow keys move the check and focus together, round the rows', async () => {
+    const m = await mount(TUE_1005);
+    press(m.container, 'Tasks');
+    press(m.container, 'Fix the bike light');
+    press(m.container, /^When: /);
+    const key = (name: string) =>
+      document.activeElement!.dispatchEvent(
+        new KeyboardEvent('keydown', { key: name, bubbles: true }),
+      );
+    id(m, 'w-none')!.focus();
+    const at = () => [
+      document.activeElement?.id,
+      document.activeElement?.getAttribute('aria-checked'),
+    ];
+    key('ArrowDown');
+    expect(at()).toEqual(['w-today', 'true']);
+    key('ArrowDown');
+    expect(at()).toEqual(['w-at', 'true']);
+    key('ArrowRight');
+    expect(at()).toEqual(['w-tomorrow', 'true']);
+    expect(titled(stateOf(m), 'Fix the bike light').when).toEqual({
+      kind: 'anytime',
+      date: '2026-11-25',
+    });
+    key('ArrowUp');
+    key('ArrowUp');
+    key('ArrowUp');
+    expect(at()).toEqual(['w-none', 'true']);
+    key('ArrowLeft');
+    expect(at()).toEqual(['w-pick', 'true']);
+    expect((document.activeElement as HTMLElement).tabIndex).toBe(0);
+  });
+
   it('How long sets a booked slot and its estimate together, and says what it reads', async () => {
     const m = await opened();
     press(m.container, /^When: /);
