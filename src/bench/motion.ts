@@ -278,7 +278,11 @@ export function frameNode(colour: string, kind = ''): HTMLElement {
   const piece = (cls: string) => h('i', { class: `mf ${cls}` });
   const node = document.createElement('div');
   node.className = `mframe ${kind}`.trim();
+  // Drawn only, like a picture: wherever it is put, a tap goes through it to
+  // what it is drawn over.
   node.setAttribute('aria-hidden', 'true');
+  node.setAttribute('inert', '');
+  node.style.setProperty('pointer-events', 'none');
   node.style.setProperty('--mf', colour);
   node.append(
     piece('band'),

@@ -10,6 +10,7 @@ import {
   SPRING_FALLBACK,
   along,
   backwards,
+  frameNode,
   framePieces,
   freeze,
   linearEasing,
@@ -123,6 +124,13 @@ describe('pictures', () => {
     expect(copy.querySelector('[id], [data-geo], [tabindex], [aria-describedby]')).toBeNull();
     expect(copy.textContent).toBe('Go');
     source.remove();
+  });
+
+  it('a frame too: read by nothing, and a tap goes through it wherever it is put', () => {
+    const frame = frameNode('red');
+    expect(frame.getAttribute('aria-hidden')).toBe('true');
+    expect(frame.hasAttribute('inert')).toBe(true);
+    expect(frame.style.pointerEvents).toBe('none');
   });
 });
 

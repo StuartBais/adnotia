@@ -138,6 +138,19 @@ function nothingLeft(m: Mounted): void {
   expect(m.container.dataset['flight']).toBeUndefined();
 }
 
+/**
+ * What a motion draws takes no tap, in its own layers or out of them: a tap
+ * in the middle of one reaches the page as it already is.
+ */
+function drawnOnly(m: Mounted): void {
+  const drawnNodes = m.container.querySelectorAll<HTMLElement>(
+    '.mframe, .mdrawer, .mghost, .morph > *, .ghostscreen > *',
+  );
+  for (const node of drawnNodes) {
+    expect(node.closest('[inert]') !== null || node.style.pointerEvents === 'none').toBe(true);
+  }
+}
+
 type Step = (m: Mounted) => void | Promise<void>;
 
 /**
@@ -158,7 +171,10 @@ async function bothWays(at: string, scenario: Parameters<typeof mount>[1], steps
       const before = played.length;
       await step(m);
       await drawn();
-      if (way === 'full') pages.calls.push(played.length - before);
+      if (way === 'full') {
+        pages.calls.push(played.length - before);
+        drawnOnly(m);
+      }
       over(m);
       if (way === 'full') nothingLeft(m);
       pages[way].push(page(m));
