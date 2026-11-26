@@ -6,10 +6,13 @@ import { EMAIL } from '../../src/bench/example';
 import { loadScenario, migrateBench, type BenchDomains } from '../../src/bench/state';
 import { emptyDomains } from '../../src/kernel/store';
 import {
+  advance,
   button,
+  goBack,
   hintOf,
   mount,
   nameOf,
+  outlastFade,
   outlastUndo,
   press,
   readText,
@@ -247,6 +250,20 @@ describe('the Next line for six seconds (SPEC 9.8)', () => {
     undo.blur();
     await Promise.resolve();
     expect(id(m, 'b-undo')).toBeNull();
+  });
+
+  it('kept for its focus, goes when the handle opens the drawer over it, as a tap in Safari', async () => {
+    const m = await mount(TUE_1005);
+    press(m.container, 'Step done: Write the question');
+    id(m, 'b-undo')!.focus();
+    outlastUndo();
+    // A tap that does not move focus: the pill is rebuilt away with no focusout.
+    press(m.container, 'Step done: Write the question. Rest of today');
+    expect(m.container.dataset['drawer']).toBe('open');
+    press(m.container, 'Hide the rest of today');
+    advance(m, 3);
+    expect(id(m, 'b-undo')).toBeNull();
+    expect(nameOf(handle(m))).toBe('Next, in 22 minutes: 10:30, Call the dentist. Rest of today');
   });
 
   it('ends when the app goes to the background', async () => {
@@ -512,6 +529,43 @@ describe('Undo on Focus’s foot (SPEC 5.4)', () => {
     undo.blur();
     await Promise.resolve();
     expect(id(m, 'b-undo')).toBeNull();
+  });
+
+  it('kept for its focus, goes when back closes Focus under it', async () => {
+    const m = await focused();
+    press(m.container, 'Step done: Write the question');
+    id(m, 'b-undo')!.focus();
+    outlastUndo();
+    goBack();
+    expect(m.container.dataset['focus']).toBeUndefined();
+    outlastFade();
+    advance(m, 3);
+    expect(m.container.querySelector('.undo')).toBeNull();
+    expect(handle(m).querySelector('.h-l1')?.textContent).not.toBe('Step done');
+  });
+
+  it('and when "⌄ Today" closes Focus without moving focus, as a tap in Safari', async () => {
+    const m = await focused();
+    press(m.container, 'Step done: Write the question');
+    id(m, 'b-undo')!.focus();
+    outlastUndo();
+    button(m.container, 'Back to Today').click();
+    expect(m.container.dataset['focus']).toBeUndefined();
+    advance(m, 3);
+    expect(id(m, 'b-undo')).toBeNull();
+    expect(handle(m).querySelector('.h-l1')?.textContent).not.toBe('Step done');
+  });
+
+  it('kept for its focus on the Next line, goes when the lit block opens Focus', async () => {
+    const m = await mount(TUE_1005);
+    press(m.container, 'Step done: Write the question');
+    id(m, 'b-undo')!.focus();
+    outlastUndo();
+    button(m.container, /^Now: Read it once and send\./).click();
+    expect(m.container.dataset['focus']).toBe('open');
+    advance(m, 3);
+    expect(id(m, 'b-undo')).toBeNull();
+    expect(readText(foot(m))).toBe('Later today: 10:30, Call the dentist, in 22 minutes');
   });
 
   it('moves to the Next line when Focus closes within the six seconds', async () => {

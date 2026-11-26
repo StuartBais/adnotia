@@ -508,6 +508,13 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
     }
     ticker?.refresh();
     syncHistory();
+    // An Undo kept past its six seconds for its focus goes once the pill has
+    // lost it, however it lost it: here a paint took the pill away (Focus
+    // opening or closing, the drawer opening) with no focusout to say so.
+    if (undo?.expired && !undoHasFocus()) {
+      undo = undefined;
+      render();
+    }
   }
 
   function patchAll(live: PresentLive | undefined): void {
@@ -1031,7 +1038,7 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
     slot.timer = setTimeout(() => {
       slot.timer = undefined;
       if (undo !== slot) return;
-      if (document.activeElement?.id === 'b-undo') slot.expired = true;
+      if (undoHasFocus()) slot.expired = true;
       else {
         undo = undefined;
         render();
@@ -1068,12 +1075,30 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
     else landFocus();
   }
 
-  /** An Undo kept for its focus goes when focus leaves it. */
-  function onFocusOut(event: FocusEvent): void {
-    if (!undo?.expired || (event.target as HTMLElement | null)?.id !== 'b-undo') return;
-    if ((event.relatedTarget as HTMLElement | null)?.id === 'b-undo') return;
+  /**
+   * The live pill has focus: the one #b-undo, on the page and in a layer that
+   * is read. The fading Focus keeps a pill with its id stripped, in an inert
+   * layer, and that one does not count.
+   */
+  function undoHasFocus(): boolean {
+    const active = document.activeElement;
+    return (
+      active instanceof HTMLElement &&
+      active.id === 'b-undo' &&
+      active.isConnected &&
+      active.closest('[inert]') === null
+    );
+  }
+
+  /**
+   * An Undo kept for its focus goes when focus leaves it. Judged once the
+   * move has landed, so focus going from one pill to the pill rebuilt in its
+   * place keeps it.
+   */
+  function onFocusOut(): void {
+    if (!undo?.expired) return;
     queueMicrotask(() => {
-      if (!undo?.expired || document.activeElement?.id === 'b-undo') return;
+      if (!undo?.expired || undoHasFocus()) return;
       undo = undefined;
       render();
     });
