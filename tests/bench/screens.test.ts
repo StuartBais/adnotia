@@ -4239,6 +4239,39 @@ describe('the drawer in the hand (SPEC 9.8 and 10; plan section 13)', () => {
     expect(at(m)).toBe('open');
   });
 
+  it('the half drawer’s top is measured under the open drawer too, so a pull down finds where the lantern ends now', async () => {
+    layOut();
+    // Where the unlit lantern ends: moved below while the drawer is open.
+    let foot = 340;
+    const laid = vi.mocked(Element.prototype.getBoundingClientRect);
+    const board = laid.getMockImplementation()!;
+    laid.mockImplementation(function (this: Element) {
+      if (this instanceof HTMLElement && this.dataset['halfAnchor'] !== undefined) {
+        return {
+          top: foot - 48,
+          bottom: foot,
+          left: 0,
+          right: 0,
+          width: 0,
+          height: 48,
+          x: 0,
+          y: 0,
+          toJSON: () => ({}),
+        } as DOMRect;
+      }
+      return board.call(this);
+    });
+    const m = await mount(TUE_0958, 'notStarted', reduced);
+    const top = () => m.container.style.getPropertyValue('--half-t');
+    expect(top()).toBe('356px');
+    press(m.container, 'Rest of today');
+    expect(at(m)).toBe('open');
+    foot = 400;
+    advance(m, 1);
+    expect(at(m)).toBe('open');
+    expect(top()).toBe('416px');
+  });
+
   it('a quick 40 pt pull from half, held still a moment before letting go, rests half', async () => {
     layOut();
     const m = await mount(TUE_0958, 'notStarted');

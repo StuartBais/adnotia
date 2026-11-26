@@ -883,7 +883,7 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
       current.kind === 'running' &&
       (today?.kind === 'lit' || capsule !== undefined || showFocus || rides || ownPage);
     patchAll(live);
-    if (!travel) layout(position);
+    if (!travel) layout();
     fitSheet();
     // Focus has closed and what had focus went with it: back where it was
     // opened, on the capsule if it is there, otherwise the screen's own block
@@ -1484,23 +1484,23 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
    * The half drawer's top follows what is lit above it: Start's foot plus 16,
    * or the unlit block's under rule 3, and never above y 366 on the board.
    * It is measured whatever the drawer's position, since a folded drawer can
-   * be pulled up to it. At rest, a list with more below is cut to the last
-   * whole row above the tabs' cover, so that row is the covered one (plan
-   * section 10, "Rows"). A list that fits is left whole, with no covered row
-   * and no cover: SPEC 9.7 draws one only where a list stops at an edge with
-   * more below it.
+   * be pulled up to it and an open one down to it, and the lantern is laid
+   * out under the open drawer as under the others.
+   *
+   * At rest, a list with more below is cut to the last whole row above the
+   * tabs' cover, so that row is the covered one (plan section 10, "Rows"). A
+   * list that fits is left whole, with no covered row and no cover: SPEC 9.7
+   * draws one only where a list stops at an edge with more below it.
    */
-  function layout(position: DrawerPosition): void {
+  function layout(): void {
     const box = container.getBoundingClientRect();
     if (box.height === 0) return; // not laid out: a test, or a hidden page
-    if (position !== 'open') {
-      const header = layer.screen.querySelector('.hdr');
-      const saTop = header ? header.getBoundingClientRect().top - box.top - 4 : 20;
-      const least = saTop + 312;
-      const anchor = layer.screen.querySelector('[data-half-anchor]');
-      const foot = anchor ? anchor.getBoundingClientRect().bottom - box.top + 16 : least;
-      container.style.setProperty('--half-t', `${Math.max(foot, least)}px`);
-    }
+    const header = layer.screen.querySelector('.hdr');
+    const saTop = header ? header.getBoundingClientRect().top - box.top - 4 : 20;
+    const least = saTop + 312;
+    const anchor = layer.screen.querySelector('[data-half-anchor]');
+    const foot = anchor ? anchor.getBoundingClientRect().bottom - box.top + 16 : least;
+    container.style.setProperty('--half-t', `${Math.max(foot, least)}px`);
     const viewport = layer.drawer.querySelector<HTMLElement>(':scope > .viewport');
     const list = viewport?.querySelector<HTMLElement>('.list');
     let more = false;
