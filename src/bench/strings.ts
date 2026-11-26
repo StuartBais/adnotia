@@ -82,9 +82,38 @@ export const T = {
   notInPrototype: 'Not in this prototype.',
   routineNotInPrototype: 'Running a routine is not in this prototype.',
 
-  // A task's page.
+  // Tasks (SPEC 5.6). The helper lines for Coming up and Done, and the line
+  // for a Today with nothing on it, are undrawn: proposals.
+  comingUpHelp: 'Anything with a date after today waits here.',
+  doneHelp: 'What got done, the newest first.',
+  tomorrow: 'Tomorrow',
+  noDate: 'No date',
+
+  // A task's page (SPEC 5.3 and 5.8). "Not done after all", the done page's
+  // line and "estimate" after the minutes follow the plan (G12); undrawn.
   steps: 'Steps',
   addStep: 'Add a step',
+  more: 'More',
+  estimate: 'estimate',
+  soFar: 'so far',
+  notDoneAfterAll: 'Not done after all',
+
+  // The sheets a task's page raises (SPEC 12; plan section 11).
+  when: 'When',
+  whenNone: 'No date (inbox)',
+  whenToday: 'Today, anytime',
+  whenAt: 'Today at a time',
+  whenTomorrow: 'Tomorrow',
+  whenPick: 'Pick a day',
+  howLong: 'How long',
+  /** Undrawn: how long, with nothing set. A proposal. */
+  notSet: 'Not set',
+  minus5: '−5',
+  plus5: '+5',
+  addNote: 'Add a note',
+  editNote: 'Edit the note',
+  rename: 'Rename',
+  delete: 'Delete',
 } as const;
 
 /** Hints, read after a control's name (SPEC 11). */
@@ -112,6 +141,12 @@ export const SAY = {
   startInstead: 'Start this instead',
   timeLeft: 'Time left',
   me: 'Me',
+  more: 'More',
+  less5: 'Take 5 minutes off',
+  more5: 'Add 5 minutes',
+  /** The time and day inputs the when sheet reveals. */
+  time: 'Time',
+  day: 'Day',
 } as const;
 
 /** Spoken names built from a title or a step. */
@@ -142,6 +177,28 @@ export const say = {
       : `Stops the timer on ${title}. It keeps its place at step ${step}.`,
   routineRow: (title: string, steps: number, ranToday: boolean) =>
     `${title}, ${steps === 1 ? '1 step' : `${steps} steps`}${ranToday ? ', ran today' : ''}`,
+  /** A task's page, a step on its rail (SPEC 11, list 8). */
+  railStep: (number: number, title: string, lead?: string) =>
+    lead === undefined ? `Step ${number}: ${title}` : `${lead}, step ${number}: ${title}`,
+  /** A done step that is read, not tapped: on a page that is not lit. */
+  railDone: (number: number, title: string) => `Step ${number}, done: ${title}`,
+  /** The when pill: "When: Today, 10:30, 10 minutes, in 25 minutes". Undrawn words. */
+  when: (parts: readonly string[]) => `When: ${parts.join(', ')}`,
+  /** Page 8's meta line: "Today, 25 minute estimate, 7 minutes so far" (SPEC 11). */
+  pageMeta: (day: string, estimate: number | undefined, soFar: number) =>
+    [
+      day,
+      estimate === undefined ? undefined : `${estimate} minute estimate`,
+      `${soFar === 1 ? '1 minute' : `${soFar} minutes`} so far`,
+    ]
+      .filter(Boolean)
+      .join(', '),
+  /** A row in Tasks that is the present: "Now: Write the school email". */
+  presentRow: (lead: string, title: string) => `${lead}: ${title}`,
+  /** The note field on a running task's page. */
+  noteField: (note: string) => `Note: ${note}`,
+  /** The confirm before Delete. Undrawn: a proposal. */
+  deleteQuestion: (title: string) => `Delete ${title}?`,
   /** The bar read alone: the meter's value. */
   meterValue: (left: number, estimate: number) =>
     `${left} of ${estimate} ${estimate === 1 ? 'minute' : 'minutes'} left`,
@@ -293,4 +350,15 @@ export function idleItemLabel(item: {
   const starts = item.firstStep ? ` Starts with ${item.firstStep}.` : '';
   const meta = parts.length > 0 ? ` ${parts.join(', ')}` : '';
   return `${T.firstOnList}: ${item.title}.${starts}${meta}`.trimEnd();
+}
+
+/**
+ * The line under the question before Delete (plan section 11). Undrawn: a
+ * proposal. It says plainly that nothing takes it back, since SPEC 9.8 gives
+ * Delete no six seconds of Undo.
+ */
+export function deleteLine(hasSteps: boolean): string {
+  return hasSteps
+    ? 'Its steps go with it, and there is no Undo for this.'
+    : 'There is no Undo for this.';
 }

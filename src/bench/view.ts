@@ -6,10 +6,13 @@
 // a part is rebuilt only when what it holds changes, never because a second
 // passed.
 
+import * as model from '../domains/tasks';
 import type { Task } from '../domains/tasks';
-import { loggingDay } from '../kernel/dates';
+import { addDays, loggingDay, type IsoDate } from '../kernel/dates';
 import {
   barState,
+  estimateOf,
+  slotStart,
   idleLantern,
   idleStatus,
   minutesWords,
@@ -29,6 +32,7 @@ import {
   T,
   idleItemLabel,
   nothingRunningLabel,
+  say,
   type SpokenMinutes,
   type SpokenNow,
 } from './strings';
@@ -274,6 +278,8 @@ export interface TimedRow {
    * no words for it; these follow its Next line and Focus foot.
    */
   label: string;
+  /** The present, in Tasks › Today: its Now tag (SPEC 9.7), or Paused. */
+  tag?: string;
 }
 
 export interface AnytimeRow {
@@ -281,6 +287,8 @@ export interface AnytimeRow {
   title: string;
   /** Ticked since the list was opened: a sage disc that un-ticks it. */
   ticked: boolean;
+  /** The present, in Tasks › Today: its Now tag (SPEC 9.7), or Paused. */
+  tag?: string;
 }
 
 export interface DayList {
@@ -309,30 +317,312 @@ const timedRow = (task: TimedTask, inMinutes: number | undefined): TimedRow => {
 export function dayList(
   state: BenchDomains,
   now: Date,
-  options: { exclude?: string; keep?: ReadonlySet<string>; inLine?: boolean } = {},
+  options: {
+    exclude?: string;
+    keep?: ReadonlySet<string>;
+    inLine?: boolean;
+    /** Tasks › Today: the present listed with its tag, and Done always (SPEC 5.6). */
+    tasks?: boolean;
+  } = {},
 ): DayList {
   const rest = restOfToday(state, now, {
     ...(options.exclude === undefined ? {} : { exclude: options.exclude }),
     ...(options.keep === undefined ? {} : { keep: options.keep }),
+    ...(options.tasks ? { includePresent: true, done: true } : {}),
   });
+  const lit = options.tasks ? present(state, now) : undefined;
+  const tagOf = (task: Task) =>
+    lit && lit.kind !== 'none' && lit.task.id === task.id
+      ? { tag: lit.kind === 'running' ? T.now : T.paused }
+      : {};
   const later = rest.later
     .filter((task) => task.doneAt === undefined)
-    .map((task) =>
-      timedRow(
+    .map((task) => ({
+      ...timedRow(
         task,
         options.inLine && rest.next?.task.id === task.id ? rest.next.inMinutes : undefined,
       ),
-    );
+      ...tagOf(task),
+    }));
   return {
     later,
     anytime: rest.anytime.map((task) => ({
       id: task.id,
       title: task.title,
       ticked: task.doneAt !== undefined,
+      ...tagOf(task),
     })),
     done: rest.done?.map((task) => ({ id: task.id, title: task.title })),
     slot: Math.max(0, ...later.map((row) => Math.min(row.minutes * 1.5, 90))),
   };
 }
+
+// ---------------------------------------------------------------- Tasks
+
+/** A row in Tasks (SPEC 5.6): a ring and a title, and a muted second line. */
+export interface TaskRow {
+  id: string;
+  title: string;
+  /** Done, or ticked since the list was opened: a sage disc that un-ticks it. */
+  done: boolean;
+  /** "9:00", a booked item's time, in Coming up. */
+  time: string | undefined;
+  /** "3 steps": steps still to do. */
+  steps: string | undefined;
+  /** The minutes, drawn with their track. */
+  minutes: number | undefined;
+  /** With nothing else to say, the start of the note, after its glyph. */
+  note: string | undefined;
+}
+
+export type TasksView =
+  | { list: 'inbox'; rows: TaskRow[] }
+  | { list: 'today'; day: DayList; empty: boolean }
+  | { list: 'coming'; groups: { date: IsoDate; label: string; rows: TaskRow[] }[] }
+  | { list: 'done'; rows: TaskRow[] };
+
+/** "Today", "Tomorrow", or "Thursday 26 November". */
+export function dayWord(date: IsoDate, today: IsoDate): string {
+  if (date === today) return T.today;
+  if (date === addDays(today, 1)) return T.tomorrow;
+  return longDate(date);
+}
+
+/**
+ * The start of a note, for a row's second line: its first line up to the
+ * first clause ends, "Thursday or Friday morning" (SPEC 5.6). The board cuts
+ * the example there; how much to show is otherwise undrawn, so this is a
+ * proposal, and a long first clause is still cut by the row's width.
+ */
+export function noteStart(note: string): string {
+  const first = note.trim().split('\n')[0] ?? '';
+  const clause = /^(.*?)[,;.:](?:\s|$)/.exec(first);
+  return (clause?.[1] ?? first).trim();
+}
+
+const isTop = (task: Task) => task.parentId === undefined;
+
+/**
+ * A row's facts. In Done the row is the title alone: what is left of a task
+ * that is finished is not a thing to show.
+ */
+function taskRow(state: BenchDomains, task: Task, bare = false): TaskRow {
+  const left = stepFacts(state.tasks, task).left;
+  const timed = task.when.kind === 'timed' ? task.when : undefined;
+  const minutes = timed ? timed.durationMinutes : task.estimateMinutes;
+  const steps = left > 0 ? stepCount(left) : undefined;
+  const note = task.notes?.trim();
+  const quiet = steps === undefined && minutes === undefined && timed === undefined;
+  const done = task.doneAt !== undefined;
+  if (bare) {
+    return {
+      id: task.id,
+      title: task.title,
+      done,
+      time: undefined,
+      steps: undefined,
+      minutes: undefined,
+      note: undefined,
+    };
+  }
+  return {
+    id: task.id,
+    title: task.title,
+    done,
+    time: timed && clock24(timed.time),
+    steps,
+    minutes: minutes !== undefined && minutes > 0 ? minutes : undefined,
+    note: quiet && note ? noteStart(note) : undefined,
+  };
+}
+
+export interface TasksOptions {
+  /** Rows ticked since the list was opened, which stay where they were. */
+  keep?: ReadonlySet<string>;
+  /** In Done, rows un-ticked since it was opened, and when they had been done. */
+  undone?: ReadonlyMap<string, string>;
+}
+
+/**
+ * One of the four lists (SPEC 5.6, plan G11). The inbox holds what has no
+ * date, in the order it came in. Today is the drawer's own list, with the
+ * present in it carrying its tag and what got done today under Done. Coming
+ * up is grouped by day under muted labels, and Done is newest first. None
+ * says how many, and none says how long anything waited.
+ */
+export function tasksView(
+  state: BenchDomains,
+  now: Date,
+  list: 'inbox' | 'today' | 'coming' | 'done',
+  options: TasksOptions = {},
+): TasksView {
+  const today = loggingDay(now);
+  const keep = options.keep ?? new Set<string>();
+  const open = (task: Task) => task.doneAt === undefined || keep.has(task.id);
+  switch (list) {
+    case 'inbox':
+      return {
+        list,
+        rows: state.tasks
+          .filter((task) => isTop(task) && task.when.kind === 'none' && open(task))
+          .map((task) => taskRow(state, task)),
+      };
+    case 'today': {
+      const day = dayList(state, now, { keep, inLine: true, tasks: true });
+      const empty =
+        day.later.length === 0 && day.anytime.length === 0 && (day.done?.length ?? 0) === 0;
+      return { list, day, empty };
+    }
+    case 'coming': {
+      const later = state.tasks.filter(
+        (task) => isTop(task) && task.when.kind !== 'none' && task.when.date > today && open(task),
+      );
+      const dates = [...new Set(later.map((task) => (task.when as { date: IsoDate }).date))].sort();
+      return {
+        list,
+        groups: dates.map((date) => {
+          const onDay = later.filter(
+            (task) => task.when.kind !== 'none' && task.when.date === date,
+          );
+          const timed = onDay
+            .filter((task): task is TimedTask => task.when.kind === 'timed')
+            .sort((a, b) => slotStart(a.when).getTime() - slotStart(b.when).getTime());
+          const anytime = onDay.filter((task) => task.when.kind === 'anytime');
+          return {
+            date,
+            label: dayWord(date, today),
+            rows: [...timed, ...anytime].map((task) => taskRow(state, task)),
+          };
+        }),
+      };
+    }
+    case 'done': {
+      const undone = options.undone ?? new Map<string, string>();
+      // A row un-ticked and ticked again keeps the place it had.
+      const when = (task: Task) => Date.parse(undone.get(task.id) ?? task.doneAt ?? '');
+      return {
+        list,
+        rows: state.tasks
+          .filter((task) => isTop(task) && (task.doneAt !== undefined || undone.has(task.id)))
+          .sort((a, b) => when(b) - when(a))
+          .map((task) => taskRow(state, task, true)),
+      };
+    }
+  }
+}
+
+// ---------------------------------------------------------------- a task's page
+
+/** The when pill (SPEC 5.3): the time, how long, and how soon, as one object. */
+export interface WhenPill {
+  /** "Today, 10:30", "Today", "Tomorrow", "No date". */
+  day: string;
+  /** "10 min": a booked item's slot, or else the estimate. */
+  length: string | undefined;
+  /** Minutes until a booked item today starts, while it is still to come. Follows the clock. */
+  soon: number | undefined;
+}
+
+export function whenPill(task: Task, now: Date): WhenPill {
+  const today = loggingDay(now);
+  const when = task.when;
+  if (when.kind === 'timed') {
+    const start = slotStart(when).getTime();
+    const ahead = when.date === today && start > now.getTime();
+    return {
+      day: `${dayWord(when.date, today)}, ${clock24(when.time)}`,
+      length: duration(when.durationMinutes),
+      soon: ahead ? Math.ceil((start - now.getTime()) / 60_000) : undefined,
+    };
+  }
+  const estimate = task.estimateMinutes;
+  return {
+    day: when.kind === 'none' ? T.noDate : dayWord(when.date, today),
+    length: estimate !== undefined && estimate > 0 ? duration(estimate) : undefined,
+    soon: undefined,
+  };
+}
+
+/** The when pill's spoken name: "When: Today, 10:30, 10 minutes, in 25 minutes". */
+export function whenSpoken(task: Task, pill: WhenPill): string {
+  const minutes =
+    task.when.kind === 'timed' ? task.when.durationMinutes : (task.estimateMinutes ?? 0);
+  return say.when([
+    pill.day,
+    ...(pill.length === undefined ? [] : [durationSpoken(minutes)]),
+    ...(pill.soon === undefined ? [] : [`in ${durationSpoken(pill.soon)}`]),
+  ]);
+}
+
+export interface RailStep {
+  id: string;
+  title: string;
+  number: number;
+  done: boolean;
+  current: boolean;
+}
+
+export interface TaskPageView {
+  id: string;
+  title: string;
+  /**
+   * Unlit (SPEC 5.3), the present's own page running or paused (5.8, plan
+   * G12), or done (G12).
+   */
+  kind: 'unlit' | 'running' | 'paused' | 'done';
+  when: WhenPill;
+  steps: RailStep[];
+  note: string | undefined;
+  /** On an unlit page: what Start would stop, if anything runs. */
+  instead: { title: string; step: number | undefined } | undefined;
+  /** The present's view, on its own page. */
+  present: PresentView | undefined;
+}
+
+export function taskPageView(state: BenchDomains, now: Date, id: string): TaskPageView | undefined {
+  const task = state.tasks.find((item) => item.id === id);
+  if (!task) return undefined;
+  const lit = presentView(state, now);
+  const own = lit && lit.task.id === id ? lit : undefined;
+  const facts = stepFacts(state.tasks, task);
+  const running = model.running(state.tasks);
+  const other = running && running.id !== id ? running : undefined;
+  return {
+    id,
+    title: task.title,
+    kind: task.doneAt !== undefined ? 'done' : own ? own.kind : 'unlit',
+    when: whenPill(task, now),
+    steps: facts.steps.map((step, index) => ({
+      id: step.id,
+      title: step.title,
+      number: index + 1,
+      done: step.doneAt !== undefined,
+      current: step.id === facts.current?.id,
+    })),
+    note: task.notes?.trim() || undefined,
+    instead:
+      !own && task.doneAt === undefined && other
+        ? { title: other.title, step: stepFacts(state.tasks, other).position?.number }
+        : undefined,
+    present: own,
+  };
+}
+
+/** The page's make-up, for a key: not its figures, which move in place. */
+export const taskPageKey = (view: TaskPageView): unknown[] => [
+  view.id,
+  view.title,
+  view.kind,
+  view.when.day,
+  view.when.length,
+  view.when.soon !== undefined,
+  view.steps,
+  view.note,
+  view.instead,
+  view.present && presentKey(view.present),
+];
+
+/** Estimates, for the running page's meta line: the one the bar measures. */
+export { estimateOf };
 
 export type { Present };

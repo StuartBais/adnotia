@@ -379,6 +379,11 @@ export interface RestOptions {
   exclude?: string;
   /** Rows ticked since the list was opened stay where they were. */
   keep?: ReadonlySet<string>;
+  /**
+   * Tasks › Today lists what got done today whatever the reward option says
+   * (SPEC 5.6); the drawer lists it only with "List what got done today" on.
+   */
+  done?: boolean;
 }
 
 export function restOfToday(
@@ -410,17 +415,18 @@ export function restOfToday(
   const passedFirst = state.bench.passed.flatMap((id) => byId.get(id) ?? []);
   const anytime = [...passedFirst, ...anytimeAll.filter((task) => !passedFirst.includes(task))];
 
-  const done = rewardOptions(state.rewards, { kind: 'day' }).doneList
-    ? state.tasks
-        .filter(
-          (task) =>
-            isTop(task) &&
-            task.doneAt !== undefined &&
-            !keep.has(task.id) &&
-            loggingDay(new Date(task.doneAt)) === today,
-        )
-        .sort((a, b) => Date.parse(a.doneAt!) - Date.parse(b.doneAt!))
-    : undefined;
+  const done =
+    options.done || rewardOptions(state.rewards, { kind: 'day' }).doneList
+      ? state.tasks
+          .filter(
+            (task) =>
+              isTop(task) &&
+              task.doneAt !== undefined &&
+              !keep.has(task.id) &&
+              loggingDay(new Date(task.doneAt)) === today,
+          )
+          .sort((a, b) => Date.parse(a.doneAt!) - Date.parse(b.doneAt!))
+      : undefined;
 
   const upcoming = later.find(
     (task) => task.doneAt === undefined && slotStart(task.when).getTime() > now.getTime(),

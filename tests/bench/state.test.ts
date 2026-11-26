@@ -485,6 +485,12 @@ describe('restOfToday', () => {
     expect(rest.anytime[0]?.title).toBe(EMAIL);
   });
 
+  it('lists what got done today for Tasks › Today, whatever the reward option says', () => {
+    const state = scene('example', TUE_1005);
+    expect(restOfToday(state, TUE_1005).done).toBeUndefined();
+    expect(titles(restOfToday(state, TUE_1005, { done: true }).done ?? [])).toEqual(['Bins out']);
+  });
+
   it('leaves out the item the idle lantern lights, for the half drawer (screen 7)', () => {
     const state = scene('notStarted', TUE_0958);
     const rest = restOfToday(state, TUE_0958, { exclude: idOf(state, EMAIL) });
