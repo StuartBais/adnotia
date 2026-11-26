@@ -1377,13 +1377,13 @@ export function createMoves(host: MovesHost): Moves {
       }
     }
     // Step done and Pause sit over the drawer's rows while it folds down from
-    // half: they come in once its top has passed under them.
+    // half: they come in once its top has gone under the line they stand on.
     const pills = [...layers.dock.querySelectorAll<HTMLElement>('.dock-pill')];
     const from = snap.drawerY;
     const to = boxOf(layers.drawer, container).y;
     for (const el of pills) {
       const box = boxOf(el, container);
-      const under = to > from + 0.5 ? (box.y + box.h - from) / (to - from) : 0;
+      const under = to > from + 0.5 ? (box.y - from) / (to - from) : 0;
       const at = under > 0 ? Math.min(D - FIRST, momentAt(SPRING, Math.min(1, under))) : 0;
       tracks.push({
         el,

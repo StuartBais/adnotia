@@ -687,12 +687,12 @@ describe('Start', () => {
     const mine = since(before);
     const pills = [...m.container.querySelectorAll('.dock .dock-pill')];
     expect(pills.length).toBe(2);
-    // The drawer's top passes 650 about nine tenths of the way from 366 to 684.
-    const under = springAt(0.2);
-    expect(under).toBeLessThan((650 - 366) / (684 - 366));
+    // The drawer's top passes 606, where they stand, three quarters of the
+    // way from 366 to 684, at about 160 ms.
+    expect(springAt(0.15)).toBeLessThan((606 - 366) / (684 - 366));
     for (const pill of pills) {
       const fade = mine.find((p) => p.el === pill && p.frames.some((f) => 'opacity' in f))!;
-      expect(opacityAt(fade, 200)).toBe(0);
+      expect(opacityAt(fade, 150)).toBe(0);
       expect(opacityAt(fade, springDuration())).toBe(1);
     }
     over(m);
