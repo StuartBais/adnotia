@@ -2221,7 +2221,13 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
                 : ((current && estimateOf(current)) ?? 15);
             setWhen(id, { kind: 'timed', date: loggingDay(now()), time, durationMinutes: length });
           },
-          onDate: (date) => setWhen(id, { kind: 'anytime', date }),
+          // The picker offers nothing before today; a day typed before it
+          // (a desktop's field takes one) is today, never a day gone by,
+          // which no list would show.
+          onDate: (date) => {
+            const today = loggingDay(now());
+            setWhen(id, { kind: 'anytime', date: date < today ? today : date });
+          },
           onLess: () => changeLength(id, -5),
           onMore: () => changeLength(id, 5),
           onDone: () => closeTaskSheet(),

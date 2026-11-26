@@ -3168,6 +3168,12 @@ describe('the sheets a task’s page raises (SPEC 9.9 and 12)', () => {
     day.value = '2026-12-02';
     day.dispatchEvent(new Event('change', { bubbles: true }));
     expect(dentist(m).when).toEqual({ kind: 'anytime', date: '2026-12-02' });
+    // A day typed before today is today: never a day gone by, which no list shows.
+    day.value = '2026-11-20';
+    day.dispatchEvent(new Event('change', { bubbles: true }));
+    expect(dentist(m).when).toEqual({ kind: 'anytime', date: '2026-11-24' });
+    expect(radios(m)[1]).toEqual(['Today, anytime', 'true']);
+    press(m.container, 'Pick a day');
     press(m.container, 'No date (inbox)');
     expect(dentist(m).when).toEqual({ kind: 'none' });
     press(m.container, 'Today at a time');
