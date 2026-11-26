@@ -8,6 +8,7 @@ import {
   PROJECT_S,
   SLOP,
   SPRING_RESPONSE,
+  STILL_MS,
   dragDrawer,
   nearest,
   project,
@@ -64,6 +65,34 @@ describe('where a release is heading', () => {
     // A finger held still for longer than that has no speed.
     expect(velocityOf(samples, 500)).toBe(0);
     expect(velocityOf([], 0)).toBe(0);
+  });
+
+  it('measures up to the release, so a pause before letting go slows it, and 40 ms still stops it', () => {
+    expect(STILL_MS).toBe(40);
+    // Pressed at 389 and pulled up 40 pt, the last 11 of them in 16 ms.
+    const samples = [
+      { y: 389, at: 0 },
+      { y: 380, at: 18 },
+      { y: 370, at: 51 },
+      { y: 360, at: 85 },
+      { y: 349, at: 101 },
+    ];
+    // Lifted at once: 31 pt over the 88 ms from 380 at 18 to the release.
+    const atOnce = velocityOf(samples, 106);
+    expect(atOnce).toBeCloseTo((-31 / 88) * 1000);
+    // Held a moment: slower, measured to the lift, not from 360 to 349 alone.
+    const held = velocityOf(samples, 131);
+    expect(held).toBeLessThan(0);
+    expect(Math.abs(held)).toBeLessThan(Math.abs(atOnce));
+    // Held still past 40 ms: no speed at all, however fast it went before.
+    expect(velocityOf(samples, 142)).toBe(0);
+    expect(velocityOf(samples, 175)).toBe(0);
+    expect(velocityOf(samples, 183)).toBe(0);
+    // The speed only falls as the pause grows.
+    const speeds = [106, 111, 116, 121, 126, 131, 136, 141, 146].map((now) =>
+      Math.abs(velocityOf(samples, now)),
+    );
+    expect(speeds.every((speed, i) => i === 0 || speed <= (speeds[i - 1] ?? speed))).toBe(true);
   });
 
   it('gives less the further it is pulled past either end', () => {
@@ -284,6 +313,34 @@ describe('the drawer under a finger', () => {
     r.run(1000);
     expect(r.log).toEqual(['begin folded', 'settle open from folded']);
     expect(r.moves[r.moves.length - 1]).toBe(60);
+  });
+
+  it('a quick pull held still before letting go rests where it was let go, not where it was heading', () => {
+    // From half, pressed 23 below its top, up 40 pt with the last 11 in
+    // 16 ms; the drawer's top is at 326, nearer half than open either way.
+    const lift = (hold: number) => {
+      const r = rig(IDLE, 'half');
+      r.handle.dispatchEvent(pointer('pointerdown', 389));
+      for (const [y, at] of [
+        [380, 18],
+        [370, 51],
+        [360, 85],
+        [349, 101],
+      ] as const) {
+        r.clock.now = 1000 + at;
+        r.handle.dispatchEvent(pointer('pointermove', y));
+        r.flush();
+      }
+      r.clock.now = 1101 + hold;
+      r.handle.dispatchEvent(pointer('pointerup', 349));
+      r.run(1000);
+      return r;
+    };
+    for (const hold of [5, 30, 70, 90, 130]) {
+      const r = lift(hold);
+      expect(r.log).toEqual(['begin half', 'settle half from half']);
+      expect(r.moves[r.moves.length - 1]).toBe(366);
+    }
   });
 
   it('settles on the spring: every frame nearer, none past, ending exactly there', () => {

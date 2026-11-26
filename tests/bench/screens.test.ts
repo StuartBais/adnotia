@@ -4239,6 +4239,31 @@ describe('the drawer in the hand (SPEC 9.8 and 10; plan section 13)', () => {
     expect(at(m)).toBe('open');
   });
 
+  it('a quick 40 pt pull from half, held still a moment before letting go, rests half', async () => {
+    layOut();
+    const m = await mount(TUE_0958, 'notStarted');
+    expect(m.container.dataset['motion']).toBe('full');
+    const before = stateOf(m);
+    // Up from 389 to 349, the last 11 pt in 16 ms, then held 74 ms: the
+    // drawer's top is at 326, and the finger has stopped.
+    pull(m, button(m.container, 'Rest of today'), [389, 380, 370, 360, 349], {
+      every: [18, 33, 34, 16],
+      hold: 74,
+    });
+    fly(m);
+    expect(at(m)).toBe('half');
+    expect(stateOf(m)).toBe(before);
+    expect(depth()).toBe(0);
+    expect(drawerOf(m).style.transform).toBe('');
+    // Lifted at once, it is not flung either.
+    pull(m, button(m.container, 'Rest of today'), [389, 380, 370, 360, 349], {
+      every: [18, 33, 34, 16],
+      hold: 5,
+    });
+    fly(m);
+    expect(at(m)).toBe('half');
+  });
+
   it('a pull that ends where it began changes nothing: no write, no entry', async () => {
     layOut();
     const m = await mount(TUE_1005, 'example', reduced);

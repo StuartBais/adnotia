@@ -227,29 +227,35 @@ const pointer = (type: string, clientY: number) =>
 
 /**
  * A finger on `on`: down at the first y, then to each y after it, `every`
- * ms apart with a frame between, then lifted unless `up` is false. With the
- * default pace and a moment's hold before lifting, it lets go with no
- * speed, so it rests at the place nearest where it let go. Lifted, it sends
- * the click a mouse sends; `click: false` is a touch that moved, which
- * sends none.
+ * ms apart with a frame between (or the gaps before each, given one by one),
+ * then held still for `hold` ms (by default one more `every`) and lifted
+ * unless `up` is false. With the default pace it lets go with no speed, so
+ * it rests at the place nearest where it let go. Lifted, it sends the click
+ * a mouse sends; `click: false` is a touch that moved, which sends none.
  */
 export function pull(
   mounted: Mounted,
   on: Element,
   ys: number[],
-  { every = 200, up = true, click = true }: { every?: number; up?: boolean; click?: boolean } = {},
+  {
+    every = 200,
+    hold,
+    up = true,
+    click = true,
+  }: { every?: number | readonly number[]; hold?: number; up?: boolean; click?: boolean } = {},
 ): void {
   const [first, ...rest] = ys;
+  const gap = (i: number) => (typeof every === 'number' ? every : (every[i] ?? 16));
   // Where a captured pointer's click goes, should what was pressed be gone.
   const surface = on.closest('.drawer, .foot') ?? on;
   on.dispatchEvent(pointer('pointerdown', first ?? 0));
-  for (const y of rest) {
-    mounted.mono.now += every;
+  rest.forEach((y, i) => {
+    mounted.mono.now += gap(i);
     on.dispatchEvent(pointer('pointermove', y));
     vi.advanceTimersByTime(16);
-  }
+  });
   if (up) {
-    mounted.mono.now += every;
+    mounted.mono.now += hold ?? gap(rest.length);
     on.dispatchEvent(pointer('pointerup', ys[ys.length - 1] ?? 0));
     if (click) {
       (on.isConnected ? on : surface).dispatchEvent(

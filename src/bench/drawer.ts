@@ -42,6 +42,13 @@ export const SLOP = 8;
 /** Only the finger's last this many ms count towards its speed. */
 export const VELOCITY_WINDOW = 100;
 
+/**
+ * A finger that has not moved for this long before it lifts has stopped, and
+ * lets go with no speed (ms). Android's VelocityTracker and Flutter take the
+ * same 40 ms.
+ */
+export const STILL_MS = 40;
+
 /** The spring is at rest when it is this close (px) and this slow (px/s). */
 const REST_DISTANCE = 0.5;
 const REST_SPEED = 20;
@@ -76,16 +83,18 @@ export function rubber(y: number, top: number, bottom: number, dimension: number
 }
 
 /**
- * The finger's speed in px/s, positive downward, from the samples taken in
- * the last VELOCITY_WINDOW ms. A finger that has held still that long has no
- * speed, so a slow drag and a pause before letting go lands where it is.
+ * The finger's speed in px/s, positive downward, as it lifts at `now`: how
+ * far it went over the last VELOCITY_WINDOW ms, measured up to the release
+ * rather than to its last move, so the time it has held still counts. A
+ * finger that has not moved for STILL_MS has stopped and has no speed: a
+ * pause before letting go lands where it is, however fast it went before.
  */
 export function velocityOf(samples: readonly { y: number; at: number }[], now: number): number {
-  const recent = samples.filter((sample) => now - sample.at <= VELOCITY_WINDOW);
-  const first = recent[0];
-  const last = recent[recent.length - 1];
-  if (!first || !last || last.at - first.at < 1) return 0;
-  return ((last.y - first.y) / (last.at - first.at)) * 1000;
+  const last = samples[samples.length - 1];
+  if (!last || now - last.at > STILL_MS) return 0;
+  const first = samples.find((sample) => now - sample.at <= VELOCITY_WINDOW);
+  if (!first || now - first.at < 1) return 0;
+  return ((last.y - first.y) / (now - first.at)) * 1000;
 }
 
 export interface SpringAt {
