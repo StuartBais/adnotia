@@ -20,6 +20,7 @@ import {
   outlastSheet,
   outlastUndo,
   press,
+  pressTab,
   readText,
   readingOrder,
   said,
@@ -2483,5 +2484,807 @@ describe('5 · Capture (SPEC 5.5)', () => {
     outlastSheet();
     expect(layer.hidden).toBe(true);
     expect(layer.childElementCount).toBe(0);
+  });
+});
+
+// ---------------------------------------------------------------- chunk 5
+
+/** Names of the Tasks switcher's parts, and which is selected. */
+const switcherOf = (m: Mounted) =>
+  [...m.container.querySelectorAll<HTMLElement>('[role="tab"]')].map((tab) => [
+    nameOf(tab),
+    tab.getAttribute('aria-selected'),
+  ]);
+/** The rows of the list on screen, by title, in order. */
+const rowTitles = (m: Mounted) =>
+  [...m.container.querySelectorAll('.screen [data-row] .rowbtn')].map((row) =>
+    drawnText(row.querySelector('.rt > span, .ti') ?? row),
+  );
+const page = (m: Mounted) => m.container.querySelector<HTMLElement>('.screen')!;
+
+describe('6a and 6b · Tasks (SPEC 5.6)', () => {
+  const INBOX = [
+    'Birthday present for Mum',
+    'Cancel the gym trial',
+    'Ask about the boiler quote',
+    'Look into swimming lessons',
+    'Return the library books',
+    'Fix the bike light',
+  ];
+
+  it('opens on the inbox: the switcher, its helper line, and what has no date in the order it came', async () => {
+    const m = await mount(TUE_1005);
+    press(m.container, 'Tasks');
+    expect(m.container.querySelector('h1')?.textContent).toBe('Tasks');
+    expect(switcherOf(m)).toEqual([
+      ['Inbox', 'true'],
+      ['Today', 'false'],
+      ['Coming up', 'false'],
+      ['Done', 'false'],
+    ]);
+    expect(m.container.querySelector('[role="tablist"]')?.getAttribute('aria-label')).toBe('Tasks');
+    expect(drawnText(m.container.querySelector('.body .helper')!)).toBe(
+      'Anything with no date waits here.',
+    );
+    expect(rowTitles(m)).toEqual(INBOX);
+    // Second lines: steps still to do, the minutes and their track, or the
+    // start of the note. Never when it came in, never how long it waited.
+    const second = [...m.container.querySelectorAll('.screen [data-row]')].map((row) => {
+      const small = row.querySelector('small');
+      return small ? drawnText(small) : '';
+    });
+    expect(second).toEqual([
+      '',
+      '2 steps',
+      'Thursday or Friday morning',
+      '3 steps · 30 min',
+      '15 min',
+      '',
+    ]);
+    const tracks = [...m.container.querySelectorAll<HTMLElement>('.screen .dur .m')];
+    expect(tracks.map((track) => track.style.width)).toEqual(['45px', '22.5px']);
+    expect(nameOf(id(m, 'r-' + titled(stateOf(m), 'Look into swimming lessons').id)!)).toBe(
+      'Look into swimming lessons, 3 steps, 30 minutes',
+    );
+    // The capsule rides it, lifted on charcoal, over the fade.
+    expect(m.container.querySelector('.capsule')?.classList.contains('lift')).toBe(true);
+    expect(m.container.querySelector('.fade')?.hasAttribute('hidden')).toBe(false);
+  });
+
+  it('offers four choices, and reads them in SPEC 11’s order', async () => {
+    const m = await mount(TUE_1005);
+    press(m.container, 'Tasks');
+    expect(choices(m.container)).toBe(4);
+    const order = readingOrder(m.container);
+    expect(order.slice(0, 7)).toEqual([
+      'Tasks',
+      'Me',
+      'Inbox',
+      'Today',
+      'Coming up',
+      'Done',
+      'Anything with no date waits here.',
+    ]);
+    expect(order.slice(7, 11)).toEqual([
+      'Mark done: Birthday present for Mum',
+      'Birthday present for Mum',
+      'Mark done: Cancel the gym trial',
+      'Cancel the gym trial, 2 steps',
+    ]);
+    expect(order.slice(-7)).toEqual([
+      'Now: Write the question, step 2 of 3 of Write the school email. 18 of 25 minutes left, ends 10:23.',
+      'Capture',
+      'Next, in 25 minutes: 10:30, Call the dentist. Rest of today',
+      ...TABS,
+    ]);
+  });
+
+  it('moves along the switcher with the arrow keys, choosing as it goes', async () => {
+    const m = await mount(TUE_1005);
+    press(m.container, 'Tasks');
+    id(m, 'l-inbox')!.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }),
+    );
+    expect(switcherOf(m)[1]).toEqual(['Today', 'true']);
+    expect(document.activeElement).toBe(id(m, 'l-today'));
+    id(m, 'l-today')!.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true }),
+    );
+    expect(switcherOf(m)[0]).toEqual(['Inbox', 'true']);
+  });
+
+  it('opens the inbox at its newest end, every time, and Save leaves it where it was', async () => {
+    const tall = vi.spyOn(Element.prototype, 'scrollHeight', 'get').mockReturnValue(900);
+    try {
+      const m = await mount(TUE_1005);
+      const list = () => m.container.querySelector<HTMLElement>('[data-scroll-key="tasks-inbox"]')!;
+      press(m.container, 'Tasks');
+      expect(list().scrollTop).toBe(900);
+      list().scrollTop = 300;
+      press(m.container, 'Capture');
+      type(m, 'Ask Ana about Friday');
+      press(m.container, 'Save');
+      expect(rowTitles(m).at(-1)).toBe('Ask Ana about Friday');
+      expect(list().scrollTop).toBe(300);
+      // A row opened and back: the list where it was.
+      press(m.container, 'Fix the bike light');
+      press(m.container, 'Back to Tasks');
+      expect(list().scrollTop).toBe(300);
+      // Opened again: the newest end.
+      press(m.container, 'Today');
+      press(m.container, 'Tasks');
+      expect(list().scrollTop).toBe(900);
+      pressTab(m.container, 'Done');
+      list;
+      pressTab(m.container, 'Inbox');
+      expect(list().scrollTop).toBe(900);
+    } finally {
+      tall.mockRestore();
+    }
+  });
+
+  it('ticks a ring in place, its disc the way back, and the Next line offers Undo', async () => {
+    const m = await mount(TUE_1005);
+    press(m.container, 'Tasks');
+    press(m.container, 'Mark done: Fix the bike light');
+    expect(titled(stateOf(m), 'Fix the bike light').doneAt).toBeDefined();
+    expect(rowTitles(m)).toEqual(INBOX);
+    expect(said(m)).toBe('Done: Fix the bike light');
+    expect(drawnText(id(m, 'b-handle')!.querySelector('.h-l1')!)).toBe('Done');
+    expect(drawnText(id(m, 'b-handle')!.querySelector('.h-l2')!)).toBe('Fix the bike light');
+    press(m.container, 'Undo done: Fix the bike light');
+    expect(titled(stateOf(m), 'Fix the bike light').doneAt).toBeUndefined();
+    press(m.container, 'Mark done: Fix the bike light');
+    // Opened again, the list holds only what is not done.
+    pressTab(m.container, 'Today');
+    pressTab(m.container, 'Inbox');
+    expect(rowTitles(m)).toEqual(INBOX.slice(0, 5));
+  });
+
+  it('opens a row’s page pushed on Tasks, which stays current', async () => {
+    const m = await mount(TUE_1005);
+    press(m.container, 'Tasks');
+    press(m.container, 'Cancel the gym trial, 2 steps');
+    expect(id(m, 'p-title')?.textContent).toBe('Cancel the gym trial');
+    expect(id(m, 't-tasks')?.getAttribute('aria-current')).toBe('page');
+    expect(nameOf(id(m, 'b-back')!)).toBe('Back to Tasks');
+    press(m.container, 'Back to Tasks');
+    expect(switcherOf(m)[0]).toEqual(['Inbox', 'true']);
+  });
+
+  it('Today: the drawer’s list, the present in it with its Now tag, and what got done under Done', async () => {
+    const m = await mount(TUE_1005);
+    press(m.container, 'Tasks');
+    pressTab(m.container, 'Today');
+    const labels = [...m.container.querySelectorAll('.screen .lbl')].map(
+      (node) => node.textContent,
+    );
+    expect(labels).toEqual(['Later today', 'Anytime today', 'Done']);
+    expect(rowTitles(m).slice(0, 4)).toEqual([
+      'Call the dentistin 25 min',
+      'Walk to the park',
+      'Ring the bank',
+      'Write the school emailNow',
+    ]);
+    const email = id(m, `r-${emailOf(stateOf(m)).id}`)!;
+    expect(nameOf(email)).toBe('Now: Write the school email');
+    expect(email.querySelector('.ntag')?.getAttribute('aria-hidden')).toBe('true');
+    expect(readingOrder(m.container)).toContain('Bins out, done');
+    expect(m.container.querySelector('.screen .helper')).toBeNull();
+    // A row opens the running task's own page.
+    email.click();
+    expect(m.container.dataset['ground']).toBe('present');
+    expect(id(m, 'b-focus')).not.toBeNull();
+  });
+
+  it('Today: says Paused where Now would be, for a task paused today', async () => {
+    const m = await mount(TUE_1320, 'pauseLeft');
+    press(m.container, 'Tasks');
+    pressTab(m.container, 'Today');
+    const email = id(m, `r-${emailOf(stateOf(m)).id}`)!;
+    expect(nameOf(email)).toBe('Paused: Write the school email');
+    expect(email.querySelector('.ntag')?.textContent).toBe('Paused');
+    expect(email.querySelector('.ntag')?.classList.contains('now')).toBe(false);
+  });
+
+  it('Today: ticking the running task finishes it, and Undo runs its clock again', async () => {
+    const m = await mount(TUE_1005);
+    press(m.container, 'Tasks');
+    pressTab(m.container, 'Today');
+    press(m.container, 'Mark done: Write the school email');
+    expect(model.running(stateOf(m).tasks)).toBeUndefined();
+    press(m.container, 'Undo done: Write the school email');
+    expect(model.running(stateOf(m).tasks)?.title).toBe(EMAIL);
+  });
+
+  it('Coming up: grouped by day under muted labels, booked items first with their time', async () => {
+    const m = await mount(TUE_1005, 'example', (state) => {
+      let tasks = state.tasks;
+      const gym = titled(state, 'Cancel the gym trial').id;
+      const bike = titled(state, 'Fix the bike light').id;
+      const mum = titled(state, 'Birthday present for Mum').id;
+      tasks = model.schedule(tasks, gym, { kind: 'anytime', date: '2026-11-25' });
+      tasks = model.schedule(tasks, bike, {
+        kind: 'timed',
+        date: '2026-11-25',
+        time: '09:00',
+        durationMinutes: 15,
+      });
+      tasks = model.schedule(tasks, mum, { kind: 'anytime', date: '2026-11-26' });
+      return { ...state, tasks };
+    });
+    press(m.container, 'Tasks');
+    pressTab(m.container, 'Coming up');
+    expect(drawnText(m.container.querySelector('.body .helper')!)).toBe(
+      'Anything with a date after today waits here.',
+    );
+    const labels = [...m.container.querySelectorAll('.screen .lbl')].map(
+      (node) => node.textContent,
+    );
+    expect(labels).toEqual(['Tomorrow', 'Thursday 26 November']);
+    expect(rowTitles(m)).toEqual([
+      'Fix the bike light',
+      'Cancel the gym trial',
+      'Birthday present for Mum',
+    ]);
+    expect(drawnText(m.container.querySelector('.screen [data-row] small')!)).toBe('9:00 · 15 min');
+    expect(choices(m.container)).toBe(4);
+  });
+
+  it('Coming up and Done say only their helper line when they hold nothing', async () => {
+    const m = await mount(TUE_1005, 'empty');
+    press(m.container, 'Tasks');
+    pressTab(m.container, 'Coming up');
+    expect(m.container.querySelectorAll('.screen [data-row]')).toHaveLength(0);
+    pressTab(m.container, 'Done');
+    expect(drawnText(m.container.querySelector('.body .helper')!)).toBe(
+      'What got done, the newest first.',
+    );
+    expect(m.container.querySelectorAll('.screen [data-row]')).toHaveLength(0);
+    pressTab(m.container, 'Today');
+    expect(drawnText(m.container.querySelector('.body .helper')!)).toBe(
+      'Nothing planned for today.',
+    );
+  });
+
+  it('Done: newest first, each a disc that un-ticks it, the row kept until the list is next opened', async () => {
+    const m = await mount(TUE_1005);
+    press(m.container, 'Tasks');
+    press(m.container, 'Mark done: Fix the bike light');
+    pressTab(m.container, 'Done');
+    expect(rowTitles(m)).toEqual(['Fix the bike light', 'Bins out']);
+    press(m.container, 'Undo done: Fix the bike light');
+    expect(titled(stateOf(m), 'Fix the bike light').doneAt).toBeUndefined();
+    expect(rowTitles(m)).toEqual(['Fix the bike light', 'Bins out']);
+    expect(button(m.container, 'Mark done: Fix the bike light')).toBeTruthy();
+    press(m.container, 'Mark done: Fix the bike light');
+    // Ticked again, it keeps its place rather than jumping to the top.
+    expect(rowTitles(m)).toEqual(['Fix the bike light', 'Bins out']);
+    press(m.container, 'Undo done: Fix the bike light');
+    pressTab(m.container, 'Inbox');
+    pressTab(m.container, 'Done');
+    expect(rowTitles(m)).toEqual(['Bins out']);
+  });
+
+  it('6b: on white places the same list, the capsule the one dark thing', async () => {
+    const m = await mount(TUE_1005, 'example', (state) => ({
+      ...state,
+      bench: { ...state.bench, settings: { ...state.bench.settings, places: 'white' } },
+    }));
+    press(m.container, 'Tasks');
+    expect(m.container.dataset['places']).toBe('white');
+    expect(m.container.dataset['ground']).toBe('place');
+    expect(m.container.querySelector('.capsule')?.classList.contains('lift')).toBe(false);
+    expect(rowTitles(m)).toEqual(INBOX);
+    expect(choices(m.container)).toBe(4);
+  });
+});
+
+describe('3a and 3b · A task opened while another runs (SPEC 5.3)', () => {
+  const DENTIST = /^(10:30, )?Call the dentist/;
+  async function opened(
+    scenario: 'example' | 'notStarted' | 'pauseLeft' = 'example',
+    local = TUE_1005,
+  ) {
+    const m = await mount(local, scenario);
+    // Folded, the handle opens the rest of today; at 9:58 it rests half open.
+    if (scenario !== 'notStarted') press(m.container, /^Next|^Anytime/);
+    press(m.container, DENTIST);
+    return m;
+  }
+
+  it('says what it is: its title, the when pill, Start this instead and its sentence, Steps and Add a step', async () => {
+    const m = await opened();
+    expect(id(m, 'p-title')?.textContent).toBe('Call the dentist');
+    expect(id(m, 'p-title')?.tagName).toBe('H1');
+    const when = id(m, 'p-when')!;
+    expect(drawnText(when)).toBe('Today, 10:30 · 10 min · in 25 min');
+    expect(nameOf(when)).toBe('When: Today, 10:30, 10 minutes, in 25 minutes');
+    const start = id(m, 'p-start')!;
+    expect(drawnText(start)).toBe('Start this instead');
+    expect(hintOf(start)).toBe(
+      'Stops the timer on Write the school email. It keeps its place at step 2.',
+    );
+    expect(drawnText(m.container.querySelector('.page .sentence')!)).toBe(
+      'Starting this stops the timer on Write the school email. It keeps its place at step 2.',
+    );
+    expect(drawnText(m.container.querySelector('.steps-lbl')!)).toBe('Steps');
+    expect(drawnText(id(m, 'p-addstep')!)).toBe('Add a step');
+    // The capsule on the dock line, the drawer folded naming the true next item: this one.
+    expect(m.container.querySelector('.capsule')?.tagName).toBe('BUTTON');
+    expect(m.container.dataset['drawer']).toBe('folded');
+    expect(nameOf(id(m, 'b-handle')!)).toBe(
+      'Next, in 25 minutes: 10:30, Call the dentist. Rest of today',
+    );
+    expect(id(m, 't-today')?.getAttribute('aria-current')).toBe('page');
+  });
+
+  it('offers five choices, and reads them in SPEC 11’s order', async () => {
+    const m = await opened();
+    expect(choices(m.container)).toBe(5);
+    expect(readingOrder(m.container)).toEqual([
+      'Back to Today',
+      'More',
+      'Me',
+      'Call the dentist',
+      'When: Today, 10:30, 10 minutes, in 25 minutes',
+      'Start this instead',
+      'Starting this stops the timer on Write the school email. It keeps its place at step 2.',
+      'Steps',
+      'Add a step',
+      'Now: Write the question, step 2 of 3 of Write the school email. 18 of 25 minutes left, ends 10:23.',
+      'Capture',
+      'Next, in 25 minutes: 10:30, Call the dentist. Rest of today',
+      ...TABS,
+    ]);
+  });
+
+  it('moves the when pill’s "in 25 min" in place as time passes', async () => {
+    const m = await opened();
+    const when = id(m, 'p-when')!;
+    advance(m, 1);
+    expect(id(m, 'p-when')).toBe(when);
+    expect(drawnText(when)).toBe('Today, 10:30 · 10 min · in 24 min');
+    expect(nameOf(when)).toBe('When: Today, 10:30, 10 minutes, in 24 minutes');
+  });
+
+  it('Start this instead lights the page, says both tasks, and Undo goes back at step 2', async () => {
+    const m = await opened();
+    press(m.container, 'Start this instead');
+    expect(model.running(stateOf(m).tasks)?.title).toBe('Call the dentist');
+    expect(m.container.dataset['ground']).toBe('present');
+    expect(m.container.querySelector('.capsule')).toBeNull();
+    expect(id(m, 'b-focus')).not.toBeNull();
+    expect(said(m)).toBe(
+      'Started Call the dentist. Write the school email keeps its place at step 2.',
+    );
+    const handle = id(m, 'b-handle')!;
+    expect(drawnText(handle.querySelector('.h-l1')!)).toBe('Started Call the dentist');
+    expect(drawnText(handle.querySelector('.h-l2')!)).toBe('Write the school email at step 2');
+    press(m.container, 'Undo: go back to Write the school email at step 2');
+    expect(model.running(stateOf(m).tasks)?.title).toBe(EMAIL);
+    expect(titled(stateOf(m), 'Call the dentist').sessions).toHaveLength(0);
+    expect(m.container.dataset['ground']).toBe('place');
+    expect(drawnText(id(m, 'p-start')!)).toBe('Start this instead');
+  });
+
+  it('with nothing running reads "Start", with no sentence, and offers four choices', async () => {
+    const m = await opened('notStarted', TUE_0958);
+    expect(drawnText(id(m, 'p-start')!)).toBe('Start');
+    expect(m.container.querySelector('.page .sentence')).toBeNull();
+    expect(hintOf(id(m, 'p-start')!)).toBeUndefined();
+    expect(m.container.querySelector('.capsule')).toBeNull();
+    expect(choices(m.container)).toBe(4);
+    press(m.container, 'Start');
+    expect(model.running(stateOf(m).tasks)?.title).toBe('Call the dentist');
+    expect(nameOf(id(m, 'b-undo')!)).toBe('Undo start: Call the dentist');
+    press(m.container, 'Undo start: Call the dentist');
+    expect(model.running(stateOf(m).tasks)).toBeUndefined();
+    expect(titled(stateOf(m), 'Call the dentist').sessions).toHaveLength(0);
+  });
+
+  it('with another task paused reads "Start" too, and the paused capsule goes when it starts', async () => {
+    const m = await opened('pauseLeft', TUE_1320);
+    expect(drawnText(id(m, 'p-start')!)).toBe('Start');
+    expect(m.container.querySelector('.page .sentence')).toBeNull();
+    expect(m.container.querySelector('.capsule .ptag')?.textContent).toBe('Paused');
+    press(m.container, 'Start');
+    expect(m.container.querySelector('.capsule')).toBeNull();
+    expect(m.container.dataset['ground']).toBe('present');
+  });
+
+  it('3b: on white places a white page, which turns charcoal when it is lit', async () => {
+    const m = await mount(TUE_1005, 'example', (state) => ({
+      ...state,
+      bench: { ...state.bench, settings: { ...state.bench.settings, places: 'white' } },
+    }));
+    press(m.container, /^Next/);
+    press(m.container, DENTIST);
+    expect(m.container.dataset['places']).toBe('white');
+    expect(m.container.dataset['ground']).toBe('place');
+    expect(page(m).classList.contains('task')).toBe(true);
+    expect(choices(m.container)).toBe(5);
+    press(m.container, 'Start this instead');
+    expect(m.container.dataset['ground']).toBe('present');
+  });
+});
+
+describe('8 · The running task’s own page (SPEC 5.8)', () => {
+  async function own(scenario: 'example' | 'pauseLeft' = 'example', local = TUE_1005) {
+    const m = await mount(local, scenario);
+    press(m.container, 'Tasks');
+    pressTab(m.container, 'Today');
+    press(
+      m.container,
+      scenario === 'example' ? 'Now: Write the school email' : 'Paused: Write the school email',
+    );
+    return m;
+  }
+
+  it('is lit: the meta line, the bar row, the steps on the rail, the note, and Focus on the dock line', async () => {
+    const m = await own();
+    expect(m.container.dataset['ground']).toBe('present');
+    expect(id(m, 'p-title')?.textContent).toBe(EMAIL);
+    const meta = m.container.querySelector('.tmeta')!;
+    expect(drawnText(meta)).toBe('Today · 25 min estimate · 7 min so far');
+    expect(readText(meta)).toBe('Today, 25 minute estimate, 7 minutes so far');
+    const bar = m.container.querySelector('.timerow .bar')!;
+    expect(bar.className).toBe('bar bar-page is-burn');
+    expect(nameOf(bar)).toBe('Time left');
+    expect(bar.getAttribute('aria-valuetext')).toBe('18 of 25 minutes left');
+    expect(drawnText(m.container.querySelector('.tmins')!)).toBe('18 min left ends 10:23');
+    expect(drawnText(m.container.querySelector('.rail li.current .s')!)).toBe(
+      'Write the question Now',
+    );
+    expect(drawnText(id(m, 'p-note')!)).toBe('Note When is the permission slip due?');
+    expect(m.container.querySelector('.capsule')).toBeNull();
+    expect(drawnText(id(m, 'b-focus')!)).toBe('Focus');
+    expect(hintOf(id(m, 'b-focus')!)).toBe('Opens focus.');
+  });
+
+  it('offers four choices, and reads them in SPEC 11’s order', async () => {
+    const m = await own();
+    expect(choices(m.container)).toBe(4);
+    expect(readingOrder(m.container)).toEqual([
+      'Back to Tasks',
+      'More',
+      'Me',
+      EMAIL,
+      'Today, 25 minute estimate, 7 minutes so far',
+      'Time left',
+      'Undo step done: Find the school address',
+      'Now, step 2: Write the question',
+      'Step 3: Read it once and send',
+      'Note: When is the permission slip due?',
+      'Focus',
+      'Capture',
+      'Next, in 25 minutes: 10:30, Call the dentist. Rest of today',
+      ...TABS,
+    ]);
+  });
+
+  it('moves the bar, the minutes and "so far" in place as time passes', async () => {
+    const m = await own();
+    const rail = m.container.querySelector('.rail');
+    advance(m, 1);
+    expect(m.container.querySelector('.rail')).toBe(rail);
+    expect(drawnText(m.container.querySelector('.tmins')!)).toBe('17 min left ends 10:23');
+    expect(drawnText(m.container.querySelector('.tmeta')!)).toBe(
+      'Today · 25 min estimate · 8 min so far',
+    );
+  });
+
+  it('opens Focus from "⌃ Focus", and focus comes back to it', async () => {
+    const m = await own();
+    press(m.container, 'Focus');
+    expect(m.container.dataset['focus']).toBe('open');
+    expect(nameOf(id(m, 'f-back')!)).toBe('Back to Tasks');
+    press(m.container, 'Back to Tasks');
+    expect(document.activeElement).toBe(id(m, 'b-focus'));
+  });
+
+  it('un-ticks a done step from its disc', async () => {
+    const m = await own();
+    press(m.container, 'Undo step done: Find the school address');
+    expect(drawnText(m.container.querySelector('.rail li.current .s')!)).toBe(
+      'Find the school address Now',
+    );
+  });
+
+  it('paused: the bar frozen in ash, the minutes in white with no end time, and Paused where Now was', async () => {
+    const m = await own('pauseLeft', TUE_1320);
+    expect(m.container.dataset['ground']).toBe('present');
+    expect(m.container.querySelector('.timerow .bar')?.className).toBe(
+      'bar bar-page is-paused is-frozen',
+    );
+    const minutes = m.container.querySelector('.tmins strong')!;
+    expect(minutes.textContent).toBe('18 min left');
+    expect(minutes.className).toBe('still');
+    expect(drawnText(m.container.querySelector('.tmins')!)).toBe('18 min left');
+    expect(readingOrder(m.container)).toContain('Paused, step 2: Write the question');
+    expect(m.container.querySelector('.rail .nowtag')).toBeNull();
+    expect(id(m, 'b-focus')).not.toBeNull();
+  });
+
+  it('done: a sage Done line, and "Not done after all"', async () => {
+    const m = await mount(TUE_1005);
+    press(m.container, 'Tasks');
+    pressTab(m.container, 'Done');
+    press(m.container, 'Bins out');
+    expect(drawnText(m.container.querySelector('.doneline')!)).toBe('Done');
+    expect(id(m, 'p-when')).toBeNull();
+    expect(id(m, 'p-addstep')).toBeNull();
+    press(m.container, 'Not done after all');
+    expect(titled(stateOf(m), 'Bins out').doneAt).toBeUndefined();
+    expect(id(m, 'p-start')).not.toBeNull();
+  });
+});
+
+describe('Add a step (SPEC 5.3 and 3, "When a field has the keyboard")', () => {
+  async function opened() {
+    const m = await mount(TUE_1005);
+    press(m.container, /^Next/);
+    press(m.container, /^10:30, Call the dentist/);
+    return m;
+  }
+  const field = (m: Mounted) => id(m, 'p-stepfield') as HTMLInputElement;
+  const dentist = (m: Mounted) => titled(stateOf(m), 'Call the dentist');
+
+  it('turns into a field focused in the same tap, so the keyboard comes up', async () => {
+    const m = await opened();
+    id(m, 'p-addstep')!.click();
+    expect(document.activeElement).toBe(field(m));
+    expect(id(m, 'p-addstep')?.hidden).toBe(true);
+    expect(m.container.dataset['typing']).toBe('');
+    // The frame does not move: the dock line, the drawer and the tabs stay.
+    expect(m.container.dataset['drawer']).toBe('folded');
+    expect(choices(m.container)).toBe(5);
+  });
+
+  it('adds a step on return and stays open for the next, which stays focused', async () => {
+    const m = await opened();
+    id(m, 'p-addstep')!.click();
+    const input = field(m);
+    input.value = 'Find the card';
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    expect(model.stepsOf(stateOf(m).tasks, dentist(m).id).map((step) => step.title)).toEqual([
+      'Find the card',
+    ]);
+    expect(document.activeElement).toBe(field(m));
+    expect(field(m).value).toBe('');
+    expect(readingOrder(m.container)).toContain('Step 1: Find the card');
+  });
+
+  it('keeps what it holds as a draft when left, shown in the field, and closes when empty', async () => {
+    const m = await opened();
+    id(m, 'p-addstep')!.click();
+    const input = field(m);
+    input.value = 'Ring at nine';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    input.blur();
+    await Promise.resolve();
+    expect(stateOf(m).bench.drafts.fields[`step:${dentist(m).id}`]).toBe('Ring at nine');
+    expect(m.container.dataset['typing']).toBeUndefined();
+    expect(field(m).value).toBe('Ring at nine');
+    expect(id(m, 'p-addstep')?.hidden).toBe(true);
+    // Back later, the draft is in the field.
+    press(m.container, 'Back to Today');
+    press(m.container, /^Next/);
+    press(m.container, /^10:30, Call the dentist/);
+    expect(field(m).value).toBe('Ring at nine');
+    field(m).focus();
+    field(m).value = '';
+    field(m).blur();
+    await Promise.resolve();
+    expect(stateOf(m).bench.drafts.fields[`step:${dentist(m).id}`]).toBeUndefined();
+    expect(id(m, 'p-addstep')?.hidden).toBe(false);
+  });
+});
+
+describe('the sheets a task’s page raises (SPEC 9.9 and 12)', () => {
+  const depth = () => {
+    vi.advanceTimersByTime(1);
+    return historyDepth();
+  };
+  async function opened(places: 'charcoal' | 'white' = 'charcoal') {
+    const m = await mount(TUE_1005, 'example', (state) => ({
+      ...state,
+      bench: { ...state.bench, settings: { ...state.bench.settings, places } },
+    }));
+    press(m.container, /^Next/);
+    press(m.container, /^10:30, Call the dentist/);
+    return m;
+  }
+  const dentist = (m: Mounted) => titled(stateOf(m), 'Call the dentist');
+  const radios = (m: Mounted) =>
+    [...m.container.querySelectorAll<HTMLElement>('.ts-panel [role="radio"]')].map((radio) => [
+      nameOf(radio),
+      radio.getAttribute('aria-checked'),
+    ]);
+
+  it('the when sheet: a level of its own, modal, its rows a radio group with the slot chosen', async () => {
+    const m = await opened();
+    const before = depth();
+    press(m.container, /^When: /);
+    expect(depth()).toBe((before as number) + 1);
+    expect(m.container.dataset['tsheet']).toBe('when');
+    expect(page(m).hasAttribute('inert')).toBe(true);
+    expect(m.container.querySelector('.dock')?.hasAttribute('inert')).toBe(true);
+    expect(document.activeElement?.id).toBe('ts-title');
+    expect(nameOf(m.container.querySelector('[role="dialog"]')!)).toBe('When');
+    expect(radios(m)).toEqual([
+      ['No date (inbox)', 'false'],
+      ['Today, anytime', 'false'],
+      ['Today at a time', 'true'],
+      ['Tomorrow', 'false'],
+      ['Pick a day', 'false'],
+    ]);
+    expect((id(m, 'w-time') as HTMLInputElement).value).toBe('10:30');
+    expect(id(m, 'w-length')?.textContent).toBe('10 min');
+    // The capsule rides its top edge as a picture: not a control.
+    const ride = m.container.querySelector('.ts-ride .capsule')!;
+    expect(ride.getAttribute('aria-hidden')).toBe('true');
+    expect(choices(m.container)).toBe(5);
+  });
+
+  it('a choice takes effect at once, and Done closes it, back on the pill', async () => {
+    const m = await opened();
+    press(m.container, /^When: /);
+    press(m.container, 'Today, anytime');
+    expect(dentist(m).when).toEqual({ kind: 'anytime', date: '2026-11-24' });
+    expect(radios(m)[1]).toEqual(['Today, anytime', 'true']);
+    expect(id(m, 'w-time')).toBeNull();
+    press(m.container, 'Tomorrow');
+    expect(dentist(m).when).toEqual({ kind: 'anytime', date: '2026-11-25' });
+    press(m.container, 'Pick a day');
+    expect(dentist(m).when).toEqual({ kind: 'anytime', date: '2026-11-26' });
+    const day = id(m, 'w-date') as HTMLInputElement;
+    day.value = '2026-12-02';
+    day.dispatchEvent(new Event('change', { bubbles: true }));
+    expect(dentist(m).when).toEqual({ kind: 'anytime', date: '2026-12-02' });
+    press(m.container, 'No date (inbox)');
+    expect(dentist(m).when).toEqual({ kind: 'none' });
+    press(m.container, 'Today at a time');
+    expect(dentist(m).when).toMatchObject({ kind: 'timed', date: '2026-11-24', time: '10:30' });
+    press(m.container, 'Done');
+    outlastSheet();
+    expect(m.container.dataset['tsheet']).toBeUndefined();
+    expect(document.activeElement).toBe(id(m, 'p-when'));
+    expect(drawnText(id(m, 'p-when')!)).toBe('Today, 10:30 · 10 min · in 25 min');
+  });
+
+  it('How long sets a booked slot and its estimate together, and says what it reads', async () => {
+    const m = await opened();
+    press(m.container, /^When: /);
+    press(m.container, 'Add 5 minutes');
+    expect(dentist(m).when).toMatchObject({ kind: 'timed', durationMinutes: 15 });
+    expect(dentist(m).estimateMinutes).toBe(15);
+    expect(id(m, 'w-length')?.textContent).toBe('15 min');
+    expect(said(m)).toBe('How long: 15 min');
+    press(m.container, 'Take 5 minutes off');
+    press(m.container, 'Take 5 minutes off');
+    expect(dentist(m).when).toMatchObject({ durationMinutes: 5 });
+    expect((id(m, 'w-less') as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it('How long sets an estimate on anything not booked, and can unset it', async () => {
+    const m = await opened();
+    press(m.container, /^When: /);
+    press(m.container, 'No date (inbox)');
+    // Its slot's length goes with it, as its estimate.
+    expect(id(m, 'w-length')?.textContent).toBe('10 min');
+    expect(dentist(m).estimateMinutes).toBe(10);
+    press(m.container, 'Take 5 minutes off');
+    press(m.container, 'Take 5 minutes off');
+    expect(dentist(m).estimateMinutes).toBeUndefined();
+    expect(id(m, 'w-length')?.textContent).toBe('Not set');
+  });
+
+  it('closes by back, by Close and by a tap above it, and keeps nothing behind it inert', async () => {
+    const m = await opened();
+    const base = depth();
+    press(m.container, /^When: /);
+    goBack();
+    expect(m.container.dataset['tsheet']).toBeUndefined();
+    expect(depth()).toBe(base);
+    expect(page(m).hasAttribute('inert')).toBe(false);
+    press(m.container, 'More');
+    press(m.container, 'Close');
+    expect(m.container.dataset['tsheet']).toBeUndefined();
+    expect(document.activeElement).toBe(id(m, 'b-more'));
+    expect(depth()).toBe(base);
+    press(m.container, 'More');
+    m.container.querySelector<HTMLElement>('[role="dialog"] .c-above')!.click();
+    expect(m.container.dataset['tsheet']).toBeUndefined();
+    expect(depth()).toBe(base);
+  });
+
+  it('the ⋯ sheet: the note, Rename and Delete, four choices', async () => {
+    const m = await opened('white');
+    press(m.container, 'More');
+    expect(nameOf(m.container.querySelector('[role="dialog"]')!)).toBe('Call the dentist');
+    expect(
+      controls(m.container)
+        .filter((node) => node.closest('.ts-panel'))
+        .map(nameOf),
+    ).toEqual(['Close', 'Add a note', 'Rename', 'Delete']);
+    expect(choices(m.container)).toBe(4);
+  });
+
+  it('Add a note: the field focused in the same tap, the words kept as typed, one level throughout', async () => {
+    const m = await opened();
+    const base = depth();
+    press(m.container, 'More');
+    id(m, 'm-note')!.click();
+    expect(document.activeElement?.id).toBe('ts-field');
+    expect(m.container.dataset['tsheet']).toBe('note');
+    expect(depth()).toBe((base as number) + 1);
+    const note = id(m, 'ts-field') as HTMLTextAreaElement;
+    note.value = 'Ask about the crown';
+    note.dispatchEvent(new Event('input', { bubbles: true }));
+    vi.advanceTimersByTime(300);
+    expect(dentist(m).notes).toBe('Ask about the crown');
+    note.value = 'Ask about the crown, and the bill';
+    note.dispatchEvent(new Event('input', { bubbles: true }));
+    press(m.container, 'Close');
+    expect(dentist(m).notes).toBe('Ask about the crown, and the bill');
+    expect(depth()).toBe(base);
+    press(m.container, 'More');
+    expect(button(m.container, 'Edit the note')).toBeTruthy();
+  });
+
+  it('Rename: return closes it; an empty name keeps the one it had', async () => {
+    const m = await opened();
+    press(m.container, 'More');
+    id(m, 'm-rename')!.click();
+    const name = id(m, 'ts-field') as HTMLInputElement;
+    expect(document.activeElement).toBe(name);
+    expect(name.value).toBe('Call the dentist');
+    name.value = '';
+    name.dispatchEvent(new Event('input', { bubbles: true }));
+    name.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    expect(m.container.dataset['tsheet']).toBeUndefined();
+    expect(dentist(m)).toBeDefined();
+    press(m.container, 'More');
+    id(m, 'm-rename')!.click();
+    const again = id(m, 'ts-field') as HTMLInputElement;
+    again.value = 'Call the dentist about the crown';
+    again.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    expect(id(m, 'p-title')?.textContent).toBe('Call the dentist about the crown');
+  });
+
+  it('Delete: confirms, says there is no Undo, and the page drops back with its level', async () => {
+    const m = await mount(TUE_1005);
+    press(m.container, 'Tasks');
+    const base = depth();
+    press(m.container, 'Cancel the gym trial, 2 steps');
+    press(m.container, 'More');
+    press(m.container, 'Delete');
+    expect(nameOf(m.container.querySelector('[role="dialog"]')!)).toBe(
+      'Delete Cancel the gym trial?',
+    );
+    expect(drawnText(m.container.querySelector('.ts-line')!)).toBe(
+      'Its steps go with it, and there is no Undo for this.',
+    );
+    expect(choices(m.container)).toBe(2);
+    const gym = titled(stateOf(m), 'Cancel the gym trial').id;
+    press(m.container, 'Delete');
+    expect(stateOf(m).tasks.some((task) => task.id === gym || task.parentId === gym)).toBe(false);
+    expect(switcherOf(m)[0]).toEqual(['Inbox', 'true']);
+    expect(depth()).toBe(base);
+    expect(rowTitles(m)).not.toContain('Cancel the gym trial');
+  });
+
+  it('opens over the running task’s own page with nothing riding its edge', async () => {
+    const m = await mount(TUE_1005);
+    press(m.container, 'Tasks');
+    pressTab(m.container, 'Today');
+    press(m.container, 'Now: Write the school email');
+    press(m.container, 'Note: When is the permission slip due?');
+    expect(document.activeElement?.id).toBe('ts-field');
+    expect((id(m, 'ts-field') as HTMLTextAreaElement).value).toBe(
+      'When is the permission slip due?',
+    );
+    expect(m.container.querySelector('.ts-ride')).toBeNull();
   });
 });

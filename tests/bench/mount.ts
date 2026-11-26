@@ -230,7 +230,8 @@ export function controls(container: HTMLElement): HTMLElement[] {
  * The main choices on a screen (SPEC 3 "Counting the five choices"): the
  * frame is not counted (the tabs, Me, a back control, "⋯" and the drawer's
  * handle, which on the open drawer is Hide), and a list counts once however
- * many rows it has, as a switch of parts does ("Inbox or Today", SPEC 5.5).
+ * many rows it has, as a switch of parts does ("Inbox or Today", SPEC 5.5),
+ * the Tasks switcher, and How long's −5 and +5 around its minutes.
  * The six-second Undo, on the Next line or Focus's foot, is counted as frame
  * (SPEC 5.4), and so is Me carried above the capture sheet.
  */
@@ -240,8 +241,10 @@ export function choices(container: HTMLElement): number {
   let count = 0;
   for (const node of controls(container)) {
     if (node.closest('nav') || node.classList.contains('me')) continue;
-    if (['b-handle', 'b-hide', 'b-back', 'f-back', 'b-undo', 'c-me'].includes(node.id)) continue;
-    const list = node.closest('.list, [role="radiogroup"]');
+    if (['b-handle', 'b-hide', 'b-back', 'f-back', 'b-undo', 'c-me', 'b-more'].includes(node.id)) {
+      continue;
+    }
+    const list = node.closest('.list, [data-list], [role="radiogroup"], [role="tablist"]');
     if (list) {
       if (!seen.has(list)) {
         seen.add(list);
@@ -254,11 +257,21 @@ export function choices(container: HTMLElement): number {
   return count + lists;
 }
 
-/** The control with this accessible name, or a failure that shows what there is. */
+/**
+ * The control with this accessible name, or a failure that shows what there
+ * is. A plain button is found before a tab or a radio of the same name, as a
+ * person asking for the button "Today" means the tab bar's, not the Tasks
+ * switcher's (which pressTab finds) or capture's Today.
+ */
 export function button(container: HTMLElement, name: string | RegExp): HTMLElement {
-  const found = controls(container).find((node) =>
+  const named = controls(container).filter((node) =>
     typeof name === 'string' ? nameOf(node) === name : name.test(nameOf(node)),
   );
+  const plain = (node: HTMLElement) => {
+    const role = node.getAttribute('role');
+    return role === null || role === 'button';
+  };
+  const found = named.find(plain) ?? named[0];
   if (!found) {
     throw new Error(
       `No control named ${String(name)}. There are: ${controls(container).map(nameOf).join(' | ')}`,
@@ -269,6 +282,15 @@ export function button(container: HTMLElement, name: string | RegExp): HTMLEleme
 
 export const press = (container: HTMLElement, name: string | RegExp): void =>
   button(container, name).click();
+
+/** A part of a tab list by its name: the Tasks switcher's "Today", say. */
+export function pressTab(container: HTMLElement, name: string): void {
+  const found = controls(container).find(
+    (node) => node.getAttribute('role') === 'tab' && nameOf(node) === name,
+  );
+  if (!found) throw new Error(`No tab named ${name}`);
+  found.click();
+}
 
 /**
  * Text as it is drawn for a sighted person: the visually hidden words kept

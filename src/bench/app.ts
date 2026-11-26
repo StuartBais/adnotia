@@ -13,13 +13,15 @@
 // the minutes and the spoken labels in place. So a tick never takes away the
 // person's focus, scroll or a tap in progress.
 //
-// Built so far (plan section 19, chunks 2 to 4): the frame, Today in every
-// state, the drawer at rest at its lip, folded and half and open by tap, the
-// capsule on the places and the open drawer, the tabs with bare places, Me
-// with the crisis page, About with the scenario buttons, Focus, a layer over
-// the current tab with its own history entry, and capture: a sheet over
+// Built so far (plan section 19, chunks 2 to 4 and the first half of 5): the
+// frame, Today in every state, the drawer at rest at its lip, folded and half
+// and open by tap, the capsule on the places and the open drawer, the tabs,
+// Me with the crisis page, About with the scenario buttons, Focus, a layer
+// over the current tab with its own history entry, capture: a sheet over
 // whatever is open, riding the keyboard, with its own history entry and a
-// draft that outlives it.
+// draft that outlives it, Tasks with its four lists, a task's own page in
+// each of its forms with "Add a step", and the sheets a page raises. Routines
+// and Library are still bare places.
 
 import { emptyDomains, type KernelStore } from '../kernel/store';
 import * as act from './actions';
@@ -48,7 +50,7 @@ import {
   type View,
 } from './state';
 import { createTicker, type Ticker } from './clock';
-import { trackKeyboard } from './keyboard';
+import { KEYBOARD_GUESS, trackKeyboard } from './keyboard';
 import {
   dock,
   foldedDrawer,
@@ -61,31 +63,36 @@ import {
   type DockProps,
 } from './frame';
 import { lampOf, todayScreen } from './screens/today';
-import {
-  BACK_TO,
-  aboutScreen,
-  crisisScreen,
-  meScreen,
-  placeScreen,
-  taskScreen,
-  ABOUT,
-} from './screens/places';
+import { BACK_TO, aboutScreen, crisisScreen, meScreen, placeScreen, ABOUT } from './screens/places';
+import { listScrollKey, tasksScreen } from './screens/tasks';
+import { taskScreen } from './screens/task';
+import { deleteSheet, fieldSheet, moreSheet, whenSheet, type WhenChoice } from './screens/sheets';
+import type { CloseWay } from './screens/capture';
+import { addDays, fromMinutes, loggingDay } from '../kernel/dates';
+import { duration } from './format';
+import type { When } from '../domains/tasks';
 import { settingsScreen, type SettingsView } from './screens/settings';
 import { focusFoot, focusKey, focusScreen, type FocusActions } from './screens/focus';
 import { captureSheet, type CaptureTo } from './screens/capture';
-import { ANNOUNCE, T } from './strings';
+import { ANNOUNCE, T, say } from './strings';
 import { h, injectSprite } from './ui';
 import { resolve as rewardOptions, setOption } from '../domains/options';
 import {
   dayList,
+  estimateOf,
   idleKey,
   idleLitId,
   presentKey,
   presentLive,
   presentView,
+  taskPageKey,
+  taskPageView,
+  tasksView,
   todayView,
   type PresentLive,
   type PresentView,
+  type TaskPageView,
+  type TasksView,
 } from './view';
 
 export interface BenchOptions {
@@ -151,6 +158,20 @@ export const DRAFT_AFTER = 300;
 /** Room between what is raised above the capture sheet and the sheet's top. */
 const RAISED_GAP = 12;
 
+/** The line under a field outside a sheet, kept in view above the keys with it (SPEC 3). */
+const FIELD_LINE = 22;
+
+/** The sheets a task's page raises (SPEC 12; plan section 11). */
+type TaskSheetKind = 'when' | 'more' | 'note' | 'rename' | 'delete';
+
+interface TaskSheet {
+  kind: TaskSheetKind;
+  taskId: string;
+  /** The control that raised it, where focus goes back when it closes. */
+  opener: string;
+  serial: number;
+}
+
 /** The Screen Wake Lock, where the browser has one: feature-detected, never required. */
 interface WakeLockLike {
   release(): Promise<void>;
@@ -215,6 +236,8 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
     focusFoot: h('div', { class: 'ffoot', hidden: true }),
     // Capture's sheet, above everything, the dock line included (SPEC 5.5).
     sheet: h('div', { class: 'sheet-layer', hidden: true }),
+    // The sheets a task's page raises: when, ⋯, note, rename and delete.
+    tsheet: h('div', { class: 'sheet-layer', hidden: true }),
     live: h('div', { class: 'live', 'aria-live': 'polite' }),
   };
   container.append(hints());
@@ -225,14 +248,18 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
     root: document.documentElement,
     viewport: window.visualViewport ?? undefined,
     layoutHeight: () => container.getBoundingClientRect().height || window.innerHeight,
-    onChange: () => fitSheet(),
+    onChange: () => {
+      fitSheet();
+      keepFieldInView();
+    },
   });
 
   const keys = new Map<HTMLElement, string>();
   const patches = new Map<HTMLElement, Built['patch']>();
   /** Rows ticked since the list was opened: they stay in place as discs. */
   const ticked = new Set<string>();
-  let shown: { position: DrawerPosition; tab: Tab; page: string | undefined } | undefined;
+  let shown:
+    { position: DrawerPosition; tab: Tab; page: string | undefined; list: TaskList } | undefined;
   /** Taps on Step done, Pause and Resume are ignored until this moment (monotonic). */
   let guardUntil = 0;
   /** What the dock line's slot held, and where, at the last render. */
@@ -270,6 +297,22 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
   let draftTimer: ReturnType<typeof setTimeout> | undefined;
   /** Whether what is raised above the sheet fits, as last measured; else the capsule rides. */
   let raisedFits = true;
+  /** Rows un-ticked in Tasks › Done since it was opened, and when they had been done. */
+  const undone = new Map<string, string>();
+  /** The inbox is opening: once painted it is scrolled to its newest end (SPEC 5.6). */
+  let inboxToEnd = false;
+  /** Where each of the Tasks lists was scrolled, so back from a page finds it there. */
+  const remembered: Record<string, number> = {};
+  /** The task whose "Add a step" field has the keyboard (SPEC 3, plan section 13). */
+  let stepField: string | undefined;
+  let stepTimer: ReturnType<typeof setTimeout> | undefined;
+  /** A sheet raised from a task's page: a level of its own, like capture's. */
+  let tsheet: TaskSheet | undefined;
+  let tsheetShown = false;
+  let tsheetLeaving: ReturnType<typeof setTimeout> | undefined;
+  /** The note or rename field of the sheet now open. */
+  let tsheetField: HTMLInputElement | HTMLTextAreaElement | undefined;
+  let tsheetTimer: ReturnType<typeof setTimeout> | undefined;
 
   /** A screen shorter than 740 pt, where the handle is one line (SPEC 3). */
   function compact(): boolean {
@@ -293,12 +336,16 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
     const focusId = active instanceof HTMLElement && target.contains(active) ? active.id : '';
     const quiet = isQuiet(active);
     const scroll = scrollOf(target);
+    for (const [name, top] of Object.entries(scroll)) {
+      if (name.startsWith('tasks-')) remembered[name] = top;
+    }
     const built = build();
     target.replaceChildren(...built.nodes);
     keys.set(target, key);
     patches.set(target, built.patch);
     for (const node of target.querySelectorAll<HTMLElement>('[data-scroll-key]')) {
-      const top = scroll[node.dataset['scrollKey'] ?? ''];
+      const name = node.dataset['scrollKey'] ?? '';
+      const top = scroll[name] ?? (name.startsWith('tasks-') ? remembered[name] : undefined);
       if (top !== undefined) node.scrollTop = top;
     }
     if (focusId) {
@@ -405,8 +452,10 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
     const showFocus = focusOpen;
     focusShown = showFocus;
     // The capture sheet is modal: everything under it is inert, Me excepted,
-    // which the sheet carries over its own (SPEC 5.5).
+    // which the sheet carries over its own (SPEC 5.5). So is a sheet raised
+    // from a task's page, with nothing excepted (SPEC 9.9).
     const sheetOpen = sheet !== undefined;
+    const modal = sheetOpen || tsheet !== undefined;
     const byMinute = motion(state) === 'reduced';
     const places = state.bench.settings.places;
 
@@ -423,14 +472,28 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
         ? 'folded'
         : rule.position;
     const open = position === 'open';
-    const ground = view.kind === 'today' ? 'present' : 'place';
+    // The present's own page is lit charcoal on either places (SPEC 5.8):
+    // a charcoal screen of the present, as Today is.
+    const ownPage =
+      view.kind === 'page' &&
+      view.page.kind === 'task' &&
+      current.kind !== 'none' &&
+      current.task.id === view.page.id;
+    const ground = view.kind === 'today' || ownPage ? 'present' : 'place';
 
     // Moving between lists clears the rows ticked in them.
     const page = view.kind === 'page' ? JSON.stringify(view.page) : undefined;
-    if (shown && (shown.position !== position || shown.tab !== nav.tab || shown.page !== page)) {
+    if (
+      shown &&
+      (shown.position !== position ||
+        shown.tab !== nav.tab ||
+        shown.page !== page ||
+        shown.list !== nav.list)
+    ) {
       ticked.clear();
+      undone.clear();
     }
-    shown = { position, tab: nav.tab, page };
+    shown = { position, tab: nav.tab, page, list: nav.list };
 
     container.dataset['drawer'] = position;
     container.dataset['ground'] = ground;
@@ -446,18 +509,37 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
 
     // The page.
     const today = view.kind === 'today' ? todayView(state, t) : undefined;
-    layer.screen.className = today ? 'screen today' : 'screen';
+    const lists =
+      view.kind === 'place' && nav.tab === 'tasks'
+        ? tasksView(state, t, nav.list, { keep: ticked, undone })
+        : undefined;
+    const taskPage =
+      view.kind === 'page' && view.page.kind === 'task'
+        ? taskPageView(state, t, view.page.id)
+        : undefined;
+    layer.screen.className = today ? 'screen today' : taskPage ? 'screen task' : 'screen';
     if (today) layer.screen.dataset['lamp'] = lampOf(today);
     else delete layer.screen.dataset['lamp'];
-    paint(layer.screen, screenKey(view, today), () => screen(view, today, live));
+    const parts = { today, lists, taskPage };
+    paint(layer.screen, screenKey(view, parts), () => screen(view, parts, live));
+    if (inboxToEnd) {
+      const inbox = layer.screen.querySelector<HTMLElement>(
+        `[data-scroll-key="${listScrollKey('inbox')}"]`,
+      );
+      if (inbox) {
+        inbox.scrollTop = inbox.scrollHeight;
+        remembered[listScrollKey('inbox')] = inbox.scrollTop;
+      }
+      inboxToEnd = false;
+    }
     // The open drawer covers the screen, and Focus covers everything but the
     // dock line: what is under either is not read or reached.
     for (const under of [layer.screen, layer.fade]) {
-      if (open || showFocus || sheetOpen) under.setAttribute('inert', '');
+      if (open || showFocus || modal) under.setAttribute('inert', '');
       else under.removeAttribute('inert');
     }
     for (const under of [layer.foot, layer.tabs]) {
-      if (showFocus || sheetOpen) under.setAttribute('inert', '');
+      if (showFocus || modal) under.setAttribute('inert', '');
       else under.removeAttribute('inert');
     }
 
@@ -472,7 +554,7 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
     } else if (wasFocus) {
       startLeaving();
     }
-    if (showFocus && sheetOpen) {
+    if (showFocus && modal) {
       for (const part of [layer.focus, layer.focusFoot]) part.setAttribute('inert', '');
     }
 
@@ -496,9 +578,12 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
             onOpen: () => openFocus('capsule'),
           }
         : undefined;
+    // The present's own page: its way into Focus, where the capsule would be.
+    const focusPill = !showFocus && ownPage && !open ? { onOpen: openFocusFromPage } : undefined;
     const props: DockProps = {
       ...(onDock ? { present: presentButtons(onDock) } : {}),
       ...(capsule ? { capsule } : {}),
+      ...(focusPill ? { focusPill } : {}),
       captureOnLight:
         !showFocus &&
         (open ||
@@ -511,7 +596,13 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
         state.bench.drafts.capture.text.trim() !== '',
       onCapture: openCapture,
     };
-    const slot = props.present ? 'present' : props.capsule ? 'capsule' : 'none';
+    const slot = props.present
+      ? 'present'
+      : props.capsule
+        ? 'capsule'
+        : props.focusPill
+          ? 'focus'
+          : 'none';
     // The lantern and Focus fold into the capsule, and grow out of it, as a
     // 200 ms cross-fade, the capsule fading in already in its slot (SPEC 10,
     // Reduce Motion; the only path until the animated one is built).
@@ -519,7 +610,7 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
       lastSlot !== undefined && lastSlot !== slot && (slot === 'capsule' || lastSlot === 'capsule');
     guardArrival(props, view, open, showFocus);
     paint(layer.dock, dockKey(props), () => dock(props));
-    if (sheetOpen) layer.dock.setAttribute('inert', '');
+    if (modal) layer.dock.setAttribute('inert', '');
     else layer.dock.removeAttribute('inert');
     if (morph) {
       for (const node of layer.dock.querySelectorAll('.capsule, .dock-pill')) {
@@ -529,7 +620,7 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
     layer.fade.hidden = !(ground === 'place' && capsule !== undefined && !open);
 
     // The drawer, and Hide at its foot when it is open.
-    if (position === 'lip' || showFocus || sheetOpen) layer.drawer.setAttribute('inert', '');
+    if (position === 'lip' || showFocus || modal) layer.drawer.setAttribute('inert', '');
     else layer.drawer.removeAttribute('inert');
     paint(layer.drawer, drawerKey(state, t, position, today), () =>
       drawer(state, t, position, today),
@@ -591,6 +682,31 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
     if (rides) container.dataset['ride'] = '';
     else delete container.dataset['ride'];
 
+    // A sheet raised from a task's page (SPEC 9.9), with the capsule riding
+    // its top edge as a picture where the page carries one.
+    if (tsheet) {
+      stopTSheetLeaving();
+      const ride =
+        presentNow && live && capsuleMode(view, current, position, true) === 'picture'
+          ? { view: presentNow, live, look: capsuleLook(places, position) }
+          : undefined;
+      const rideKey = ride
+        ? [presentKey(ride.view), ride.look, capsuleShape(ride.view, ride.live)]
+        : null;
+      const open = tsheet;
+      paint(layer.tsheet, JSON.stringify(['tsheet', tsheetKey(state, t, open), rideKey]), () =>
+        taskSheetOf(open, ride),
+      );
+      // It fades in once, as it opens (SPEC 10, Reduce Motion), not each
+      // time a choice in it rebuilds it.
+      if (!tsheetShown) layer.tsheet.querySelector('.csheet')?.classList.add('enter');
+    } else if (tsheetShown) {
+      startTSheetLeaving();
+    }
+    tsheetShown = tsheet !== undefined;
+    if (tsheet) container.dataset['tsheet'] = tsheet.kind;
+    else delete container.dataset['tsheet'];
+
     // Reading order: top to bottom, then the dock line, then the drawer, except
     // where the drawer's list is read before capture: on the half drawer (SPEC
     // 11, list 7) and the open one, whose Hide is read after the dock line from
@@ -610,6 +726,7 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
               layer.tabs,
               layer.focusFoot,
               layer.sheet,
+              layer.tsheet,
               layer.live,
             ]
           : [
@@ -622,6 +739,7 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
               layer.tabs,
               layer.focusFoot,
               layer.sheet,
+              layer.tsheet,
               layer.live,
             ]),
       );
@@ -641,7 +759,7 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
 
     barRunning =
       current.kind === 'running' &&
-      (today?.kind === 'lit' || capsule !== undefined || showFocus || rides);
+      (today?.kind === 'lit' || capsule !== undefined || showFocus || rides || ownPage);
     patchAll(live);
     layout(position);
     fitSheet();
@@ -651,7 +769,7 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
     // every layer's inert is settled: Done on the dock line loses its focus
     // while the drawer is still inert under Focus.
     if (wasFocus && !showFocus && (focusIn(layer.focus, layer.focusFoot) || focusLost())) {
-      const capsuleButton = layer.dock.querySelector<HTMLElement>('#b-capsule');
+      const capsuleButton = layer.dock.querySelector<HTMLElement>('#b-capsule, #b-focus');
       if (capsuleButton) capsuleButton.focus({ preventScroll: true });
       else landFocus();
     }
@@ -689,7 +807,16 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
 
   // ---------------------------------------------------------------- the parts
 
-  function screenKey(view: View, today: ReturnType<typeof todayView> | undefined): string {
+  /** What the page is made of, worked out once per render for its key and its build. */
+  interface ScreenParts {
+    today: ReturnType<typeof todayView> | undefined;
+    lists: TasksView | undefined;
+    taskPage: TaskPageView | undefined;
+  }
+
+  function screenKey(view: View, parts: ScreenParts): string {
+    const { today, lists, taskPage } = parts;
+    if (lists) return JSON.stringify(['tasks', listsShape(lists)]);
     if (today) {
       return JSON.stringify([
         'today',
@@ -706,17 +833,54 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
       return JSON.stringify(['page', view.page, settingsView(read())]);
     }
     if (view.kind === 'page' && view.page.kind === 'task') {
-      const task = read().tasks.find((item) => item.id === (view.page as { id: string }).id);
-      return JSON.stringify(['page', view.page, nav.tab, task?.title]);
+      return JSON.stringify([
+        'page',
+        view.page,
+        nav.tab,
+        taskPage ? taskPageKey(taskPage) : null,
+        fieldOpen(view.page.id),
+      ]);
     }
     return JSON.stringify([view.kind, view.kind === 'page' ? view.page : nav.tab]);
   }
 
-  function screen(
-    view: View,
-    today: ReturnType<typeof todayView> | undefined,
-    live: PresentLive | undefined,
-  ): Built {
+  /**
+   * A list as built, for its key: in Today the next timed row's "in N min" and
+   * the spoken names follow the clock and are moved in place, so only which
+   * row carries the "in" line is part of it.
+   */
+  function listsShape(lists: TasksView): unknown {
+    if (lists.list !== 'today') return lists;
+    const later = lists.day.later.map((row) => ({
+      ...row,
+      inLine: row.inLine !== undefined,
+      label: undefined,
+    }));
+    return { ...lists, day: { ...lists.day, later } };
+  }
+
+  function screen(view: View, parts: ScreenParts, live: PresentLive | undefined): Built {
+    const { today, lists, taskPage } = parts;
+    if (lists) {
+      return tasksScreen(
+        lists,
+        {
+          onMe: openMe,
+          onList: chooseList,
+          onRow: openTask,
+          onTick: (id) => {
+            ticked.add(id);
+            run(act.tick, id);
+          },
+          onUntick: (id) => {
+            const task = read().tasks.find((item) => item.id === id);
+            if (nav.list === 'done' && task?.doneAt) undone.set(id, task.doneAt);
+            untickRow(id);
+          },
+        },
+        () => tasksView(read(), now(), nav.list, { keep: ticked, undone }),
+      );
+    }
     if (today) {
       return todayScreen(
         today,
@@ -727,7 +891,10 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
           onSetAside: (id) => run(act.setAside, id),
           onOpenTask: (id) => push({ kind: 'task', id }),
           onStart: (id) => run(act.start, id),
-          onOpenInbox: () => go({ tab: 'tasks', stack: [], list: 'inbox' }),
+          onOpenInbox: () => {
+            inboxToEnd = true;
+            go({ tab: 'tasks', stack: [], list: 'inbox' });
+          },
         },
         () => todayView(read(), now()),
       );
@@ -756,7 +923,34 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
         case 'task': {
           const id = view.page.id;
           const task = read().tasks.find((item) => item.id === id);
-          return taskScreen(task?.title ?? '', BACK_TO[nav.tab], actions);
+          if (!task || !taskPage) return { nodes: [] };
+          return taskScreen({
+            view: taskPage,
+            task,
+            live: taskPage.present ? live : undefined,
+            back: BACK_TO[nav.tab],
+            field: { open: fieldOpen(id), text: fieldText(id) },
+            current: () => taskPageView(read(), now(), id),
+            actions: {
+              onBack: back,
+              onMe: openMe,
+              onMore: () => openTaskSheet('more', id, 'b-more'),
+              onWhen: () => openTaskSheet('when', id, 'p-when'),
+              onStart: () => run(act.start, id),
+              onStepFocus: () => stepFocused(id),
+              onStepInput: (text) => stepDraftLater(id, text),
+              onStepEnter: (text) => addStepNow(id, text),
+              onStepLeave: (text) => leaveStepField(id, text),
+              onReopenStep: (stepId) => {
+                const before = read();
+                if (undo?.undo.step === stepId) dropUndo();
+                run(act.reopenStep, stepId);
+                if (read() === before) render();
+              },
+              onNote: () => openTaskSheet('note', id, 'p-note'),
+              onNotDone: () => run(act.untick, id),
+            },
+          });
         }
         default:
           return placeScreen(nav.tab === 'today' ? 'tasks' : nav.tab, actions);
@@ -783,7 +977,9 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
               props.capsule.mode,
               capsuleShape(props.capsule.view, props.capsule.live),
             ]
-          : ['none'],
+          : props.focusPill
+            ? ['focus']
+            : ['none'],
       props.captureOnLight,
       props.draftKept,
     ]);
@@ -859,7 +1055,7 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
         ticked.add(id);
         run(act.tick, id);
       },
-      onUntick: (id: string) => run(act.untick, id),
+      onUntick: untickRow,
     };
     if (position === 'half') {
       return {
@@ -1355,8 +1551,42 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
       // The fold rendered the place it folded over, which used the arrival up;
       // Today, if that is where this goes, still grows out of the capsule.
       arrival = 'morph';
+      // The inbox opens at its newest end, every time (SPEC 5.6).
+      if (tab === 'tasks' && nav.list === 'inbox') inboxToEnd = true;
       go({ tab, stack: [], list: nav.list });
     });
+  }
+
+  /**
+   * The Tasks switcher: another list, its rows ticked or un-ticked in the
+   * last one settled. The inbox opens at its newest end.
+   */
+  function chooseList(list: TaskList): void {
+    if (list === nav.list) return;
+    if (list === 'inbox') inboxToEnd = true;
+    go({ ...nav, list });
+  }
+
+  /**
+   * A ticked row's disc: not done after all. While the tick's own Undo is
+   * live, the disc takes it back the same way, so a running task ticked by
+   * mistake runs again; the disc and the Next line's pill are one way back.
+   */
+  function untickRow(id: string): void {
+    if (undo?.undo.ticked === id) {
+      const before = read();
+      const slot = undo;
+      dropUndo();
+      commit(slot.undo.inverse(before, now()));
+      announce(ANNOUNCE.undone);
+      return;
+    }
+    run(act.untick, id);
+  }
+
+  /** "⌃ Focus" on the present's own page: Focus opens upward out of it (SPEC 5.8). */
+  function openFocusFromPage(): void {
+    openFocus('lantern');
   }
 
   /** A row in the day's list opens its task; from the open drawer, folding it. */
@@ -1449,6 +1679,7 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
 
   function scenario(id: ScenarioId): void {
     dropSheet();
+    dropPageEdits();
     dropUndo();
     focusOpen = false;
     commit(loadScenario(read(), id, now()));
@@ -1459,6 +1690,7 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
   function deleteAll(): void {
     if (!confirm(ABOUT.deleteConfirm)) return;
     dropSheet();
+    dropPageEdits();
     dropUndo();
     focusOpen = false;
     const t = now();
@@ -1540,6 +1772,21 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
     if (text !== undefined) keepDraft(text, to);
     if (read() === before) render();
     if (land) landAfterSheet(quiet);
+  }
+
+  /**
+   * A page's sheet and its field go with nothing said: a scenario, a long time
+   * away. What was typed is kept, as closing would keep it.
+   */
+  function dropPageEdits(): void {
+    flushSheetText();
+    if (tsheet && (tsheet.kind === 'note' || tsheet.kind === 'rename')) keyboard.release();
+    tsheet = undefined;
+    tsheetField = undefined;
+    const field = layer.screen.querySelector<HTMLInputElement>('#p-stepfield');
+    if (field && stepField) keepFieldDraft(stepField, field.value);
+    stepField = undefined;
+    delete container.dataset['typing'];
   }
 
   /** The sheet goes with nothing said and nowhere to land: a scenario, a long time away. */
@@ -1627,7 +1874,7 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
   function landAfterSheet(quiet = true): void {
     const spot = focusShown
       ? layer.focus.querySelector<HTMLElement>('#f-step')
-      : container.dataset['ground'] === 'present' && !isOpen()
+      : layer.screen.classList.contains('today') && !isOpen()
         ? null
         : layer.dock.querySelector<HTMLElement>('#b-capture');
     // On Today, the screen's own block: the lit step, the unlit item, or 7b's heading.
@@ -1705,6 +1952,395 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
     }, SHEET_FADE_MS);
   }
 
+  // ---------------------------------------------------------------- a field on a page
+
+  /** Whether "Add a step" shows as a field: it has the keyboard, or holds a draft. */
+  function fieldOpen(id: string): boolean {
+    const draft = read().bench.drafts.fields[act.stepDraftKey(id)];
+    return stepField === id || (draft !== undefined && draft.trim() !== '');
+  }
+
+  /** What the field holds: its words as typed, else the draft kept for it. */
+  function fieldText(id: string): string {
+    const live = layer.screen.querySelector<HTMLInputElement>('#p-stepfield');
+    if (live && stepField === id) return live.value;
+    return read().bench.drafts.fields[act.stepDraftKey(id)] ?? '';
+  }
+
+  /** The field has the keyboard: the content makes room under it and scrolls it up. */
+  function stepFocused(id: string): void {
+    stepField = id;
+    container.dataset['typing'] = '';
+    keepFieldInView();
+  }
+
+  function stepDraftLater(id: string, text: string): void {
+    if (stepTimer !== undefined) clearTimeout(stepTimer);
+    stepTimer = setTimeout(() => {
+      stepTimer = undefined;
+      keepFieldDraft(id, text);
+    }, DRAFT_AFTER);
+  }
+
+  /** What the field holds, kept for it, or let go when it is empty (plan section 13). */
+  function keepFieldDraft(id: string, text: string): void {
+    if (stepTimer !== undefined) clearTimeout(stepTimer);
+    stepTimer = undefined;
+    const state = read();
+    const key = act.stepDraftKey(id);
+    const fields = state.bench.drafts.fields;
+    let next: Record<string, string>;
+    if (text.trim() === '') {
+      if (!(key in fields)) return;
+      const { [key]: _gone, ...rest } = fields;
+      next = rest;
+    } else {
+      if (fields[key] === text) return;
+      next = { ...fields, [key]: text };
+    }
+    commit({
+      ...state,
+      bench: { ...state.bench, drafts: { ...state.bench.drafts, fields: next } },
+    });
+  }
+
+  /**
+   * Return in the field: the words become the task's last step, the field is
+   * emptied and stays open with the keyboard, and the page scrolls it back up.
+   */
+  function addStepNow(id: string, text: string): void {
+    if (text.trim() === '') return;
+    if (stepTimer !== undefined) clearTimeout(stepTimer);
+    stepTimer = undefined;
+    const field = layer.screen.querySelector<HTMLInputElement>('#p-stepfield');
+    if (field) field.value = '';
+    commit(act.addStep(read(), id, text, now()).state);
+    keepFieldInView();
+  }
+
+  /**
+   * The field lost focus: to a tap elsewhere, the keyboard's own key, or a
+   * rebuild of the page that put focus straight back. Judged once the move
+   * has landed. What it holds is kept as its draft (SPEC 3).
+   */
+  function leaveStepField(id: string, text: string): void {
+    queueMicrotask(() => {
+      if (destroyed || stepField !== id) return;
+      if (document.activeElement?.id === 'p-stepfield') return;
+      stepField = undefined;
+      delete container.dataset['typing'];
+      keepFieldDraft(id, text);
+    });
+  }
+
+  /**
+   * The field rule (SPEC 3): with the keyboard up, only the content moves. It
+   * scrolls so the field and the line under it sit above the keyboard, as
+   * soon as the field has focus (where the keyboard will be: as last
+   * measured, or a share of the screen) and again as the keyboard settles.
+   * A field already clear of the keys stays where it is, and so does the
+   * title above it. The frame stays where it is, behind the keyboard.
+   */
+  function keepFieldInView(): void {
+    const field = layer.screen.querySelector<HTMLElement>('#p-stepfield');
+    if (!field || document.activeElement !== field) return;
+    const scroller = field.closest<HTMLElement>('.body');
+    const box = container.getBoundingClientRect();
+    if (!scroller || box.height === 0) return;
+    const keys = keyboard.inset() || Math.round(box.height * KEYBOARD_GUESS);
+    const limit = box.bottom - keys;
+    const foot = field.getBoundingClientRect().bottom + FIELD_LINE;
+    if (foot > limit) scroller.scrollTop += foot - limit;
+  }
+
+  // ---------------------------------------------------------------- a page's sheets
+
+  /**
+   * A sheet over a task's page: when, ⋯, note, rename or the confirm before
+   * Delete. One level in history, whichever it is: the ⋯ sheet hands its
+   * place to the one it opens. A note or a rename has its field focused in
+   * the same call as the tap, so iOS raises the keyboard, and rides it as
+   * capture does; the others put focus on their title, quietly.
+   */
+  function openTaskSheet(kind: TaskSheetKind, taskId: string, opener: string): void {
+    if (destroyed || sheet) return;
+    flushSheetText();
+    const typing = kind === 'note' || kind === 'rename';
+    const was = tsheet;
+    if (typing) keyboard.expect();
+    else if (was && (was.kind === 'note' || was.kind === 'rename')) keyboard.release();
+    tsheet = { kind, taskId, opener: was?.opener ?? opener, serial: ++sheetSerial };
+    tsheetField = undefined;
+    together(() => render());
+    // Set by the build that render ran.
+    const field = tsheetField as HTMLInputElement | HTMLTextAreaElement | undefined;
+    if (typing && field) {
+      field.focus({ preventScroll: true });
+      const end = field.value.length;
+      try {
+        field.setSelectionRange(end, end);
+      } catch {
+        // A field that cannot place its caret still takes the typing.
+      }
+      return;
+    }
+    const home = layer.tsheet.querySelector<HTMLElement>('[data-sheet-home]');
+    if (home) focusOn(home, true);
+  }
+
+  /**
+   * Close, a swipe down, a tap above, Escape or back: what was typed is kept,
+   * and focus goes back to what raised the sheet, quietly unless a key closed
+   * it.
+   */
+  function closeTaskSheet(way: CloseWay | 'back' = 'close'): void {
+    if (!tsheet) return;
+    flushSheetText();
+    const closing = tsheet;
+    tsheet = undefined;
+    tsheetField = undefined;
+    if (closing.kind === 'note' || closing.kind === 'rename') keyboard.release();
+    render();
+    const spot = document.getElementById(closing.opener);
+    if (spot && spot.closest('[inert]') === null) focusOn(spot, way !== 'escape');
+    else landFocus(way !== 'escape');
+  }
+
+  /** A note or a rename, written as typed: kept a moment after it stops. */
+  function sheetTextLater(): void {
+    if (tsheetTimer !== undefined) clearTimeout(tsheetTimer);
+    tsheetTimer = setTimeout(() => {
+      tsheetTimer = undefined;
+      flushSheetText();
+    }, DRAFT_AFTER);
+  }
+
+  function flushSheetText(): void {
+    if (tsheetTimer !== undefined) clearTimeout(tsheetTimer);
+    tsheetTimer = undefined;
+    const open = tsheet;
+    const field = tsheetField;
+    if (!open || !field) return;
+    if (open.kind === 'note') commit(act.setNote(read(), open.taskId, field.value).state);
+    else if (open.kind === 'rename') commit(act.rename(read(), open.taskId, field.value).state);
+  }
+
+  /** What the sheet is made of, for its key. The words typed in it are never part of it. */
+  function tsheetKey(state: BenchDomains, t: Date, open: TaskSheet): unknown[] {
+    const task = state.tasks.find((item) => item.id === open.taskId);
+    const base = [open.kind, open.serial, task === undefined];
+    if (!task) return base;
+    switch (open.kind) {
+      case 'when': {
+        const form = whenForm(task, t);
+        return [...base, form.choice, form.length, form.canLess];
+      }
+      case 'more':
+        return [...base, task.notes !== undefined && task.notes.trim() !== ''];
+      case 'delete':
+        return [...base, task.title];
+      default:
+        return base;
+    }
+  }
+
+  /** The when sheet's state, from the task as it is. */
+  function whenForm(task: BenchDomains['tasks'][number], t: Date) {
+    const today = loggingDay(t);
+    const tomorrow = addDays(today, 1);
+    const when = task.when;
+    const choice: WhenChoice =
+      when.kind === 'none'
+        ? 'none'
+        : when.kind === 'timed'
+          ? when.date === today
+            ? 'at'
+            : 'pick'
+          : when.date === today
+            ? 'today'
+            : when.date === tomorrow
+              ? 'tomorrow'
+              : 'pick';
+    const minutes = when.kind === 'timed' ? when.durationMinutes : task.estimateMinutes;
+    return {
+      today,
+      tomorrow,
+      choice,
+      minutes,
+      length: minutes !== undefined && minutes > 0 ? duration(minutes) : T.notSet,
+      canLess: when.kind === 'timed' ? when.durationMinutes > 5 : minutes !== undefined,
+    };
+  }
+
+  function taskSheetOf(
+    open: TaskSheet,
+    ride: { view: PresentView; live: PresentLive; look: 'lifted' | 'plain' } | undefined,
+  ): Built {
+    const task = read().tasks.find((item) => item.id === open.taskId);
+    if (!task) return { nodes: [] };
+    const id = task.id;
+    const onClose = (way: CloseWay) => closeTaskSheet(way);
+    const shell = { ride, onClose };
+    switch (open.kind) {
+      case 'when': {
+        const t = now();
+        const form = whenForm(task, t);
+        return whenSheet({
+          ...shell,
+          title: T.when,
+          choice: form.choice,
+          time: task.when.kind === 'timed' ? task.when.time : undefined,
+          date: task.when.kind === 'none' ? undefined : task.when.date,
+          today: form.today,
+          length: form.length,
+          canLess: form.canLess,
+          onChoose: (choice) => chooseWhen(id, choice),
+          onTime: (time) => {
+            const current = read().tasks.find((item) => item.id === id);
+            const length =
+              current?.when.kind === 'timed'
+                ? current.when.durationMinutes
+                : ((current && estimateOf(current)) ?? 15);
+            setWhen(id, { kind: 'timed', date: loggingDay(now()), time, durationMinutes: length });
+          },
+          onDate: (date) => setWhen(id, { kind: 'anytime', date }),
+          onLess: () => changeLength(id, -5),
+          onMore: () => changeLength(id, 5),
+          onDone: () => closeTaskSheet(),
+        });
+      }
+      case 'more':
+        return moreSheet({
+          ...shell,
+          title: task.title,
+          hasNote: task.notes !== undefined && task.notes.trim() !== '',
+          onNote: () => openTaskSheet('note', id, open.opener),
+          onRename: () => openTaskSheet('rename', id, open.opener),
+          onDelete: () => openTaskSheet('delete', id, open.opener),
+        });
+      case 'note':
+      case 'rename': {
+        const built = fieldSheet({
+          ...shell,
+          kind: open.kind,
+          title: open.kind === 'note' ? T.note : T.rename,
+          text: tsheetField?.value ?? (open.kind === 'note' ? (task.notes ?? '') : task.title),
+          onInput: sheetTextLater,
+        });
+        tsheetField = built.field;
+        return built;
+      }
+      case 'delete':
+        return deleteSheet({
+          ...shell,
+          title: say.deleteQuestion(task.title),
+          hasSteps: read().tasks.some((item) => item.parentId === id),
+          onDelete: () => deleteTask(id),
+        });
+    }
+  }
+
+  /** A row of the when sheet: the choice takes effect at once (SPEC 12). */
+  function chooseWhen(id: string, choice: WhenChoice): void {
+    const task = read().tasks.find((item) => item.id === id);
+    if (!task) return;
+    const t = now();
+    const form = whenForm(task, t);
+    switch (choice) {
+      case 'none':
+        return setWhen(id, { kind: 'none' });
+      case 'today':
+        return setWhen(id, { kind: 'anytime', date: form.today });
+      case 'tomorrow':
+        return setWhen(id, { kind: 'anytime', date: form.tomorrow });
+      case 'at': {
+        // Its own time if it had one today; otherwise the next half hour.
+        const time =
+          task.when.kind === 'timed' && task.when.date === form.today
+            ? task.when.time
+            : nextHalfHour(t);
+        const length =
+          task.when.kind === 'timed' ? task.when.durationMinutes : (estimateOf(task) ?? 15);
+        return setWhen(id, { kind: 'timed', date: form.today, time, durationMinutes: length });
+      }
+      case 'pick': {
+        // Its own day if that is after tomorrow; otherwise the day after.
+        const date =
+          task.when.kind !== 'none' && task.when.date > form.tomorrow
+            ? task.when.date
+            : addDays(form.today, 2);
+        return setWhen(id, { kind: 'anytime', date });
+      }
+    }
+  }
+
+  /**
+   * "Today at a time" with no time of its own: the next :00 or :30 at least
+   * five minutes ahead, never past 23:30. Undrawn: a proposal.
+   */
+  function nextHalfHour(t: Date): string {
+    const ahead = t.getHours() * 60 + t.getMinutes() + 5;
+    return fromMinutes(Math.min(Math.ceil(ahead / 30) * 30, 23 * 60 + 30));
+  }
+
+  function setWhen(id: string, when: When): void {
+    commit(act.setWhen(read(), id, when).state);
+  }
+
+  /** −5 or +5 under How long, and what it now reads, said. */
+  function changeLength(id: string, by: number): void {
+    const task = read().tasks.find((item) => item.id === id);
+    if (!task) return;
+    const minutes =
+      task.when.kind === 'timed' ? task.when.durationMinutes : (task.estimateMinutes ?? 0);
+    const next = Math.max(0, minutes + by);
+    commit(act.setLength(read(), id, next === 0 ? undefined : next).state);
+    const after = read().tasks.find((item) => item.id === id);
+    if (after) announce(`${T.howLong}: ${whenForm(after, now()).length}`);
+  }
+
+  /**
+   * Delete, confirmed: the task and its steps go, the sheet with them, and
+   * the page drops back to where it was pushed from (plan section 11).
+   */
+  function deleteTask(id: string): void {
+    together(() => {
+      tsheet = undefined;
+      tsheetField = undefined;
+      if (stepField === id) stepField = undefined;
+      commit(act.remove(read(), id).state);
+    });
+    if (focusLost()) landFocus(true);
+  }
+
+  /** The sheet fades out as a picture: its ids go, so nothing finds it, and it takes no taps. */
+  function startTSheetLeaving(): void {
+    const part = layer.tsheet;
+    const active = document.activeElement;
+    if (active instanceof HTMLElement && part.contains(active)) active.blur();
+    part.setAttribute('inert', '');
+    part.dataset['leaving'] = '';
+    keys.delete(part);
+    patches.delete(part);
+    for (const node of part.querySelectorAll('[id]')) node.removeAttribute('id');
+    if (tsheetLeaving !== undefined) clearTimeout(tsheetLeaving);
+    tsheetLeaving = setTimeout(() => {
+      tsheetLeaving = undefined;
+      if (tsheet || destroyed) return;
+      paint(part, '', () => ({ nodes: [] }));
+      delete part.dataset['leaving'];
+      part.hidden = true;
+    }, SHEET_FADE_MS);
+  }
+
+  function stopTSheetLeaving(): void {
+    if (tsheetLeaving !== undefined) clearTimeout(tsheetLeaving);
+    tsheetLeaving = undefined;
+    layer.tsheet.removeAttribute('inert');
+    delete layer.tsheet.dataset['leaving'];
+    layer.tsheet.hidden = false;
+  }
+
   // ---------------------------------------------------------------- history
 
   /**
@@ -1726,7 +2362,13 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
   let holding = false;
 
   function levels(): number {
-    return nav.stack.length + (focusOpen ? 1 : 0) + (isOpen() ? 1 : 0) + (sheet ? 1 : 0);
+    return (
+      nav.stack.length +
+      (focusOpen ? 1 : 0) +
+      (isOpen() ? 1 : 0) +
+      (sheet ? 1 : 0) +
+      (tsheet ? 1 : 0)
+    );
   }
 
   function syncHistory(): void {
@@ -1799,6 +2441,7 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
   /** The sheet closes, keeping its draft; otherwise Focus; then the open drawer; then the top page. */
   function closeTop(): void {
     if (sheet) closeCapture();
+    else if (tsheet) closeTaskSheet('back');
     else if (focusOpen) closeFocus();
     else if (isOpen()) foldDrawer(true);
     else if (nav.stack.length > 0) back();
@@ -1826,6 +2469,9 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
   function hide(): void {
     // What is in the field is kept, though the sheet stays open.
     if (sheet && sheetField) keepDraft(sheetField.value, sheet.to);
+    flushSheetText();
+    const field = layer.screen.querySelector<HTMLInputElement>('#p-stepfield');
+    if (field && stepField) keepFieldDraft(stepField, field.value);
     dropUndo();
     away = true;
     holdAwake(false);
@@ -1845,6 +2491,7 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
     const woken = wake(state, now());
     if (woken.restore === 'today') {
       dropSheet();
+      dropPageEdits();
       nav = { ...TODAY, list: nav.list };
       focusOpen = false;
       ticked.clear();
@@ -1906,6 +2553,9 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
       if (sheetLeaving !== undefined) clearTimeout(sheetLeaving);
       if (lowering !== undefined) clearTimeout(lowering);
       if (draftTimer !== undefined) clearTimeout(draftTimer);
+      if (stepTimer !== undefined) clearTimeout(stepTimer);
+      if (tsheetTimer !== undefined) clearTimeout(tsheetTimer);
+      if (tsheetLeaving !== undefined) clearTimeout(tsheetLeaving);
       keyboard.destroy();
       holdAwake(false);
       dropUndo();
@@ -1927,6 +2577,8 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
         'sheet',
         'ride',
         'lowering',
+        'tsheet',
+        'typing',
       ]) {
         delete container.dataset[name];
       }
