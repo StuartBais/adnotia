@@ -2629,6 +2629,7 @@ describe('6a and 6b · Tasks (SPEC 5.6)', () => {
     press(m.container, 'Mark done: Fix the bike light');
     expect(titled(stateOf(m), 'Fix the bike light').doneAt).toBeDefined();
     expect(rowTitles(m)).toEqual(INBOX);
+    expect(button(m.container, 'Fix the bike light, done')).toBeTruthy();
     expect(said(m)).toBe('Done: Fix the bike light');
     expect(drawnText(id(m, 'b-handle')!.querySelector('.h-l1')!)).toBe('Done');
     expect(drawnText(id(m, 'b-handle')!.querySelector('.h-l2')!)).toBe('Fix the bike light');
@@ -2753,8 +2754,13 @@ describe('6a and 6b · Tasks (SPEC 5.6)', () => {
     press(m.container, 'Mark done: Fix the bike light');
     pressTab(m.container, 'Done');
     expect(rowTitles(m)).toEqual(['Fix the bike light', 'Bins out']);
+    // Each row says it is done, in words, as SPEC 11's "Bins out, done".
+    const rowNames = () =>
+      [...m.container.querySelectorAll<HTMLElement>('.screen .rowbtn')].map(nameOf);
+    expect(rowNames()).toEqual(['Fix the bike light, done', 'Bins out, done']);
     press(m.container, 'Undo done: Fix the bike light');
     expect(titled(stateOf(m), 'Fix the bike light').doneAt).toBeUndefined();
+    expect(rowNames()).toEqual(['Fix the bike light', 'Bins out, done']);
     expect(rowTitles(m)).toEqual(['Fix the bike light', 'Bins out']);
     expect(button(m.container, 'Mark done: Fix the bike light')).toBeTruthy();
     press(m.container, 'Mark done: Fix the bike light');
@@ -3026,7 +3032,8 @@ describe('8 · The running task’s own page (SPEC 5.8)', () => {
     const m = await mount(TUE_1005);
     press(m.container, 'Tasks');
     pressTab(m.container, 'Done');
-    press(m.container, 'Bins out');
+    // A done row says so (SPEC 11).
+    press(m.container, 'Bins out, done');
     expect(drawnText(m.container.querySelector('.doneline')!)).toBe('Done');
     expect(id(m, 'p-when')).toBeNull();
     expect(id(m, 'p-addstep')).toBeNull();
@@ -3375,7 +3382,7 @@ describe('the sheets a task’s page raises (SPEC 9.9 and 12)', () => {
     press(m.container, 'Tasks');
     press(m.container, 'Mark done: Fix the bike light');
     expect(nameOf(id(m, 'b-undo')!)).toBe('Undo done: Fix the bike light');
-    press(m.container, 'Fix the bike light');
+    press(m.container, 'Fix the bike light, done');
     press(m.container, 'More');
     press(m.container, 'Delete');
     press(m.container, 'Delete');

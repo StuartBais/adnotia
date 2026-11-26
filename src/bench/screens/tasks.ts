@@ -196,9 +196,13 @@ function listNodes(view: TasksView, actions: TasksActions): Node[] {
   return nodes;
 }
 
-/** "Look into swimming lessons, 3 steps, 30 minutes". */
+/**
+ * "Look into swimming lessons, 3 steps, 30 minutes". A done row, in Done or
+ * ticked in place, says so last, as SPEC 11's "Bins out, done": its title
+ * turning muted is not the only sign.
+ */
 function rowLabel(row: TaskRow): string {
-  return [
+  const label = [
     row.title,
     row.time,
     row.steps,
@@ -207,6 +211,7 @@ function rowLabel(row: TaskRow): string {
   ]
     .filter(Boolean)
     .join(', ');
+  return row.done ? say.doneRow(label) : label;
 }
 
 /**

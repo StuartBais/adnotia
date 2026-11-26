@@ -327,7 +327,7 @@ describe('never', () => {
     press(m.container, 'Back to Tasks');
     press(m.container, 'Mark done: Write the school email');
     pressTab(m.container, 'Done');
-    press(m.container, EMAIL);
+    press(m.container, `${EMAIL}, done`);
     expect(m.container.querySelector('.doneline')).not.toBeNull();
     holdsNothing(m, 'a done task’s page');
   });
