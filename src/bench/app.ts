@@ -275,11 +275,16 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
   /**
    * The control that had focus went with the rebuild (Start, Set aside, Done
    * on the last step): focus lands on what took its place, the screen's own
-   * block, rather than falling to the page.
+   * block, rather than falling to the page. A place has no block of its own,
+   * so there it lands on the handle, whose Next line says what happened and
+   * holds its Undo.
    */
   function landFocus(): void {
-    const homes = container.querySelectorAll<HTMLElement>('[data-focus-home]');
-    [...homes].find((home) => !home.closest('[inert]'))?.focus({ preventScroll: true });
+    const homes = [
+      ...container.querySelectorAll<HTMLElement>('[data-focus-home]'),
+      ...layer.drawer.querySelectorAll<HTMLElement>('#b-handle'),
+    ];
+    homes.find((node) => !node.closest('[inert]'))?.focus({ preventScroll: true });
   }
 
   function scrollOf(root: ParentNode): Record<string, number> {
@@ -491,8 +496,11 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
     patchAll(live);
     layout(position);
     // Focus has closed and what had focus went with it: back where it was
-    // opened, on the capsule if it is there, otherwise the screen's own block.
-    if (wasFocus && !showFocus && focusIn(layer.focus, layer.focusFoot)) {
+    // opened, on the capsule if it is there, otherwise the screen's own block
+    // (or, on a place after Done or Set aside, the handle). Judged here, once
+    // every layer's inert is settled: Done on the dock line loses its focus
+    // while the drawer is still inert under Focus.
+    if (wasFocus && !showFocus && (focusIn(layer.focus, layer.focusFoot) || focusLost())) {
       const capsuleButton = layer.dock.querySelector<HTMLElement>('#b-capsule');
       if (capsuleButton) capsuleButton.focus({ preventScroll: true });
       else landFocus();

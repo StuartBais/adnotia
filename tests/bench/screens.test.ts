@@ -1705,6 +1705,28 @@ describe('4 · Focus (SPEC 5.4)', () => {
     expect(m.container.dataset['drawer']).toBe('folded');
   });
 
+  it.each([
+    ['the step, as a tap in Safari leaves it', false],
+    ['Done itself, as VoiceOver leaves it', true],
+  ])('Done over a place folds Focus back and lands on the handle, from %s', async (_, onDone) => {
+    const m = await mount(TUE_1005);
+    press(m.container, 'Tasks');
+    press(m.container, CAPSULE);
+    settle(m);
+    press(m.container, 'Step done: Write the question');
+    if (onDone) id(m, 'b-stepdone')!.focus();
+    else expect(document.activeElement).toBe(id(m, 'f-step'));
+    press(m.container, 'Done: Read it once and send');
+    expect(m.container.dataset['focus']).toBeUndefined();
+    expect(screenTitle(m)).toBe('Tasks');
+    // No capsule now, and a place has no block of its own.
+    expect(id(m, 'b-capsule')).toBeNull();
+    const handle = id(m, 'b-handle')!;
+    expect(document.activeElement).toBe(handle);
+    expect(handle.querySelector('.h-l1')?.textContent).toBe('Step done');
+    expect(button(m.container, 'Undo step done: Read it once and send')).toBeTruthy();
+  });
+
   it('"⌄ Today" folds it back into the lantern; the clock keeps running', async () => {
     const m = await focused();
     press(m.container, 'Back to Today');
