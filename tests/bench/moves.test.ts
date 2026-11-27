@@ -728,6 +728,38 @@ describe('Pause and Resume on Today', () => {
   });
 });
 
+describe('the capsule is not drawn beside what sets off from it', () => {
+  it('goes within the first frame as it grows into Focus or the lantern', async () => {
+    const m = await mount(TUE_1005);
+    settle(m);
+    press(m.container, 'Routines');
+    await drawn();
+    over(m);
+    let cuts = 0;
+    for (const go of [
+      () => press(m.container, /^Now: Write the question/),
+      () => press(m.container, 'Back to Routines'),
+      () => press(m.container, 'Today'),
+    ]) {
+      const before = played.length;
+      go();
+      await drawn();
+      const mine = since(before);
+      const capsules = [...m.container.querySelectorAll('.morph > .capsule')];
+      const going = capsules
+        .map((el) => mine.find((p) => p.el === el && p.frames.some((f) => 'opacity' in f)))
+        .filter((p): p is Played => p !== undefined && opacityAt(p, 0) === 1);
+      // Where it sets off from the capsule, the capsule's own picture is
+      // gone before the first frame after the tap is drawn.
+      for (const fade of going) expect(opacityAt(fade, 16)).toBe(0);
+      cuts += going.length;
+      over(m);
+    }
+    // Into Focus, and into the lantern on Today.
+    expect(cuts).toBe(2);
+  });
+});
+
 describe('Focus is drawn inside its frame', () => {
   /** The board's boxes for the capsule, Focus and Focus's foot, at 390 × 844. */
   function boxes(): void {

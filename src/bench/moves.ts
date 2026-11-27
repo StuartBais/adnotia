@@ -139,11 +139,18 @@ const LANTERN_MS = 350;
 const FOCUS_MS = 400;
 /**
  * The capsule itself is swapped in or out where the moving layer is already
- * on it: going, over the first 40 ms, before the layer has moved off it;
- * arriving, over the spring's last 150 ms, by which time the layer is within
- * about 1% of the way, so nothing is drawn twice side by side.
+ * on it: going, within the first frame, before the layer has moved off it
+ * (the spring is 3% of the way by 16 ms, so a 40 ms fade showed the capsule
+ * beside the travelling step); arriving, over the spring's last 150 ms, by
+ * which time the layer is within about 1% of the way, so nothing is drawn
+ * twice side by side.
  */
-const CUT_MS = 40;
+const CUT_MS = 8;
+/**
+ * Capture rising over Focus: what Focus alone has is gone in this long (ms),
+ * before the step, the bar and the minutes come up through it.
+ */
+const AWAY_MS = 40;
 const LAND_MS = 150;
 /** Focus's context line, controls and foot fade in over the last 120 ms (SPEC 10). */
 const FOCUS_LAST = 120;
@@ -1851,7 +1858,7 @@ export function createMoves(host: MovesHost): Moves {
     }
     if (next.sheet === 'today') raise(snap.lantern, fresh(LANTERN, layers.screen), tracks, temp, 1);
     if (next.sheet === 'focus')
-      raise(snap.focus, fresh(FOCUS, layers.focus), tracks, temp, 1, CUT_MS);
+      raise(snap.focus, fresh(FOCUS, layers.focus), tracks, temp, 1, AWAY_MS);
     return {
       channel: 'sheet',
       tracks,
@@ -1890,7 +1897,7 @@ export function createMoves(host: MovesHost): Moves {
     if (prev.sheet === 'today')
       raise(fresh(LANTERN, layers.screen), snap.lantern, tracks, temp, -1);
     if (prev.sheet === 'focus')
-      raise(fresh(FOCUS, layers.focus), snap.focus, tracks, temp, -1, CUT_MS);
+      raise(fresh(FOCUS, layers.focus), snap.focus, tracks, temp, -1, AWAY_MS);
     if (tracks.length === 0) return undefined;
     return {
       channel: 'sheet',
@@ -1911,7 +1918,7 @@ export function createMoves(host: MovesHost): Moves {
    * far end fades out over `gone` ms: from Focus, the done step, "After
    * this", +5 min and the note have nowhere to go, and the step, the bar and
    * the minutes come up through them within about two frames, so they are
-   * gone before that (CUT_MS) rather than drawn under what passes.
+   * gone before that (AWAY_MS) rather than drawn under what passes.
    */
   function raise<K extends string>(
     rest: Parts<K>,
