@@ -56,7 +56,7 @@ export const CHANGED = {
   title: 'This prototype was changed in another tab',
   body:
     'This tab has stopped saving, so that it does not write over that change. ' +
-    'Anything done here since then is not kept.',
+    'What was done in this tab since it last saved is not kept.',
   again: 'Open the newer copy',
 } as const;
 
