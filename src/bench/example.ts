@@ -267,12 +267,25 @@ export interface Scenario {
  *   (screen 7c at 13:20).
  * - clockLeftRunning: built 2 h ago with the email still running and the app
  *   in the background since 1 h 50 ago, so the clock closes on load (7c, used up).
+ *   Early in the morning both are built later, inside today (see `inToday`).
  * - weeksAway: built three weeks ago, so the day boundary sends everything back
  *   to the inbox (screen 7b at 9:12 on Monday 14 December).
  * - empty: nothing at all (7b).
  */
 export function buildScenario(id: ScenarioId, now: Date): Scenario {
   const ago = (minutes: number) => new Date(now.getTime() - minutes * MINUTE);
+  /**
+   * `minutes` ago, unless that falls before today's logging day began: then
+   * 10 minutes into today, where today has gone on long enough for the scene
+   * to happen in it (`needs` minutes after that). Before about 7:15, 3 h 15
+   * ago is yesterday, and the day boundary would send the whole day to the
+   * inbox, so the button would show 7b rather than 7c.
+   */
+  const inToday = (minutes: number, needs: number) => {
+    const into = loggingDayStart(loggingDay(now)).getTime() + 10 * MINUTE;
+    const back = ago(minutes);
+    return now.getTime() - into >= needs * MINUTE && back.getTime() < into ? new Date(into) : back;
+  };
   switch (id) {
     case 'example': {
       const built = exampleDay(now);
@@ -293,19 +306,21 @@ export function buildScenario(id: ScenarioId, now: Date): Scenario {
       };
     }
     case 'pauseLeft': {
-      const then = ago(195);
+      const then = inToday(195, 1);
       const built = exampleDay(then);
       const tasks = model.stopWork(built.tasks, built.email, then);
       return { tasks, routines: built.routines, day: loggingDay(then), away: undefined };
     }
     case 'clockLeftRunning': {
-      const then = ago(120);
+      // Started 7 minutes before `then`, its 25 used up 18 after, and closed
+      // once 15 more have passed in the background, which began 10 after.
+      const then = inToday(120, 35);
       const built = exampleDay(then);
       return {
         tasks: built.tasks,
         routines: built.routines,
         day: loggingDay(then),
-        away: { since: ago(110).toISOString() },
+        away: { since: new Date(then.getTime() + 10 * MINUTE).toISOString() },
       };
     }
     case 'weeksAway': {

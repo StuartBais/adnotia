@@ -345,6 +345,18 @@ describe('7c · Paused (SPEC 5.7c)', () => {
     );
   });
 
+  it('builds both early in the morning inside today, not on a day the boundary has sent to the inbox', async () => {
+    for (const scenario of ['pauseLeft', 'clockLeftRunning'] as const) {
+      const m = await mount('2026-11-24T05:00:00', scenario);
+      const text = visibleText(m.container);
+      expect(text, scenario).toContain('Paused');
+      expect(text, scenario).not.toContain('Nothing planned for today');
+      if (scenario === 'clockLeftRunning') expect(text).toContain('estimate 25');
+      else expect(text).toContain('18 min left');
+      unmount();
+    }
+  });
+
   it('says "Timer stopped" there instead, when the owner’s setting says so', async () => {
     const m = await mount(TUE_1005, 'clockLeftRunning', (state) => ({
       ...state,
