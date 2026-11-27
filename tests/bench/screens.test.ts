@@ -999,7 +999,10 @@ describe('Me, and Settings under it (SPEC 12; plan sections 4 and 11)', () => {
         'A session the app closed reads',
         'The word on Today after the app closes a clock left running.',
       ],
-      ['Motion', 'Reduced moves the bar once a minute, whatever the phone is set to.'],
+      [
+        'Motion',
+        'Reduced fades where things would move, and steps the bar once a minute, whatever the phone is set to.',
+      ],
     ]);
     // Once only: not again as a line of its own before the switch.
     const read = readingOrder(m.container);

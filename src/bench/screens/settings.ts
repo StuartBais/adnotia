@@ -32,7 +32,8 @@ export const SETTINGS = {
   closedLabel: 'A session the app closed reads',
   closedLabelHelp: 'The word on Today after the app closes a clock left running.',
   motion: 'Motion',
-  motionHelp: 'Reduced moves the bar once a minute, whatever the phone is set to.',
+  motionHelp:
+    'Reduced fades where things would move, and steps the bar once a minute, whatever the phone is set to.',
   asPhone: 'As the phone',
   reduced: 'Reduced',
 } as const;
