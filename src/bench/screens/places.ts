@@ -101,9 +101,10 @@ export function crisisScreen(actions: PlaceActions): Built {
           h('p', { class: 't-meta', text: CRISIS_STRINGS.cannotHelp }),
           h('h2', { class: 't-label', text: CRISIS_STRINGS.linesTitle }),
           h('p', { class: 't-meta', text: CRISIS_STRINGS.linesSub }),
+          // The dial links are one list, so they count as one choice (SPEC 3).
           h(
             'ul',
-            { class: 'lines' },
+            { class: 'lines', 'data-list': true },
             ...CRISIS_LINES.map((line) =>
               h(
                 'li',

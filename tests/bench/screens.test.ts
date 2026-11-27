@@ -1587,6 +1587,8 @@ describe('the frame (SPEC 3)', () => {
     expect(text).toContain('If you are in immediate danger, call your local emergency number.');
     expect(text).toContain('Samaritans');
     expect(m.container.querySelector('a[href^="tel:"]')).not.toBeNull();
+    // Its dial links count once, as a list does (SPEC 3): they and capture.
+    expect(choices(m.container)).toBe(2);
     press(m.container, 'Back to Me');
     expect(m.container.querySelector('h1')?.textContent).toBe('Me');
   });

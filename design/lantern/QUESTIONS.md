@@ -160,7 +160,7 @@ This is every question the prototype at `/bench/` leaves for you, in one place a
 
 **26. Counting the five choices on the prototype's own pages.**
 
-- **Now:** by SPEC 3's counting, Settings offers six choices while something runs (its four switches, the capsule and capture) and five when nothing does. About offers four. The crisis page offers two by SPEC's counting, though the test that counts choices sees six, because its five dial links are not marked as one list.
+- **Now:** by SPEC 3's counting, Settings offers six choices while something runs (its four switches, the capsule and capture) and five when nothing does. About offers four, and the crisis page two: capture, and its dial links counted as one list.
 - **See it:** "Load the example day", then Me › Settings.
 - **Question:** are Settings and About exempt, as the prototype's control pages? If not, one way to bring Settings to five is to leave the capsule off pages under Me, as on the crisis page.
 
