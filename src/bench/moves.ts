@@ -119,6 +119,14 @@ export const CAPTURE_RESPONSE = 0.28;
 const CAPTURE: Curve = springCurve(CAPTURE_RESPONSE);
 /** How long the capture sheet takes to drop (ms): the drop's end takes the leaving sheet away. */
 export const DROP_MS = CAPTURE.duration;
+/**
+ * Where on capture's way (progress) a step that wraps at one end and not at
+ * the other changes over between its two-line and one-line drawings, going
+ * towards one line; coming back, the same stretch from the other end. About
+ * two frames of dissolve while it moves fast, and early enough that the bar
+ * coming up under a second line never reaches it.
+ */
+export const REWRAP: readonly [number, number] = [0.2, 0.4];
 /** "Fade in the first 100 ms", and out in the last (SPEC 10). */
 const FIRST = 100;
 /**
@@ -228,12 +236,20 @@ function fontOf(el: Element): { font: number; line: number } {
   return { font, line };
 }
 
-/** Whether the element is drawn at all: in the page, and not display: none. */
+/**
+ * Whether the element is drawn at all: in the page, and neither it nor
+ * anything it sits in is display: none. A part inside a hidden parent keeps
+ * its own display, and has no box: Focus's done disc, raised over capture,
+ * would otherwise travel from the corner of the screen.
+ */
 function drawn(el: Element | null): el is HTMLElement {
   if (!(el instanceof HTMLElement) || !el.isConnected) return false;
   if (el.closest('[hidden]')) return false;
-  const style = el.ownerDocument.defaultView?.getComputedStyle(el);
-  return style?.display !== 'none';
+  const view = el.ownerDocument.defaultView;
+  for (let node: Element | null = el; node; node = node.parentElement) {
+    if (view?.getComputedStyle(node).display === 'none') return false;
+  }
+  return true;
 }
 
 /** A colour with nothing in it. */
@@ -1778,7 +1794,8 @@ export function createMoves(host: MovesHost): Moves {
       hold.push(...hidden(capsuleEl), ...hidden(ride.closest<HTMLElement>('.c-ride')));
     }
     if (next.sheet === 'today') raise(snap.lantern, fresh(LANTERN, layers.screen), tracks, temp, 1);
-    if (next.sheet === 'focus') raise(snap.focus, fresh(FOCUS, layers.focus), tracks, temp, 1);
+    if (next.sheet === 'focus')
+      raise(snap.focus, fresh(FOCUS, layers.focus), tracks, temp, 1, CUT_MS);
     return {
       channel: 'sheet',
       tracks,
@@ -1816,7 +1833,8 @@ export function createMoves(host: MovesHost): Moves {
     }
     if (prev.sheet === 'today')
       raise(fresh(LANTERN, layers.screen), snap.lantern, tracks, temp, -1);
-    if (prev.sheet === 'focus') raise(fresh(FOCUS, layers.focus), snap.focus, tracks, temp, -1);
+    if (prev.sheet === 'focus')
+      raise(fresh(FOCUS, layers.focus), snap.focus, tracks, temp, -1, CUT_MS);
     if (tracks.length === 0) return undefined;
     return {
       channel: 'sheet',
@@ -1833,7 +1851,11 @@ export function createMoves(host: MovesHost): Moves {
    * What stays lit above the sheet, moved from where it rested (`rest`) to
    * where it is raised (`up`), or back: the real parts carried by their
    * transforms, a part that only one end has fading in or out where it is,
-   * and the title on Today travelling into the Now line.
+   * and the title on Today travelling into the Now line. A part gone at the
+   * far end fades out over `gone` ms: from Focus, the done step, "After
+   * this", +5 min and the note have nowhere to go, and the step, the bar and
+   * the minutes come up through them within about two frames, so they are
+   * gone before that (CUT_MS) rather than drawn under what passes.
    */
   function raise<K extends string>(
     rest: Parts<K>,
@@ -1841,15 +1863,87 @@ export function createMoves(host: MovesHost): Moves {
     tracks: Track[],
     temp: Element[],
     dir: 1 | -1,
+    gone = FIRST,
   ): void {
     const D = CAPTURE.duration;
     const now = dir === 1 ? up : rest;
     const was = dir === 1 ? rest : up;
+    const by = (key: string) => [(was as Parts<string>)[key], (now as Parts<string>)[key]] as const;
+    // The minutes: where the words after them sit beside them at one end and
+    // under them at the other (Focus's, raised onto one line), those words
+    // go with the minutes and are faded across, rather than travelling
+    // across the minutes on their own diagonal.
+    const [minsA, minsB] = by('mins');
+    const [restA, restB] = by('rest');
+    const under = (m: Part, r: Part) => r.box.y >= m.box.y + m.line / 2;
+    const restTurns =
+      minsA && minsB && restA && restB && under(minsA, restA) !== under(minsB, restB);
+    const withMins: Xf =
+      minsA && minsB
+        ? { x: minsB.box.x - minsA.box.x, y: minsB.box.y - minsA.box.y, sx: 1, sy: 1 }
+        : NONE;
     for (const key of Object.keys({ ...rest, ...up }) as K[]) {
       if (key === ('whole' as K) || key === ('body' as K) || key === ('frow' as K)) continue;
       const a = was[key];
       const b = now[key];
-      if (a && b) {
+      if (a && b && wraps(a) !== wraps(b)) {
+        // A step that wraps at one end and not at the other (Focus's 44 pt
+        // step on two lines, raised at 40 on one) never travels scaled: at
+        // 44 on one line it runs past the margin, and two lines scaled into
+        // one line's place lie across the bar. Each end's own drawing is
+        // carried, unscaled, by its first line, and they change over in a
+        // short dissolve on the way (REWRAP): the two lines only near their
+        // own end, where the bar is still clear of the second.
+        const one = wraps(a) ? b : a;
+        const two = wraps(a) ? a : b;
+        const onTwo: Xf = {
+          x: two.box.x - one.box.x,
+          y: two.box.y + two.line / 2 - (one.box.y + one.line / 2),
+          sx: 1,
+          sy: 1,
+        };
+        const off: Xf = { x: -onTwo.x, y: -onTwo.y, sx: 1, sy: 1 };
+        const [from, to] = two === a ? REWRAP : [1 - REWRAP[1], 1 - REWRAP[0]];
+        const [w0, w1] = [momentAt(CAPTURE, from), momentAt(CAPTURE, to)];
+        const pic = placed(a);
+        temp.push(pic);
+        tracks.push({
+          el: pic,
+          move: [NONE, two === a ? off : onTwo],
+          fade: [
+            [w0, 1],
+            [w1, 0],
+          ],
+        });
+        tracks.push({
+          el: b.el,
+          move: [two === a ? onTwo : off, NONE],
+          fade: [
+            [w0, 0],
+            [w1, 1],
+          ],
+        });
+      } else if (a && b && key === ('rest' as K) && restTurns) {
+        const pic = placed(a);
+        temp.push(pic);
+        const back: Xf = { x: -withMins.x, y: -withMins.y, sx: 1, sy: 1 };
+        tracks.push({
+          el: pic,
+          move: [NONE, withMins],
+          fade: [
+            [0, 1],
+            [FIRST, 0],
+          ],
+        });
+        tracks.push({
+          el: b.el,
+          move: [back, NONE],
+          fade: [
+            [D - FIRST - 50, 0],
+            [D, 1],
+          ],
+        });
+      } else if (a && b) {
         const s = b.font / a.font;
         const back =
           Math.abs(s - 1) > 0.01
@@ -1866,7 +1960,7 @@ export function createMoves(host: MovesHost): Moves {
           ...(title ? { move: [NONE, lineMap(a, title)] as const } : {}),
           fade: [
             [0, 1],
-            [FIRST, 0],
+            [gone, 0],
           ],
         });
       } else if (b) {

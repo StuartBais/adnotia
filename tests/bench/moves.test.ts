@@ -9,8 +9,8 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { FOCUS_FADE_MS, MORPH_MS, TAP_GUARD } from '../../src/bench/app';
-import { END_PAD, springAt, springDuration } from '../../src/bench/motion';
-import { DROP_MS } from '../../src/bench/moves';
+import { END_PAD, springAt, springCurve, springDuration } from '../../src/bench/motion';
+import { CAPTURE_RESPONSE, DROP_MS, REWRAP } from '../../src/bench/moves';
 import type { BenchDomains } from '../../src/bench/state';
 import {
   BOARD_STOPS,
@@ -547,6 +547,132 @@ describe('a step that wraps in Focus travels as one line', () => {
       nothingLeft(m);
     });
   }
+});
+
+describe('capture over Focus keeps the step to one line and the margin', () => {
+  /**
+   * Focus's step on two lines at rest, and on one raised above the sheet.
+   * jsdom has no stylesheet: the step, a heading, has its default line of 28.8.
+   */
+  function focusLines(): void {
+    layOut();
+    const laid = vi.mocked(Element.prototype.getBoundingClientRect);
+    const board = laid.getMockImplementation()!;
+    const box = (x: number, y: number, w: number, h: number) =>
+      ({ x, y, left: x, top: y, width: w, height: h, right: x + w, bottom: y + h }) as DOMRect;
+    laid.mockImplementation(function (this: Element) {
+      if (this.classList.contains('fstep') && this.closest('.focus')) {
+        const raised = this.closest<HTMLElement>('.app')?.dataset['sheet'] === 'focus';
+        return raised ? box(24, 144, 338, 29) : box(24, 140, 342, 58);
+      }
+      return board.call(this);
+    });
+  }
+  const realStep = (m: Mounted) => m.container.querySelector('.focus .fstep')!;
+  const capture = springCurve(CAPTURE_RESPONSE);
+  /** The first ms at which capture's spring is `p` of the way. */
+  const msAt = (p: number) => {
+    let ms = 0;
+    while (capture.at(ms) < p) ms++;
+    return ms;
+  };
+  const scaleOf = (frame: Keyframe) =>
+    /scale\(([\d.]+), ([\d.]+)\)/.exec(String(frame['transform']))?.slice(1).map(Number);
+
+  it('carries each end’s drawing unscaled, and the two lines only near their own end, either way', async () => {
+    focusLines();
+    const m = await mount(TUE_1005);
+    settle(m);
+    press(m.container, /^Now: Write the question/);
+    await drawn();
+    over(m);
+    for (const way of ['open', 'close'] as const) {
+      const before = played.length;
+      if (way === 'open') press(m.container, 'Capture');
+      else press(m.container, 'Close');
+      await drawn();
+      const mine = since(before);
+      const step = realStep(m);
+      const picture = m.container.querySelector('.morph > .fstep')!;
+      for (const el of [step, picture]) {
+        const moved = mine.filter((p) => p.el === el && p.frames.some((f) => 'transform' in f));
+        expect(moved, way).toHaveLength(1);
+        // Never scaled: at 44 on one line it would run past the margin.
+        for (const frame of moved[0]!.frames) expect(scaleOf(frame), way).toEqual([1, 1]);
+      }
+      const shown = (el: Element, ms: number) => {
+        const fade = mine.find((p) => p.el === el && p.frames.some((f) => 'opacity' in f));
+        return fade ? opacityAt(fade, ms) > 0.01 : true;
+      };
+      // Opening, the picture is Focus's two lines and the real step the raised
+      // one line; closing, the other way about.
+      const [twoLines, oneLine] = way === 'open' ? [picture, step] : [step, picture];
+      expect(shown(twoLines, way === 'open' ? 0 : DROP_MS)).toBe(true);
+      expect(shown(oneLine, way === 'open' ? DROP_MS : 0)).toBe(true);
+      // The two lines only near Focus, before the bar coming up under the
+      // second line could reach it.
+      const near = way === 'open' ? [msAt(REWRAP[1]), DROP_MS] : [0, msAt(1 - REWRAP[1])];
+      for (let ms = near[0]!; ms <= near[1]!; ms += 4) {
+        expect(shown(twoLines, ms), `${way} at ${ms} ms`).toBe(false);
+      }
+      // Drawn together for a dissolve of about three frames, not for the way.
+      let both = 0;
+      for (let ms = 0; ms <= DROP_MS; ms++) if (shown(step, ms) && shown(picture, ms)) both++;
+      expect(both, way).toBeLessThanOrEqual(50);
+      over(m);
+      nothingLeft(m);
+    }
+  });
+
+  it('leaves what is put away under the sheet where it is, gone before anything passes it', async () => {
+    // As bench.css has it: raised, the done step, After this, the note and
+    // +5 min are put away. jsdom has no stylesheet of its own.
+    const rule = document.createElement('style');
+    rule.textContent = [
+      ".app[data-sheet='focus'] .fbody > .fdone { display: none; }",
+      ".app[data-sheet='focus'] .fbody > .fafter { display: none; }",
+      ".app[data-sheet='focus'] .fbody > .note { display: none; }",
+      ".app[data-sheet='focus'] .frow > .pill { display: none; }",
+    ].join('\n');
+    document.head.append(rule);
+    try {
+      focusLines();
+      const m = await mount(TUE_1005);
+      settle(m);
+      press(m.container, /^Now: Write the question/);
+      await drawn();
+      over(m);
+      expect(m.container.querySelector('.focus .fdisc')).not.toBeNull();
+      for (const way of ['Capture', 'Close'] as const) {
+        const before = played.length;
+        press(m.container, way);
+        await drawn();
+        const mine = since(before);
+        // The done step's disc, inside the line put away, has no place up there.
+        const travelled = mine.filter(
+          (p) => p.el.matches('.fdone, .fdone *') && p.frames.some((f) => 'transform' in f),
+        );
+        expect(travelled, way).toEqual([]);
+        if (way === 'Capture') {
+          // Each fades where it stood, gone before the step, the bar and the
+          // minutes come up through it.
+          const pictures = [
+            ...m.container.querySelectorAll('.morph > :is(.fdone, .fafter, .note, .pill)'),
+          ];
+          expect(pictures).toHaveLength(4);
+          for (const pic of pictures) {
+            const fade = mine.find((p) => p.el === pic && p.frames.some((f) => 'opacity' in f));
+            expect(fade, pic.className).toBeDefined();
+            expect(opacityAt(fade!, 40), pic.className).toBeLessThanOrEqual(0.01);
+          }
+        }
+        over(m);
+        nothingLeft(m);
+      }
+    } finally {
+      rule.remove();
+    }
+  });
 });
 
 describe('Pause and Resume on Today', () => {
