@@ -742,6 +742,38 @@ describe('Pause and Resume on Today', () => {
   });
 });
 
+describe('the drawer carries what it held only as far as it is seen to travel', () => {
+  it('folding, hands over before it lands; opening, leaves the foot’s words to the foot', async () => {
+    let mounted: Mounted | undefined;
+    layDrawer(() => mounted);
+    const m = await mount(TUE_1005);
+    mounted = m;
+    settle(m);
+    let before = played.length;
+    press(m.container, HANDLE);
+    await drawn();
+    // Going up, the old picture's "Rest of today ⌃" is not drawn: the foot
+    // cross-fades its own to Hide in the same place.
+    let old = m.container.querySelector<HTMLElement>('.drawer > .mdrawer')!;
+    expect(old.querySelector('.h-more')).not.toBeNull();
+    for (const words of old.querySelectorAll<HTMLElement>('.h-more')) {
+      expect(words.style.opacity).toBe('0');
+    }
+    over(m);
+    before = played.length;
+    press(m.container, 'Hide the rest of today');
+    await drawn();
+    old = m.container.querySelector<HTMLElement>('.drawer > .mdrawer')!;
+    const fade = since(before).find((p) => p.el === old && p.frames.some((f) => 'opacity' in f))!;
+    // Gone by the time the spring is seen to have landed, about 350 ms, not
+    // held until its numeric end.
+    expect(opacityAt(fade, 240)).toBe(1);
+    expect(opacityAt(fade, 350)).toBe(0);
+    over(m);
+    nothingLeft(m);
+  });
+});
+
 describe('the capsule is not drawn beside what sets off from it', () => {
   it('goes within the first frame as it grows into Focus or the lantern', async () => {
     const m = await mount(TUE_1005);

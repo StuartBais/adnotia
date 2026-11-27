@@ -762,12 +762,24 @@ export function createMoves(host: MovesHost): Moves {
       restoreScrolls(old, snap.drawer.scrolls, true);
       temp.push(old);
       const down = to > from;
+      // Going up, "Rest of today ⌃" at the old foot is carried by the foot's
+      // own cross-fade to Hide: the picture rising with the drawer leaves it
+      // out rather than draw it twice. By opacity, as every part of a
+      // picture carries its own visibility.
+      if (!down) {
+        for (const words of old.querySelectorAll<HTMLElement>('.h-more')) {
+          words.style.setProperty('opacity', '0');
+        }
+      }
       tracks.push({
         el: old,
+        // Going down, what it held hands over to what it holds over the last
+        // 100 ms of the time the spring is felt to take, as it all but lands,
+        // not of its numeric end, by when it has sat still for 150 ms.
         fade: down
           ? [
-              [SPRING.duration - FIRST, 1],
-              [SPRING.duration, 0],
+              [LANTERN_MS - FIRST, 1],
+              [LANTERN_MS, 0],
             ]
           : [
               [0, 1],
