@@ -212,6 +212,41 @@ describe('the animated path is gated on data-motion=full', () => {
     expect(m.container.querySelector('.morph')?.childElementCount).toBe(0);
   });
 
+  it('follows the phone’s own Reduce Motion while Settings says “As the phone”', async () => {
+    const had = Object.getOwnPropertyDescriptor(window, 'matchMedia');
+    try {
+      for (const reduce of [true, false]) {
+        Object.defineProperty(window, 'matchMedia', {
+          configurable: true,
+          value: (query: string) => ({
+            matches: reduce && query === '(prefers-reduced-motion: reduce)',
+            media: query,
+            onchange: null,
+            addEventListener() {},
+            removeEventListener() {},
+            addListener() {},
+            removeListener() {},
+            dispatchEvent: () => false,
+          }),
+        });
+        const m = await mount(TUE_0958, 'notStarted');
+        expect(stateOf(m).bench.settings.motion).not.toBe('reduced');
+        expect(m.container.dataset['motion']).toBe(reduce ? 'reduced' : 'full');
+        expect(m.container.hasAttribute('data-anim')).toBe(!reduce);
+        settle(m);
+        const before = played.length;
+        press(m.container, 'Start');
+        await drawn();
+        expect(since(before).length > 0, `reduce ${reduce}`).toBe(!reduce);
+        over(m);
+        unmount();
+      }
+    } finally {
+      if (had) Object.defineProperty(window, 'matchMedia', had);
+      else delete (window as { matchMedia?: unknown }).matchMedia;
+    }
+  });
+
   it('with motion on, the app says so, and a tap plays its way', async () => {
     let mounted: Mounted | undefined;
     layDrawer(() => mounted);
