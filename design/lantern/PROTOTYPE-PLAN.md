@@ -1567,6 +1567,7 @@ Each of these bears on the choice between Capacitor, React Native and native.
 - **The keyboard** is followed after the fact through `visualViewport`, not animated with it.
 - **The status-bar style** is fixed at launch in home-screen mode.
 - **Tapping the status bar** does not scroll an inner list to the top.
+- **The screen cannot be held upright.** A web page on an iPhone, in Safari or from the home screen, cannot lock its orientation, so the screen turns when the phone does.
 - **A drag that starts on the capsule** does not scroll the list underneath, because the dock is fixed (section 4).
 - **Accessibility custom actions** do not exist on the web.
 - **The fairer test is the home-screen copy.** A WKWebView wrapper (Capacitor) behaves like it, not like a Safari tab.
