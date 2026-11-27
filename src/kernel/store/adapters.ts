@@ -12,11 +12,21 @@ export class StorageChangedError extends Error {
   }
 }
 
+/**
+ * Refuses a write when what is stored is not what this tab last read or wrote
+ * (ADR-016). Where the browser has Web Locks, the check and the write run
+ * inside one, so they are atomic between tabs. `lock: false` leaves the lock
+ * out: a lock's callback is a task, so a write started as the page goes away
+ * may never run, while without it a plain codec checks and writes within the
+ * same task. The prototype at /bench/ takes that trade; the app does not.
+ */
 export function guardedStorageAdapter(
   adapter: StorageAdapter,
   documentKey: string,
   initial: string | null,
+  options: { lock?: boolean } = {},
 ): StorageAdapter {
+  const { lock = true } = options;
   let expected = initial;
   async function change(key: string, value: string | null): Promise<void> {
     const write = async () => {
@@ -26,7 +36,7 @@ export function guardedStorageAdapter(
       else await adapter.write(key, value);
       if (key === documentKey) expected = value;
     };
-    const locks = globalThis.navigator?.locks;
+    const locks = lock ? globalThis.navigator?.locks : undefined;
     if (locks) await locks.request(`${documentKey}:write`, write);
     else await write();
   }
