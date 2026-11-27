@@ -7,8 +7,10 @@
 // are built (docs/09-product-brief.md, order of work, items 2 and 3). It is
 // not the app: nothing links to it, and it keeps its data under its own
 // storage key, `adnotia-bench`, so it cannot touch the first build's. Every
-// screen of the board is built, from Today to the Library, except running a
-// routine (owner default 10). What it leaves for the owner is in
+// screen of the board's app is built, from Today to the Library, except
+// running a routine (owner default 10). The Lock Screen and the Dynamic
+// Island, which the board also draws, are beyond a web page, and About lists
+// them under "Left out". What it leaves for the owner is in
 // design/lantern/QUESTIONS.md.
 //
 // How it is put together:
@@ -49,7 +51,10 @@
 // Where the rules live: state.ts holds every rule as a pure function of the
 // state and a moment (what is present, the minutes, the Next line, the
 // capsule, the drawer's places, a forgotten clock, the 04:00 boundary,
-// waking). actions.ts holds every change a person makes, each with its Undo.
+// waking). actions.ts holds every change a person makes to tasks and the
+// day, with an Undo where SPEC 9.8 gives one: Start, Resume, Step done, Done,
+// a tick, Set aside and Save. The rest have none, Pause, +5 min, Delete and
+// what a task's sheets set among them.
 // strings.ts holds every word, format.ts how times are written, drawer.ts the
 // drawer under a finger, keyboard.ts the keyboard, and example.ts the
 // scenario buttons. The design is design/lantern/SPEC.md, the build brief is
