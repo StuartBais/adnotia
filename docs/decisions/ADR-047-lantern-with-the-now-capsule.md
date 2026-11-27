@@ -135,8 +135,8 @@ confirmed it. What changed is that it can now be held.
   What it leaves for the owner is in `design/lantern/QUESTIONS.md`.
 - **The font is vendored as a trial**, as the decision above said it would be.
   - File: `src/bench/fonts/InstrumentSans-latin.woff2`, Instrument Sans
-    version 4, the `latin` subset as one variable file with a width axis (75
-    to 100) and a weight axis (400 to 700).
+    version 4 as served by Google Fonts, the `latin` subset as one variable
+    file with a width axis (75 to 100) and a weight axis (400 to 700).
   - Source: Google Fonts' own file for that subset, downloaded on
     25 November 2026; the URL and the steps are in
     `src/bench/fonts/README.md`.
