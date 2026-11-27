@@ -2138,7 +2138,8 @@ svg.i28 {
 .app[data-places='white'][data-ground='place'] .screen :is(.prose .lead, .prose a, .prose .line b) {
   color: var(--charcoal);
 }
-.scenarios {
+.scenarios,
+.scenarios > ul {
   display: grid;
   gap: 8px;
   justify-items: start;

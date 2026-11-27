@@ -1114,6 +1114,9 @@ describe('Me, and Settings under it (SPEC 12; plan sections 4 and 11)', () => {
     ]) {
       expect(text).toContain(words);
     }
+    // The scenario buttons are one list (SPEC 3, "a list counts once"):
+    // the list, Delete everything, the capsule and capture.
+    expect(choices(m.container)).toBe(4);
     // What this round leaves out, as the plan does: larger text and offline use.
     expect(ABOUT.leftOut).toMatch(/larger text/);
     expect(ABOUT.leftOut).toMatch(/needs a connection to open/);

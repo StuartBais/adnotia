@@ -198,13 +198,22 @@ export function aboutScreen(actions: PlaceActions): Built {
           h(
             'div',
             { class: 'scenarios' },
-            ...SCENARIOS.map((scenario) =>
-              h('button', {
-                class: 'pill ash p44',
-                type: 'button',
-                text: scenario.label,
-                onclick: () => actions.onScenario(scenario.id),
-              }),
+            // One list of like buttons, which SPEC 3 counts as one choice.
+            h(
+              'ul',
+              { 'data-list': true },
+              ...SCENARIOS.map((scenario) =>
+                h(
+                  'li',
+                  {},
+                  h('button', {
+                    class: 'pill ash p44',
+                    type: 'button',
+                    text: scenario.label,
+                    onclick: () => actions.onScenario(scenario.id),
+                  }),
+                ),
+              ),
             ),
             h('button', {
               class: 'textbtn',
