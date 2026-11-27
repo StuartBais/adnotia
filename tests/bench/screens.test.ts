@@ -1822,6 +1822,8 @@ describe('4 · Focus (SPEC 5.4)', () => {
     expect(layer.querySelector('.bar')?.getAttribute('aria-valuetext')).toBe(
       '27 minutes so far, estimate 25',
     );
+    // Nothing is left to name: the meter is the time, as its words are.
+    expect(nameOf(layer.querySelector('.bar')!)).toBe('Time');
     expect(visibleText(m.container)).not.toMatch(/\b0 min left/);
   });
 
@@ -1851,7 +1853,9 @@ describe('4 · Focus (SPEC 5.4)', () => {
     press(m.container, /^Now: Write the question\. Step 2 of 3/);
     expect(layerOf(m).querySelector('.fmins strong')?.textContent).toBe('7 min so far');
     expect(layerOf(m).querySelector('.bar')?.className).toBe('bar bar-focus is-countUp');
+    expect(nameOf(layerOf(m).querySelector('.bar')!)).toBe('Time');
     press(m.container, 'Add 5 minutes');
+    expect(nameOf(layerOf(m).querySelector('.bar')!)).toBe('Time left');
     expect(emailOf(stateOf(m)).estimateMinutes).toBe(12);
     expect(layerOf(m).querySelector('.fmins strong')?.textContent).toBe('5 min left');
   });
