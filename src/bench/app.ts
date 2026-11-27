@@ -28,6 +28,18 @@
 // bench.css. With motion on, in a browser that plays Web Animations, the app
 // carries [data-anim] and moves.ts draws the way between one page and the
 // next after each render: the page itself is never held up for it.
+//
+// mountBench is one closure, in sections, each marked by a rule:
+//   boot, layers         the store, the ticker, and the layers it draws into
+//   render               one pass from the state to every layer, and focus
+//   the parts            what each layer is built from
+//   Focus                opening, closing and leaving it
+//   the screen stays awake, measuring, actions, the tap guard
+//   undo                 the six seconds on the Next line and Focus's foot
+//   the drawer, the drawer in the hand   by a tap, and under a finger
+//   capture, a field on a page, a page's sheets
+//   history              one entry per level, and back closing the top one
+//   the page, go         hidden and shown, and moving between places
 
 import { emptyDomains, type KernelStore } from '../kernel/store';
 import * as act from './actions';
@@ -859,11 +871,12 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
     const parts = { today, lists, taskPage };
     const built = keys.get(layer.screen);
     paint(layer.screen, screenKey(view, parts), () => screen(view, parts, live));
-    // Reduce Motion, and for now every setting (SPEC 10; plan section 14,
-    // phase A): a tab switch or a page pushed or popped fades the new screen
-    // in over the canvas, and Today lighting on Start comes up as a 150 ms
-    // colour change. Nothing travels. Only what this paint built fades: a
-    // rebuild on the same page, or a choice in the Tasks switcher, does not.
+    // A tab switch fades the new screen in over the canvas on either path;
+    // under Reduce Motion (SPEC 10; plan section 14, phase A) so does a page
+    // pushed or popped, and Today lighting on Start comes up as a 150 ms
+    // colour change. With motion on, moves.ts slides the page and grows the
+    // sentence instead. Only what this paint built fades: a rebuild on the
+    // same page, or a choice in the Tasks switcher, does not.
     const place = JSON.stringify([nav.tab, nav.stack]);
     if (keys.get(layer.screen) !== built && lastPlace !== '') {
       if (place !== lastPlace) {
@@ -952,7 +965,7 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
           : 'none';
     // The lantern and Focus fold into the capsule, and grow out of it, as a
     // 200 ms cross-fade, the capsule fading in already in its slot (SPEC 10,
-    // Reduce Motion; the only path until the animated one is built).
+    // Reduce Motion). With motion on, moves.ts grows and folds them instead.
     const morph =
       lastSlot !== undefined && lastSlot !== slot && (slot === 'capsule' || lastSlot === 'capsule');
     guardArrival(props, view, open, showFocus);
@@ -1046,9 +1059,9 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
       const rideKey = ride
         ? [presentKey(ride.view), ride.look, capsuleShape(ride.view, ride.live)]
         : null;
-      const open = tsheet;
-      paint(layer.tsheet, JSON.stringify(['tsheet', tsheetKey(state, t, open), rideKey]), () =>
-        taskSheetOf(open, ride),
+      const sheetNow = tsheet;
+      paint(layer.tsheet, JSON.stringify(['tsheet', tsheetKey(state, t, sheetNow), rideKey]), () =>
+        taskSheetOf(sheetNow, ride),
       );
       // It fades in once, as it opens (SPEC 10, Reduce Motion), not each
       // time a choice in it rebuilds it.

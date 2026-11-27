@@ -1322,6 +1322,241 @@ export function createMoves(host: MovesHost): Moves {
     };
   }
 
+  // ---------------------------------------------------------------- 4. capture
+
+  /**
+   * The disc grows into the sheet (SPEC 10): a frame from the disc's circle
+   * to the sheet's box, terracotta turning to stone, the sheet's own content
+   * coming up as it arrives. From Today the lantern slides up into the top
+   * third with it, the title moving up into the Now line; from Focus its
+   * step and bar go up the same way; over a place the capsule rides up to
+   * the sheet's edge.
+   */
+  function captureOpen(next: Scene, snap: Snapshot): Plan | undefined {
+    const panel = q('.sheet-layer[data-capture]:not([data-leaving]) .c-panel');
+    if (!panel || !snap.disc) return undefined;
+    const D = CAPTURE.duration;
+    const tracks: Track[] = [];
+    const temp: Element[] = [];
+    const hold: { el: HTMLElement; style: Record<string, string> }[] = [];
+    const to: FrameAt = { box: boxOf(panel, container), r: 24 };
+    const from: FrameAt = { box: snap.disc.box, r: snap.disc.box.h / 2 };
+    // Stone underneath, the disc's terracotta over it giving way.
+    for (const [colour, fade] of [
+      [
+        TERRA,
+        [
+          [0, 1],
+          [FIRST + 20, 0],
+        ],
+      ],
+      [STONE, [[0, 1]]],
+    ] as const) {
+      const frame = frameNode(colour);
+      layers.sheet.prepend(frame);
+      temp.push(frame);
+      tracks.push(...frameTracks(frame, from, to), { el: frame, fade });
+    }
+    tracks.push({
+      el: panel,
+      fade: [
+        [FIRST + 20, 0],
+        [D * 0.65, 1],
+      ],
+    });
+    // Over a place the capsule rides up from its slot to the sheet's edge:
+    // its picture travels, and the one riding the sheet, which comes up with
+    // the sheet's content, is kept out of sight until the picture is on it.
+    const ride = q('.sheet-layer[data-capture]:not([data-leaving]) .c-ride .capsule');
+    const capsuleEl = q('.dock .capsule');
+    if (ride && snap.capsule.whole && drawn(ride)) {
+      const pic = placed(snap.capsule.whole, layers.sheet);
+      temp.push(pic);
+      tracks.push({ el: pic, move: [NONE, mapTo(snap.capsule.whole.box, boxOf(ride, container))] });
+      hold.push(...hidden(capsuleEl), ...hidden(ride.closest<HTMLElement>('.c-ride')));
+    }
+    if (next.sheet === 'today') raise(snap.lantern, fresh(LANTERN, layers.screen), tracks, temp, 1);
+    if (next.sheet === 'focus')
+      raise(snap.focus, fresh(FOCUS, layers.focus), tracks, temp, 1, AWAY_MS);
+    return {
+      channel: 'sheet',
+      tracks,
+      temp,
+      hold,
+      duration: D,
+      easing: CAPTURE.easing,
+      progress: CAPTURE.at,
+    };
+  }
+
+  /**
+   * The sheet drops (SPEC 10): it slides down off the screen on capture's
+   * spring, the capsule riding its edge goes back down to its slot, and what
+   * was raised above it comes back down to where it rests.
+   */
+  function captureClose(prev: Scene, snap: Snapshot): Plan | undefined {
+    const leaving = q('.sheet-layer[data-capture][data-leaving] .c-panel');
+    const D = CAPTURE.duration;
+    const tracks: Track[] = [];
+    const temp: Element[] = [];
+    const hold: { el: HTMLElement; style: Record<string, string> }[] = [];
+    if (leaving && snap.panel) {
+      const drop = height() - snap.panel.y + 24;
+      tracks.push({ el: leaving, move: [NONE, { x: 0, y: drop, sx: 1, sy: 1 }] });
+      const above = q('.sheet-layer[data-capture][data-leaving] .c-ride');
+      const capsuleEl = q('.dock .capsule');
+      if (above && snap.ride && capsuleEl && drawn(capsuleEl)) {
+        hold.push({ el: above, style: { visibility: 'hidden' } });
+        const pic = placed(snap.ride, layers.sheet);
+        temp.push(pic);
+        tracks.push({ el: pic, move: [NONE, mapTo(snap.ride.box, boxOf(capsuleEl, container))] });
+        hold.push(...hidden(capsuleEl));
+      }
+    }
+    if (prev.sheet === 'today')
+      raise(fresh(LANTERN, layers.screen), snap.lantern, tracks, temp, -1);
+    if (prev.sheet === 'focus')
+      raise(fresh(FOCUS, layers.focus), snap.focus, tracks, temp, -1, AWAY_MS);
+    if (tracks.length === 0) return undefined;
+    return {
+      channel: 'sheet',
+      tracks,
+      temp,
+      hold,
+      duration: D,
+      easing: CAPTURE.easing,
+      progress: CAPTURE.at,
+    };
+  }
+
+  /**
+   * What stays lit above the sheet, moved from where it rested (`rest`) to
+   * where it is raised (`up`), or back: the real parts carried by their
+   * transforms, a part that only one end has fading in or out where it is,
+   * and the title on Today travelling into the Now line. A part gone at the
+   * far end fades out over `gone` ms: from Focus, the done step, "After
+   * this", +5 min and the note have nowhere to go, and the step, the bar and
+   * the minutes come up through them within about two frames, so they are
+   * gone before that (AWAY_MS) rather than drawn under what passes.
+   */
+  function raise<K extends string>(
+    rest: Parts<K>,
+    up: Parts<K>,
+    tracks: Track[],
+    temp: Element[],
+    dir: 1 | -1,
+    gone = FIRST,
+  ): void {
+    const D = CAPTURE.duration;
+    const now = dir === 1 ? up : rest;
+    const was = dir === 1 ? rest : up;
+    const by = (key: string) => [(was as Parts<string>)[key], (now as Parts<string>)[key]] as const;
+    // The minutes: where the words after them sit beside them at one end and
+    // under them at the other (Focus's, raised onto one line), those words
+    // go with the minutes and are faded across, rather than travelling
+    // across the minutes on their own diagonal.
+    const [minsA, minsB] = by('mins');
+    const [restA, restB] = by('rest');
+    const under = (m: Part, r: Part) => r.box.y >= m.box.y + m.line / 2;
+    const restTurns =
+      minsA && minsB && restA && restB && under(minsA, restA) !== under(minsB, restB);
+    const withMins: Xf =
+      minsA && minsB
+        ? { x: minsB.box.x - minsA.box.x, y: minsB.box.y - minsA.box.y, sx: 1, sy: 1 }
+        : NONE;
+    for (const key of Object.keys({ ...rest, ...up }) as K[]) {
+      if (key === ('whole' as K) || key === ('body' as K) || key === ('frow' as K)) continue;
+      const a = was[key];
+      const b = now[key];
+      if (a && b && wraps(a) !== wraps(b)) {
+        // A step that wraps at one end and not at the other (Focus's 44 pt
+        // step on two lines, raised at 40 on one) never travels scaled: at
+        // 44 on one line it runs past the margin, and two lines scaled into
+        // one line's place lie across the bar. Each end's own drawing is
+        // carried, unscaled, by its first line, and they change over in a
+        // short dissolve on the way (REWRAP): the two lines only near their
+        // own end, where the bar is still clear of the second.
+        const one = wraps(a) ? b : a;
+        const two = wraps(a) ? a : b;
+        const onTwo: Xf = {
+          x: two.box.x - one.box.x,
+          y: two.box.y + two.line / 2 - (one.box.y + one.line / 2),
+          sx: 1,
+          sy: 1,
+        };
+        const off: Xf = { x: -onTwo.x, y: -onTwo.y, sx: 1, sy: 1 };
+        const [from, to] = two === a ? REWRAP : [1 - REWRAP[1], 1 - REWRAP[0]];
+        const [w0, w1] = [momentAt(CAPTURE, from), momentAt(CAPTURE, to)];
+        const pic = placed(a);
+        temp.push(pic);
+        tracks.push({
+          el: pic,
+          move: [NONE, two === a ? off : onTwo],
+          fade: [
+            [w0, 1],
+            [w1, 0],
+          ],
+        });
+        tracks.push({
+          el: b.el,
+          move: [two === a ? onTwo : off, NONE],
+          fade: [
+            [w0, 0],
+            [w1, 1],
+          ],
+        });
+      } else if (a && b && key === ('rest' as K) && restTurns) {
+        const pic = placed(a);
+        temp.push(pic);
+        const back: Xf = { x: -withMins.x, y: -withMins.y, sx: 1, sy: 1 };
+        tracks.push({
+          el: pic,
+          move: [NONE, withMins],
+          fade: [
+            [0, 1],
+            [FIRST, 0],
+          ],
+        });
+        tracks.push({
+          el: b.el,
+          move: [back, NONE],
+          fade: [
+            [D - FIRST - 50, 0],
+            [D, 1],
+          ],
+        });
+      } else if (a && b) {
+        const s = b.font / a.font;
+        const back =
+          Math.abs(s - 1) > 0.01
+            ? mapTo(b.box, a.box, { s: a.font / b.font, line: b.line, lineOver: a.line })
+            : { x: a.box.x - b.box.x, y: a.box.y - b.box.y, sx: 1, sy: 1 };
+        tracks.push({ el: b.el, move: [back, NONE] });
+      } else if (a) {
+        // Gone at this end: a picture fades where it stood. Today's title moves up into the Now line.
+        const pic = placed(a);
+        temp.push(pic);
+        const title = key === ('ttl' as K) ? (now as Parts<string>)['nowtitle'] : undefined;
+        tracks.push({
+          el: pic,
+          ...(title ? { move: [NONE, lineMap(a, title)] as const } : {}),
+          fade: [
+            [0, 1],
+            [gone, 0],
+          ],
+        });
+      } else if (b) {
+        tracks.push({
+          el: b.el,
+          fade: [
+            [D - FIRST - 50, 0],
+            [D, 1],
+          ],
+        });
+      }
+    }
+  }
+
   // ---------------------------------------------------------------- 5. Start
 
   /**
@@ -1801,241 +2036,6 @@ export function createMoves(host: MovesHost): Moves {
       duration: ms,
       easing: 'linear',
     };
-  }
-
-  // ---------------------------------------------------------------- 4. capture
-
-  /**
-   * The disc grows into the sheet (SPEC 10): a frame from the disc's circle
-   * to the sheet's box, terracotta turning to stone, the sheet's own content
-   * coming up as it arrives. From Today the lantern slides up into the top
-   * third with it, the title moving up into the Now line; from Focus its
-   * step and bar go up the same way; over a place the capsule rides up to
-   * the sheet's edge.
-   */
-  function captureOpen(next: Scene, snap: Snapshot): Plan | undefined {
-    const panel = q('.sheet-layer[data-capture]:not([data-leaving]) .c-panel');
-    if (!panel || !snap.disc) return undefined;
-    const D = CAPTURE.duration;
-    const tracks: Track[] = [];
-    const temp: Element[] = [];
-    const hold: { el: HTMLElement; style: Record<string, string> }[] = [];
-    const to: FrameAt = { box: boxOf(panel, container), r: 24 };
-    const from: FrameAt = { box: snap.disc.box, r: snap.disc.box.h / 2 };
-    // Stone underneath, the disc's terracotta over it giving way.
-    for (const [colour, fade] of [
-      [
-        TERRA,
-        [
-          [0, 1],
-          [FIRST + 20, 0],
-        ],
-      ],
-      [STONE, [[0, 1]]],
-    ] as const) {
-      const frame = frameNode(colour);
-      layers.sheet.prepend(frame);
-      temp.push(frame);
-      tracks.push(...frameTracks(frame, from, to), { el: frame, fade });
-    }
-    tracks.push({
-      el: panel,
-      fade: [
-        [FIRST + 20, 0],
-        [D * 0.65, 1],
-      ],
-    });
-    // Over a place the capsule rides up from its slot to the sheet's edge:
-    // its picture travels, and the one riding the sheet, which comes up with
-    // the sheet's content, is kept out of sight until the picture is on it.
-    const ride = q('.sheet-layer[data-capture]:not([data-leaving]) .c-ride .capsule');
-    const capsuleEl = q('.dock .capsule');
-    if (ride && snap.capsule.whole && drawn(ride)) {
-      const pic = placed(snap.capsule.whole, layers.sheet);
-      temp.push(pic);
-      tracks.push({ el: pic, move: [NONE, mapTo(snap.capsule.whole.box, boxOf(ride, container))] });
-      hold.push(...hidden(capsuleEl), ...hidden(ride.closest<HTMLElement>('.c-ride')));
-    }
-    if (next.sheet === 'today') raise(snap.lantern, fresh(LANTERN, layers.screen), tracks, temp, 1);
-    if (next.sheet === 'focus')
-      raise(snap.focus, fresh(FOCUS, layers.focus), tracks, temp, 1, AWAY_MS);
-    return {
-      channel: 'sheet',
-      tracks,
-      temp,
-      hold,
-      duration: D,
-      easing: CAPTURE.easing,
-      progress: CAPTURE.at,
-    };
-  }
-
-  /**
-   * The sheet drops (SPEC 10): it slides down off the screen on capture's
-   * spring, the capsule riding its edge goes back down to its slot, and what
-   * was raised above it comes back down to where it rests.
-   */
-  function captureClose(prev: Scene, snap: Snapshot): Plan | undefined {
-    const leaving = q('.sheet-layer[data-capture][data-leaving] .c-panel');
-    const D = CAPTURE.duration;
-    const tracks: Track[] = [];
-    const temp: Element[] = [];
-    const hold: { el: HTMLElement; style: Record<string, string> }[] = [];
-    if (leaving && snap.panel) {
-      const drop = height() - snap.panel.y + 24;
-      tracks.push({ el: leaving, move: [NONE, { x: 0, y: drop, sx: 1, sy: 1 }] });
-      const above = q('.sheet-layer[data-capture][data-leaving] .c-ride');
-      const capsuleEl = q('.dock .capsule');
-      if (above && snap.ride && capsuleEl && drawn(capsuleEl)) {
-        hold.push({ el: above, style: { visibility: 'hidden' } });
-        const pic = placed(snap.ride, layers.sheet);
-        temp.push(pic);
-        tracks.push({ el: pic, move: [NONE, mapTo(snap.ride.box, boxOf(capsuleEl, container))] });
-        hold.push(...hidden(capsuleEl));
-      }
-    }
-    if (prev.sheet === 'today')
-      raise(fresh(LANTERN, layers.screen), snap.lantern, tracks, temp, -1);
-    if (prev.sheet === 'focus')
-      raise(fresh(FOCUS, layers.focus), snap.focus, tracks, temp, -1, AWAY_MS);
-    if (tracks.length === 0) return undefined;
-    return {
-      channel: 'sheet',
-      tracks,
-      temp,
-      hold,
-      duration: D,
-      easing: CAPTURE.easing,
-      progress: CAPTURE.at,
-    };
-  }
-
-  /**
-   * What stays lit above the sheet, moved from where it rested (`rest`) to
-   * where it is raised (`up`), or back: the real parts carried by their
-   * transforms, a part that only one end has fading in or out where it is,
-   * and the title on Today travelling into the Now line. A part gone at the
-   * far end fades out over `gone` ms: from Focus, the done step, "After
-   * this", +5 min and the note have nowhere to go, and the step, the bar and
-   * the minutes come up through them within about two frames, so they are
-   * gone before that (AWAY_MS) rather than drawn under what passes.
-   */
-  function raise<K extends string>(
-    rest: Parts<K>,
-    up: Parts<K>,
-    tracks: Track[],
-    temp: Element[],
-    dir: 1 | -1,
-    gone = FIRST,
-  ): void {
-    const D = CAPTURE.duration;
-    const now = dir === 1 ? up : rest;
-    const was = dir === 1 ? rest : up;
-    const by = (key: string) => [(was as Parts<string>)[key], (now as Parts<string>)[key]] as const;
-    // The minutes: where the words after them sit beside them at one end and
-    // under them at the other (Focus's, raised onto one line), those words
-    // go with the minutes and are faded across, rather than travelling
-    // across the minutes on their own diagonal.
-    const [minsA, minsB] = by('mins');
-    const [restA, restB] = by('rest');
-    const under = (m: Part, r: Part) => r.box.y >= m.box.y + m.line / 2;
-    const restTurns =
-      minsA && minsB && restA && restB && under(minsA, restA) !== under(minsB, restB);
-    const withMins: Xf =
-      minsA && minsB
-        ? { x: minsB.box.x - minsA.box.x, y: minsB.box.y - minsA.box.y, sx: 1, sy: 1 }
-        : NONE;
-    for (const key of Object.keys({ ...rest, ...up }) as K[]) {
-      if (key === ('whole' as K) || key === ('body' as K) || key === ('frow' as K)) continue;
-      const a = was[key];
-      const b = now[key];
-      if (a && b && wraps(a) !== wraps(b)) {
-        // A step that wraps at one end and not at the other (Focus's 44 pt
-        // step on two lines, raised at 40 on one) never travels scaled: at
-        // 44 on one line it runs past the margin, and two lines scaled into
-        // one line's place lie across the bar. Each end's own drawing is
-        // carried, unscaled, by its first line, and they change over in a
-        // short dissolve on the way (REWRAP): the two lines only near their
-        // own end, where the bar is still clear of the second.
-        const one = wraps(a) ? b : a;
-        const two = wraps(a) ? a : b;
-        const onTwo: Xf = {
-          x: two.box.x - one.box.x,
-          y: two.box.y + two.line / 2 - (one.box.y + one.line / 2),
-          sx: 1,
-          sy: 1,
-        };
-        const off: Xf = { x: -onTwo.x, y: -onTwo.y, sx: 1, sy: 1 };
-        const [from, to] = two === a ? REWRAP : [1 - REWRAP[1], 1 - REWRAP[0]];
-        const [w0, w1] = [momentAt(CAPTURE, from), momentAt(CAPTURE, to)];
-        const pic = placed(a);
-        temp.push(pic);
-        tracks.push({
-          el: pic,
-          move: [NONE, two === a ? off : onTwo],
-          fade: [
-            [w0, 1],
-            [w1, 0],
-          ],
-        });
-        tracks.push({
-          el: b.el,
-          move: [two === a ? onTwo : off, NONE],
-          fade: [
-            [w0, 0],
-            [w1, 1],
-          ],
-        });
-      } else if (a && b && key === ('rest' as K) && restTurns) {
-        const pic = placed(a);
-        temp.push(pic);
-        const back: Xf = { x: -withMins.x, y: -withMins.y, sx: 1, sy: 1 };
-        tracks.push({
-          el: pic,
-          move: [NONE, withMins],
-          fade: [
-            [0, 1],
-            [FIRST, 0],
-          ],
-        });
-        tracks.push({
-          el: b.el,
-          move: [back, NONE],
-          fade: [
-            [D - FIRST - 50, 0],
-            [D, 1],
-          ],
-        });
-      } else if (a && b) {
-        const s = b.font / a.font;
-        const back =
-          Math.abs(s - 1) > 0.01
-            ? mapTo(b.box, a.box, { s: a.font / b.font, line: b.line, lineOver: a.line })
-            : { x: a.box.x - b.box.x, y: a.box.y - b.box.y, sx: 1, sy: 1 };
-        tracks.push({ el: b.el, move: [back, NONE] });
-      } else if (a) {
-        // Gone at this end: a picture fades where it stood. Today's title moves up into the Now line.
-        const pic = placed(a);
-        temp.push(pic);
-        const title = key === ('ttl' as K) ? (now as Parts<string>)['nowtitle'] : undefined;
-        tracks.push({
-          el: pic,
-          ...(title ? { move: [NONE, lineMap(a, title)] as const } : {}),
-          fade: [
-            [0, 1],
-            [gone, 0],
-          ],
-        });
-      } else if (b) {
-        tracks.push({
-          el: b.el,
-          fade: [
-            [D - FIRST - 50, 0],
-            [D, 1],
-          ],
-        });
-      }
-    }
   }
 
   // ---------------------------------------------------------------- 8. pages slide
