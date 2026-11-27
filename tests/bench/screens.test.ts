@@ -3544,6 +3544,34 @@ describe('the sheets a task’s page raises (SPEC 9.9 and 12)', () => {
     expect(drawnText(id(m, 'p-when')!)).toBe('Today, 10:30 · 10 min · in 25 min');
   });
 
+  it('a time or a day cleared in the picker reads what is booked again, and changes nothing', async () => {
+    const m = await opened();
+    press(m.container, /^When: /);
+    const time = id(m, 'w-time') as HTMLInputElement;
+    time.value = '';
+    time.dispatchEvent(new Event('change', { bubbles: true }));
+    expect(time.value).toBe('10:30');
+    expect(dentist(m).when).toMatchObject({ kind: 'timed', date: '2026-11-24', time: '10:30' });
+    expect(radios(m)[2]).toEqual(['Today at a time', 'true']);
+    press(m.container, 'Pick a day');
+    const day = id(m, 'w-date') as HTMLInputElement;
+    day.value = '2026-12-02';
+    day.dispatchEvent(new Event('change', { bubbles: true }));
+    const booked = id(m, 'w-date') as HTMLInputElement;
+    expect(booked.value).toBe('2026-12-02');
+    booked.value = '';
+    booked.dispatchEvent(new Event('change', { bubbles: true }));
+    expect(booked.value).toBe('2026-12-02');
+    expect(dentist(m).when).toEqual({ kind: 'anytime', date: '2026-12-02' });
+    // A day field still being picked has nothing booked, and stays empty.
+    press(m.container, 'Today, anytime');
+    press(m.container, 'Pick a day');
+    const fresh = id(m, 'w-date') as HTMLInputElement;
+    fresh.dispatchEvent(new Event('change', { bubbles: true }));
+    expect(fresh.value).toBe('');
+    expect(dentist(m).when).toEqual({ kind: 'anytime', date: '2026-11-24' });
+  });
+
   it('the arrow keys move the check and focus together, round the rows', async () => {
     const m = await mount(TUE_1005);
     press(m.container, 'Tasks');

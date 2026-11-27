@@ -206,7 +206,7 @@ These need the iPhone. Each says what to look for, and what it means if it goes 
 
 **36. The capsule's width.** "Load the example day", then open Tasks so the capsule shows. Its second line must show "Write the school email" with no "…". Then pause it: "Paused" must sit inside its space, clear of the words beside it.
 
-**37. The when sheet's time and day fields.** Tasks › a task › When › Today at a time. The field should look like the white fields elsewhere. Tap it, and use Reset or Clear if the picker offers one: does the field go blank while the time stays booked? Then the same for Pick a day. Also note whether the picker shows a 12-hour clock ("10:30 AM"): it follows the phone's own setting, while the rest of the prototype uses 24 hours. Should the sheet draw its own 24-hour picker instead?
+**37. The when sheet's time and day fields.** Tasks › a task › When › Today at a time. The field should look like the white fields elsewhere. Tap it, and use Reset or Clear if the picker offers one: the field should come back to the booked time rather than go blank, since the time stays booked. Then the same for Pick a day, once a day is set. Also note whether the picker shows a 12-hour clock ("10:30 AM"): it follows the phone's own setting, while the rest of the prototype uses 24 hours. Should the sheet draw its own 24-hour picker instead?
 
 **38. Japanese or Chinese input.** Add the Japanese (Romaji) keyboard. In capture, type "nihon", choose a conversion, and press return to confirm it. The item must not be saved until a second return. Try "Add a step" the same way.
 

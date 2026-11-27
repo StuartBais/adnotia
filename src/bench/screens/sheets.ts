@@ -173,7 +173,9 @@ export function whenSheet(props: WhenProps): Built {
   });
 
   // The time or the day the chosen row asks for, as the phone's own pickers:
-  // native inputs, which the keyboard does not take.
+  // native inputs, which the keyboard does not take. Cleared in the picker,
+  // a field takes back what is booked, so it never reads blank while the
+  // pill and the chosen row still say a time or a day.
   const reveal =
     props.choice === 'at'
       ? h('input', {
@@ -183,8 +185,9 @@ export function whenSheet(props: WhenProps): Built {
           'aria-label': SAY.time,
           value: props.time ?? '',
           onchange: (event: Event) => {
-            const value = (event.target as HTMLInputElement).value;
-            if (value) props.onTime(value);
+            const input = event.target as HTMLInputElement;
+            if (input.value) props.onTime(input.value);
+            else input.value = props.time ?? '';
           },
         })
       : props.choice === 'pick'
@@ -196,8 +199,9 @@ export function whenSheet(props: WhenProps): Built {
             min: props.today,
             value: props.date ?? '',
             onchange: (event: Event) => {
-              const value = (event.target as HTMLInputElement).value;
-              if (value) props.onDate(value);
+              const input = event.target as HTMLInputElement;
+              if (input.value) props.onDate(input.value);
+              else input.value = props.date ?? '';
             },
           })
         : null;
