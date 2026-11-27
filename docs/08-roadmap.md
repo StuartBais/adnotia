@@ -24,13 +24,15 @@ record. Where things stand now, refreshed 27 November 2026:
   proposed: the owner chose the direction and has not yet confirmed the board.
 - The benchmark prototype is rebuilt in that design (brief, order of work item
   3), from `design/lantern/PROTOTYPE-PLAN.md`. The code is in `src/bench/`, its
-  tests in `tests/bench/`, and it is served at `/bench/` on the site: Today,
-  the rest of today, Focus, capture, Tasks, a task's own page and its sheets,
-  Routines, the Library and Me, on the real task model, with a Reduce Motion
-  path and an animated one. Running a routine is left out of this round. It
-  bundles Instrument Sans as a trial, recorded in a dated note on ADR-047. It
-  is still plain web code with no framework, so trying it commits to nothing,
-  and it keeps its data under its own storage key and is linked from nowhere.
+  tests in `tests/bench/`, and it will be served at `/bench/` on the site once
+  the branch named under Next is merged into `main`, which does not hold it
+  yet. It holds Today, the rest of today, Focus, capture, Tasks, a task's own
+  page and its sheets, Routines, the Library and Me, on the real task model,
+  with a Reduce Motion path and an animated one. Running a routine is left out
+  of this round. It bundles Instrument Sans as a trial, recorded in a dated
+  note on ADR-047. It is still plain web code with no framework, so trying it
+  commits to nothing, and it keeps its data under its own storage key and is
+  linked from nowhere.
 - Waiting on the owner: trying it, and the questions it leaves, gathered in
   `design/lantern/QUESTIONS.md`. They are grouped as behaviour, words, the
   look, checks only the phone can make, and the defaults the build took so it
