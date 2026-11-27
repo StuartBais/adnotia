@@ -959,7 +959,26 @@ describe('Me, and Settings under it (SPEC 12; plan sections 4 and 11)', () => {
     expect(
       inOrder(names, ['Me', 'If things are bad right now', 'Settings', 'About this prototype']),
     ).toEqual(['Me', 'If things are bad right now', 'Settings', 'About this prototype']);
+    // Those three and no others.
+    expect(
+      [...m.container.querySelectorAll('.screen .menu li')].map((row) =>
+        nameOf(row.querySelector('button')!),
+      ),
+    ).toEqual(['If things are bad right now', 'Settings', 'About this prototype']);
     expect(visibleText(m.container)).not.toMatch(/Medication|Family/);
+  });
+
+  it('offers five choices while something runs, and four with nothing (SPEC 3)', async () => {
+    for (const [scenario, count] of [
+      ['example', 5],
+      ['empty', 4],
+    ] as const) {
+      const m = await mount(TUE_1005, scenario);
+      press(m.container, 'Me');
+      // The three rows, the capsule while something runs, and capture.
+      expect(choices(m.container), scenario).toBe(count);
+      unmount();
+    }
   });
 
   it('offers the owner’s four switches, each a radio group of two', async () => {
