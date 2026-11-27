@@ -119,3 +119,34 @@ The specification shows each of these screen by screen.
 - The design boards in `design/` load their typefaces from Google Fonts when
   opened, and the PNGs are the record. Nothing in `design/` is built or shipped,
   and the app makes no request.
+
+## Note, 27 November 2026: the prototype follows this design
+
+The status above stands: this direction is proposed, and the owner has not
+confirmed it. What changed is that it can now be held.
+
+- **`/bench/` follows this design.** The benchmark prototype was rebuilt
+  from `design/lantern/SPEC.md` (draft 6) and the board, in chunks 0 to 7 of
+  `design/lantern/PROTOTYPE-PLAN.md`: Today, the rest of today, Focus,
+  capture, Tasks, a task's own page and its sheets, Routines, the Library and
+  Me, on the real task model, with the Reduce Motion path and the animated
+  one. Running a routine (chunk 8) is left out by the plan's default 10. It is
+  still plain web code under its own storage key and linked from nowhere.
+  What it leaves for the owner is in `design/lantern/QUESTIONS.md`.
+- **The font is vendored as a trial**, as the decision above said it would be.
+  - File: `src/bench/fonts/InstrumentSans-latin.woff2`, Instrument Sans
+    version 4, the `latin` subset as one variable file with a width axis (75
+    to 100) and a weight axis (400 to 700).
+  - Source: Google Fonts' own file for that subset, downloaded on
+    25 November 2026; the URL and the steps are in
+    `src/bench/fonts/README.md`.
+  - sha256: `19f8ec3200550a11859c7e52d7378354bf71bc6dd0441fdde79b9a660513f5e4`.
+  - Size: 57,100 bytes.
+  - Licence: SIL Open Font License 1.1, in `OFL.txt` beside the file.
+  - It is served from the site's own origin under `font-src 'self'`, and
+    nothing outside `src/bench/` uses it. The typeface is still proposed.
+- **The prototype's budget.** `npm run budget` reports `/bench/` at 123.0 kB
+  gzipped, fonts as served, against a budget of 150.0 kB: the font 55.8 kB,
+  the script 51.8 kB, the stylesheet 9.0 kB, the crisis lines it shares with
+  the app 5.8 kB and the page 0.6 kB. The home-screen icon is not counted,
+  because it is fetched only when the page is added to the home screen.
