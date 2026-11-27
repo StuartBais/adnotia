@@ -92,3 +92,18 @@ with `{ lock: false }`, and the app is unchanged.
   copy without a word. Under the guard, storage can only have moved on from
   that tab's last save, so nothing of the tab's is lost, and the screen is
   left for the case it is for: two tabs changed at once.
+- **Known limits.** Found by the independent check of this change, in
+  Chromium, and not measured on a phone:
+  - The screen can show when nothing was lost. If a tab is shown again
+    before the tab being left has finished its last write, the returning
+    tab reopens quietly, its own next save is refused, and the screen
+    shows. The other tab's change is kept and the button opens it.
+  - Opening a second tab of the prototype in the background makes the
+    visible tab stale, because every tab saves once as it opens. The
+    visible tab gets no event to reopen on, so its next change is refused,
+    the screen shows, and that one change is not kept.
+  - A quiet reopen brings back the place the other tab was at, not this
+    tab's own, because the other tab's last write is what is stored.
+  - On a desktop with two windows, focusing a window may reopen it before
+    text typed into capture has been kept, and that text would be dropped.
+    This is read from the code and has not been seen happen.
