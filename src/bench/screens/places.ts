@@ -147,7 +147,7 @@ export const ABOUT = {
         'Whether Today and Focus can be told apart at a glance.',
         'The bar burning down, and the minutes straight after the phone has been locked for 5 minutes.',
         'A clock left running: start, lock the phone for 45 minutes, and come back.',
-        'Step done, Pause or a tick, then Undo on the Next line.',
+        'Step done, Resume or a tick, then Undo on the Next line.',
         'Focus, from the capsule or the step: the screen stays on while it is open.',
       ],
     },
