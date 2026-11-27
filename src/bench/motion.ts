@@ -140,10 +140,6 @@ export function lerpXf(a: Xf, b: Xf, p: number): Xf {
   };
 }
 
-export function lerpBox(a: Box, b: Box, p: number): Box {
-  return { x: lerp(a.x, b.x, p), y: lerp(a.y, b.y, p), w: lerp(a.w, b.w, p), h: lerp(a.h, b.h, p) };
-}
-
 /** A ratio that is never a division by nothing: a box not laid out keeps its size. */
 const ratio = (to: number, from: number) => (from > 0 && to > 0 ? to / from : 1);
 

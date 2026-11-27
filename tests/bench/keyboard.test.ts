@@ -1,6 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
-  FIELD_ABOVE_FOOT,
   KEYBOARD_GUESS,
   keyboardInset,
   trackKeyboard,
@@ -108,7 +107,6 @@ describe('trackKeyboard', () => {
     const guess = Math.round(HEIGHT * KEYBOARD_GUESS);
     // Near enough the 336 pt keyboard of a 6.1 in iPhone that the field is
     // above it: iOS pans only to show the field.
-    expect(guess + FIELD_ABOVE_FOOT).toBeGreaterThan(336);
     expect(Math.abs(guess - 336)).toBeLessThan(12);
     expect(kb()).toBe(`${guess}px`);
     expect(keyboard.inset()).toBe(guess);

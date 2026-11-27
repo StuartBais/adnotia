@@ -241,12 +241,6 @@ svg.i28 {
   font-weight: 600;
   letter-spacing: -0.01em;
 }
-.t-heading {
-  font-size: 22px;
-  line-height: 28px;
-  font-weight: 700;
-  letter-spacing: -0.015em;
-}
 .t-field {
   font-size: 22px;
   line-height: 28px;
@@ -281,21 +275,10 @@ svg.i28 {
   line-height: 20px;
   font-weight: 500;
 }
-.t-meta-strong {
-  font-size: 15px;
-  line-height: 20px;
-  font-weight: 650;
-}
 .t-label {
   font-size: 13px;
   line-height: 18px;
   font-weight: 650;
-  letter-spacing: 0.01em;
-}
-.t-tab {
-  font-size: 12px;
-  line-height: 16px;
-  font-weight: 600;
   letter-spacing: 0.01em;
 }
 

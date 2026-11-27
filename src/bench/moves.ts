@@ -1543,7 +1543,7 @@ export function createMoves(host: MovesHost): Moves {
 
   /**
    * In Focus: the finished step moves up into the done line and turns to
-   * ash, and "After this" rises into the step's place at full size.
+   * ash, and the next step rises into its place from 24 below.
    */
   function stepDoneFocus(snap: Snapshot): Plan | undefined {
     const O = snap.focus;
@@ -1553,7 +1553,7 @@ export function createMoves(host: MovesHost): Moves {
     const temp: Element[] = [];
     const hold: { el: HTMLElement; style: Record<string, string> }[] = [];
     const pair = (a: Part | undefined, b: Part | undefined) => {
-      if (!a || !b) return false;
+      if (!a || !b) return;
       const pa = placed(a);
       const pb = placed(b);
       temp.push(pa, pb);
@@ -1576,7 +1576,6 @@ export function createMoves(host: MovesHost): Moves {
         },
       );
       hold.push(...hidden(b.el));
-      return true;
     };
     // The finished step goes into the done line. Wrapping where the done
     // line is one line, it goes as its first line, cut where the done line
@@ -1620,10 +1619,9 @@ export function createMoves(host: MovesHost): Moves {
     } else {
       pair(O.step, N.doneText);
     }
-    const after = O.after?.el.querySelector('b') ? O.after : undefined;
-    const rose =
-      after && after.text.replace(/^\s*After this:?\s*/, '').trim() === N.step.text.trim();
-    if (!(rose && pair(O.after, N.step))) {
+    // The next step rises into its place from 24 below. It is not carried
+    // from "After this", whose words would come with it.
+    {
       const pic = placed(N.step);
       temp.push(pic);
       tracks.push({

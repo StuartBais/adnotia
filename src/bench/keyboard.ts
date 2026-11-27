@@ -40,9 +40,6 @@ export interface ViewportLike {
  */
 export const KEYBOARD_GUESS = 0.4;
 
-/** How far the field's foot is above the sheet's: the helper line and the row under it. */
-export const FIELD_ABOVE_FOOT = 108;
-
 /**
  * How much of the layout viewport the keyboard covers, in CSS px: the layout
  * viewport's height less the visual viewport's bottom edge in it. Pinch zoom
