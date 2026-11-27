@@ -1174,7 +1174,9 @@ function readBench(value: unknown): BenchState {
  * Brings a stored document's domains up to what these rules expect (plan
  * section 6). The Bookmark round's separate focus box goes; a running session
  * keeps running, because it lives on the task. A missing or damaged `bench`
- * is made whole, keeping any key it does not know, and so are the domains.
+ * is made whole, keeping any key it does not know. The other domains are
+ * taken as they are: one of the wrong shape is not replaced, which would
+ * write over what was stored, and boot.ts says plainly that it cannot open it.
  * If the stored day is not today's, the day boundary runs, after a forgotten
  * clock is closed, in the order a wake takes them (plan section 12), so boot
  * and wake agree. The record of going away is left for the boot's wake, whose

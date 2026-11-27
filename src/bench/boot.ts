@@ -126,10 +126,18 @@ export async function startBench(options: StartOptions): Promise<Started> {
       candidate.dispose();
       return;
     }
-    store = candidate;
     // The prototype writes where the person was and flushes when the page is
-    // hidden or left (app.ts).
-    bench = mountBench({ store, container, now, confirm, keepsNothing: !keeps });
+    // hidden or left (app.ts). A document that reads but has the wrong shape
+    // inside throws here instead: mountBench takes down what it built, and
+    // disposing the store drops the write it had waiting, so nothing changes.
+    try {
+      bench = mountBench({ store: candidate, container, now, confirm, keepsNothing: !keeps });
+    } catch {
+      candidate.dispose();
+      if (!destroyed) failed();
+      return;
+    }
+    store = candidate;
   }
 
   /** One plain screen in place of the prototype; its button opens what is stored now. */

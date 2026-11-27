@@ -88,6 +88,65 @@ describe('starting', () => {
     expect(container.textContent).not.toContain(FAILED.title);
   });
 
+  // A document that reads, and migrates, but has the wrong shape inside: one
+  // throws while the prototype works out its day, the other on the first
+  // render, after the screen's layers and listeners are in place.
+  const wrongInside = {
+    'tasks that are not a list': {
+      schemaVersion: 2,
+      kernel: { settings: {} },
+      modules: {},
+      family: { children: {} },
+      domains: { tasks: {}, routines: { routines: [], runs: [] }, completions: [], reminders: [] },
+    },
+    'no reward settings': {
+      schemaVersion: 2,
+      kernel: { settings: {} },
+      modules: {},
+      family: { children: {} },
+      domains: { tasks: [], routines: { routines: [], runs: [] }, completions: [], reminders: [] },
+    },
+  };
+
+  for (const [what, document] of Object.entries(wrongInside)) {
+    it(`says so plainly when what is stored reads but cannot be opened (${what}), and changes nothing`, async () => {
+      vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+      try {
+        const adapter = memoryStorageAdapter();
+        const stored = JSON.stringify(document);
+        await adapter.write(KEY, stored);
+        const added = vi.spyOn(window, 'addEventListener');
+        const removed = vi.spyOn(window, 'removeEventListener');
+        await start(adapter, () => false);
+        expect(container.querySelector('h1')?.textContent).toBe(FAILED.title);
+        expect(container.classList.contains('app')).toBe(false);
+        // Nothing of the screen that could not open is left listening for back.
+        const popstate = (calls: unknown[][]) =>
+          calls.filter(([type]) => type === 'popstate').length;
+        expect(popstate(added.mock.calls)).toBe(popstate(removed.mock.calls));
+        // Past the store's debounce: nothing the opening did is written.
+        vi.advanceTimersByTime(1000);
+        await new Promise((resolve) => setImmediate(resolve));
+        expect(await adapter.read(KEY)).toBe(stored);
+      } finally {
+        vi.restoreAllMocks();
+        vi.useRealTimers();
+      }
+    });
+  }
+
+  it('starts again cleanly after a document it could not open', async () => {
+    const adapter = memoryStorageAdapter();
+    await adapter.write(KEY, JSON.stringify(wrongInside['no reward settings']));
+    await start(adapter);
+    [...container.querySelectorAll('button')].find((b) => b.textContent === FAILED.again)!.click();
+    await settle();
+    await settle();
+    expect(container.textContent).not.toContain(FAILED.title);
+    // One prototype on the page, not the one that failed as well.
+    expect(container.querySelectorAll('.screen')).toHaveLength(1);
+  });
+
   it('says in About that nothing is kept, where the browser lets it keep nothing', async () => {
     const open = async () => {
       container = document.createElement('div');

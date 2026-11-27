@@ -3419,7 +3419,17 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
     now: monotonic,
     dimension: () => container.getBoundingClientRect().height || window.innerHeight,
   });
-  render();
+  // A resize can cross the compact height, which changes where the drawer may rest.
+  const onResize = () => render();
+  // A stored document can read and still have the wrong shape inside, and the
+  // first render is where that shows. What was built comes down again, so the
+  // throw reaches boot.ts with nothing left listening, and it says so plainly.
+  try {
+    render();
+  } catch (error) {
+    teardown();
+    throw error;
+  }
   ticker = createTicker({
     onTick: ({ minute: turned }) => (turned ? minute() : patchLive()),
     onWake: wakeUp,
@@ -3428,62 +3438,60 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
     nextChange: sessionMinute,
     now: () => now().getTime(),
   });
-  // A resize can cross the compact height, which changes where the drawer may rest.
-  const onResize = () => render();
   window.addEventListener('resize', onResize);
   void document.fonts?.ready.then(() => {
     if (!destroyed) onResize();
   });
 
-  return {
-    destroy() {
-      destroyed = true;
-      if (announcing !== undefined) clearTimeout(announcing);
-      if (leaving !== undefined) clearTimeout(leaving);
-      if (sheetLeaving !== undefined) clearTimeout(sheetLeaving);
-      if (lowering !== undefined) clearTimeout(lowering);
-      if (draftTimer !== undefined) clearTimeout(draftTimer);
-      if (stepTimer !== undefined) clearTimeout(stepTimer);
-      if (tsheetTimer !== undefined) clearTimeout(tsheetTimer);
-      if (tsheetLeaving !== undefined) clearTimeout(tsheetLeaving);
-      if (moving !== undefined) clearTimeout(moving);
-      keyboard.destroy();
-      drag?.destroy();
-      moves.destroy();
-      holdAwake(false);
-      dropUndo();
-      container.removeEventListener('focusout', onFocusOut);
-      container.removeEventListener('keydown', onKeyDown);
-      container.removeEventListener('touchstart', onTouchStart);
-      container.removeEventListener('keydown', spendArrival, true);
-      container.removeEventListener('click', spendArrival, true);
-      container.removeEventListener('click', landDrawer, true);
-      container.removeEventListener('scroll', onScroll, true);
-      ticker?.destroy();
-      unsubscribe();
-      window.removeEventListener('resize', onResize);
-      window.removeEventListener('popstate', onPopState);
-      container.replaceChildren();
-      container.classList.remove('app');
-      for (const name of [
-        'drawer',
-        'ground',
-        'places',
-        'motion',
-        'more',
-        'focus',
-        'sheet',
-        'ride',
-        'lowering',
-        'tsheet',
-        'typing',
-        'travel',
-        'anim',
-        'flight',
-      ]) {
-        delete container.dataset[name];
-      }
-      for (const name of ['--half-t', ...TRAVEL_VARS]) container.style.removeProperty(name);
-    },
-  };
+  return { destroy: teardown };
+
+  function teardown(): void {
+    destroyed = true;
+    if (announcing !== undefined) clearTimeout(announcing);
+    if (leaving !== undefined) clearTimeout(leaving);
+    if (sheetLeaving !== undefined) clearTimeout(sheetLeaving);
+    if (lowering !== undefined) clearTimeout(lowering);
+    if (draftTimer !== undefined) clearTimeout(draftTimer);
+    if (stepTimer !== undefined) clearTimeout(stepTimer);
+    if (tsheetTimer !== undefined) clearTimeout(tsheetTimer);
+    if (tsheetLeaving !== undefined) clearTimeout(tsheetLeaving);
+    if (moving !== undefined) clearTimeout(moving);
+    keyboard.destroy();
+    drag?.destroy();
+    moves.destroy();
+    holdAwake(false);
+    dropUndo();
+    container.removeEventListener('focusout', onFocusOut);
+    container.removeEventListener('keydown', onKeyDown);
+    container.removeEventListener('touchstart', onTouchStart);
+    container.removeEventListener('keydown', spendArrival, true);
+    container.removeEventListener('click', spendArrival, true);
+    container.removeEventListener('click', landDrawer, true);
+    container.removeEventListener('scroll', onScroll, true);
+    ticker?.destroy();
+    unsubscribe();
+    window.removeEventListener('resize', onResize);
+    window.removeEventListener('popstate', onPopState);
+    container.replaceChildren();
+    container.classList.remove('app');
+    for (const name of [
+      'drawer',
+      'ground',
+      'places',
+      'motion',
+      'more',
+      'focus',
+      'sheet',
+      'ride',
+      'lowering',
+      'tsheet',
+      'typing',
+      'travel',
+      'anim',
+      'flight',
+    ]) {
+      delete container.dataset[name];
+    }
+    for (const name of ['--half-t', ...TRAVEL_VARS]) container.style.removeProperty(name);
+  }
 }
