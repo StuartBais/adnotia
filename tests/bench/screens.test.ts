@@ -2393,6 +2393,28 @@ describe('5 · Capture (SPEC 5.5)', () => {
     expect(m.container.dataset['sheet']).toBeUndefined();
   });
 
+  it('the return that picks a word in Japanese or Chinese input does not save', async () => {
+    const m = await captured();
+    const input = type(m, ASK);
+    // While the word is being chosen, and the confirming return as WebKit
+    // sends it: isComposing already false, keyCode 229.
+    for (const init of [{ isComposing: true }, { keyCode: 229 }]) {
+      const pick = new KeyboardEvent('keydown', {
+        key: 'Enter',
+        bubbles: true,
+        cancelable: true,
+        ...init,
+      });
+      input.dispatchEvent(pick);
+      expect(pick.defaultPrevented).toBe(false);
+      expect(inboxTitles(m)).not.toContain(ASK);
+      expect(m.container.dataset['sheet']).toBe('today');
+      expect(field(m).value).toBe(ASK);
+    }
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    expect(inboxTitles(m)).toContain(ASK);
+  });
+
   it('Today files it on today’s list, anytime, and the helper line says so first', async () => {
     const m = await captured();
     type(m, ASK);
@@ -3392,6 +3414,18 @@ describe('Add a step (SPEC 5.3 and 3, "When a field has the keyboard")', () => {
     expect(readingOrder(m.container)).toContain('Step 1: Find the card');
   });
 
+  it('adds no step on the return that picks a word in Japanese or Chinese input', async () => {
+    const m = await opened();
+    id(m, 'p-addstep')!.click();
+    const input = field(m);
+    input.value = 'Find the card';
+    for (const init of [{ isComposing: true }, { keyCode: 229 }]) {
+      input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, ...init }));
+    }
+    expect(model.stepsOf(stateOf(m).tasks, dentist(m).id)).toEqual([]);
+    expect(field(m).value).toBe('Find the card');
+  });
+
   it('keeps what it holds as a draft when left, shown in the field, and closes when empty', async () => {
     const m = await opened();
     id(m, 'p-addstep')!.click();
@@ -3731,6 +3765,11 @@ describe('the sheets a task’s page raises (SPEC 9.9 and 12)', () => {
     id(m, 'm-rename')!.click();
     const again = id(m, 'ts-field') as HTMLInputElement;
     again.value = 'Call the dentist about the crown';
+    // The return that picks a word, as WebKit sends it, leaves the sheet open.
+    again.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, keyCode: 229 }),
+    );
+    expect(m.container.dataset['tsheet']).toBe('rename');
     again.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
     expect(id(m, 'p-title')?.textContent).toBe('Call the dentist about the crown');
   });

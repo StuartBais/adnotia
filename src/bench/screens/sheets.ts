@@ -16,7 +16,7 @@
 import { capsule } from '../capsule';
 import { type Built } from '../frame';
 import { SAY, T, deleteLine } from '../strings';
-import { h, icon } from '../ui';
+import { composing, h, icon } from '../ui';
 import { swipeToClose, type CloseWay } from './capture';
 import type { PresentLive, PresentView } from '../view';
 
@@ -338,7 +338,7 @@ export function fieldSheet(props: FieldProps): FieldSheet {
   if (props.kind === 'rename') {
     field.addEventListener('keydown', (event) => {
       const key = event as KeyboardEvent;
-      if (key.key !== 'Enter' || key.isComposing) return;
+      if (key.key !== 'Enter' || composing(key)) return;
       key.preventDefault();
       props.onClose('close');
     });

@@ -69,6 +69,16 @@ export function dottedNodes(text: string): (Node | string)[] {
   return parts.flatMap((part, index) => (index === 0 ? [part] : [' ', sep(), ' ', part]));
 }
 
+/**
+ * Whether a key still belongs to a keyboard choosing a word, as Japanese or
+ * Chinese input does. WebKit sends the return that confirms a conversion with
+ * isComposing already false and keyCode 229, so both are read: that return
+ * picks the word and must not save it.
+ */
+export function composing(event: KeyboardEvent): boolean {
+  return event.isComposing || event.keyCode === 229;
+}
+
 /** Text a screen reader reads that the screen does not show. */
 export function spoken(text: string): HTMLElement {
   return h('span', { class: 'vh', text });

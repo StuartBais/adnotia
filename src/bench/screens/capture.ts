@@ -19,7 +19,7 @@
 import { capsule } from '../capsule';
 import { HINT_IDS, type Built } from '../frame';
 import { SAY, T } from '../strings';
-import { h, segmented } from '../ui';
+import { composing, h, segmented } from '../ui';
 import type { PresentLive, PresentView } from '../view';
 
 export type CaptureTo = 'inbox' | 'today';
@@ -71,7 +71,7 @@ export function captureSheet(props: CaptureProps): CaptureSheet {
   }) as HTMLInputElement;
   field.addEventListener('input', () => props.onInput(field.value));
   field.addEventListener('keydown', (event) => {
-    if (event.key !== 'Enter' || event.isComposing) return;
+    if (event.key !== 'Enter' || composing(event)) return;
     event.preventDefault();
     props.onSave();
   });

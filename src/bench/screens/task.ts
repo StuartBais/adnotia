@@ -18,7 +18,7 @@
 
 import { T, say, startInsteadSentence } from '../strings';
 import { backPill, meButton, type Built } from '../frame';
-import { bar, h, icon, patchBar, sep, spoken } from '../ui';
+import { bar, composing, h, icon, patchBar, sep, spoken } from '../ui';
 import { inDuration, clock24, duration } from '../format';
 import { meter } from './focus';
 import {
@@ -298,7 +298,7 @@ function addStep(props: TaskPageProps): HTMLElement {
   field.addEventListener('focus', () => actions.onStepFocus());
   field.addEventListener('input', () => actions.onStepInput(field.value));
   field.addEventListener('keydown', (event) => {
-    if (event.isComposing) return;
+    if (composing(event)) return;
     if (event.key === 'Enter') {
       event.preventDefault();
       actions.onStepEnter(field.value);
