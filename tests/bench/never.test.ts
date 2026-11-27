@@ -23,15 +23,21 @@ import {
 // About, the crisis page and capture), every scenario, and every six-second line and
 // Undo: nothing overdue, late, missed or behind; no streak, no greeting and
 // no cheering; no exclamation mark; never "0 min left" and never seconds; no
-// count on a tab; and no figure for time away.
+// count on a tab, and no count of what was not done; and no figure for time
+// away. Each tap's announcement is heard before the screen is read.
 
 afterEach(unmount);
 
-/** Everything a person can see or hear: the text, every label and every hint. */
+/**
+ * Everything a person can see or hear: the text, the live region's words,
+ * every label, every value a meter or a slider speaks, and every placeholder.
+ */
 function everything(m: Mounted): string {
   const parts = [m.container.textContent ?? ''];
-  for (const node of m.container.querySelectorAll('[aria-label]')) {
-    parts.push(node.getAttribute('aria-label') ?? '');
+  for (const name of ['aria-label', 'aria-valuetext', 'placeholder']) {
+    for (const node of m.container.querySelectorAll(`[${name}]`)) {
+      parts.push(node.getAttribute(name) ?? '');
+    }
   }
   return parts.join(' | ').replace(/\s+/g, ' ');
 }
@@ -44,12 +50,21 @@ const NEVER: readonly [RegExp, string][] = [
   [/streak/i, 'a streak'],
   [/welcome back/i, 'a greeting'],
   [/great job|well done|nice work/i, 'cheering'],
-  [/you forgot/i, 'blame'],
+  [/\bforg[eo]t/i, 'blame'],
   [/!/, 'an exclamation mark'],
   [/\b0 min left|\b0 minutes left/i, '"0 min left"'],
   [/\b\d+\s?(?:s|sec|secs|seconds?)\b|\d:\d\d:\d\d/i, 'seconds'],
   [/\bago\b|while you were away|since you|you were away/i, 'time away'],
   [/\b\d+\s*(?:days?|weeks?)\b/i, 'a count of days or weeks'],
+  [/\blast (?:opened|used|seen|ran)\b/i, 'time away'],
+  [
+    /\b(?:away|gone|back after)\s+(?:for\s+)?\d|\bpaused\s+(?:for\s+)?\d+\s*(?:h\b|hours?)/i,
+    'time away',
+  ],
+  [
+    /\b\d+\s+(?:\w+\s+)?(?:more|left to do|to go|not done|undone|still to do)\b/i,
+    'a count of what was not done',
+  ],
 ];
 
 function holdsNothing(m: Mounted, where: string): void {
@@ -123,17 +138,23 @@ describe('never', () => {
 
   it('says none of it after the taps that change Today', async () => {
     const m = await mount('2026-11-24T10:05:00', 'example');
+    // Each tap's announcement is heard before the screen is read.
     press(m.container, 'Pause');
+    said(m);
     holdsNothing(m, 'Today, paused');
     press(m.container, /^Set aside /);
+    said(m);
     holdsNothing(m, 'Today, set aside, its Undo showing');
     outlastUndo();
     holdsNothing(m, 'Today, set aside');
     press(m.container, /^Mark done: /);
+    said(m);
     holdsNothing(m, 'Today, a ring ticked');
     press(m.container, 'Start');
+    said(m);
     holdsNothing(m, 'Today, started');
     press(m.container, /^Step done: /);
+    said(m);
     holdsNothing(m, 'Today, a step done');
   });
 
@@ -145,11 +166,13 @@ describe('never', () => {
     said(m);
     holdsNothing(m, 'Focus, five minutes added');
     press(m.container, /^Step done: /);
+    said(m);
     holdsNothing(m, 'Focus, a step done, its Undo on the foot');
     press(m.container, /^Undo step done: /);
     said(m);
     holdsNothing(m, 'Focus, after Undo');
     press(m.container, 'Pause');
+    said(m);
     holdsNothing(m, 'Focus, paused');
     m.clock.now = new Date('2026-11-24T13:20:00');
     vi.advanceTimersByTime(60_000);
@@ -167,6 +190,7 @@ describe('never', () => {
       rewards: setOption(state.rewards, { kind: 'day' }, 'doneList', true),
     }));
     const undo = (where: string) => {
+      said(m);
       const pill = controls(m.container).find((node) => node.id === 'b-undo');
       expect(pill, `an Undo after ${where}`).toBeDefined();
       holdsNothing(m, `the Next line after ${where}`);
