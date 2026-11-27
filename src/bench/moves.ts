@@ -1377,8 +1377,12 @@ export function createMoves(host: MovesHost): Moves {
       temp.push(frame);
       tracks.push(...frameTracks(frame, from, to), { el: frame, fade });
     }
+    // The sheet's own content and stone come up inside the growing frame,
+    // cut to it, so the sheet is one object with one top edge, not a second
+    // card at its final place showing through above the frame's edge.
     tracks.push({
       el: panel,
+      clip: [cutTo(to.box, from), cutTo(to.box, to)],
       fade: [
         [FIRST + 20, 0],
         [D * 0.65, 1],

@@ -464,6 +464,40 @@ describe('the capsule is drawn once', () => {
     nothingLeft(m);
     expect(ride!.hasAttribute('style')).toBe(false);
   });
+
+  it('the sheet comes up inside the frame growing from the disc: one top edge, not two', async () => {
+    layOut();
+    const laid = vi.mocked(Element.prototype.getBoundingClientRect);
+    const board = laid.getMockImplementation()!;
+    const box = (x: number, y: number, w: number, h: number) =>
+      ({ x, y, left: x, top: y, width: w, height: h, right: x + w, bottom: y + h }) as DOMRect;
+    // The disc in its place, and the sheet where it rests over the keyboard.
+    laid.mockImplementation(function (this: Element) {
+      if (this.classList.contains('capture') && this.closest('.dock')) return box(302, 606, 64, 64);
+      if (this.classList.contains('c-panel')) return box(0, 280, 390, 260);
+      return board.call(this);
+    });
+    const m = await mount(TUE_1005);
+    settle(m);
+    const before = played.length;
+    press(m.container, 'Capture');
+    await drawn();
+    const mine = since(before);
+    const panel = m.container.querySelector('.sheet-layer[data-capture] .c-panel')!;
+    const cut = mine.find((p) => p.el === panel && p.frames.some((f) => 'clipPath' in f));
+    expect(cut).toBeDefined();
+    // From the disc's circle to the whole panel, on the frame's own spring.
+    const [first, last] = cut!.frames.map((f) => String(f['clipPath']));
+    expect(first).not.toBe(last);
+    expect(last).toMatch(/^inset\(0px 0px 0px 0px round 24px\)$/);
+    const frame = mine.find(
+      (p) => p.el.closest('.mframe') && p.frames.some((f) => 'transform' in f),
+    );
+    expect(cut!.options.easing).toBe(frame?.options.easing);
+    expect(cut!.options.duration).toBe(frame?.options.duration);
+    over(m);
+    nothingLeft(m);
+  });
 });
 
 /** What was played from `before` on. */
