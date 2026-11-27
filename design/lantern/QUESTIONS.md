@@ -1,6 +1,6 @@
 # Questions for the owner
 
-This is every question the prototype at `/bench/` leaves for you, in one place and in plain words. Each one says what the prototype does now and where to see it, so you can try it before you answer. The days the questions need are set up from Me › About this prototype, under "Prototype". "Load the example day" puts the board's day around the current time, with "Write the school email" running at step 2 of 3 and "Call the dentist" next, and the other buttons load the other days the board draws. Nothing here holds the build up: it went ahead on the defaults listed near the end, and each can be changed. Answer by number, in a word where a word will do.
+This is every question the prototype at `/bench/` leaves for you, in one place and in plain words. Each one says what the prototype does now and where to see it, so you can try it before you answer. The days the questions need are set up from Me › About this prototype, under "Prototype". "Load the example day" puts the board's day around the current time, with "Write the school email" running at step 2 of 3 and "Call the dentist" next, and the other buttons load the other days the board draws. Nothing here holds the build up: it went ahead on the defaults listed near the end, and each can be changed. Answer by number, in a word where a word will do. The one the rest hang on is 43: whether to confirm ADR-047, the direction itself.
 
 ## Behaviour
 
@@ -220,31 +220,33 @@ These need the iPhone. Each says what to look for, and what it means if it goes 
 
 ## Answered by default for this round
 
-The build took these answers so it would not wait. Each stands until you change it. They are plan section 21's questions, and the plan's "Defaults taken for the owner's questions".
+The build took these answers so it would not wait. Each stands until you change it. The first is the direction itself; the rest are plan section 21's questions, and the plan's "Defaults taken for the owner's questions".
 
-**43. The font.** Instrument Sans is bundled as a trial, with its licence beside it. ADR-047 still calls the typeface proposed. Keep it?
+**43. The direction.** The whole prototype is Lantern with the Now capsule, as ADR-047 proposes and `board.html` draws it. ADR-047 is still proposed: it waits on you. Confirm ADR-047, Lantern with the Now capsule, as the board draws it? If something should change first, say what.
 
-**44. First open.** With nothing kept, the prototype loads the example day around the current time. "Start empty" is in About. Or should it open on "Nothing planned for today"?
+**44. The font.** Instrument Sans is bundled as a trial, with its licence beside it. ADR-047 still calls the typeface proposed. Keep it?
 
-**45. Charcoal or white places.** Settings › Places switches Tasks, Routines, Library and Me between the two. Today and Focus stay charcoal. Which do you want? ADR-047 leaves this to you.
+**45. First open.** With nothing kept, the prototype loads the example day around the current time. "Start empty" is in About. Or should it open on "Nothing planned for today"?
 
-**46. Coming back the same day.** Under 15 minutes away, the prototype returns exactly where you were; after that, it opens on Today. See it: open a task's page, lock the phone for 5 minutes and come back, then again for 20.
+**46. Charcoal or white places.** Settings › Places switches Tasks, Routines, Library and Me between the two. Today and Focus stay charcoal. Which do you want? ADR-047 leaves this to you.
 
-**47. A clock left running.** It closes at the end of its estimate, or with no estimate at the last moment the app was open, once the app has been in the background 15 minutes. Today then reads "Paused", or "Timer stopped" if Settings says so. See it: "Load: a clock left running".
+**47. Coming back the same day.** Under 15 minutes away, the prototype returns exactly where you were; after that, it opens on Today. See it: open a task's page, lock the phone for 5 minutes and come back, then again for 20.
 
-**48. +5 min with no estimate.** It sets the estimate to the whole minutes worked so far plus 5. See it: start a task with no estimate, such as Fix the bike light, open Focus, then +5 min.
+**48. A clock left running.** It closes at the end of its estimate, or with no estimate at the last moment the app was open, once the app has been in the background 15 minutes. Today then reads "Paused", or "Timer stopped" if Settings says so. See it: "Load: a clock left running".
 
-**49. The clock.** 24-hour, as the board draws it ("10:30", "ends 10:23").
+**49. +5 min with no estimate.** It sets the estimate to the whole minutes worked so far plus 5. See it: start a task with no estimate, such as Fix the bike light, open Focus, then +5 min.
 
-**50. A booked item's two lengths.** The when sheet's "How long" sets both the slot's length and the estimate, kept equal.
+**50. The clock.** 24-hour, as the board draws it ("10:30", "ends 10:23").
 
-**51. The pieces SPEC does not draw.** Built as proposed: Tasks › Coming up grouped by day; Tasks › Done newest first, with a disc to un-tick; an unopened task's steps as plain text, with no Now; a paused task's page as page 8 with the paused bar; a done task's page with "Not done after all"; Me opened on the current tab, which stays current; "⌄" and the tab's name when Focus opens from a pushed page; "in 1 h 20 min" for an hour or more; and "Nothing running · until 10:40" with "Booked now" when a booked slot is under way.
+**51. A booked item's two lengths.** The when sheet's "How long" sets both the slot's length and the estimate, kept equal.
 
-**52. Running routines.** Left out of this round. Do you want them before deciding how the phone apps are built? If so, what should Pause mean for a routine? The proposal is that it freezes the current step's minutes, with Resume and Set aside as for a task.
+**52. The pieces SPEC does not draw.** Built as proposed: Tasks › Coming up grouped by day; Tasks › Done newest first, with a disc to un-tick; an unopened task's steps as plain text, with no Now; a paused task's page as page 8 with the paused bar; a done task's page with "Not done after all"; Me opened on the current tab, which stays current; "⌄" and the tab's name when Focus opens from a pushed page; "in 1 h 20 min" for an hour or more; and "Nothing running · until 10:40" with "Booked now" when a booked slot is under way.
 
-**53. Android.** Not this round. Will you also try it on an Android phone? It would need a manifest of its own.
+**53. Running routines.** Left out of this round. Do you want them before deciding how the phone apps are built? If so, what should Pause mean for a routine? The proposal is that it freezes the current step's minutes, with Resume and Set aside as for a task.
 
-**54. The design's own decisions.** SPEC section 14 lists the rest, each with a proposed answer: how long Undo stays, where a booked item goes when its time passes, whether starting a routine stops the running task, and whether the time box belongs to the task or the step. The prototype follows those proposals.
+**54. Android.** Not this round. Will you also try it on an Android phone? It would need a manifest of its own.
+
+**55. The design's own decisions.** SPEC section 14 lists the rest, each with a proposed answer: how long Undo stays, where a booked item goes when its time passes, whether starting a routine stops the running task, and whether the time box belongs to the task or the step. The prototype follows those proposals.
 
 ## Known, and left for later
 
