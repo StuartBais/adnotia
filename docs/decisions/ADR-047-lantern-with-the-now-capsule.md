@@ -146,8 +146,8 @@ confirmed it. What changed is that it can now be held.
     build copies it to `/bench/OFL.txt`, so the deployed copy carries it too.
   - It is served from the site's own origin under `font-src 'self'`, and
     nothing outside `src/bench/` uses it. The typeface is still proposed.
-- **The prototype's budget.** `npm run budget` reports `/bench/` at 123.0 kB
+- **The prototype's budget.** `npm run budget` reports `/bench/` at 123.4 kB
   gzipped, fonts as served, against a budget of 150.0 kB: the font 55.8 kB,
-  the script 51.8 kB, the stylesheet 9.0 kB, the crisis lines it shares with
-  the app 5.8 kB and the page 0.6 kB. The home-screen icon is not counted,
+  the script 52.2 kB, the stylesheet 9.0 kB, the crisis lines it shares with
+  the app 5.9 kB and the page 0.6 kB. The home-screen icon is not counted,
   because it is fetched only when the page is added to the home screen.
