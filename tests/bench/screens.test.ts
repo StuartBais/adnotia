@@ -1108,9 +1108,11 @@ describe('Me, and Settings under it (SPEC 12; plan sections 4 and 11)', () => {
       ABOUT.data,
       ABOUT.home,
       ABOUT.statusBar,
+      ABOUT.tryNote,
       ABOUT.leftOut,
+      ABOUT.limits,
       ABOUT.font,
-      ...ABOUT.tries,
+      ...ABOUT.tries.flatMap((group) => [group.title, ...group.items]),
     ]) {
       expect(text).toContain(words);
     }

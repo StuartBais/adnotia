@@ -2108,7 +2108,13 @@ svg.i28 {
   min-height: 44px;
   margin: -12px 0;
 }
-/* What to try: a plain list, each line marked by a small dot. */
+/* What to try: a few plain lists under their names, each line marked by a
+   small dot. */
+.prose h3 {
+  margin-top: 4px;
+  color: var(--white);
+  font-weight: 650;
+}
 .prose .tries {
   display: grid;
   gap: 6px;
@@ -2135,7 +2141,9 @@ svg.i28 {
 .app[data-places='white'][data-ground='place'] .screen .textbtn {
   color: var(--muted);
 }
-.app[data-places='white'][data-ground='place'] .screen :is(.prose .lead, .prose a, .prose .line b) {
+.app[data-places='white'][data-ground='place']
+  .screen
+  :is(.prose .lead, .prose h3, .prose a, .prose .line b) {
   color: var(--charcoal);
 }
 .scenarios,

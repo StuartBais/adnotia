@@ -139,27 +139,62 @@ export const ABOUT = {
   statusBar:
     'From the home screen, the phone sets the colour of its clock and battery when the prototype opens, so with white places they can be hard to see. Judge white places in a Safari tab.',
   tryTitle: 'What to try',
+  tryNote: 'Try each in a Safari tab and from the home screen.',
   tries: [
-    'The edges: the status bar, the corners, and whether the page ever bounces.',
-    'The bar burning, and the minutes straight after the phone has been locked for 5 minutes.',
-    'A clock left running: start, lock the phone for 45 minutes, and come back.',
-    'The rest of today: pull its handle up and let go, slowly or with a flick, over each tab. Close it with Hide, by pulling it down, or by swiping back from the edge of the screen.',
-    'Step done or a tick, then Undo on the Next line.',
-    'Taps that land between the capsule and capture.',
-    'Capture: the keyboard comes up with the sheet riding on it, the page never slides, and what you typed is still there after a reload.',
-    'Capture, then Done above the keys, then the field again: the keyboard comes back up under the field, and nothing slides.',
-    'Tasks, then Today: flick the list and tap to stop it. That tap only stops the list; the capsule does not open.',
-    'A task’s page: Start this instead, then Undo on the Next line.',
-    'Add a step on a task’s page: the keyboard comes up under the field, and only the page moves.',
-    'Back by swiping from the edge of the screen, from a task’s page and from the sheets it opens.',
-    'Reduce Motion and Increase Contrast, on and off.',
-    'VoiceOver across Today, Focus, capture and the rest of today.',
-    'Charcoal against white places, in daylight and at night.',
-    'The light around the step on an OLED screen.',
+    {
+      title: 'Today and Focus',
+      items: [
+        'Whether Today and Focus can be told apart at a glance.',
+        'The bar burning down, and the minutes straight after the phone has been locked for 5 minutes.',
+        'A clock left running: start, lock the phone for 45 minutes, and come back.',
+        'Step done, Pause or a tick, then Undo on the Next line.',
+        'Focus, from the capsule or the step: the screen stays on while it is open.',
+      ],
+    },
+    {
+      title: 'In the hand',
+      items: [
+        'The rest of today: pull its handle up and let go, slowly or with a flick, over each tab. Close it with Hide or by pulling it down.',
+        'Taps that land between the capsule and capture, and between the capsule and Step done.',
+        'Tasks: flick a list and tap to stop it. That tap only stops the list; the capsule does not open.',
+        'Double-tap a line of text, in the rest of today or on this page. The page should not zoom.',
+        'Back: swipe in from the left edge on a task’s page, a sheet, the open drawer and Focus, and watch whether the page slides in twice. From the home screen, see whether the swipe works at all.',
+      ],
+    },
+    {
+      title: 'Typing',
+      items: [
+        'Capture: the keyboard comes up with the sheet riding on it, the page never slides, and what you typed is still there after a reload.',
+        'With the keyboard up, drag on the lantern above the sheet and on the line under the field. The page should stay still.',
+        'Capture, then Done above the keys, then the field again: the keyboard comes back up under the field.',
+        'Add a step on a task’s page: the keyboard comes up under the field, and only the page moves.',
+        'With a Japanese keyboard, in capture or Add a step: the return that picks a word should not save it.',
+        'When, on a task’s page, then a time or a day: the field looks like the others, and clearing it in the picker does not leave it blank.',
+      ],
+    },
+    {
+      title: 'The look',
+      items: [
+        'Charcoal against white places, in daylight and at night. From the home screen, whether the clock and battery show over white places.',
+        'The capsule over Tasks: its second line shows “Write the school email” whole, and “Paused” sits clear of the words beside it.',
+        'The type is Instrument Sans in a tab and from the home screen, not the phone’s own.',
+        'The light around the step on an OLED screen.',
+      ],
+    },
+    {
+      title: 'With the phone’s own settings',
+      items: [
+        'Motion: with the phone’s Reduce Motion off, compare Settings › Motion at As the phone and at Reduced. With Reduce Motion on, only Reduced shows. Watch for stutter while the drawer is pulled.',
+        'Increase Contrast, on and off. Reduce Transparency: the fade under the capsule over Tasks should turn solid.',
+        'VoiceOver across Today, Focus, capture and the rest of today: where it lands after each tap, what it says as it moves, done rows, the bar and the tabs.',
+      ],
+    },
   ],
   leftOutTitle: 'Left out',
   leftOut:
     'Medication and Family are not in the prototype. Nor is anything a web page cannot draw: the Lock Screen, the Dynamic Island, widgets and haptics. It does not follow the phone’s larger text sizes, and it needs a connection to open, even from the home screen.',
+  limits:
+    'Some things a web page does less well than an app, and they count in deciding how the app gets built: the sheet follows the keyboard rather than moving with it, tapping the status bar does not scroll a list to the top, a drag that starts on the capsule does not scroll the list under it, VoiceOver has no custom actions, and the screen turns when the phone does.',
   font: 'Set in Instrument Sans, by the Instrument Sans Project Authors, under the SIL Open Font License 1.1.',
   prototype: 'Prototype',
   deleteAll: 'Delete everything',
@@ -188,13 +223,18 @@ export function aboutScreen(actions: PlaceActions, keepsNothing = false): Built 
           h('p', { class: 't-meta', text: ABOUT.home }),
           h('p', { class: 't-meta', text: ABOUT.statusBar }),
           h('h2', { class: 't-label', text: ABOUT.tryTitle }),
-          h(
-            'ul',
-            { class: 'tries' },
-            ...ABOUT.tries.map((text) => h('li', { class: 't-meta', text })),
-          ),
+          h('p', { class: 't-meta', text: ABOUT.tryNote }),
+          ...ABOUT.tries.flatMap((group) => [
+            h('h3', { class: 't-meta', text: group.title }),
+            h(
+              'ul',
+              { class: 'tries' },
+              ...group.items.map((text) => h('li', { class: 't-meta', text })),
+            ),
+          ]),
           h('h2', { class: 't-label', text: ABOUT.leftOutTitle }),
           h('p', { class: 't-meta', text: ABOUT.leftOut }),
+          h('p', { class: 't-meta', text: ABOUT.limits }),
           h('p', { class: 't-meta', text: ABOUT.font }),
           h('h2', { class: 't-label', text: ABOUT.prototype }),
           h(
