@@ -1,33 +1,60 @@
 // The benchmark prototype, in the design "Lantern, with the Now capsule"
 // (design/lantern/SPEC.md, draft 6; ADR-047), running on the real task model.
+// This file puts it on the page: mountBench takes a store and a container and
+// draws the whole app into it, and answers every tap.
 //
-// It exists to be held on a phone so the owner can decide how the phone apps
+// It exists to be held on an iPhone so the owner can decide how the phone apps
 // are built (docs/09-product-brief.md, order of work, items 2 and 3). It is
 // not the app: nothing links to it, and it keeps its data under its own
-// storage key so it cannot touch the first build's.
+// storage key, `adnotia-bench`, so it cannot touch the first build's. Every
+// screen of the board is built, from Today to the Library, except running a
+// routine (owner default 10). What it leaves for the owner is in
+// design/lantern/QUESTIONS.md.
 //
-// The screen is a stack of persistent layers (plan section 8): the current
-// page, the fade behind the dock line, the stone drawer, the tabs, the dock
-// line and a live region. A layer is rebuilt only when what it shows changes,
-// judged by a cheap key; the ticker never rebuilds anything, and moves the bar,
-// the minutes and the spoken labels in place. So a tick never takes away the
-// person's focus, scroll or a tap in progress.
+// How it is put together:
 //
-// Built so far (plan section 19, chunks 2 to 7): the frame, Today in every
-// state, the drawer at rest at its lip, folded and half and open, by a tap or
-// under a finger that pulls it and lets it go onto its spring, the
-// capsule on the places and the open drawer, the tabs, Me with the crisis
-// page, About with the scenario buttons, Focus, a layer over the current tab
-// with its own history entry, capture: a sheet over whatever is open, riding
-// the keyboard, with its own history entry and a draft that outlives it,
-// Tasks with its four lists, a task's own page in each of its forms with "Add
-// a step", the sheets a page raises, Routines with each routine's page
-// (without running one, owner default 10), and the Library as a stub.
+// - The layers. The screen is a stack of persistent layers (plan section 8),
+//   kept in reading order: the current page, the fade behind the dock line,
+//   Focus, the dock line and the stone drawer (the drawer first where its
+//   list is read before capture), the drawer's foot, the tabs, Focus's foot,
+//   the two sheet layers (capture, and the sheets a task's page raises) and
+//   a live region. The animated path adds two of its own, drawn only while
+//   something moves and empty at rest.
+// - The renderer. render() is one pass from the stored state and the moment
+//   to every layer. view.ts works out what each part shows, and from that a
+//   cheap key; paint() rebuilds a layer only when its key moved, keeping
+//   focus and scroll. Builders in frame.ts and screens/ return their nodes and
+//   a patch for whatever changes by the second.
+// - The ticker (clock.ts). It never rebuilds anything: on each tick the
+//   patches move the bar, the minutes and the spoken labels in place, so a
+//   tick never takes the person's focus, scroll or a tap in progress. It
+//   ticks by the second only while a bar burns with motion on, by the minute
+//   otherwise, and not at all while the page is hidden. Going to the
+//   background writes where the person was; coming back runs wake() in
+//   state.ts (a forgotten clock, the day, passed slots, then where to open).
+// - History. One entry for each level above the tab: each page pushed on it,
+//   then Focus or the open drawer, then a sheet. Safari's edge swipe and
+//   back close the top level; a level closed here takes its entry back, one
+//   move in flight at a time.
+// - Motion (SPEC 10). Two paths, chosen by the phone's Reduce Motion unless
+//   Settings › Motion says Reduced. The Reduce Motion path is fades, drawn
+//   here and in bench.css. With motion on, in a browser that plays Web
+//   Animations, the app carries [data-anim], and after each render moves.ts
+//   draws the way from what was on screen to what is now, with motion.ts's
+//   spring, pictures and frames. The page is never held up for it, and a
+//   motion leaves exactly the Reduce Motion page behind: at rest the two paths
+//   match within 1 pt. The spring is a CSS linear() easing, which needs
+//   Safari 17.2 or later; older browsers get a Bezier curve close to it.
 //
-// Motion has two paths (SPEC 10). Reduce Motion's fades are drawn here and in
-// bench.css. With motion on, in a browser that plays Web Animations, the app
-// carries [data-anim] and moves.ts draws the way between one page and the
-// next after each render: the page itself is never held up for it.
+// Where the rules live: state.ts holds every rule as a pure function of the
+// state and a moment (what is present, the minutes, the Next line, the
+// capsule, the drawer's places, a forgotten clock, the 04:00 boundary,
+// waking). actions.ts holds every change a person makes, each with its Undo.
+// strings.ts holds every word, format.ts how times are written, drawer.ts the
+// drawer under a finger, keyboard.ts the keyboard, and example.ts the
+// scenario buttons. The design is design/lantern/SPEC.md, the build brief is
+// design/lantern/PROTOTYPE-PLAN.md, and tests/bench/ holds both to them
+// (mount.ts has the helpers).
 //
 // mountBench is one closure, in sections, each marked by a rule:
 //   boot, layers         the store, the ticker, and the layers it draws into
