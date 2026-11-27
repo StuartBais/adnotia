@@ -146,7 +146,7 @@ export const ABOUT = {
     'Taps that land between the capsule and capture.',
     'Capture: the keyboard comes up with the sheet riding on it, the page never slides, and what you typed is still there after a reload.',
     'Capture, then Done above the keys, then the field again: the keyboard comes back up under the field, and nothing slides.',
-    'Tasks: flick the inbox and tap to stop it. That tap only stops the list; the capsule does not open.',
+    'Tasks, then Today: flick the list and tap to stop it. That tap only stops the list; the capsule does not open.',
     'A task’s page: Start this instead, then Undo on the Next line.',
     'Add a step on a task’s page: the keyboard comes up under the field, and only the page moves.',
     'Back by swiping from the edge of the screen, from a task’s page and from the sheets it opens.',
@@ -157,7 +157,7 @@ export const ABOUT = {
   ],
   leftOutTitle: 'Left out',
   leftOut:
-    'Medication and Family are not in the prototype. Nor is anything a web page cannot draw: the Lock Screen, the Dynamic Island, widgets and haptics.',
+    'Medication and Family are not in the prototype. Nor is anything a web page cannot draw: the Lock Screen, the Dynamic Island, widgets and haptics. It does not follow the phone’s larger text sizes, and it needs a connection to open, even from the home screen.',
   font: 'Set in Instrument Sans, by the Instrument Sans Project Authors, under the SIL Open Font License 1.1.',
   prototype: 'Prototype',
   deleteAll: 'Delete everything',

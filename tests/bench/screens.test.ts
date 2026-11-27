@@ -1114,6 +1114,9 @@ describe('Me, and Settings under it (SPEC 12; plan sections 4 and 11)', () => {
     ]) {
       expect(text).toContain(words);
     }
+    // What this round leaves out, as the plan does: larger text and offline use.
+    expect(ABOUT.leftOut).toMatch(/larger text/);
+    expect(ABOUT.leftOut).toMatch(/needs a connection to open/);
     // Every scenario, "Start empty" among them, then Delete everything, last.
     const names = readingOrder(m.container);
     expect(
