@@ -10,7 +10,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { FOCUS_FADE_MS, MORPH_MS, TAP_GUARD } from '../../src/bench/app';
 import { END_PAD, springAt, springCurve, springDuration } from '../../src/bench/motion';
-import { CAPTURE_RESPONSE, DROP_MS, REWRAP } from '../../src/bench/moves';
+import { CAPTURE_RESPONSE, DROP_MS, REWRAP, START_OUT } from '../../src/bench/moves';
 import type { BenchDomains } from '../../src/bench/state';
 import {
   BOARD_STOPS,
@@ -880,6 +880,50 @@ describe('a motion that cannot be drawn', () => {
 });
 
 describe('Start', () => {
+  it('draws nothing over anything else: the idle block goes first, each text travels as one drawing, the lit block comes last', async () => {
+    let mounted: Mounted | undefined;
+    layDrawer(() => mounted);
+    const m = await mount(TUE_0958, 'notStarted');
+    mounted = m;
+    settle(m);
+    const before = played.length;
+    press(m.container, 'Start');
+    await drawn();
+    const mine = since(before);
+    const shown = (el: Element, ms: number) => {
+      const fade = mine.find((p) => p.el === el && p.frames.some((f) => 'opacity' in f));
+      return fade ? opacityAt(fade, ms) : 1;
+    };
+    const pic = (selector: string) => {
+      const el = m.container.querySelector(`.morph > ${selector}`);
+      expect(el, selector).not.toBeNull();
+      return el!;
+    };
+    // What only the idle block has is gone before anything travelling reaches it.
+    for (const selector of ['.idle-status', '.label', '.meta', '.start', '.after']) {
+      expect(shown(pic(selector), START_OUT), selector).toBeLessThanOrEqual(0.01);
+    }
+    // What only the lit block has comes in over the last 100 ms of the lantern's time.
+    for (const selector of ['.nowline', 'strong', '.rest', '.note']) {
+      expect(shown(pic(selector), 249), selector).toBeLessThanOrEqual(0.01);
+      expect(shown(pic(selector), springDuration()), selector).toBe(1);
+    }
+    // The title and the step each travel as one drawing: two of them only in
+    // a dissolve of a couple of frames, never two scales for the way.
+    for (const [from, to] of [
+      ['.sentence', '.ttl'],
+      ['.after', '.step'],
+    ] as const) {
+      let both = 0;
+      for (let ms = 0; ms <= springDuration(); ms++) {
+        if (shown(pic(from), ms) > 0.01 && shown(pic(to), ms) > 0.01) both++;
+      }
+      expect(both, `${from} and ${to}`).toBeLessThanOrEqual(50);
+    }
+    over(m);
+    nothingLeft(m);
+  });
+
   it('brings Step done and Pause in once the drawer folding from half has passed under them', async () => {
     let mounted: Mounted | undefined;
     layDrawer(() => mounted);

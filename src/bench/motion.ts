@@ -390,6 +390,8 @@ export interface Track {
   easing?: string;
   /** Its own length for `move`, in place of the motion's (ms). */
   duration?: number;
+  /** When its `move` sets off, held at its start until then (ms; played only). */
+  delay?: number;
 }
 
 /** A value along stops, held flat before the first and after the last. */
@@ -546,6 +548,7 @@ export class Motions {
         const played = this.animate(track.el, [{ transform: xfCss(a) }, { transform: xfCss(b) }], {
           duration: track.duration ?? plan.duration,
           easing: track.easing ?? plan.easing,
+          ...(track.delay ? { delay: track.delay } : {}),
           fill: 'both',
         });
         if (played) animations.push(played);

@@ -151,6 +151,11 @@ const FOCUS_LAST = 120;
 export const STEP_MS = 250;
 /** Pause and Resume, and the Next line's words: a cross-fade in place (SPEC 10). */
 export const CROSS_MS = 150;
+/**
+ * Start on Today: what only the idle block has is gone in this long (ms),
+ * before what travels reaches it.
+ */
+export const START_OUT = 50;
 /** Start: the bar draws in from empty to full (SPEC 10). */
 export const DRAW_MS = 250;
 /** How far the finished step rises, and the next rises from (pt). */
@@ -1314,9 +1319,18 @@ export function createMoves(host: MovesHost): Moves {
 
   /**
    * Start on Today (SPEC 10): the sentence grows from 32 to 40 into the step
-   * (or, with steps, shrinks into the title as "Starts with" grows into the
-   * step), the bar draws in from empty over 250 ms, and Now and the rest
-   * fade in. The drawer folds from half on its own spring (the flight).
+   * (or, with steps, shrinks into the title as the step grows from where
+   * "Starts with" names it), the bar draws in from empty over 250 ms, and Now
+   * and the rest fade in. The drawer folds from half on its own spring (the
+   * flight).
+   *
+   * Nothing is drawn over anything else on the way. What only the idle block
+   * has is gone in the first START_OUT ms, before anything travelling reaches
+   * it. Each travelling text is one picture at full opacity, which hands over
+   * to the lit block's own drawing in a short dissolve once it has all but
+   * landed. What only the lit block has fades in over the last 100 ms of the
+   * lantern's time, where it stands; the bar comes in, and draws, once the
+   * folding drawer has gone under it.
    */
   function startPlay(snap: Snapshot): Plan | undefined {
     const I = snap.idle;
@@ -1326,9 +1340,24 @@ export function createMoves(host: MovesHost): Moves {
     const tracks: Track[] = [];
     const temp: Element[] = [];
     const used = new Set<Part>();
-    const pair = (a: Part | undefined, b: Part | undefined) => {
-      if (!a || !b) return;
+    const gone = new Set<Part>();
+    const out: Stop[] = [
+      [0, 1],
+      [START_OUT, 0],
+    ];
+    const landing = [momentAt(SPRING, 0.97), momentAt(SPRING, 0.98)] as const;
+    const setOff = [START_OUT - 10, START_OUT + 50] as const;
+    /**
+     * One drawing carried from `a` into `b` at full opacity, handing over to
+     * the other in a short dissolve: once it has all but landed, unless the
+     * two wrap differently and it grows (a 32 pt title on one line that wraps
+     * at 40), when `b`'s own lines are carried from the start, scaled down,
+     * so that nothing scaled up runs past the margin.
+     */
+    const carry = (a: Part, b: Part) => {
       used.add(b);
+      gone.add(a);
+      const [w0, w1] = wraps(a) !== wraps(b) && a.font < b.font ? setOff : landing;
       const pa = placed(a);
       const pb = placed(b);
       temp.push(pa, pb);
@@ -1337,39 +1366,62 @@ export function createMoves(host: MovesHost): Moves {
           el: pa,
           move: [NONE, lineMap(a, b)],
           fade: [
-            [0, 1],
-            [CROSS_MS, 0],
+            [w0, 1],
+            [w1, 0],
           ],
         },
         {
           el: pb,
           move: [lineMap(b, a), NONE],
           fade: [
-            [0, 0],
-            [CROSS_MS, 1],
+            [w0, 0],
+            [w1, 1],
           ],
         },
       );
     };
+    /**
+     * The step grows from where "Starts with" names it, at the line's size:
+     * the line goes in the first START_OUT ms, and the step comes in over it
+     * as it sets off. Only the step's words are carried, so it starts where
+     * those words stood, after the lead.
+     */
+    const grow = (a: Part, b: Part) => {
+      used.add(b);
+      gone.add(a);
+      const pa = placed(a);
+      temp.push(pa);
+      tracks.push({ el: pa, fade: out });
+      const lead = pa.querySelector('b');
+      const leadEnd = lead ? boxOf(lead, container) : undefined;
+      const space = a.font * 0.25;
+      const at: Box =
+        leadEnd && leadEnd.w > 0
+          ? { ...a.box, x: leadEnd.x + leadEnd.w + space, w: a.box.w - leadEnd.w - space }
+          : a.box;
+      const pb = placed(b);
+      temp.push(pb);
+      tracks.push({
+        el: pb,
+        move: [mapTo(b.box, at, { s: a.font / b.font, line: b.line, lineOver: a.line }), NONE],
+        fade: [
+          [setOff[0], 0],
+          [setOff[1], 1],
+        ],
+      });
+    };
     const startsWith = I.after?.text.replace(/^\s*Starts with:?\s*/, '').trim();
-    if (I.sentence.text.trim() === L.step.text.trim()) pair(I.sentence, L.step);
+    if (I.sentence.text.trim() === L.step.text.trim()) carry(I.sentence, L.step);
     else {
-      pair(I.sentence, L.ttl);
-      if (I.after && startsWith === L.step.text.trim()) pair(I.after, L.step);
+      if (L.ttl) carry(I.sentence, L.ttl);
+      if (I.after && startsWith === L.step.text.trim()) grow(I.after, L.step);
     }
     for (const key of ['status', 'label', 'sentence', 'after', 'meta', 'under', 'start'] as const) {
       const p = I[key];
-      if (!p || (key === 'sentence' && used.size > 0) || (key === 'after' && used.has(L.step)))
-        continue;
+      if (!p || gone.has(p)) continue;
       const pic = placed(p);
       temp.push(pic);
-      tracks.push({
-        el: pic,
-        fade: [
-          [0, 1],
-          [CROSS_MS, 0],
-        ],
-      });
+      tracks.push({ el: pic, fade: out });
     }
     for (const key of ['nowline', 'ttl', 'step', 'mins', 'rest', 'note'] as const) {
       const p = L[key];
@@ -1379,19 +1431,28 @@ export function createMoves(host: MovesHost): Moves {
       tracks.push({
         el: pic,
         fade: [
-          [0, 0],
-          [CROSS_MS, 1],
+          [LANTERN_MS - FIRST, 0],
+          [LANTERN_MS, 1],
         ],
       });
     }
+    // The bar, the pills: each comes in once the drawer folding down from
+    // half has gone under it, rather than over the drawer's rows.
+    const from = snap.drawerY;
+    const to = boxOf(layers.drawer, container).y;
+    const clear = (box: Box) => {
+      const under = to > from + 0.5 ? (box.y + box.h - from) / (to - from) : 0;
+      return under > 0 ? Math.min(D - FIRST, momentAt(SPRING, Math.min(1, under))) : 0;
+    };
     if (L.bar) {
       const pic = placed(L.bar);
       temp.push(pic);
+      const at = clear(L.bar.box);
       tracks.push({
         el: pic,
         fade: [
-          [0, 0],
-          [FIRST, 1],
+          [at, 0],
+          [at + FIRST, 1],
         ],
       });
       const fill = pic.querySelector<HTMLElement>('.fill');
@@ -1402,18 +1463,15 @@ export function createMoves(host: MovesHost): Moves {
           move: [{ x: 0, y: 0, sx: 0, sy: 1 }, NONE],
           easing: EASE_OUT,
           duration: DRAW_MS,
+          delay: at,
         });
       }
     }
     // Step done and Pause sit over the drawer's rows while it folds down from
     // half: they come in once its top has gone under the line they stand on.
-    const pills = [...layers.dock.querySelectorAll<HTMLElement>('.dock-pill')];
-    const from = snap.drawerY;
-    const to = boxOf(layers.drawer, container).y;
-    for (const el of pills) {
+    for (const el of [...layers.dock.querySelectorAll<HTMLElement>('.dock-pill')]) {
       const box = boxOf(el, container);
-      const under = to > from + 0.5 ? (box.y - from) / (to - from) : 0;
-      const at = under > 0 ? Math.min(D - FIRST, momentAt(SPRING, Math.min(1, under))) : 0;
+      const at = clear({ ...box, h: 0 });
       tracks.push({
         el,
         fade: [
