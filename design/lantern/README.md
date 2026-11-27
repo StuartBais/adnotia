@@ -2,6 +2,8 @@
 
 November 2026. The owner looked at the ten directions in `design/explore/` and chose "Lantern, but with Glasshouse's pinned now capsule". This folder develops that choice. It is a drawing, not a decision: ADR-045 stands until the owner confirms this direction and a new ADR records it.
 
+The prototype at `/bench/` follows this design, built from `PROTOTYPE-PLAN.md`, and `QUESTIONS.md` lists what it leaves for the owner to answer.
+
 ## The idea
 
 A dark charcoal canvas lit by one sentence, the step you are on, in very large white type, with one terracotta bar burning down beneath it. Everywhere else, that sentence travels folded into a charcoal Now capsule that names its task. The capsule sits in a fixed slot above the drawer and the tabs, with the capture button beside it, one tap from Focus on every screen. Charcoal means now, and the stone drawer holds the rest of today.
