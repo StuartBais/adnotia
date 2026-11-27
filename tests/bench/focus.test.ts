@@ -107,6 +107,14 @@ describe('the Reduce Motion fades (SPEC 10)', () => {
     const task = rules.find((rule) => rule.selectors.includes('.screen.task'))?.body ?? '';
     expect(task).toMatch(/background-color 150ms/);
     expect(task).not.toMatch(/transform|translate|top|left/);
+    // The text never eases through the ground's grey: it changes at once, a
+    // third of the way, on either path.
+    const full =
+      rules.find((rule) => rule.selectors.includes(".app[data-motion='full'] .screen.task"))
+        ?.body ?? '';
+    expect(task).toMatch(/color 0s linear 50ms/);
+    expect(full).toMatch(/background-color 300ms ease-out/);
+    expect(full).toMatch(/color 0s linear 100ms/);
   });
 
   it('fades the capture sheet in and out, and what it raises, with nothing travelling', () => {

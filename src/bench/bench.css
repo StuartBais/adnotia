@@ -2435,14 +2435,19 @@ svg.i28 {
 }
 
 /* Lighting on Start: a colour change, 150 ms under Reduce Motion, 300 ms
-   otherwise, on white places (SPEC 10). */
+   otherwise, on white places (SPEC 10). The ground eases; the text changes
+   at once a third of the way, where it keeps about 3:1 against the ground
+   either way. Eased with the ground, it passed through the ground's own
+   grey and the title all but vanished. */
 .screen.task {
   transition:
     background-color 150ms ease-out,
-    color 150ms ease-out;
+    color 0s linear 50ms;
 }
 .app[data-motion='full'] .screen.task {
-  transition-duration: 300ms;
+  transition:
+    background-color 300ms ease-out,
+    color 0s linear 100ms;
 }
 
 /* The title at 122–160, under the back pill. */
