@@ -1982,6 +1982,24 @@ describe('4 · Focus (SPEC 5.4)', () => {
     expect(button(m.container, 'Undo step done: Read it once and send')).toBeTruthy();
   });
 
+  it('Escape closes it as "⌄ Today" does, unless the capture sheet over it takes the key', async () => {
+    const m = await focused();
+    const escape = () =>
+      new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true });
+    // Capture over Focus: Escape closes the sheet, and Focus stays.
+    press(m.container, 'Capture');
+    expect(m.container.dataset['sheet']).toBe('focus');
+    type(m, 'Ring the garage').dispatchEvent(escape());
+    expect(m.container.dataset['sheet']).toBeUndefined();
+    expect(m.container.dataset['focus']).toBe('open');
+    const key = escape();
+    id(m, 'f-step')!.dispatchEvent(key);
+    expect(key.defaultPrevented).toBe(true);
+    expect(m.container.dataset['focus']).toBeUndefined();
+    expect(model.running(stateOf(m).tasks)?.title).toBe(EMAIL);
+    expect(document.activeElement).toBe(id(m, 'b-lit'));
+  });
+
   it('"⌄ Today" folds it back into the lantern; the clock keeps running', async () => {
     const m = await focused();
     press(m.container, 'Back to Today');

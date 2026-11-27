@@ -658,18 +658,23 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
     if (['Shift', 'Control', 'Alt', 'Meta'].includes(event.key)) return;
     const target = event.target;
     if (target instanceof HTMLElement && isQuiet(target)) delete target.dataset['quiet'];
-    // Escape folds the open drawer, as Hide and back do, when nothing above
-    // it took the key: a sheet closes itself, and a field lets go of it.
+    // Escape is the keyboard's back, when nothing above took the key: a
+    // sheet closes itself, and a field lets go of it. It closes Focus as
+    // "⌄ Today" does, or folds the open drawer, as Hide does.
     if (
-      event.key === 'Escape' &&
-      !event.defaultPrevented &&
-      !event.isComposing &&
-      isOpen() &&
-      !sheet &&
-      !tsheet &&
-      !focusShown &&
-      !drag?.moving()
+      event.key !== 'Escape' ||
+      event.defaultPrevented ||
+      event.isComposing ||
+      sheet ||
+      tsheet ||
+      drag?.moving()
     ) {
+      return;
+    }
+    if (focusOpen && focusShown) {
+      event.preventDefault();
+      closeFocus();
+    } else if (isOpen() && !focusShown) {
       event.preventDefault();
       hideDrawer();
     }
