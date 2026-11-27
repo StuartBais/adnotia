@@ -226,6 +226,12 @@ interface TaskSheet {
   /** The control that raised it, where focus goes back when it closes. */
   opener: string;
   serial: number;
+  /**
+   * The when sheet: "Pick a day" chosen for a task with no day after
+   * tomorrow. The day field shows, and the task is left as it was until a
+   * day is set in it: the app proposes no day of its own (SPEC 13).
+   */
+  picking?: boolean;
 }
 
 /**
@@ -2878,8 +2884,8 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
     if (!task) return base;
     switch (open.kind) {
       case 'when': {
-        const form = whenForm(task, t);
-        return [...base, form.choice, form.length, form.canLess];
+        const form = whenForm(task, t, open);
+        return [...base, form.choice, form.date, form.length, form.canLess];
       }
       case 'more':
         return [...base, task.notes !== undefined && task.notes.trim() !== ''];
@@ -2890,13 +2896,15 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
     }
   }
 
-  /** The when sheet's state, from the task as it is. */
-  function whenForm(task: BenchDomains['tasks'][number], t: Date) {
+  /** The when sheet's state, from the task as it is, and a day being picked. */
+  function whenForm(task: BenchDomains['tasks'][number], t: Date, open?: TaskSheet) {
     const today = loggingDay(t);
     const tomorrow = addDays(today, 1);
     const when = task.when;
-    const choice: WhenChoice =
-      when.kind === 'none'
+    const picking = open?.picking === true;
+    const choice: WhenChoice = picking
+      ? 'pick'
+      : when.kind === 'none'
         ? 'none'
         : when.kind === 'timed'
           ? when.date === today
@@ -2912,6 +2920,8 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
       today,
       tomorrow,
       choice,
+      // The day the field shows: none while one is being picked.
+      date: picking || when.kind === 'none' ? undefined : when.date,
       minutes,
       length: minutes !== undefined && minutes > 0 ? duration(minutes) : T.notSet,
       canLess: when.kind === 'timed' ? when.durationMinutes > 5 : minutes !== undefined,
@@ -2930,13 +2940,13 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
     switch (open.kind) {
       case 'when': {
         const t = now();
-        const form = whenForm(task, t);
+        const form = whenForm(task, t, open);
         return whenSheet({
           ...shell,
           title: T.when,
           choice: form.choice,
           time: task.when.kind === 'timed' ? task.when.time : undefined,
-          date: task.when.kind === 'none' ? undefined : task.when.date,
+          date: form.date,
           today: form.today,
           length: form.length,
           canLess: form.canLess,
@@ -2954,6 +2964,7 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
           // which no list would show.
           onDate: (date) => {
             const today = loggingDay(now());
+            if (tsheet) tsheet.picking = false;
             setWhen(id, { kind: 'anytime', date: date < today ? today : date });
           },
           onLess: () => changeLength(id, -5),
@@ -2992,19 +3003,27 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
     }
   }
 
-  /** A row of the when sheet: the choice takes effect at once (SPEC 12). */
+  /**
+   * A row of the when sheet: the choice takes effect at once (SPEC 12), but
+   * for "Pick a day", which waits for the day.
+   */
   function chooseWhen(id: string, choice: WhenChoice): void {
     const task = read().tasks.find((item) => item.id === id);
     if (!task) return;
     const t = now();
     const form = whenForm(task, t);
+    const wasPicking = tsheet?.picking === true;
+    if (tsheet) tsheet.picking = false;
     switch (choice) {
       case 'none':
-        return setWhen(id, { kind: 'none' });
+        setWhen(id, { kind: 'none' });
+        break;
       case 'today':
-        return setWhen(id, { kind: 'anytime', date: form.today });
+        setWhen(id, { kind: 'anytime', date: form.today });
+        break;
       case 'tomorrow':
-        return setWhen(id, { kind: 'anytime', date: form.tomorrow });
+        setWhen(id, { kind: 'anytime', date: form.tomorrow });
+        break;
       case 'at': {
         // Its own time if it had one today; otherwise the next half hour.
         const time =
@@ -3013,17 +3032,18 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
             : nextHalfHour(t);
         const length =
           task.when.kind === 'timed' ? task.when.durationMinutes : (estimateOf(task) ?? 15);
-        return setWhen(id, { kind: 'timed', date: form.today, time, durationMinutes: length });
+        setWhen(id, { kind: 'timed', date: form.today, time, durationMinutes: length });
+        break;
       }
-      case 'pick': {
-        // Its own day if that is after tomorrow; otherwise the day after.
-        const date =
-          task.when.kind !== 'none' && task.when.date > form.tomorrow
-            ? task.when.date
-            : addDays(form.today, 2);
-        return setWhen(id, { kind: 'anytime', date });
-      }
+      case 'pick':
+        // A day of its own after tomorrow is already picked. Otherwise the
+        // day field opens empty, and nothing changes until a day is set.
+        if (tsheet && form.choice !== 'pick') tsheet.picking = true;
+        break;
     }
+    // The sheet is drawn again for a pick begun or given up, even where the
+    // task itself did not change.
+    if (wasPicking || tsheet?.picking) render();
   }
 
   /**

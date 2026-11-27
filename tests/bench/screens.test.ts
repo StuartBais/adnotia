@@ -3503,8 +3503,12 @@ describe('the sheets a task’s page raises (SPEC 9.9 and 12)', () => {
     press(m.container, 'Tomorrow');
     expect(dentist(m).when).toEqual({ kind: 'anytime', date: '2026-11-25' });
     press(m.container, 'Pick a day');
-    expect(dentist(m).when).toEqual({ kind: 'anytime', date: '2026-11-26' });
+    // Nothing is proposed: the day field opens empty, and the task keeps
+    // tomorrow until a day is set in it (SPEC 13).
+    expect(dentist(m).when).toEqual({ kind: 'anytime', date: '2026-11-25' });
+    expect(radios(m)[4]).toEqual(['Pick a day', 'true']);
     const day = id(m, 'w-date') as HTMLInputElement;
+    expect(day.value).toBe('');
     day.value = '2026-12-02';
     day.dispatchEvent(new Event('change', { bubbles: true }));
     expect(dentist(m).when).toEqual({ kind: 'anytime', date: '2026-12-02' });
@@ -3513,6 +3517,12 @@ describe('the sheets a task’s page raises (SPEC 9.9 and 12)', () => {
     day.dispatchEvent(new Event('change', { bubbles: true }));
     expect(dentist(m).when).toEqual({ kind: 'anytime', date: '2026-11-24' });
     expect(radios(m)[1]).toEqual(['Today, anytime', 'true']);
+    press(m.container, 'Pick a day');
+    expect(dentist(m).when).toEqual({ kind: 'anytime', date: '2026-11-24' });
+    // Another row instead: the pick is given up, as if never begun.
+    press(m.container, 'Today, anytime');
+    expect(radios(m)[1]).toEqual(['Today, anytime', 'true']);
+    expect(id(m, 'w-date')).toBeNull();
     press(m.container, 'Pick a day');
     press(m.container, 'No date (inbox)');
     expect(dentist(m).when).toEqual({ kind: 'none' });
