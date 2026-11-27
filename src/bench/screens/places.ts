@@ -155,7 +155,7 @@ export const ABOUT = {
       title: 'In the hand',
       items: [
         'The rest of today: pull its handle up and let go, slowly or with a flick, over each tab. Close it with Hide or by pulling it down.',
-        'Taps that land between the capsule and capture, and between the capsule and Step done.',
+        'Taps that land between the capsule and capture, and between the capsule’s slot and Step done.',
         'Tasks: flick a list and tap to stop it. That tap only stops the list; the capsule does not open.',
         'Double-tap a line of text, in the rest of today or on this page. The page should not zoom.',
         'Back: swipe in from the left edge on a task’s page, a sheet, the open drawer and Focus, and watch whether the page slides in twice. From the home screen, see whether the swipe works at all.',
