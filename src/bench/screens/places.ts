@@ -131,7 +131,9 @@ export function crisisScreen(actions: PlaceActions): Built {
 
 export const ABOUT = {
   what: 'A prototype of the phone app, made to be held and tried. It is not the app, and nothing links to it.',
-  data: 'What you do here stays in this browser, unencrypted, under its own name. A copy added to the home screen keeps its data apart from Safari’s.',
+  data: 'What you do here stays in this browser, unencrypted, under its own name. A copy added to the home screen keeps its data apart from Safari’s. In a Private Browsing tab, it lasts only until the tab is closed.',
+  keepsNothing:
+    'This browser is not letting the prototype keep anything, so it starts again on every reload. Blocking all cookies does this.',
   homeTitle: 'On the home screen',
   home: 'In Safari, tap Share, then Add to Home Screen. The copy there opens without Safari around it, which is the fairer test of an app.',
   statusBar:
@@ -169,7 +171,7 @@ export const ABOUT = {
  * to put it on the home screen, what to try on the phone, what is left out,
  * the face and its licence, and, under "Prototype", the scenario buttons.
  */
-export function aboutScreen(actions: PlaceActions): Built {
+export function aboutScreen(actions: PlaceActions, keepsNothing = false): Built {
   return {
     nodes: [
       pageHeader(T.me, actions),
@@ -181,7 +183,7 @@ export function aboutScreen(actions: PlaceActions): Built {
           'div',
           { class: 'prose' },
           h('p', { class: 'lead', text: ABOUT.what }),
-          h('p', { class: 't-meta', text: ABOUT.data }),
+          h('p', { class: 't-meta', text: keepsNothing ? ABOUT.keepsNothing : ABOUT.data }),
           h('h2', { class: 't-label', text: ABOUT.homeTitle }),
           h('p', { class: 't-meta', text: ABOUT.home }),
           h('p', { class: 't-meta', text: ABOUT.statusBar }),

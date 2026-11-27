@@ -55,8 +55,10 @@ export interface Started {
 
 export async function startBench(options: StartOptions): Promise<Started> {
   const { container } = options;
-  const adapter =
-    options.adapter ?? (isLocalStorageAvailable() ? localStorageAdapter() : memoryStorageAdapter());
+  // A browser that lets the prototype keep nothing (Safari blocking all
+  // cookies) gets memory, and About says so rather than promising otherwise.
+  const keeps = options.adapter !== undefined || isLocalStorageAvailable();
+  const adapter = options.adapter ?? (keeps ? localStorageAdapter() : memoryStorageAdapter());
   const now = options.now ?? (() => new Date());
   const confirm = options.confirm ?? ((question: string) => window.confirm(question));
 
@@ -80,7 +82,7 @@ export async function startBench(options: StartOptions): Promise<Started> {
     store = candidate;
     // The prototype writes where the person was and flushes when the page is
     // hidden or left (app.ts).
-    bench = mountBench({ store, container, now, confirm });
+    bench = mountBench({ store, container, now, confirm, keepsNothing: !keeps });
   }
 
   function failed(): void {

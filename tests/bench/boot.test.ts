@@ -1,6 +1,7 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { SCHEMA_VERSION, memoryStorageAdapter, type StorageAdapter } from '../../src/kernel/store';
 import { FAILED, KEY, migratingCodec, startBench, type Started } from '../../src/bench/boot';
+import { ABOUT } from '../../src/bench/screens/places';
 
 // Starting the prototype (PROTOTYPE-PLAN.md section 5): its own key, a codec
 // that migrates what was stored, and one plain screen when what was stored
@@ -78,5 +79,38 @@ describe('starting', () => {
     expect(await adapter.read(KEY)).not.toBe('{ not json');
     expect(await adapter.read('adnotia-v1')).toBe('the app’s own document');
     expect(container.textContent).not.toContain(FAILED.title);
+  });
+
+  it('says in About that nothing is kept, where the browser lets it keep nothing', async () => {
+    const open = async () => {
+      container = document.createElement('div');
+      document.body.append(container);
+      started = await startBench({ container, now: () => new Date('2026-11-24T10:05:00') });
+      const tap = (name: string) =>
+        [...container.querySelectorAll('button')].find((b) => b.textContent === name)!.click();
+      tap('Me');
+      tap(ABOUT_ROW);
+      return container.textContent ?? '';
+    };
+    const ABOUT_ROW = 'About this prototype';
+    // Safari blocking all cookies: touching storage throws.
+    const blocked = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new DOMException('blocked', 'SecurityError');
+    });
+    try {
+      const text = await open();
+      expect(text).toContain(ABOUT.keepsNothing);
+      expect(text).not.toContain(ABOUT.data);
+    } finally {
+      blocked.mockRestore();
+      started?.destroy();
+      started = undefined;
+      container.remove();
+    }
+    // Where it can keep things, About says where they are.
+    const text = await open();
+    expect(text).toContain(ABOUT.data);
+    expect(text).not.toContain(ABOUT.keepsNothing);
+    localStorage.removeItem(KEY);
   });
 });

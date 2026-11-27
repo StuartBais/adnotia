@@ -133,6 +133,8 @@ export interface BenchOptions {
    * the comparison harness fixes, so the guard runs out there as on a phone.
    */
   monotonic?: () => number;
+  /** The browser lets nothing be kept: what is done here lasts until the page goes. */
+  keepsNothing?: boolean;
 }
 
 /** Where the person is: the current tab, the pages pushed on it, and the Tasks list. */
@@ -1317,7 +1319,7 @@ export function mountBench(options: BenchOptions): { destroy(): void } {
         case 'crisis':
           return crisisScreen(actions);
         case 'about':
-          return aboutScreen(actions);
+          return aboutScreen(actions, options.keepsNothing === true);
         case 'settings':
           return settingsScreen(settingsView(read()), {
             onBack: back,
