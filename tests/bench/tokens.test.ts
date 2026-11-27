@@ -235,7 +235,7 @@ describe('text on the bench’s grounds', () => {
   const CHARCOAL_OBJECT =
     /\.(?:capsule|nowtag|focuspill|c-ride|ts-ride|ntag\.now|start\.first)(?![\w-])/;
 
-  it('never sets ash or terracotta as text on a light ground: white places, stone or a tint', () => {
+  it('never sets white, ash or terracotta as text on a light ground: white places, stone or a tint', () => {
     const light =
       /data-places='white'\]\[data-ground='place'\]|^\.drawer|^\.tabs|^\.c-panel|^\.foot/;
     let seen = 0;
@@ -250,9 +250,7 @@ describe('text on the bench’s grounds', () => {
         // Focus pill and the charcoal Start. Named as whole classes, so the
         // quiet "Start this instead" and a plain tag are still held here.
         if (CHARCOAL_OBJECT.test(selector)) continue;
-        expect(['--charcoal', '--muted', '--white'], `${selector} { color: ${ink} }`).toContain(
-          ink,
-        );
+        expect(['--charcoal', '--muted'], `${selector} { color: ${ink} }`).toContain(ink);
         seen++;
       }
     }
