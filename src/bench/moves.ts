@@ -154,6 +154,12 @@ const AWAY_MS = 40;
 const LAND_MS = 150;
 /** Focus's context line, controls and foot fade in over the last 120 ms (SPEC 10). */
 const FOCUS_LAST = 120;
+/**
+ * A step changing between its two-line and one-line drawings in place: a
+ * dissolve of about two frames, so two layers of white text are not drawn
+ * over each other, grey and double, for longer.
+ */
+const REWRAP_MS = 32;
 /** Step done: the finished step rises and the next one rises into place (SPEC 10). */
 export const STEP_MS = 250;
 /** Pause and Resume, and the Next line's words: a cross-fade in place (SPEC 10). */
@@ -1135,9 +1141,11 @@ export function createMoves(host: MovesHost): Moves {
    * Where, on the way from the capsule or the lantern to Focus, what is drawn
    * at Focus's size takes over from what is drawn at the other end's: near
    * Focus, as a share of the way. Focus's step may wrap where the other end's
-   * is one line, and its second line lies across the bar anywhere else.
+   * is one line, and its second line lies across the bar anywhere else. A
+   * short stretch, about two frames, so the two are not drawn over each
+   * other for long.
    */
-  const NEAR_FOCUS: readonly [number, number] = [0.8, 0.95];
+  const NEAR_FOCUS: readonly [number, number] = [0.86, 0.92];
 
   /**
    * Focus is the capsule opened all the way (SPEC 10): the frame grows from
@@ -1836,7 +1844,7 @@ export function createMoves(host: MovesHost): Moves {
           move: [NONE, lineMap(a, b)],
           fade: [
             [0, 1],
-            [FIRST, 0],
+            [REWRAP_MS, 0],
           ],
         },
         {
@@ -1844,7 +1852,7 @@ export function createMoves(host: MovesHost): Moves {
           move: [NONE, lineMap(a, b)],
           fade: [
             [0, 0],
-            [FIRST, 1],
+            [REWRAP_MS, 1],
             [STEP_MS, 0],
           ],
         },

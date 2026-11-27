@@ -545,6 +545,10 @@ describe('a step that wraps in Focus travels as one line', () => {
     expect(finished(0)).toContain('two');
     for (const ms of [120, 180, 240]) expect(finished(ms)).not.toContain('two');
     expect(finished(120)).toEqual(['one']);
+    // The two drawings over each other only for a dissolve of two frames or so.
+    let twice = 0;
+    for (let ms = 0; ms <= 250; ms++) if (finished(ms).length > 1) twice++;
+    expect(twice).toBeLessThanOrEqual(40);
     over(m);
     nothingLeft(m);
   });
@@ -567,6 +571,15 @@ describe('a step that wraps in Focus travels as one line', () => {
       expect(stepDrawn(m, mine, 60)).not.toContain('two');
       expect(stepDrawn(m, mine, 60).length).toBeGreaterThan(0);
       expect(stepDrawn(m, mine, springDuration())).toEqual(['two']);
+      // Drawn twice, the one line over the two, only for a dissolve of two
+      // frames or so: two layers of white text at once read grey and double.
+      const twice = (played: Played[]) => {
+        let ms = 0;
+        for (let at = 0; at <= springDuration(); at++)
+          if (stepDrawn(m, played, at).length > 1) ms++;
+        return ms;
+      };
+      expect(twice(mine)).toBeLessThanOrEqual(50);
       over(m);
       before = played.length;
       press(m.container, from === 'capsule' ? 'Back to Routines' : 'Back to Today');
@@ -574,6 +587,7 @@ describe('a step that wraps in Focus travels as one line', () => {
       mine = since(before);
       // Going back, the same in reverse: two lines only as it sets off.
       expect(stepDrawn(m, mine, 0)).toContain('two');
+      expect(twice(mine)).toBeLessThanOrEqual(50);
       for (const ms of [120, 250, 400, springDuration()]) {
         expect(stepDrawn(m, mine, ms)).not.toContain('two');
         expect(stepDrawn(m, mine, ms).length).toBeGreaterThan(0);
