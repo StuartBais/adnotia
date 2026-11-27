@@ -1215,6 +1215,8 @@ describe('the 04:00 boundary (SPEC 5.7)', () => {
     const held = dayBoundary(lateNight, four, { holding: true });
     expect(model.running(held.tasks)?.id).toBe(email);
     expect(present(held, four).kind).toBe('running');
+    // Not to the inbox as an untagged row: into today, where its Now tag is.
+    expect(byTitle(held.tasks, EMAIL).when).toEqual({ kind: 'anytime', date: '2026-11-25' });
     expect(held.bench.day).toBe('2026-11-25');
     expect(byTitle(held.tasks, 'Call the dentist').when).toEqual({ kind: 'none' });
     // Coming back to it after time away still closes it within its own day.

@@ -944,7 +944,16 @@ export function dayBoundary(
       (task) => task.doneAt === undefined && task.when.kind !== 'none' && task.when.date < today,
     )
     .map((task) => task.id);
-  for (const id of past) tasks = model.unschedule(tasks, id);
+  // A clock kept running into the new day stays out of the inbox: what runs
+  // is answered in one place, and the only list that carries it is today's,
+  // with its Now tag (SPEC 4, 9.7). It moves to Anytime today.
+  const stillRunning = model.running(tasks)?.id;
+  for (const id of past) {
+    tasks =
+      options.holding && id === stillRunning
+        ? model.schedule(tasks, id, { kind: 'anytime', date: today })
+        : model.unschedule(tasks, id);
+  }
 
   // A mark made on the new day is about the new day: a forgotten clock closed
   // in the same wake at an estimate that ran out after 04:00 keeps its mark,
