@@ -71,6 +71,23 @@ if (scriptSrc.includes('unsafe-inline')) {
   );
 }
 
+// ------------------------------------------------------------ the font licence
+
+/*
+ * The prototype ships Instrument Sans under the SIL Open Font License 1.1, and
+ * condition 2 asks that each copy carry the copyright notice and the licence.
+ * The font's own name table holds the notice and only the licence's address,
+ * so the licence text has to be in the deployed copy, and it has to be the one
+ * in the source, byte for byte.
+ */
+const licencePath = join(dist, 'bench', 'OFL.txt');
+const licenceSource = join(root, 'src', 'bench', 'fonts', 'OFL.txt');
+if (!existsSync(licencePath)) {
+  fail('No dist/bench/OFL.txt: the prototype ships its typeface without the font licence.');
+} else if (!readFileSync(licencePath).equals(readFileSync(licenceSource))) {
+  fail('dist/bench/OFL.txt is not src/bench/fonts/OFL.txt byte for byte.');
+}
+
 // ------------------------------------------------------------- what goes where
 
 /*
@@ -126,7 +143,7 @@ if (existsSync(swPath)) {
         fail(`The service worker answers ${path} with the app shell: the welcome page disappears.`);
       }
     }
-    for (const path of ['/bench', '/bench/', '/bench/index.html', '/bench?x=1']) {
+    for (const path of ['/bench', '/bench/', '/bench/index.html', '/bench?x=1', '/bench/OFL.txt']) {
       if (answered(path)) {
         fail(
           `The service worker answers ${path} with the app shell, so the prototype opens as\n` +

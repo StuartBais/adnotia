@@ -142,7 +142,8 @@ confirmed it. What changed is that it can now be held.
     `src/bench/fonts/README.md`.
   - sha256: `19f8ec3200550a11859c7e52d7378354bf71bc6dd0441fdde79b9a660513f5e4`.
   - Size: 57,100 bytes.
-  - Licence: SIL Open Font License 1.1, in `OFL.txt` beside the file.
+  - Licence: SIL Open Font License 1.1, in `OFL.txt` beside the file. The
+    build copies it to `/bench/OFL.txt`, so the deployed copy carries it too.
   - It is served from the site's own origin under `font-src 'self'`, and
     nothing outside `src/bench/` uses it. The typeface is still proposed.
 - **The prototype's budget.** `npm run budget` reports `/bench/` at 123.0 kB

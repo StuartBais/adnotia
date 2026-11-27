@@ -7,7 +7,7 @@ The prototype loads it from its own origin. The page's policy is `font-src 'self
 ## What it is
 
 - **Face:** Instrument Sans, by the Instrument Sans Project Authors, version 4 as served by Google Fonts.
-- **Licence:** SIL Open Font License 1.1, in `OFL.txt` beside it. The copyright line names no Reserved Font Name, so the file may keep its name.
+- **Licence:** SIL Open Font License 1.1, in `OFL.txt` beside it. The copyright line names no Reserved Font Name, so the file may keep its name. The build copies `OFL.txt` to `/bench/OFL.txt`, because the deployed font is a copy too, and `scripts/check-built.mjs` fails if it is missing there or differs.
 - **Cut:** one variable woff2, the `latin` subset, with a width axis (`wdth` 75 to 100) and a weight axis (`wght` 400 to 700). Upright only. The `latin-ext` subset is left out.
 - **Unicode range,** as Google's stylesheet declares it for this subset: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD. A character outside it (Ł, ő) falls back to the system face. That is accepted.
 - **Size:** 57,100 bytes. It is already compressed, so it is budgeted as served.

@@ -20,6 +20,28 @@ function deployHeaders(): Plugin {
   };
 }
 
+// The prototype's typeface travels with its licence.
+//
+// The build hashes the woff2 into assets/ and nothing goes with it. The font's
+// name table keeps the copyright line and only the licence's address, and OFL
+// 1.1 condition 2 asks that each copy carry both, so the licence is copied
+// beside the page that uses the face. Under /bench/ rather than /assets/: the
+// app's worker answers every navigation off its denylist with the app shell,
+// and /bench is on that list, so this address opens the licence, not the app.
+// No glob in the workbox options matches a .txt, so the worker never precaches
+// it. The single-file build has no prototype and does not take this plugin.
+// scripts/check-built.mjs fails if the copy is missing or differs.
+function benchFontLicence(): Plugin {
+  return {
+    name: 'adnotia:bench-font-licence',
+    apply: 'build',
+    async writeBundle(options) {
+      const outDir = options.dir ?? resolve('dist');
+      await copyFile(resolve('src/bench/fonts/OFL.txt'), resolve(outDir, 'bench', 'OFL.txt'));
+    },
+  };
+}
+
 // The tab icon and the home-screen icon, inlined into index.html at build time.
 //
 // docs/07-design-system.md makes assets/logo.svg canonical and says not to embed
@@ -182,6 +204,7 @@ export default defineConfig(({ mode }) => {
       : [
           inlineIcons(),
           deployHeaders(),
+          benchFontLicence(),
           VitePWA({
             registerType: 'autoUpdate',
             // 'script-defer' emits registerSW.js as a real file. An inline
