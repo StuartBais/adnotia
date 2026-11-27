@@ -71,6 +71,29 @@ it('hands work over at the supplied instant and sums only time actually worked',
   expect(model.doneOn(model.reopen(finished, active.id), '2026-11-19')).toEqual([]);
 });
 
+it('discards only the named session, as if it had never begun', () => {
+  const earlier = model.startWork(frozen(smallDay), 'post', now);
+  const paused = model.stopWork(frozen(earlier), 'post', later);
+  const restart = new Date(`${date}T10:00`);
+  const resumed = model.startWork(frozen(paused), 'post', restart);
+  const before = model.running(frozen(resumed))!;
+  expect(before.sessions).toHaveLength(2);
+
+  const undone = model.discardSession(frozen(resumed), 'post', restart.toISOString());
+  const post = undone.find((t) => t.id === 'post')!;
+  // The earlier, closed session is untouched; the open one is gone, so nothing runs.
+  expect(post.sessions).toEqual([{ start: now.toISOString(), stop: later.toISOString() }]);
+  expect(model.running(undone)).toBeUndefined();
+  expect(model.minutesWorked(post, new Date(`${date}T12:00`))).toBe(20);
+  // Every other task is the same object, so nothing else was touched.
+  for (const task of undone)
+    if (task.id !== 'post') expect(task).toBe(resumed.find((t) => t.id === task.id));
+
+  // Twice is the same as once, and an unknown task is still refused.
+  expect(model.discardSession(frozen(undone), 'post', restart.toISOString())).toEqual(undone);
+  expect(() => model.discardSession(undone, 'nobody', restart.toISOString())).toThrow(RangeError);
+});
+
 it('keeps parent and step completion independent in both directions', () => {
   const parentDone = model.complete(frozen(smallDay), 'list', now);
   expect(model.doneOn(parentDone, date).map((t) => t.id)).toEqual(['list']);

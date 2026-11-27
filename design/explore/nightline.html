@@ -1,0 +1,1367 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Nightline · Adnotia phone direction</title>
+    <!--
+  Font, from Google Fonts under the SIL Open Font License:
+  - Overpass (variable, wght 100–900), the only face drawn, with tabular figures.
+  The app would bundle the file; the link is for this static mock-up only.
+-->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Overpass:wght@100..900&display=swap"
+    />
+    <style>
+      :root {
+        /* Nightline's own palette. Ratios measured, WCAG 2.x. */
+        --night: #111315; /* ground */
+        --band: #1c1f22; /* running row, dock, sheets, secondary buttons */
+        --slat: #17191c; /* one line of the board: chalk 15.7:1, pebble 7.5:1 */
+        --raise: #2a2e32; /* bar track on the ground; chalk on it 12.2:1 */
+        --chalk: #f2f2ef; /* primary text: 16.6:1 on night, 14.8:1 on band */
+        --pebble: #a6aaad; /* secondary text: 8.0:1 on night, 7.1:1 on band */
+        --mint: #5de2ae; /* the one live accent: 11.5:1 on night, 10.2:1 on band; night glyph on it 11.5:1 */
+        --edge: rgba(242, 242, 239, 0.055);
+
+        /* Presentation canvas, not the app */
+        --canvas: #e3e3df;
+        --canvas-ink: #121416; /* 14.4:1 on canvas */
+        --canvas-muted: #4a4e52; /* 6.5:1 on canvas */
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+      }
+
+      body {
+        background: var(--canvas);
+        color: var(--canvas-ink);
+        font-family: 'Overpass', system-ui, sans-serif;
+        font-variant-numeric: tabular-nums;
+        font-feature-settings: 'tnum' 1;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      /* ---------- presentation canvas ---------- */
+
+      .page {
+        width: 1400px;
+        padding: 56px 52px 64px;
+      }
+
+      .intro {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        gap: 48px;
+        margin-bottom: 44px;
+      }
+
+      .intro-kicker {
+        margin: 0 0 10px;
+        font-size: 15px;
+        line-height: 20px;
+        font-weight: 600;
+        color: var(--canvas-muted);
+      }
+
+      .intro h1 {
+        margin: 0;
+        font-size: 48px;
+        line-height: 52px;
+        font-weight: 800;
+        letter-spacing: -0.025em;
+      }
+
+      .intro-idea {
+        margin: 12px 0 0;
+        max-width: 800px;
+        text-wrap: pretty;
+        font-size: 19px;
+        line-height: 28px;
+        color: var(--canvas-muted);
+      }
+
+      .swatches {
+        display: flex;
+        gap: 18px;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+
+      .swatches li {
+        width: 76px;
+        font-size: 13px;
+        line-height: 17px;
+        color: var(--canvas-muted);
+      }
+
+      .swatches .chip {
+        display: block;
+        height: 44px;
+        border-radius: 12px;
+        margin-bottom: 8px;
+        box-shadow: inset 0 0 0 1px rgba(17, 19, 21, 0.12);
+      }
+
+      .swatches b {
+        display: block;
+        color: var(--canvas-ink);
+        font-weight: 700;
+      }
+
+      .shots {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+      }
+
+      .shot {
+        margin: 0;
+        width: 408px;
+      }
+
+      .shot figcaption {
+        margin-top: 22px;
+        padding: 0 6px;
+        font-size: 15px;
+        line-height: 22px;
+        color: var(--canvas-muted);
+      }
+
+      .shot figcaption strong {
+        display: block;
+        margin-bottom: 2px;
+        font-size: 17px;
+        font-weight: 700;
+        color: var(--canvas-ink);
+      }
+
+      .phone {
+        padding: 9px;
+        border-radius: 56px;
+        background: #0a0b0c;
+        box-shadow:
+          0 0 0 1px #34383b,
+          inset 0 0 0 1px #1d2023,
+          0 60px 90px -50px rgba(17, 19, 21, 0.6),
+          0 24px 44px -28px rgba(17, 19, 21, 0.45);
+      }
+
+      /* ---------- the app ---------- */
+
+      .screen {
+        position: relative;
+        width: 390px;
+        height: 844px;
+        overflow: hidden;
+        border-radius: 47px;
+        background: var(--night);
+        color: var(--chalk);
+      }
+
+      .screen :where(p, h1, h2, ul, ol, dl, dd) {
+        margin: 0;
+      }
+      .screen :where(ul, ol) {
+        list-style: none;
+        padding: 0;
+      }
+      .screen :where(a) {
+        color: inherit;
+        text-decoration: none;
+      }
+      .screen :where(button) {
+        font: inherit;
+        color: inherit;
+        border: 0;
+        background: none;
+        padding: 0;
+        cursor: pointer;
+      }
+
+      .ico {
+        width: 24px;
+        height: 24px;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 1.75;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        flex: none;
+      }
+
+      .island {
+        position: absolute;
+        top: 11px;
+        left: 50%;
+        width: 122px;
+        height: 35px;
+        margin-left: -61px;
+        border-radius: 20px;
+        background: #000;
+      }
+
+      .status {
+        height: 54px;
+        padding: 2px 30px 0 44px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: 16px;
+        font-weight: 700;
+      }
+
+      .status-icons {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .status-icons svg {
+        fill: var(--chalk);
+        display: block;
+      }
+
+      .home-bar {
+        position: absolute;
+        bottom: 8px;
+        left: 50%;
+        width: 134px;
+        height: 5px;
+        margin-left: -67px;
+        border-radius: 3px;
+        background: var(--chalk);
+      }
+
+      /* capture: the same mint square, bottom right, on every screen */
+      .capture {
+        width: 56px;
+        height: 56px;
+        flex: none;
+        display: grid;
+        place-items: center;
+        border-radius: 16px;
+        background: var(--mint);
+        color: var(--night);
+        box-shadow: 0 14px 26px -12px rgba(0, 0, 0, 0.75);
+      }
+
+      .capture .ico {
+        width: 26px;
+        height: 26px;
+        stroke-width: 2.4;
+      }
+
+      .capture--float {
+        position: absolute;
+        right: 16px;
+        bottom: 102px;
+      }
+
+      /* the bar: mint is time left, the track is the whole estimate */
+      .bar {
+        height: 8px;
+        border-radius: 4px;
+        background: var(--night);
+        overflow: hidden;
+      }
+
+      .bar > span {
+        display: block;
+        height: 100%;
+        border-radius: inherit;
+        background: var(--mint);
+      }
+
+      .bar--ground {
+        background: var(--raise);
+      }
+
+      /* buttons */
+      .btn {
+        height: 56px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 0 18px;
+        border-radius: 16px;
+        font-size: 17px;
+        line-height: 22px;
+        font-weight: 700;
+        white-space: nowrap;
+      }
+
+      .btn .ico {
+        width: 22px;
+        height: 22px;
+      }
+
+      .btn-chalk {
+        background: var(--chalk);
+        color: var(--night);
+      }
+
+      .btn-band {
+        background: var(--band);
+        color: var(--chalk);
+        box-shadow: inset 0 0 0 1px var(--edge);
+      }
+
+      .icon-btn {
+        width: 44px;
+        height: 44px;
+        display: grid;
+        place-items: center;
+        border-radius: 14px;
+        color: var(--pebble);
+      }
+
+      .icon-btn--band {
+        background: var(--band);
+        color: var(--chalk);
+      }
+
+      /* ---------- 1 · Today ---------- */
+
+      .today-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        padding: 12px 16px 0 28px;
+      }
+
+      .screen-title {
+        font-size: 28px;
+        line-height: 34px;
+        font-weight: 800;
+        letter-spacing: -0.018em;
+      }
+
+      .screen-date {
+        margin-top: 2px;
+        font-size: 15px;
+        line-height: 20px;
+        color: var(--pebble);
+      }
+
+      .me {
+        height: 44px;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        margin-top: -5px;
+        padding: 0 14px 0 11px;
+        border-radius: 14px;
+        background: var(--band);
+        box-shadow: inset 0 0 0 1px var(--edge);
+        font-size: 15px;
+        line-height: 20px;
+        font-weight: 700;
+      }
+
+      .me .ico {
+        width: 20px;
+        height: 20px;
+        color: var(--pebble);
+      }
+
+      /* The running line is the board's own line, lifted: the same time
+         column, with Now where the time would be, and the time left
+         drawn underneath it. Its text starts at 28, like every row. */
+      .now-band {
+        display: grid;
+        grid-template-columns: 72px 1fr auto;
+        align-items: baseline;
+        align-content: space-between;
+        height: 160px;
+        margin: 16px 12px 0;
+        padding: 20px 16px 16px;
+        border-radius: 20px;
+        background: var(--band);
+        box-shadow: inset 0 0 0 1px var(--edge);
+      }
+
+      .now-word {
+        font-size: 20px;
+        line-height: 24px;
+        font-weight: 800;
+        color: var(--mint);
+      }
+
+      .now-open {
+        align-self: start;
+        margin: -1px -6px 0 8px;
+        color: var(--pebble);
+      }
+      .now-open .ico {
+        display: block;
+        width: 22px;
+        height: 22px;
+      }
+
+      .now-title {
+        display: block;
+        font-size: 22px;
+        line-height: 26px;
+        font-weight: 600;
+        letter-spacing: -0.008em;
+      }
+
+      .now-step {
+        display: block;
+        margin-top: 4px;
+        font-size: 15px;
+        line-height: 20px;
+        color: var(--pebble);
+      }
+
+      .now-time {
+        grid-column: 1 / -1;
+      }
+      .now-time-words {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        margin-top: 10px;
+        font-size: 15px;
+        line-height: 20px;
+        color: var(--pebble);
+      }
+      .now-left {
+        font-size: 22px;
+        line-height: 26px;
+        font-weight: 800;
+        color: var(--chalk);
+        white-space: nowrap;
+      }
+
+      .board-label {
+        margin: 22px 28px 8px;
+        font-size: 15px;
+        line-height: 20px;
+        font-weight: 600;
+        color: var(--pebble);
+      }
+
+      .board {
+        display: grid;
+        gap: 6px;
+      }
+
+      /* A line of the board: full bleed, 64 tall, 6 of ground between. */
+      .row {
+        display: grid;
+        grid-template-columns: 72px 1fr auto;
+        align-items: baseline;
+        align-content: center;
+        min-height: 64px;
+        padding: 8px 28px;
+        background: var(--slat);
+      }
+
+      .row-time {
+        font-size: 20px;
+        line-height: 24px;
+        font-weight: 800;
+      }
+      .row-title {
+        display: block;
+        font-size: 20px;
+        line-height: 26px;
+        font-weight: 600;
+        letter-spacing: -0.006em;
+      }
+      .row-status {
+        display: block;
+        margin-top: 1px;
+        font-size: 15px;
+        line-height: 20px;
+        color: var(--pebble);
+      }
+      .row-len {
+        margin-left: 12px;
+        font-size: 15px;
+        line-height: 20px;
+        color: var(--pebble);
+        text-align: right;
+      }
+
+      .dock {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        height: 86px;
+        padding-bottom: 22px;
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        background: var(--band);
+        box-shadow: inset 0 1px 0 var(--edge);
+      }
+
+      .tab {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 3px;
+        min-height: 64px;
+        color: var(--pebble);
+        font-size: 13px;
+        line-height: 16px;
+        font-weight: 500;
+      }
+
+      .tab-label {
+        position: relative;
+        padding-bottom: 7px;
+      }
+
+      .tab[aria-current='page'] {
+        color: var(--chalk);
+        font-weight: 800;
+      }
+
+      .tab[aria-current='page'] .tab-label::after {
+        content: '';
+        position: absolute;
+        left: -2px;
+        right: -2px;
+        bottom: 0;
+        height: 3px;
+        border-radius: 2px;
+        background: var(--mint);
+      }
+
+      /* ---------- 2 · Task opened ---------- */
+
+      .nav-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        height: 52px;
+        padding: 4px 16px 0 14px;
+      }
+
+      .back {
+        height: 44px;
+        display: inline-flex;
+        align-items: center;
+        gap: 2px;
+        padding: 0 12px 0 4px;
+        color: var(--pebble);
+        font-size: 17px;
+        line-height: 22px;
+        font-weight: 600;
+      }
+
+      .task-title {
+        margin: 20px 28px 0;
+        font-size: 26px;
+        line-height: 32px;
+        font-weight: 800;
+        letter-spacing: -0.018em;
+      }
+
+      .facts {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        margin: 26px 28px 0;
+      }
+
+      .facts dt {
+        font-size: 15px;
+        line-height: 20px;
+        color: var(--pebble);
+      }
+      .facts dd {
+        margin-top: 3px;
+        font-size: 20px;
+        line-height: 24px;
+        font-weight: 800;
+      }
+
+      .task-time {
+        margin: 22px 28px 0;
+      }
+
+      .task-time-words {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 10px;
+        font-size: 15px;
+        line-height: 20px;
+        color: var(--pebble);
+      }
+
+      .task-time-words b {
+        color: var(--chalk);
+        font-weight: 700;
+      }
+
+      .steps {
+        display: grid;
+        gap: 6px;
+      }
+
+      .step {
+        display: grid;
+        grid-template-columns: 44px 1fr auto;
+        align-items: baseline;
+        align-content: center;
+        min-height: 64px;
+        padding: 0 28px;
+        background: var(--slat);
+      }
+
+      .step-num {
+        font-size: 20px;
+        line-height: 24px;
+        font-weight: 800;
+      }
+      .step-title {
+        font-size: 19px;
+        line-height: 24px;
+        font-weight: 600;
+        letter-spacing: -0.006em;
+      }
+
+      .step-state {
+        display: block;
+        white-space: nowrap;
+        margin-left: 12px;
+        font-size: 15px;
+        line-height: 20px;
+        color: var(--pebble);
+      }
+
+      .step-state .ico {
+        display: inline-block;
+        width: 18px;
+        height: 18px;
+        margin-right: 5px;
+        stroke-width: 2;
+        vertical-align: -3px;
+      }
+
+      .step--done .step-num,
+      .step--done .step-title {
+        color: var(--pebble);
+      }
+
+      .step--now {
+        margin: 0 12px;
+        padding: 0 16px;
+        min-height: 72px;
+        border-radius: 16px;
+        background: var(--band);
+        box-shadow: inset 0 0 0 1px var(--edge);
+      }
+
+      .step--now .step-state {
+        color: var(--mint);
+        font-weight: 600;
+      }
+
+      .note-row {
+        display: grid;
+        grid-template-columns: 44px 1fr;
+        align-items: baseline;
+        align-content: center;
+        min-height: 64px;
+        margin-top: 22px;
+        padding: 8px 28px;
+        background: var(--slat);
+      }
+
+      .note-label {
+        font-size: 15px;
+        line-height: 20px;
+        font-weight: 600;
+        color: var(--pebble);
+      }
+      .note-text {
+        font-size: 17px;
+        line-height: 24px;
+      }
+
+      .actions {
+        position: absolute;
+        left: 16px;
+        right: 16px;
+        bottom: 34px;
+        display: flex;
+        gap: 10px;
+      }
+
+      .actions .btn-chalk {
+        flex: 1.3;
+      }
+      .actions .btn-band {
+        flex: 1;
+      }
+
+      /* ---------- 3 · Focus ---------- */
+
+      .focus-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        height: 52px;
+        padding: 4px 16px 0 28px;
+      }
+
+      .focus-task {
+        font-size: 15px;
+        line-height: 20px;
+        color: var(--pebble);
+      }
+
+      .focus-body {
+        margin: 100px 28px 0;
+      }
+
+      .f-done {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 15px;
+        line-height: 20px;
+        color: var(--pebble);
+      }
+      .f-done .ico {
+        width: 18px;
+        height: 18px;
+        margin-left: -4px; /* the glyph sits 4 in from its box; this puts it on the 28 line */
+        stroke-width: 2;
+      }
+
+      .f-now-label {
+        margin-top: 30px;
+        font-size: 15px;
+        line-height: 20px;
+        color: var(--pebble);
+      }
+      .f-now-label b {
+        color: var(--mint);
+        font-weight: 600;
+      }
+
+      .f-now {
+        margin-top: 8px;
+        font-size: 34px;
+        line-height: 40px;
+        font-weight: 800;
+        letter-spacing: -0.022em;
+      }
+
+      .f-then {
+        margin-top: 14px;
+        font-size: 20px;
+        line-height: 26px;
+        font-weight: 600;
+        color: var(--pebble);
+      }
+
+      .f-timer {
+        margin: 56px 28px 0;
+      }
+      .f-timer .bar {
+        height: 12px;
+        border-radius: 6px;
+      }
+
+      .f-ticks {
+        display: flex;
+        justify-content: space-between;
+        height: 6px;
+        margin: 6px 0 0;
+        padding: 0;
+      }
+
+      .f-ticks i {
+        width: 1px;
+        height: 6px;
+        background: rgba(166, 170, 173, 0.45);
+      }
+
+      .f-time-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        margin-top: 10px;
+      }
+      .f-left {
+        font-size: 24px;
+        line-height: 28px;
+        font-weight: 800;
+      }
+      .f-ends {
+        font-size: 15px;
+        line-height: 20px;
+        color: var(--pebble);
+      }
+
+      .f-note {
+        display: grid;
+        grid-template-columns: 52px 1fr;
+        align-items: baseline;
+        align-content: center;
+        min-height: 64px;
+        margin-top: 34px;
+        padding: 8px 28px;
+        background: var(--slat);
+      }
+
+      .f-actions {
+        position: absolute;
+        left: 16px;
+        right: 16px;
+        bottom: 34px;
+        display: grid;
+        gap: 10px;
+      }
+
+      .btn-xl {
+        height: 64px;
+        border-radius: 20px;
+        font-size: 19px;
+        line-height: 24px;
+        font-weight: 800;
+      }
+      .btn-xl .ico {
+        width: 24px;
+        height: 24px;
+        stroke-width: 2.2;
+      }
+
+      .f-row {
+        display: flex;
+        gap: 10px;
+      }
+      .f-row .btn-band {
+        flex: 1;
+      }
+
+      .sep {
+        display: inline-block;
+        width: 3px;
+        height: 3px;
+        margin: 0 8px;
+        border-radius: 50%;
+        background: currentColor;
+        vertical-align: middle;
+        position: relative;
+        top: -1px;
+      }
+
+      .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        white-space: nowrap;
+      }
+    </style>
+  </head>
+  <body>
+    <svg width="0" height="0" style="position: absolute" aria-hidden="true" focusable="false">
+      <defs>
+        <symbol id="i-board" viewBox="0 0 24 24">
+          <path d="M4 7h3M10.5 7H20M4 12h3M10.5 12H20M4 17h3M10.5 17H17" />
+        </symbol>
+        <symbol id="i-tasks" viewBox="0 0 24 24">
+          <rect x="4" y="4" width="16" height="16" rx="4.5" />
+          <path d="m8.6 12.3 2.4 2.4 4.5-5" />
+        </symbol>
+        <symbol id="i-routines" viewBox="0 0 24 24">
+          <path d="M16.5 3.5 19 6l-2.5 2.5" />
+          <path d="M5 11.5V10a4 4 0 0 1 4-4h10" />
+          <path d="M7.5 20.5 5 18l2.5-2.5" />
+          <path d="M19 12.5V14a4 4 0 0 1-4 4H5" />
+        </symbol>
+        <symbol id="i-library" viewBox="0 0 24 24">
+          <path
+            d="M12 6.6C10.4 5.3 8 4.6 4.5 4.6v13c3.5 0 5.9.7 7.5 2 1.6-1.3 4-2 7.5-2v-13c-3.5 0-5.9.7-7.5 2Z"
+          />
+          <path d="M12 6.6v13" />
+        </symbol>
+        <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" /></symbol>
+        <symbol id="i-right" viewBox="0 0 24 24"><path d="m9.5 6 6 6-6 6" /></symbol>
+        <symbol id="i-left" viewBox="0 0 24 24"><path d="m14.5 5.5-6.5 6.5 6.5 6.5" /></symbol>
+        <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5" /></symbol>
+        <symbol id="i-close" viewBox="0 0 24 24">
+          <path d="m6.5 6.5 11 11M17.5 6.5l-11 11" />
+        </symbol>
+        <symbol id="i-pause" viewBox="0 0 24 24">
+          <rect x="7" y="5.5" width="3.6" height="13" rx="1.2" fill="currentColor" stroke="none" />
+          <rect
+            x="13.4"
+            y="5.5"
+            width="3.6"
+            height="13"
+            rx="1.2"
+            fill="currentColor"
+            stroke="none"
+          />
+        </symbol>
+        <symbol id="i-play" viewBox="0 0 24 24">
+          <path
+            d="M8 5.8v12.4a.8.8 0 0 0 1.2.7l9.6-6.2a.8.8 0 0 0 0-1.4L9.2 5.1a.8.8 0 0 0-1.2.7Z"
+            fill="currentColor"
+          />
+        </symbol>
+        <symbol id="i-more" viewBox="0 0 24 24">
+          <circle cx="6" cy="12" r="1.5" fill="currentColor" />
+          <circle cx="12" cy="12" r="1.5" fill="currentColor" />
+          <circle cx="18" cy="12" r="1.5" fill="currentColor" />
+        </symbol>
+        <symbol id="i-person" viewBox="0 0 24 24">
+          <circle cx="12" cy="8.5" r="3.5" />
+          <path d="M5 19.5c1.2-3.2 3.9-5 7-5s5.8 1.8 7 5" />
+        </symbol>
+        <symbol id="i-later" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="8" />
+          <path d="M12 8v4.2l2.8 1.8" />
+        </symbol>
+      </defs>
+    </svg>
+
+    <main class="page">
+      <header class="intro">
+        <div>
+          <p class="intro-kicker">
+            Adnotia phone app<span class="sep"><span class="sr-only">,</span></span
+            >design direction
+          </p>
+          <h1>Nightline</h1>
+          <p class="intro-idea">
+            A dark departures board for your day. Each item is one line: time, name, length. The
+            running line lifts into a wide band with a live mint bar, and every status is said in
+            plain words.
+          </p>
+        </div>
+        <ul class="swatches" aria-label="Palette">
+          <li><span class="chip" style="background: #111315"></span><b>Night</b>#111315</li>
+          <li><span class="chip" style="background: #1c1f22"></span><b>Band</b>#1C1F22</li>
+          <li><span class="chip" style="background: #f2f2ef"></span><b>Chalk</b>#F2F2EF</li>
+          <li><span class="chip" style="background: #a6aaad"></span><b>Pebble</b>#A6AAAD</li>
+          <li><span class="chip" style="background: #5de2ae"></span><b>Signal mint</b>#5DE2AE</li>
+        </ul>
+      </header>
+
+      <div class="shots">
+        <!-- ================= 1 · Today ================= -->
+        <figure class="shot">
+          <div class="phone">
+            <section class="screen" aria-label="Today screen">
+              <div class="island" aria-hidden="true"></div>
+              <div class="status" aria-hidden="true">
+                <span>10:05</span>
+                <span class="status-icons">
+                  <svg width="18" height="12" viewBox="0 0 18 12">
+                    <rect x="0" y="8" width="3" height="4" rx="1" />
+                    <rect x="5" y="5.5" width="3" height="6.5" rx="1" />
+                    <rect x="10" y="3" width="3" height="9" rx="1" />
+                    <rect x="15" y="0" width="3" height="12" rx="1" />
+                  </svg>
+                  <svg width="16" height="12" viewBox="0 0 16 12">
+                    <path
+                      d="M8 2.2c2.3 0 4.4.9 6 2.4l1.3-1.3A10.3 10.3 0 0 0 8 .3 10.3 10.3 0 0 0 .7 3.3L2 4.6a8.4 8.4 0 0 1 6-2.4Zm0 3.7c1.3 0 2.5.5 3.4 1.3l1.3-1.3A6.6 6.6 0 0 0 8 4a6.6 6.6 0 0 0-4.7 1.9l1.3 1.3C5.5 6.4 6.7 5.9 8 5.9Zm0 3.6c.4 0 .8.2 1.1.4L8 11 6.9 9.9c.3-.2.7-.4 1.1-.4Z"
+                    />
+                  </svg>
+                  <svg width="27" height="13" viewBox="0 0 27 13">
+                    <rect
+                      x="0.5"
+                      y="0.5"
+                      width="23"
+                      height="12"
+                      rx="3.5"
+                      fill="none"
+                      stroke="#f2f2ef"
+                      stroke-opacity=".4"
+                    />
+                    <rect x="2" y="2" width="16" height="9" rx="2" />
+                    <path d="M25 4.5v4c.8-.3 1.3-1.1 1.3-2s-.5-1.7-1.3-2Z" fill-opacity=".4" />
+                  </svg>
+                </span>
+              </div>
+
+              <header class="today-head">
+                <div>
+                  <h1 class="screen-title">Today</h1>
+                  <p class="screen-date">Tuesday 24 November</p>
+                </div>
+                <a class="me" href="#me"
+                  ><svg class="ico" aria-hidden="true"><use href="#i-person" /></svg>Me</a
+                >
+              </header>
+
+              <a
+                class="now-band"
+                href="#focus"
+                aria-label="Now: Write the school email. Step 2 of 3, Write the question. 18 minutes left, until 10:23. Open focus."
+              >
+                <span class="now-word">Now</span>
+                <span
+                  ><span class="now-title">Write the school email</span
+                  ><span class="now-step"
+                    >Step 2 of 3<span class="sep"><span class="sr-only">,</span></span
+                    >Write the question</span
+                  ></span
+                >
+                <span class="now-open" aria-hidden="true"
+                  ><svg class="ico"><use href="#i-right" /></svg
+                ></span>
+                <div class="now-time">
+                  <div
+                    class="bar"
+                    role="progressbar"
+                    aria-label="Time left"
+                    aria-valuemin="0"
+                    aria-valuemax="25"
+                    aria-valuenow="18"
+                    aria-valuetext="18 of 25 minutes left"
+                  >
+                    <span style="width: 72%"></span>
+                  </div>
+                  <p class="now-time-words">
+                    <span class="now-left">18 min left</span><span>until 10:23</span>
+                  </p>
+                </div>
+              </a>
+
+              <section aria-labelledby="later-label">
+                <h2 class="board-label" id="later-label">Later today</h2>
+                <ul class="board">
+                  <li>
+                    <a class="row" href="#dentist">
+                      <span class="row-time">10:30</span>
+                      <span
+                        ><span class="row-title">Call the dentist</span
+                        ><span class="row-status"
+                          >Next<span class="sep"><span class="sr-only">,</span></span
+                          >in 25 min</span
+                        ></span
+                      >
+                      <span class="row-len">10 min</span>
+                    </a>
+                  </li>
+                  <li>
+                    <a class="row" href="#park">
+                      <span class="row-time">11:00</span>
+                      <span class="row-title">Walk to the park</span>
+                      <span class="row-len">20 min</span>
+                    </a>
+                  </li>
+                </ul>
+              </section>
+
+              <section aria-labelledby="any-label">
+                <h2 class="board-label" id="any-label">Anytime</h2>
+                <ul class="board">
+                  <li>
+                    <a class="row" href="#permit">
+                      <span class="row-time"></span>
+                      <span class="row-title">Pay the gas bill</span>
+                      <span class="row-len">10 min</span>
+                    </a>
+                  </li>
+                  <li>
+                    <a class="row" href="#ink">
+                      <span class="row-time"></span>
+                      <span class="row-title">Order printer ink</span>
+                      <span class="row-len">5 min</span>
+                    </a>
+                  </li>
+                </ul>
+              </section>
+
+              <button
+                class="capture capture--float"
+                type="button"
+                aria-label="Capture a task or thought"
+              >
+                <svg class="ico" aria-hidden="true"><use href="#i-plus" /></svg>
+              </button>
+
+              <nav class="dock" aria-label="Main">
+                <a class="tab" href="#today" aria-current="page"
+                  ><svg class="ico" aria-hidden="true"><use href="#i-board" /></svg
+                  ><span class="tab-label">Today</span></a
+                >
+                <a class="tab" href="#tasks"
+                  ><svg class="ico" aria-hidden="true"><use href="#i-tasks" /></svg
+                  ><span class="tab-label">Tasks</span></a
+                >
+                <a class="tab" href="#routines"
+                  ><svg class="ico" aria-hidden="true"><use href="#i-routines" /></svg
+                  ><span class="tab-label">Routines</span></a
+                >
+                <a class="tab" href="#library"
+                  ><svg class="ico" aria-hidden="true"><use href="#i-library" /></svg
+                  ><span class="tab-label">Library</span></a
+                >
+              </nav>
+              <div class="home-bar" aria-hidden="true"></div>
+            </section>
+          </div>
+          <figcaption>
+            <strong
+              >1<span class="sep"><span class="sr-only">,</span></span
+              >Today</strong
+            >The running line gets the space. Everything else is one line: time, name, length, with
+            its status in words.
+          </figcaption>
+        </figure>
+
+        <!-- ================= 2 · Task opened ================= -->
+        <figure class="shot">
+          <div class="phone">
+            <section class="screen" aria-label="Task screen">
+              <div class="island" aria-hidden="true"></div>
+              <div class="status" aria-hidden="true">
+                <span>10:05</span>
+                <span class="status-icons">
+                  <svg width="18" height="12" viewBox="0 0 18 12">
+                    <rect x="0" y="8" width="3" height="4" rx="1" />
+                    <rect x="5" y="5.5" width="3" height="6.5" rx="1" />
+                    <rect x="10" y="3" width="3" height="9" rx="1" />
+                    <rect x="15" y="0" width="3" height="12" rx="1" />
+                  </svg>
+                  <svg width="16" height="12" viewBox="0 0 16 12">
+                    <path
+                      d="M8 2.2c2.3 0 4.4.9 6 2.4l1.3-1.3A10.3 10.3 0 0 0 8 .3 10.3 10.3 0 0 0 .7 3.3L2 4.6a8.4 8.4 0 0 1 6-2.4Zm0 3.7c1.3 0 2.5.5 3.4 1.3l1.3-1.3A6.6 6.6 0 0 0 8 4a6.6 6.6 0 0 0-4.7 1.9l1.3 1.3C5.5 6.4 6.7 5.9 8 5.9Zm0 3.6c.4 0 .8.2 1.1.4L8 11 6.9 9.9c.3-.2.7-.4 1.1-.4Z"
+                    />
+                  </svg>
+                  <svg width="27" height="13" viewBox="0 0 27 13">
+                    <rect
+                      x="0.5"
+                      y="0.5"
+                      width="23"
+                      height="12"
+                      rx="3.5"
+                      fill="none"
+                      stroke="#f2f2ef"
+                      stroke-opacity=".4"
+                    />
+                    <rect x="2" y="2" width="16" height="9" rx="2" />
+                    <path d="M25 4.5v4c.8-.3 1.3-1.1 1.3-2s-.5-1.7-1.3-2Z" fill-opacity=".4" />
+                  </svg>
+                </span>
+              </div>
+
+              <div class="nav-top">
+                <a class="back" href="#today"
+                  ><svg class="ico" aria-hidden="true"><use href="#i-left" /></svg>Today</a
+                >
+                <button class="icon-btn" type="button" aria-label="More for this task">
+                  <svg class="ico" aria-hidden="true"><use href="#i-more" /></svg>
+                </button>
+              </div>
+
+              <h1 class="task-title">Write the school email</h1>
+
+              <dl class="facts">
+                <div>
+                  <dt>When</dt>
+                  <dd>Today</dd>
+                </div>
+                <div>
+                  <dt>Planned</dt>
+                  <dd>25 min</dd>
+                </div>
+                <div>
+                  <dt>Ends about</dt>
+                  <dd>10:23</dd>
+                </div>
+              </dl>
+
+              <div class="task-time">
+                <div
+                  class="bar bar--ground"
+                  role="progressbar"
+                  aria-label="Time left"
+                  aria-valuemin="0"
+                  aria-valuemax="25"
+                  aria-valuenow="18"
+                  aria-valuetext="18 of 25 minutes left"
+                >
+                  <span style="width: 72%"></span>
+                </div>
+                <p class="task-time-words"><b>18 min left</b><span>7 min so far</span></p>
+              </div>
+
+              <section aria-labelledby="steps-label">
+                <h2 class="board-label" id="steps-label">Steps</h2>
+                <ol class="steps">
+                  <li class="step step--done">
+                    <span class="step-num">1</span>
+                    <span class="step-title">Find the school address</span>
+                    <span class="step-state"
+                      ><svg class="ico" aria-hidden="true"><use href="#i-check" /></svg>Done</span
+                    >
+                  </li>
+                  <li class="step step--now" aria-current="step">
+                    <span class="step-num">2</span>
+                    <span class="step-title">Write the question</span>
+                    <span class="step-state">Now</span>
+                  </li>
+                  <li class="step">
+                    <span class="step-num">3</span>
+                    <span class="step-title">Read it once and send</span>
+                    <span class="step-state">Next</span>
+                  </li>
+                </ol>
+              </section>
+
+              <div class="note-row">
+                <span class="note-label">Note</span>
+                <p class="note-text">When is the permission slip due?</p>
+              </div>
+
+              <div class="actions">
+                <a class="btn btn-chalk" href="#focus"
+                  ><svg class="ico" aria-hidden="true"><use href="#i-play" /></svg>Back to it</a
+                >
+                <button class="btn btn-band" type="button">Later today</button>
+                <button class="capture" type="button" aria-label="Capture a task or thought">
+                  <svg class="ico" aria-hidden="true"><use href="#i-plus" /></svg>
+                </button>
+              </div>
+              <div class="home-bar" aria-hidden="true"></div>
+            </section>
+          </div>
+          <figcaption>
+            <strong
+              >2<span class="sep"><span class="sr-only">,</span></span
+              >Task opened</strong
+            >One task as a board. The current step is lifted out, and the end time is stated rather
+            than left to work out.
+          </figcaption>
+        </figure>
+
+        <!-- ================= 3 · Focus ================= -->
+        <figure class="shot">
+          <div class="phone">
+            <section class="screen" aria-label="Focus screen">
+              <div class="island" aria-hidden="true"></div>
+              <div class="status" aria-hidden="true">
+                <span>10:05</span>
+                <span class="status-icons">
+                  <svg width="18" height="12" viewBox="0 0 18 12">
+                    <rect x="0" y="8" width="3" height="4" rx="1" />
+                    <rect x="5" y="5.5" width="3" height="6.5" rx="1" />
+                    <rect x="10" y="3" width="3" height="9" rx="1" />
+                    <rect x="15" y="0" width="3" height="12" rx="1" />
+                  </svg>
+                  <svg width="16" height="12" viewBox="0 0 16 12">
+                    <path
+                      d="M8 2.2c2.3 0 4.4.9 6 2.4l1.3-1.3A10.3 10.3 0 0 0 8 .3 10.3 10.3 0 0 0 .7 3.3L2 4.6a8.4 8.4 0 0 1 6-2.4Zm0 3.7c1.3 0 2.5.5 3.4 1.3l1.3-1.3A6.6 6.6 0 0 0 8 4a6.6 6.6 0 0 0-4.7 1.9l1.3 1.3C5.5 6.4 6.7 5.9 8 5.9Zm0 3.6c.4 0 .8.2 1.1.4L8 11 6.9 9.9c.3-.2.7-.4 1.1-.4Z"
+                    />
+                  </svg>
+                  <svg width="27" height="13" viewBox="0 0 27 13">
+                    <rect
+                      x="0.5"
+                      y="0.5"
+                      width="23"
+                      height="12"
+                      rx="3.5"
+                      fill="none"
+                      stroke="#f2f2ef"
+                      stroke-opacity=".4"
+                    />
+                    <rect x="2" y="2" width="16" height="9" rx="2" />
+                    <path d="M25 4.5v4c.8-.3 1.3-1.1 1.3-2s-.5-1.7-1.3-2Z" fill-opacity=".4" />
+                  </svg>
+                </span>
+              </div>
+
+              <div class="focus-top">
+                <p class="focus-task">Write the school email</p>
+                <button class="icon-btn icon-btn--band" type="button" aria-label="Close focus">
+                  <svg class="ico" aria-hidden="true"><use href="#i-close" /></svg>
+                </button>
+              </div>
+
+              <div class="focus-body">
+                <p class="f-done">
+                  <svg class="ico" aria-hidden="true"><use href="#i-check" /></svg>Done: Find the
+                  school address
+                </p>
+                <p class="f-now-label">
+                  <b>Now</b><span class="sep"><span class="sr-only">,</span></span
+                  >step 2 of 3
+                </p>
+                <h1 class="f-now">Write the question</h1>
+                <p class="f-then">Then: Read it once and send</p>
+              </div>
+
+              <div class="f-timer">
+                <div
+                  class="bar bar--ground"
+                  role="progressbar"
+                  aria-label="Time left"
+                  aria-valuemin="0"
+                  aria-valuemax="25"
+                  aria-valuenow="18"
+                  aria-valuetext="18 of 25 minutes left"
+                >
+                  <span style="width: 72%"></span>
+                </div>
+                <p class="f-ticks" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></p>
+                <p class="f-time-row">
+                  <span class="f-left">18 min left</span
+                  ><span class="f-ends"
+                    >of 25<span class="sep"><span class="sr-only">,</span></span
+                    >ends 10:23</span
+                  >
+                </p>
+              </div>
+
+              <div class="f-note">
+                <span class="note-label">Note</span>
+                <p class="note-text">When is the permission slip due?</p>
+              </div>
+
+              <div class="f-actions">
+                <button class="btn btn-chalk btn-xl" type="button">
+                  <svg class="ico" aria-hidden="true"><use href="#i-check" /></svg>Step done
+                </button>
+                <div class="f-row">
+                  <button class="btn btn-band" type="button">+5 min</button>
+                  <button class="btn btn-band" type="button">
+                    <svg class="ico" aria-hidden="true"><use href="#i-pause" /></svg>Pause
+                  </button>
+                  <button class="capture" type="button" aria-label="Capture a thought">
+                    <svg class="ico" aria-hidden="true"><use href="#i-plus" /></svg>
+                  </button>
+                </div>
+              </div>
+              <div class="home-bar" aria-hidden="true"></div>
+            </section>
+          </div>
+          <figcaption>
+            <strong
+              >3<span class="sep"><span class="sr-only">,</span></span
+              >Focus</strong
+            >The step is the largest line on the screen. The clock is a bar and a sentence, and it
+            says when it ends.
+          </figcaption>
+        </figure>
+      </div>
+    </main>
+  </body>
+</html>

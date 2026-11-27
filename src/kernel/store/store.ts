@@ -20,6 +20,7 @@ import {
 } from './document';
 import { plainJsonCodec, type DocumentCodec } from './codec';
 import { memoryStorageAdapter, type StorageAdapter } from './adapters';
+import type { DomainsState } from './domains';
 
 /** What a module is handed. Anything not here is not available to a module. */
 export interface Store {
@@ -52,6 +53,8 @@ export interface KernelStore extends Store {
    * one slice, scoped to the profile in use, and cannot tell there are others.
    */
   updateFamily(update: (family: Readonly<FamilyState>) => FamilyState): void;
+  /** Writes to the shared domains (ADR-046). Subscribers to `'domains'` are told. */
+  updateDomains(update: (domains: Readonly<DomainsState>) => DomainsState): void;
   /** Remove a slice entirely. Explicit and separate from disabling a module. */
   deleteSlice(sliceId: string): void;
   /** Stop the debounce timer. No timer outlives the page. */
@@ -330,6 +333,14 @@ export function createStore(options: CreateStoreOptions = {}): KernelStore {
         profileId = undefined;
       }
       for (const sliceId of listeners.keys()) notify(sliceId);
+      schedulePersist();
+    },
+
+    updateDomains(update) {
+      const doc = clone(document);
+      doc.domains = update(doc.domains);
+      replace(doc);
+      notify('domains');
       schedulePersist();
     },
 

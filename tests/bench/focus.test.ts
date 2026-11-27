@@ -1,0 +1,153 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { describe, expect, it } from 'vitest';
+
+// Where keyboard focus is shown. The ring is drawn in the ground's own ink:
+// terracotta is kept to time and capture (design/lantern/SPEC.md section 7),
+// and on stone it would measure 2.1:1, under the 3:1 a focus indicator needs.
+//
+// jsdom resolves no custom properties, so the stylesheet is read as text.
+
+const css = readFileSync(resolve(process.cwd(), 'src/bench/bench.css'), 'utf8').replace(
+  /\/\*[\s\S]*?\*\//g,
+  '',
+);
+
+/** Every rule as selector and body; a rule inside @media keeps only its own selector. */
+const rules = [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)].map((match) => ({
+  selectors: (match[1] ?? '')
+    .split(',')
+    .map((part) => part.trim().replace(/\s+/g, ' '))
+    .filter(Boolean),
+  body: match[2] ?? '',
+}));
+
+/** What the last rule for `selector` that sets --ring sets it to. */
+const ringOf = (selector: string): string | undefined =>
+  rules
+    .filter((item) => item.selectors.includes(selector))
+    .map((item) => /--ring:\s*([^;]+);/.exec(item.body)?.[1]?.trim())
+    .filter((value) => value !== undefined)
+    .at(-1);
+
+describe('the focus ring', () => {
+  it('is drawn in --ring, and nowhere in terracotta', () => {
+    const base = rules.find((rule) => rule.selectors.includes(':focus-visible'));
+    expect(base?.body).toMatch(/outline:\s*2px solid var\(--ring\)/);
+    const focus = rules.filter((rule) => rule.selectors.some((s) => s.includes(':focus')));
+    for (const rule of focus.filter((item) => /outline(-color)?:/.test(item.body))) {
+      expect(rule.body).toMatch(/outline(-color)?:[^;]*var\(--ring\)/);
+    }
+    for (const rule of rules.filter((item) => /outline(-color)?:/.test(item.body))) {
+      expect(rule.body).not.toMatch(/--terra/);
+    }
+  });
+
+  it('is white on charcoal, and charcoal on stone and on white', () => {
+    expect(ringOf(':root')).toBe('var(--white)');
+    for (const light of [
+      '.drawer',
+      '.tabs',
+      '.capture.on-light',
+      '.c-panel',
+      ".app[data-places='white'][data-ground='place'] .screen",
+      ".app[data-places='white'][data-ground='place']:not([data-focus]) .dock",
+    ]) {
+      expect(ringOf(light), light).toBe('var(--charcoal)');
+    }
+  });
+
+  it('is not drawn where the app put focus back quietly, on any ground', () => {
+    // After the capture sheet drops (SPEC 5.5). Above `.capture.on-light`,
+    // the one ground that sets --ring on a control focus lands on.
+    expect(ringOf('.app [data-quiet]:focus-visible')).toBe('transparent');
+  });
+
+  it('stays white on the dock line in Focus, which is charcoal over a white place too', () => {
+    const dock = rules.filter((rule) =>
+      rule.selectors.some((s) => s.endsWith(' .dock') && /--ring:/.test(rule.body)),
+    );
+    for (const rule of dock) {
+      const white = rule.selectors.filter(
+        (s) => s.includes("data-places='white'") && s.endsWith(' .dock'),
+      );
+      for (const selector of white) expect(selector).toContain(':not([data-focus])');
+    }
+  });
+});
+
+describe('the Reduce Motion fades (SPEC 10)', () => {
+  const animationOf = (selector: string): string | undefined =>
+    rules
+      .filter((item) => item.selectors.includes(selector))
+      .map((item) => /animation:\s*([^;]+);/.exec(item.body)?.[1]?.trim())
+      .filter((value) => value !== undefined)
+      .at(-1);
+
+  // Each is the Reduce Motion path's; with motion on, in a browser that plays
+  // it, the app carries [data-anim] and moves.ts draws these on their way.
+  it('fades Focus in whole and out again, and the capsule in, over 200 ms, with nothing travelling', () => {
+    expect(animationOf('.app:not([data-anim])[data-focus] .focus')).toBe(
+      'bench-fade-in 200ms ease-out both',
+    );
+    expect(animationOf('.dock .enter')).toBe('bench-fade-in 200ms ease-out both');
+    expect(animationOf('.app:not([data-anim]) .focus[data-leaving]')).toBe(
+      'bench-fade-out 200ms ease-in both',
+    );
+    const frames = css.match(/@keyframes bench-fade-(?:in|out)\s*\{[^@]*?\}\s*\}/g) ?? [];
+    expect(frames).toHaveLength(2);
+    for (const frame of frames) expect(frame).not.toMatch(/transform|translate|scale/);
+  });
+
+  it('fades a new tab or page in over 200 ms, and lights Today on Start over 150 ms', () => {
+    expect(animationOf('.screen > .enter')).toBe('bench-fade-in 200ms ease-out both');
+    expect(animationOf('.screen .lantern.lighting')).toBe('bench-fade-in 150ms ease-out both');
+    // A task's page turning charcoal as it lights: a colour change, 150 ms
+    // under Reduce Motion and 300 ms on the animated path.
+    const task = rules.find((rule) => rule.selectors.includes('.screen.task'))?.body ?? '';
+    expect(task).toMatch(/background-color 150ms/);
+    expect(task).not.toMatch(/transform|translate|top|left/);
+    // The text never eases through the ground's grey: it changes at once, a
+    // third of the way, on either path.
+    const full =
+      rules.find((rule) => rule.selectors.includes(".app[data-motion='full'] .screen.task"))
+        ?.body ?? '';
+    expect(task).toMatch(/color 0s linear 50ms/);
+    expect(full).toMatch(/background-color 300ms ease-out/);
+    expect(full).toMatch(/color 0s linear 100ms/);
+  });
+
+  it('fades the capture sheet in and out, and what it raises, with nothing travelling', () => {
+    expect(animationOf('.app:not([data-anim])[data-sheet] .csheet')).toBe(
+      'bench-fade-in 200ms ease-out both',
+    );
+    expect(animationOf('.app:not([data-anim]) .sheet-layer[data-leaving]')).toBe(
+      'bench-fade-out 200ms ease-in both',
+    );
+    // A page's own sheets fade out on either path; only capture's drops.
+    expect(animationOf('.sheet-layer[data-leaving]:not([data-capture])')).toBe(
+      'bench-fade-out 200ms ease-in both',
+    );
+    expect(animationOf(".app:not([data-anim])[data-sheet='today'] .lantern")).toBe(
+      'bench-fade-in 200ms ease-out both',
+    );
+    expect(animationOf('.app:not([data-anim])[data-lowering] .lantern')).toBe(
+      'bench-fade-back 200ms ease-out both',
+    );
+    // Nothing else in the stylesheet animates them under [data-anim].
+    for (const rule of rules.filter((item) => /animation:/.test(item.body))) {
+      for (const selector of rule.selectors) {
+        expect(selector.replaceAll(':not([data-anim])', '')).not.toContain('[data-anim]');
+      }
+    }
+    // And with motion on only capture's own sheet stops fading out.
+    for (const rule of rules.filter((item) => /animation:/.test(item.body))) {
+      for (const selector of rule.selectors.filter((s) => s.includes('[data-leaving]'))) {
+        expect(selector).toMatch(/:not\(\[data-anim\]\)|:not\(\[data-capture\]\)/);
+      }
+    }
+    const back = /@keyframes bench-fade-back\s*\{([^@]*?\})\s*\}/.exec(css)?.[1] ?? '';
+    expect(back).toMatch(/opacity:\s*0/);
+    expect(back).not.toMatch(/transform|translate|scale/);
+  });
+});

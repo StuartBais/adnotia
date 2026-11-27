@@ -20,6 +20,28 @@ function deployHeaders(): Plugin {
   };
 }
 
+// The prototype's typeface travels with its licence.
+//
+// The build hashes the woff2 into assets/ and nothing goes with it. The font's
+// name table keeps the copyright line and only the licence's address, and OFL
+// 1.1 condition 2 asks that each copy carry both, so the licence is copied
+// beside the page that uses the face. Under /bench/ rather than /assets/: the
+// app's worker answers every navigation off its denylist with the app shell,
+// and /bench is on that list, so this address opens the licence, not the app.
+// No glob in the workbox options matches a .txt, so the worker never precaches
+// it. The single-file build has no prototype and does not take this plugin.
+// scripts/check-built.mjs fails if the copy is missing or differs.
+function benchFontLicence(): Plugin {
+  return {
+    name: 'adnotia:bench-font-licence',
+    apply: 'build',
+    async writeBundle(options) {
+      const outDir = options.dir ?? resolve('dist');
+      await copyFile(resolve('src/bench/fonts/OFL.txt'), resolve(outDir, 'bench', 'OFL.txt'));
+    },
+  };
+}
+
 // The tab icon and the home-screen icon, inlined into index.html at build time.
 //
 // docs/07-design-system.md makes assets/logo.svg canonical and says not to embed
@@ -106,6 +128,19 @@ function appPlumbingOnly(): Plugin {
         );
       }
       await writeFile(welcome, stripped, 'utf8');
+
+      // The benchmark prototype gets neither either. With the app's manifest,
+      // "Add to Home Screen" on the prototype would install the app instead, and
+      // a phone-app prototype must not be the page that registers the worker.
+      const bench = resolve(outDir, 'bench', 'index.html');
+      const benchHtml = await readFile(bench, 'utf8');
+      const benchStripped = benchHtml
+        .replace(/\s*<link rel="manifest"[^>]*>/g, '')
+        .replace(/\s*<script[^>]*register-sw[^>]*>\s*<\/script>/g, '');
+      if (benchStripped === benchHtml) {
+        throw new Error('The prototype page carries no manifest or worker registration to remove.');
+      }
+      await writeFile(bench, benchStripped, 'utf8');
     },
   };
 }
@@ -148,7 +183,13 @@ export default defineConfig(({ mode }) => {
       rollupOptions: {
         input: single
           ? { app: resolve('app/index.html') }
-          : { home: resolve('index.html'), app: resolve('app/index.html') },
+          : {
+              home: resolve('index.html'),
+              app: resolve('app/index.html'),
+              // The benchmark prototype for the phone rebuild. Not linked from
+              // anywhere; reached by its address. See docs/09-product-brief.md.
+              bench: resolve('bench/index.html'),
+            },
       },
       target: 'es2022',
       cssCodeSplit: !single,
@@ -163,6 +204,7 @@ export default defineConfig(({ mode }) => {
       : [
           inlineIcons(),
           deployHeaders(),
+          benchFontLicence(),
           VitePWA({
             registerType: 'autoUpdate',
             // 'script-defer' emits registerSW.js as a real file. An inline
@@ -204,6 +246,15 @@ export default defineConfig(({ mode }) => {
                 'assets/**/*.{js,css}',
                 '*.{svg,png,webmanifest}',
               ],
+              /*
+               * The prototype's own chunks are not the app's. `assets/**` would
+               * otherwise sweep them into the app's precache, so every phone
+               * that opened the app would download and keep the prototype too.
+               * A chunk the two share (the store) stays, because the app needs
+               * it. The first entry is Workbox's default, kept because setting
+               * this replaces it.
+               */
+              globIgnores: ['**/node_modules/**/*', 'assets/bench-*'],
               navigateFallback: 'app/index.html',
               /*
                * The reason the welcome page survives at all.
@@ -214,8 +265,15 @@ export default defineConfig(({ mode }) => {
                * person to open the app would find the welcome page replaced by
                * it — online and offline, for as long as the registration lived,
                * with nothing in the build to say so.
+               *
+               * The prototype's entry has no slash after `bench` when typed by
+               * hand, and Workbox tests the path with its query string, so the
+               * last entry takes `/bench`, `/bench/…` and `/bench?…` alike. With
+               * the slash required, `/bench` was answered with the app's shell
+               * on any phone that had opened the app, and the edge's redirect to
+               * `/bench/` never ran.
                */
-              navigateFallbackDenylist: [/^\/$/, /^\/index\.html$/, /^\/\?/],
+              navigateFallbackDenylist: [/^\/$/, /^\/index\.html$/, /^\/\?/, /^\/bench(?:[/?]|$)/],
               // There is nothing to fetch at runtime, so there is nothing to cache
               // at runtime either.
               runtimeCaching: [],

@@ -70,3 +70,40 @@ data quietly goes missing rather than loudly failing.
   backup and restore. That is inconvenient and honest.
 - The non-atomic fallback should be re-examined when Web Locks are available
   everywhere the app supports; the guard can then become unconditional.
+
+## Note, 27 November 2026: the prototype uses the guard without the lock
+
+The benchmark prototype at `/bench/` (ADR-047) keeps its own document under
+`adnotia-bench`, and two Safari tabs of it share that key. It uses this guard,
+with `{ lock: false }`, and the app is unchanged.
+
+- **Why without the lock.** The prototype writes where the person was when
+  the page is hidden or left, so a reload opens where they were. A Web Lock's
+  callback is a task, and in Chromium a reload within 200 ms of a tap came
+  back without that write. With the prototype's plain codec, the check and the
+  write finish within the event instead. This is the non-atomic mode described
+  above, taken on purpose: two tabs writing in the same instant can still both
+  pass the check.
+- **What a refusal shows.** The prototype has no backup to offer. It stops
+  saving and shows one plain screen that says the prototype was changed in
+  another tab, with a button that opens the newer copy.
+- **Coming back to a tab.** When a tab that has nothing waiting to be saved
+  is shown again and finds the stored copy has moved on, it opens the newer
+  copy without a word. Under the guard, storage can only have moved on from
+  that tab's last save, so nothing of the tab's is lost, and the screen is
+  left for the case it is for: two tabs changed at once.
+- **Known limits.** Found by the independent check of this change, in
+  Chromium, and not measured on a phone:
+  - The screen can show when nothing was lost. If a tab is shown again
+    before the tab being left has finished its last write, the returning
+    tab reopens quietly, its own next save is refused, and the screen
+    shows. The other tab's change is kept and the button opens it.
+  - Opening a second tab of the prototype in the background makes the
+    visible tab stale, because every tab saves once as it opens. The
+    visible tab gets no event to reopen on, so its next change is refused,
+    the screen shows, and that one change is not kept.
+  - A quiet reopen brings back the place the other tab was at, not this
+    tab's own, because the other tab's last write is what is stored.
+  - On a desktop with two windows, focusing a window may reopen it before
+    text typed into capture has been kept, and that text would be dropped.
+    This is read from the code and has not been seen happen.

@@ -120,7 +120,13 @@ describe('deploy/_headers', () => {
   });
 
   it('lets no edge cache decide which build a person runs', () => {
-    for (const path of ['/index.html', '/app/index.html', '/sw.js', '/manifest.webmanifest']) {
+    for (const path of [
+      '/index.html',
+      '/app/index.html',
+      '/bench/index.html',
+      '/sw.js',
+      '/manifest.webmanifest',
+    ]) {
       expect(headersFor(path).get('Cache-Control')).toBe('no-cache');
     }
   });
@@ -139,7 +145,14 @@ describe('the documents that decide which build runs', () => {
    * default and the app shell was cached at the edge — which is how an injected
    * script outlived the setting that had been turned off to stop it.
    */
-  const documents = ['/', '/index.html', '/app/', '/app/index.html'];
+  const documents = [
+    '/',
+    '/index.html',
+    '/app/',
+    '/app/index.html',
+    '/bench/',
+    '/bench/index.html',
+  ];
   const versionDeciding = ['/sw.js', '/manifest.webmanifest'];
 
   for (const path of [...documents, ...versionDeciding]) {
@@ -150,7 +163,7 @@ describe('the documents that decide which build runs', () => {
 
   it('covers every URL a browser requests a document at, not only the file behind it', () => {
     // The failure this pins is a rule that exists and never matches.
-    for (const served of ['/', '/app/']) {
+    for (const served of ['/', '/app/', '/bench/']) {
       expect(() => headersFor(served)).not.toThrow();
     }
   });

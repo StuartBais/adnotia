@@ -1,0 +1,4972 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Lantern · Adnotia phone app</title>
+    <!--
+  Font: Instrument Sans (SIL Open Font License), variable, wdth 75–100 and wght 400–700.
+  The app bundles the font file and makes no request. This link is for the board only.
+  Inter stands in for SF Pro on the system's own chrome (status bar, keyboard, Lock Screen clock),
+  so the app's face is never mistaken for the device's.
+-->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wdth,wght@75..100,400..700&family=Inter:wght@400..700&display=swap"
+    />
+    <style>
+      /* ═════════════ Tokens (SPEC section 7). Ratios measured with the WCAG 2.x formula. ═════════════ */
+      :root {
+        --charcoal: #222624; /* the present. white 15.3, ash 6.9, terracotta 6.3 */
+        --white: #ffffff; /* places. charcoal 15.3 */
+        --ash: #a9afab; /* on charcoal only, 6.9 */
+        --terra: #f28c5e; /* time and capture. charcoal on it 6.3 */
+        --stone: #eef0ec; /* the rest of today. charcoal 13.4, muted 5.9 */
+        --sage: #dfe9e0; /* done discs only */
+        --muted: #595c5b; /* on light only. white 6.8, stone 5.9, tints 5.1 and 5.8 */
+        --ash-20: #3d413f; /* white on it 10.4 */
+        --ash-30: #4b4f4d; /* bar track; terracotta against it 3.4 */
+        --tint-stone: #dee0dc; /* charcoal 8% on stone. charcoal 11.5, muted 5.1 */
+        --tint-white: #edeeed; /* charcoal 8% on white. charcoal 13.2, muted 5.8 */
+        --tint-stone-w: #dee0dc; /* the same mix as tint-stone, used on white for a quiet pill. charcoal 11.5 */
+        --ash-8: #2d312f; /* ash 8% over charcoal: the note field and the dark switch. ash 5.9, white 13.2 */
+        --ash-15: #363b38; /* ash 15% over charcoal: the lifted capsule. white 11.4, ash 5.1, terracotta 4.7 */
+        --ash-edge: #737875; /* ash 60% over charcoal: the lifted capsule's edge, 3.4 against the canvas */
+        --hair-dark: rgba(169, 175, 171, 0.16);
+        --hair-light: rgba(34, 38, 36, 0.1);
+
+        /* board only, never in the app */
+        --board: #e4e6e2; /* charcoal 12.2, muted 5.4 */
+        --board-text: #3f4341; /* 8.0 on the board */
+        --board-idea: #2e3230; /* 10.4 on the board */
+
+        --font: 'Instrument Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+        --sys: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter', system-ui, sans-serif;
+        --sh-thumb: 0 1px 3px rgba(34, 38, 36, 0.12);
+
+        /* the capsule's and the disc's shadows end inside the 14 pt gap above the drawer (670 to 684),
+           so none of them lands on the stone as a smear */
+        --sh-capsule: 0 6px 14px -6px rgba(34, 38, 36, 0.4), 0 2px 5px rgba(34, 38, 36, 0.12);
+        --sh-disc-dark: 0 6px 14px -6px rgba(0, 0, 0, 0.55);
+        --sh-disc-light: 0 6px 14px -6px rgba(34, 38, 36, 0.45), 0 2px 5px rgba(34, 38, 36, 0.14);
+        --sh-drawer: 0 -6px 22px rgba(0, 0, 0, 0.24);
+        --sh-sheet: 0 -8px 28px rgba(0, 0, 0, 0.28);
+        --halo: 0 0 10px 2px rgba(242, 140, 94, 0.45);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+      }
+      body {
+        background: var(--board);
+        color: var(--charcoal);
+        font-family: var(--font);
+        font-variant-numeric: tabular-nums; /* every time, count and minute; longhands below so nothing resets it */
+        -webkit-font-smoothing: antialiased;
+        text-rendering: optimizeLegibility;
+      }
+      button {
+        font: inherit;
+        color: inherit;
+        border: 0;
+        background: none;
+        padding: 0;
+        margin: 0;
+        cursor: pointer;
+        text-align: inherit;
+      }
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+      h1,
+      h2,
+      h3,
+      p,
+      ul,
+      ol,
+      figure,
+      figcaption {
+        margin: 0;
+        padding: 0;
+      }
+      ul,
+      ol {
+        list-style: none;
+      }
+      .vh {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        white-space: nowrap;
+      }
+
+      /* icons: one hand-drawn set on a 24 grid, strokes drawn non-scaling so the weight is the same at every size */
+      svg.i {
+        display: block;
+        flex: none;
+        width: 24px;
+        height: 24px;
+      }
+      svg.i12 {
+        width: 12px;
+        height: 12px;
+      }
+      svg.i16 {
+        width: 16px;
+        height: 16px;
+      }
+      svg.i18 {
+        width: 18px;
+        height: 18px;
+      }
+      svg.i20 {
+        width: 20px;
+        height: 20px;
+      }
+      svg.i28 {
+        width: 28px;
+        height: 28px;
+      }
+
+      /* ═════════════ Board ═════════════ */
+      .board {
+        width: 1944px;
+        margin: 0 auto;
+        padding: 60px 60px 88px;
+      }
+      .intro {
+        display: grid;
+        grid-template-columns: 1100px 600px;
+        justify-content: space-between;
+        align-items: start;
+        margin-bottom: 76px;
+      }
+      .eyebrow {
+        font-size: 14px;
+        line-height: 20px;
+        font-weight: 600;
+        color: var(--muted);
+        letter-spacing: 0.01em;
+      }
+      .intro h1 {
+        margin-top: 12px;
+        font-size: 80px;
+        line-height: 80px;
+        font-weight: 700;
+        letter-spacing: -0.035em;
+        color: var(--charcoal);
+      }
+      .subtitle {
+        margin-top: 6px;
+        font-size: 30px;
+        line-height: 36px;
+        font-weight: 600;
+        color: var(--muted);
+        letter-spacing: -0.012em;
+      }
+      .idea {
+        margin-top: 26px;
+        max-width: 1040px;
+        font-size: 20px;
+        line-height: 30px;
+        font-weight: 450;
+        color: var(--board-idea);
+      }
+      .idea b {
+        font-weight: 650;
+        color: var(--charcoal);
+      }
+      .swatches {
+        margin-top: 26px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px 26px;
+        max-width: 1060px;
+      }
+      .sw {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13.5px;
+        line-height: 20px;
+        font-weight: 500;
+        color: var(--board-text);
+      }
+      .sw i {
+        width: 16px;
+        height: 16px;
+        border-radius: 5px;
+        display: block;
+        box-shadow: inset 0 0 0 1px rgba(34, 38, 36, 0.14);
+      }
+      .sw b {
+        font-weight: 650;
+        color: var(--charcoal);
+      }
+      .typenote {
+        margin-top: 16px;
+        max-width: 1000px;
+        font-size: 13.5px;
+        line-height: 20px;
+        font-weight: 450;
+        color: var(--board-text);
+      }
+      .typenote b {
+        font-weight: 650;
+        color: var(--charcoal);
+      }
+
+      .objects {
+        padding-top: 0;
+      }
+      .objects .exlabel.from {
+        margin-top: 6px;
+      }
+      .objects h2 {
+        font-size: 17px;
+        line-height: 22px;
+        font-weight: 650;
+        color: var(--charcoal);
+        letter-spacing: -0.005em;
+      }
+      .exhibit {
+        margin-top: 18px;
+      }
+      .exlabel {
+        margin-top: 10px;
+        font-size: 13px;
+        line-height: 18px;
+        font-weight: 500;
+        color: var(--muted);
+      }
+      .islands {
+        display: flex;
+        align-items: center;
+        gap: 24px;
+      }
+      .objects .colcap {
+        margin-top: 22px;
+        padding-top: 14px;
+        border-top: 1px solid rgba(34, 38, 36, 0.12);
+        font-size: 13px;
+        line-height: 18px;
+        font-weight: 500;
+        color: var(--muted);
+      }
+
+      .row {
+        display: grid;
+        grid-template-columns: repeat(4, 414px);
+        column-gap: 56px;
+        align-items: start;
+      }
+      .row + .row {
+        margin-top: 80px;
+      }
+      .device {
+        display: grid;
+        gap: 44px; /* the frame's shadow reaches 86 below it; at 28 it greyed the caption number to 4.3:1 */
+        justify-items: center;
+        align-content: start;
+      }
+
+      .caption {
+        width: 390px;
+      }
+      .caption .n {
+        font-size: 13px;
+        line-height: 18px;
+        font-weight: 650;
+        color: var(--muted);
+        letter-spacing: 0.01em;
+      }
+      .caption h2 {
+        margin-top: 6px;
+        font-size: 20px;
+        line-height: 26px;
+        font-weight: 650;
+        letter-spacing: -0.012em;
+        color: var(--charcoal);
+      }
+      .caption p.t {
+        margin-top: 6px;
+        font-size: 15px;
+        line-height: 22px;
+        font-weight: 450;
+        color: var(--board-text);
+      }
+      .caption p.fn {
+        margin-top: 8px;
+        font-size: 13px;
+        line-height: 18px;
+        font-weight: 500;
+        color: var(--muted);
+      }
+
+      /* ═════════════ Phone frame, as Lantern drew it ═════════════ */
+      .frame {
+        width: 414px;
+        height: 868px;
+        padding: 12px;
+        border-radius: 66px;
+        background: linear-gradient(160deg, #2a2d2c 0%, #0c0d0d 38%, #0c0d0d 70%, #262928 100%);
+        box-shadow:
+          0 0 0 1.5px #5a5f5c,
+          0 0 0 3px #141615,
+          0 40px 70px -24px rgba(20, 24, 22, 0.45),
+          0 16px 30px -12px rgba(20, 24, 22, 0.3);
+      }
+      .screen {
+        position: relative;
+        width: 390px;
+        height: 844px;
+        border-radius: 54px;
+        overflow: hidden;
+        isolation: isolate;
+      }
+      .screen.dark {
+        background: var(--charcoal);
+        color: var(--white);
+        --sb: var(--white);
+      }
+      .screen.light {
+        background: var(--white);
+        color: var(--charcoal);
+        --sb: var(--charcoal);
+      }
+      .screen.lock {
+        background: #4a5d6b;
+        color: var(--white);
+        --sb: var(--white);
+      }
+
+      /* status bar, 0–54 */
+      .status {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 390px;
+        height: 54px;
+        color: var(--sb);
+        z-index: 20;
+      }
+      .status .clock {
+        position: absolute;
+        left: 52px;
+        top: 18px;
+        font-family: var(--sys);
+        font-size: 17px;
+        line-height: 22px;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+      }
+      .status .cam {
+        position: absolute;
+        left: 133px;
+        top: 11px;
+        width: 124px;
+        height: 36px;
+        border-radius: 18px;
+        background: #000;
+      }
+      .status .sys {
+        position: absolute;
+        right: 30px;
+        top: 23px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .status .sys svg {
+        display: block;
+      }
+
+      .homebar {
+        position: absolute;
+        left: 127px;
+        top: 831px;
+        width: 136px;
+        height: 5px;
+        border-radius: 3px;
+        z-index: 20;
+      }
+      .homebar.k {
+        background: var(--charcoal);
+      }
+      .homebar.w {
+        background: var(--white);
+      }
+
+      /* absolute helper: x 24 to 366 unless told otherwise */
+      .a {
+        position: absolute;
+        left: 24px;
+        right: 24px;
+        z-index: 4;
+      }
+
+      /* ═════════════ Header row, 58–102, and Me ═════════════ */
+      .hdr {
+        position: absolute;
+        top: 58px;
+        left: 24px;
+        right: 24px;
+        height: 44px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        z-index: 6;
+      }
+      .hdr .grow {
+        flex: 1;
+      }
+      .date {
+        flex: 1;
+        font-size: 15px;
+        line-height: 20px;
+        font-weight: 500;
+        color: var(--ash);
+      }
+      .me {
+        flex: none;
+        width: 52px;
+        height: 44px;
+        border-radius: 22px;
+        display: grid;
+        place-items: center;
+        font-size: 15px;
+        line-height: 20px;
+        font-weight: 600;
+      }
+      .me.on-dark {
+        background: var(--ash-20);
+        color: var(--white);
+      }
+      .me.on-white {
+        background: var(--tint-white);
+        color: var(--charcoal);
+      }
+      .me.on-stone {
+        background: var(--tint-stone);
+        color: var(--charcoal);
+      }
+      .hpill {
+        flex: none;
+        height: 44px;
+        border-radius: 22px;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 0 16px 0 10px;
+        font-size: 15px;
+        line-height: 20px;
+        font-weight: 600;
+      }
+      .hpill.on-dark {
+        background: var(--ash-20);
+        color: var(--white);
+      }
+      .hpill.on-white {
+        background: var(--tint-white);
+        color: var(--charcoal);
+      }
+      .circ {
+        flex: none;
+        width: 44px;
+        height: 44px;
+        border-radius: 22px;
+        display: grid;
+        place-items: center;
+      }
+      .circ.on-white {
+        background: var(--tint-white);
+        color: var(--charcoal);
+      }
+      .circ.on-dark {
+        background: var(--ash-20);
+        color: var(--white);
+      }
+      .place {
+        flex: 1;
+        font-size: 28px;
+        line-height: 34px;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        color: var(--charcoal);
+      }
+      .heading {
+        flex: 1;
+        font-size: 22px;
+        line-height: 28px;
+        font-weight: 700;
+        letter-spacing: -0.015em;
+        color: var(--charcoal);
+      }
+
+      /* ═════════════ Type roles (SPEC section 8) ═════════════ */
+      .lbl {
+        font-size: 13px;
+        line-height: 18px;
+        font-weight: 650;
+        letter-spacing: 0.01em;
+        color: var(--muted);
+      }
+      .meta {
+        font-size: 15px;
+        line-height: 20px;
+        font-weight: 500;
+        color: var(--muted);
+      }
+      .ttl {
+        font-size: 20px;
+        line-height: 26px;
+        font-weight: 600;
+        letter-spacing: -0.005em;
+        color: var(--ash);
+      }
+      .step {
+        font-size: 40px;
+        line-height: 46px;
+        font-weight: 700;
+        letter-spacing: -0.024em;
+        color: var(--white);
+        text-wrap: balance;
+      }
+      .step.focus {
+        font-size: 44px;
+        line-height: 50px;
+        letter-spacing: -0.026em;
+      }
+      .ptitle {
+        font-size: 32px;
+        line-height: 38px;
+        font-weight: 700;
+        letter-spacing: -0.022em;
+        color: var(--charcoal);
+      }
+
+      /* the Now line */
+      /* the dot is inline so the tag keeps the text's baseline; it sits on the middle of the capitals */
+      .nowtag {
+        display: inline;
+        white-space: nowrap;
+        color: var(--terra);
+        font-size: 15px;
+        line-height: 20px;
+        font-weight: 650;
+      }
+      .nowtag::before {
+        content: '';
+        display: inline-block;
+        width: 7px;
+        height: 7px;
+        margin-right: 6px;
+        vertical-align: 1.5px;
+        border-radius: 50%;
+        background: var(--terra);
+      }
+      /* one separator everywhere: a word space plus 0.3em each side, so "of 25 · ends" and "Now · step" read the same */
+      .sep {
+        margin: 0 0.3em;
+      }
+      .nowline {
+        display: block;
+        white-space: nowrap;
+        height: 20px;
+        font-size: 15px;
+        line-height: 20px;
+        font-weight: 500;
+        color: var(--ash);
+      }
+      .nowline .sep {
+        color: var(--ash);
+      }
+      .lit .nowline {
+        position: relative;
+      }
+      /* paused: the pause glyph in ash where the dot was, and "Paused" in white, said in words */
+      .nowline.paused > svg {
+        display: inline-block;
+        vertical-align: -2.5px;
+        margin-right: 6px;
+        color: var(--ash);
+      }
+      .nowline.paused b {
+        font-weight: 650;
+        color: var(--white);
+      }
+      /* "Focus ›" labels the lit block, which is the target; it is words and a chevron, not a pill */
+      .flabel {
+        position: absolute;
+        right: -4px;
+        top: 0;
+        height: 20px;
+        color: var(--ash);
+        display: inline-flex;
+        align-items: center;
+        gap: 0;
+        font-size: 15px;
+        line-height: 20px;
+        font-weight: 600;
+      }
+
+      /* minutes and note */
+      .mins {
+        display: flex;
+        align-items: baseline;
+        gap: 9px;
+      }
+      .mins strong {
+        font-size: 22px;
+        line-height: 28px;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+        color: var(--terra);
+      }
+      .mins.focus strong {
+        font-size: 24px;
+        line-height: 30px;
+      }
+      /* paused: the minutes said in white, with no end time; terracotta only while a clock runs */
+      .mins strong.w {
+        color: var(--white);
+      }
+      .mins span {
+        font-size: 15px;
+        line-height: 20px;
+        font-weight: 500;
+        color: var(--ash);
+      }
+      .note {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        height: 20px;
+        font-size: 15px;
+        line-height: 20px;
+        font-weight: 500;
+        color: var(--ash);
+        white-space: nowrap;
+      }
+      .note b {
+        font-weight: 650;
+      }
+
+      /* ═════════════ The bar (SPEC 9.2) ═════════════ */
+      .bar {
+        position: relative;
+        display: block;
+        flex: none;
+        width: var(--w);
+        height: var(--h);
+        border-radius: calc(var(--h) / 2);
+        background: var(--ash-30);
+      }
+      .bar .fill {
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: var(--p);
+        background: var(--terra);
+        border-radius: calc(var(--h) / 2) 1px 1px calc(var(--h) / 2);
+      }
+      .bar .fill::after {
+        content: '';
+        position: absolute;
+        right: -1px;
+        top: -4px;
+        width: 2px;
+        height: calc(var(--h) + 8px);
+        border-radius: 1px;
+        background: var(--white);
+      }
+      .bar.glow .fill::after {
+        box-shadow: var(--halo);
+      }
+      .bar .end {
+        position: absolute;
+        right: 0;
+        top: -2px;
+        width: 2px;
+        height: calc(var(--h) + 4px);
+        border-radius: 1px;
+        background: var(--ash);
+      }
+      /* at capsule and compact-Island size: one rounded track, a rounded fill, no tick, no end cap */
+      .bar.mini .fill {
+        border-radius: calc(var(--h) / 2);
+      }
+      .bar.mini .fill::after,
+      .bar.mini .end {
+        display: none;
+      }
+      .bar.cap .fill {
+        border-radius: calc(var(--h) / 2);
+      }
+      .bar.cap .fill::after {
+        display: none;
+      }
+      /* Focus: the bar run edge to edge as a horizon, square ends; the screen's edge is its end */
+      .bar.horizon,
+      .bar.horizon .fill {
+        border-radius: 0;
+      }
+      .bar.paused .fill {
+        background: var(--ash);
+      }
+      .bar.paused .fill::after {
+        display: none;
+      }
+      /* the estimate used up: the track turns to an outline, nothing burns, no tick */
+      .bar.over {
+        background: transparent;
+        box-shadow: inset 0 0 0 1px var(--ash);
+      }
+      .bar.over .fill,
+      .bar.over .end {
+        display: none;
+      }
+
+      /* durations in a list, in Lantern's own mark: the number, then one short track the shape of the
+         burning bar, 4 tall with round ends, 1.5 pt per minute (10 min 15, 20 min 30, an hour 90 and no
+         longer). One piece after the number, so it cannot read as minus, as pause or as part done */
+      .dur {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        flex: none;
+        font-size: 15px;
+        line-height: 20px;
+        font-weight: 500;
+        color: var(--muted);
+        white-space: nowrap;
+      }
+      .dur .m {
+        display: block;
+        flex: none;
+        width: calc(min(var(--min), 60) * 1.5px);
+        height: 4px;
+        border-radius: 2px;
+        background: currentColor;
+        position: relative;
+        top: 1px; /* centred on the x-height, not on the line box */
+      }
+      .dur.on-dark {
+        color: var(--ash);
+      }
+      /* in a column of timed rows the track sits in a slot as long as the longest in that list (20 min,
+         30 pt), so every number ends on one line and the slot, not the ink, ends at 366 */
+      .trow .dur .m {
+        margin-right: calc(30px - min(var(--min), 60) * 1.5px);
+      }
+
+      /* ═════════════ Pills and buttons (SPEC 9.5) ═════════════ */
+      .pill {
+        position: absolute;
+        height: 56px;
+        border-radius: 28px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 0;
+        font-size: 17px;
+        line-height: 22px;
+        font-weight: 600;
+        letter-spacing: -0.005em;
+        white-space: nowrap;
+        z-index: 8;
+      }
+      .pill.white {
+        background: var(--white);
+        color: var(--charcoal);
+      }
+      .pill.ash {
+        background: var(--ash-20);
+        color: var(--white);
+      }
+      .pill.present {
+        background: var(--charcoal);
+        color: var(--white);
+      }
+      /* a quiet pill on white: what would change the present while something else runs.
+         A fill, a 1 pt edge of charcoal at 10% and the tab lozenge's lift, so it reads as pressable;
+         56 pt of height sets it apart from the 44 pt when pill */
+      .pill.quiet {
+        background: var(--tint-stone-w);
+        color: var(--charcoal);
+        box-shadow:
+          inset 0 0 0 1px var(--hair-light),
+          0 1px 3px rgba(34, 38, 36, 0.12);
+      }
+      .pill.pad {
+        padding: 0 22px 0 18px;
+      }
+      /* on the dock line every object is 64 tall: the capsule, the disc, and the present's own pills */
+      .pill.dock {
+        top: 606px;
+        height: 64px;
+        border-radius: 32px;
+      }
+      .pill.small {
+        height: 48px;
+        border-radius: 24px;
+        font-size: 16px;
+      }
+
+      /* ═════════════ The capture disc (SPEC 9.4): always x 302–366, y 606–670 ═════════════ */
+      .capture {
+        position: absolute;
+        left: 302px;
+        top: 606px;
+        width: 64px;
+        height: 64px;
+        border-radius: 32px;
+        background: var(--terra);
+        color: var(--charcoal);
+        display: grid;
+        place-items: center;
+        z-index: 10;
+      }
+      .capture.on-dark {
+        box-shadow: var(--sh-disc-dark);
+      }
+      .capture.on-light {
+        box-shadow:
+          inset 0 0 0 1px rgba(34, 38, 36, 0.15),
+          var(--sh-disc-light);
+      }
+
+      /* ═════════════ The Now capsule (SPEC 4): x 24–292, y 606–670 ═════════════
+         The lantern at its smallest, in the lantern's order: the step, then the bar, then the
+         minutes and the task. The task is shown whole or not at all. */
+      .capsule {
+        position: relative;
+        display: block;
+        width: 268px;
+        height: 64px;
+        border-radius: 32px;
+        background: var(--charcoal);
+        color: var(--white);
+        box-shadow: var(--sh-capsule);
+      }
+      .capsule.slot {
+        position: absolute;
+        left: 24px;
+        top: 606px;
+        z-index: 10;
+      }
+      /* on a charcoal place it is lifted off the canvas: an ash-15 fill (1.4 against the canvas), a full
+         1 pt edge of ash at 60% (3.4 against the canvas) and a deep shadow. White 11.4, ash 5.1 and
+         terracotta 4.7 on it */
+      .capsule.lift {
+        background: var(--ash-15);
+        box-shadow:
+          inset 0 0 0 1px var(--ash-edge),
+          0 6px 14px -6px rgba(0, 0, 0, 0.7),
+          0 2px 5px rgba(0, 0, 0, 0.4);
+      }
+      .capsule .c1 {
+        position: absolute;
+        left: 16px;
+        right: 14px;
+        top: 7px;
+        height: 22px;
+        display: flex;
+        align-items: baseline;
+        white-space: nowrap;
+      }
+      .capsule .c1 .nowtag {
+        display: block;
+        flex: none;
+        width: 54px;
+      }
+      /* paused: the word in the first column where Now was, in ash, at width 90 so it fits the
+         54 pt column and the step does not move */
+      .capsule .c1 .ptag {
+        display: block;
+        flex: none;
+        width: 54px;
+        font-size: 15px;
+        line-height: 20px;
+        font-weight: 650;
+        font-stretch: 90%;
+        color: var(--ash);
+      }
+      .capsule .c1 .cstep {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        font-size: 17px;
+        line-height: 22px;
+        font-weight: 600;
+        letter-spacing: -0.005em;
+        color: var(--white);
+      }
+      .capsule > .bar {
+        position: absolute;
+        left: 16px;
+        top: 33px;
+      }
+      .capsule .c2 {
+        position: absolute;
+        left: 16px;
+        right: 14px;
+        top: 40px;
+        height: 20px;
+        overflow: hidden;
+        white-space: nowrap;
+        font-size: 15px;
+        line-height: 20px;
+        font-weight: 500;
+        color: var(--ash);
+      }
+      .capsule .c2 b {
+        font-weight: 650;
+        color: var(--terra);
+      }
+      .capsule .c2 b.w {
+        color: var(--white);
+      }
+      /* the task's name, set at width 95 so "18 min left · Write the school email" fits the 238 pt
+         line whole (236 pt). Shown whole or not at all */
+      .capsule .c2 .tn {
+        font-stretch: 95%;
+      }
+
+      /* ═════════════ The drawer (SPEC 9.8), handle, hairline, tabs ═════════════ */
+      .drawer {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: var(--stone);
+        border-radius: 28px 28px 0 0;
+        box-shadow: var(--sh-drawer);
+        z-index: 2;
+      }
+      .drawer.flat {
+        box-shadow: none;
+      }
+      .dshadow {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        border-radius: 28px 28px 0 0;
+        box-shadow: var(--sh-drawer);
+        z-index: 8;
+        pointer-events: none;
+      }
+      /* on a white page the lift is drawn short, a hair of charcoal along the rounded top and a soft
+         shadow reaching only 6 pt above it, so stone (1.14 against white) still reads as a sheet and
+         the 14 pt gap under the capsule stays white */
+      .dshadow.on-light {
+        box-shadow:
+          0 -1px 0 rgba(34, 38, 36, 0.08),
+          0 -1px 5px rgba(34, 38, 36, 0.08);
+      }
+      .grab {
+        position: absolute;
+        left: 176px;
+        width: 38px;
+        height: 5px;
+        border-radius: 3px;
+        background: rgba(89, 92, 91, 0.42);
+        z-index: 5;
+      }
+      .hair {
+        position: absolute;
+        left: 24px;
+        width: 342px;
+        height: 1px;
+        background: var(--hair-light);
+        z-index: 5;
+      }
+      /* Focus's foot: the same hairline on charcoal, at the tab hairline's y, so the foot line is set
+         on the frame like the tabs elsewhere */
+      .hair.dark {
+        background: var(--hair-dark);
+      }
+      .handle {
+        position: absolute;
+        left: 0;
+        top: 684px;
+        width: 390px;
+        height: 70px;
+        color: var(--charcoal);
+        z-index: 5;
+      }
+      .handle .l1 {
+        position: absolute;
+        left: 24px;
+        top: 20px;
+      }
+      .handle .l2 {
+        position: absolute;
+        left: 24px;
+        top: 40px;
+        width: 222px; /* clear of "Rest of today ⌃", whose ink starts at 266 */
+        height: 22px;
+        display: flex;
+        align-items: center;
+      }
+      /* the same handle control on every drawer: words and a chevron at the right, centred across
+         both lines (704 to 746), so it reads as the handle's name and heads no column */
+      .handle .more {
+        position: absolute;
+        right: 20px;
+        top: 31px;
+        height: 20px;
+        display: inline-flex;
+        align-items: center;
+        gap: 2px;
+        font-size: 13px;
+        line-height: 18px;
+        font-weight: 650;
+        letter-spacing: 0.01em;
+        color: var(--muted);
+      }
+      .handle.strip {
+        height: 44px;
+      }
+      /* the open drawer: its toggle stays where the folded handle's "Rest of today ⌃" sits, under
+         capture at 715–735, so the drawer closes from the spot that opened it */
+      .handle.open {
+        z-index: 8;
+      }
+      .handle.open .more {
+        right: 24px;
+        gap: 4px;
+      }
+      /* the half drawer: one deliberate row, its name at the left in charcoal and the chevron at 366 */
+      .handle.strip .row1 {
+        position: absolute;
+        left: 24px;
+        right: 20px;
+        top: 20px;
+        height: 22px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: 17px;
+        line-height: 22px;
+        font-weight: 600;
+        letter-spacing: -0.005em;
+        color: var(--charcoal);
+      }
+      .handle.strip .row1 svg {
+        color: var(--muted);
+      }
+
+      .handle .l2 .t {
+        flex: none;
+        width: 60px;
+        font-size: 17px;
+        line-height: 22px;
+        font-weight: 650;
+      }
+      .handle .l2 .ti {
+        flex: 1;
+        min-width: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        font-size: 17px;
+        line-height: 22px;
+        font-weight: 600;
+        letter-spacing: -0.005em;
+      }
+
+      .tabs {
+        position: absolute;
+        left: 16px;
+        top: 760px;
+        width: 358px;
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 4px;
+        z-index: 6;
+      }
+      .tab {
+        height: 52px;
+        border-radius: 26px;
+        display: grid;
+        justify-items: center;
+        align-content: center;
+        gap: 2px;
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 16px;
+        font-weight: 600;
+        letter-spacing: 0.01em;
+      }
+      .tab[aria-current='page'] {
+        background: var(--white);
+        color: var(--charcoal);
+        font-weight: 700;
+        box-shadow: var(--sh-thumb);
+      }
+
+      /* fades behind the dock line */
+      .fade {
+        position: absolute;
+        left: 0;
+        right: 0;
+        z-index: 7;
+        pointer-events: none;
+      }
+      .fade.white {
+        top: 582px;
+        height: 102px;
+        background: linear-gradient(
+          180deg,
+          rgba(255, 255, 255, 0) 0,
+          rgba(255, 255, 255, 0.94) 24px,
+          rgba(255, 255, 255, 0.94) 100%
+        );
+      }
+      .fade.stone {
+        background: linear-gradient(180deg, rgba(238, 240, 236, 0), rgba(238, 240, 236, 0.94));
+      }
+      .fade.dark {
+        top: 582px;
+        height: 102px;
+        background: linear-gradient(
+          180deg,
+          rgba(34, 38, 36, 0) 0,
+          rgba(34, 38, 36, 0.94) 24px,
+          rgba(34, 38, 36, 0.94) 100%
+        );
+      }
+
+      /* ═════════════ Rows (SPEC 9.7) ═════════════ */
+      .trow {
+        position: absolute;
+        left: 24px;
+        width: 342px;
+        display: flex;
+        align-items: center;
+        z-index: 4;
+        color: var(--charcoal);
+      }
+      .trow .t {
+        flex: none;
+        width: 60px;
+        font-size: 17px;
+        line-height: 22px;
+        font-weight: 650;
+      }
+      .trow .ti {
+        flex: 1;
+        min-width: 0;
+        font-size: 17px;
+        line-height: 22px;
+        font-weight: 500;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .trow .ti b {
+        display: block;
+        font-weight: 500;
+      }
+      .trow .ti small {
+        display: block;
+        font-size: 13px;
+        line-height: 18px;
+        font-weight: 500;
+        color: var(--muted);
+      }
+      .trow.two {
+        align-items: flex-start;
+        padding-top: 11px;
+      }
+      .trow.two .dur {
+        margin-top: 1px;
+      }
+      .rrow {
+        position: absolute;
+        left: 24px;
+        width: 342px;
+        height: 44px;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        z-index: 4;
+        font-size: 17px;
+        line-height: 22px;
+        font-weight: 500;
+        color: var(--charcoal);
+        white-space: nowrap;
+      }
+      /* one row metric everywhere a list is drawn (the rest of today, the half drawer, Tasks,
+         Routines): 11 pt above and below the text, so one line is 44 and two lines are 62, and the
+         space between any two rows is the same */
+      .rrow.two {
+        height: 62px;
+        align-items: flex-start;
+        padding-top: 11px;
+      }
+      /* a row with a second line: the ring is centred on the title line, as Reminders does */
+      .rrow.two .ring {
+        margin-top: -1px;
+      }
+      .rrow .rt {
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+      }
+      /* the half drawer, where capture floats over the list with no capsule: a title wraps to a second
+         line ending by x 286, so it is never cut or faded beside the disc (the row grows to 62) */
+      .rrow.lane {
+        white-space: normal;
+      }
+      .rrow.lane .rt {
+        max-width: 222px;
+      }
+      .rrow .rt small {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 13px;
+        line-height: 18px;
+        font-weight: 500;
+        color: var(--muted);
+      }
+      .on-dark .rrow {
+        color: var(--white);
+      }
+      .on-dark .rrow .ring {
+        color: var(--ash);
+      }
+      .on-dark .rrow .rt small {
+        color: var(--ash);
+      }
+      .rrow .rt small .dur {
+        font-size: 13px;
+        line-height: 18px;
+        gap: 6px;
+        color: inherit;
+      }
+      .rrow .rt small .sep {
+        margin: 0 0.15em;
+      }
+      .rrow.done {
+        color: var(--muted);
+      }
+      /* the covered row: ring and title under one cover, on one ramp, from nothing at the ring's top
+         (y 10 in the row) to 30% stone at its foot (y 34). Charcoal under 30% stone is about 5:1 on
+         stone, so the whole circle and every glyph stay above 4.5:1 and the row reads as going under */
+      .rrow.cue::after {
+        content: '';
+        position: absolute;
+        left: -4px;
+        right: -4px;
+        top: 10px;
+        height: 24px;
+        background: linear-gradient(
+          180deg,
+          rgba(238, 240, 236, 0) 0%,
+          rgba(238, 240, 236, 0.3) 92%,
+          rgba(238, 240, 236, 0.3) 100%
+        );
+        pointer-events: none;
+      }
+      .ring {
+        color: var(--charcoal);
+      }
+      .disc {
+        flex: none;
+        width: 24px;
+        height: 24px;
+        border-radius: 12px;
+        background: var(--sage);
+        color: var(--charcoal);
+        display: grid;
+        place-items: center;
+      }
+
+      /* ═════════════ Segmented controls (SPEC 9.6) ═════════════ */
+      .seg {
+        position: absolute;
+        left: 24px;
+        width: 346px; /* 24 to 370: under Step done and capture, so the three edges line up */
+        height: 56px;
+        border-radius: 28px;
+        background: var(--ash-20);
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        z-index: 8;
+      }
+      .seg button {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        height: 56px;
+        font-size: 16px;
+        line-height: 22px;
+        font-weight: 600;
+        color: var(--white);
+      }
+      .seg button + button::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 16px;
+        bottom: 16px;
+        width: 1px;
+        background: rgba(169, 175, 171, 0.24);
+      }
+      .switch {
+        position: absolute;
+        height: 44px;
+        border-radius: 22px;
+        display: grid;
+        z-index: 4;
+      }
+      .switch.on-white {
+        background: var(--stone);
+      }
+      .switch.on-stone {
+        background: var(--tint-stone);
+      }
+      /* each segment is a 44 pt target; the selected one draws its thumb 3 pt inside it */
+      .switch span {
+        position: relative;
+        height: 44px;
+        display: grid;
+        place-items: center;
+        font-size: 15px;
+        line-height: 20px;
+        font-weight: 600;
+        color: var(--muted);
+        white-space: nowrap;
+      }
+      .switch span[aria-checked='true'],
+      .switch span[aria-selected='true'] {
+        color: var(--charcoal);
+        font-weight: 700;
+      }
+      .switch span[aria-checked='true']::before,
+      .switch span[aria-selected='true']::before {
+        content: '';
+        position: absolute;
+        inset: 3px;
+        border-radius: 19px;
+        background: var(--white);
+        /* iOS's own thumb shadow, so the selection reads by more than weight on a 1.15:1 track */
+        box-shadow:
+          0 3px 8px rgba(0, 0, 0, 0.12),
+          0 3px 1px rgba(0, 0, 0, 0.04);
+      }
+      .switch.on-dark {
+        background: var(--ash-8);
+      }
+      .switch.on-dark span {
+        color: var(--ash);
+      }
+      .switch.on-dark span[aria-selected='true'] {
+        color: var(--white);
+      }
+      .switch.on-dark span[aria-selected='true']::before {
+        background: var(--ash-20);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+      }
+      .switch span > b {
+        position: relative;
+        font-weight: inherit;
+      }
+
+      /* ═════════════ Screen 1 · Today: the lit block ends at 540 and grows upward ═════════════ */
+      .lit {
+        position: absolute;
+        left: 24px;
+        width: 342px;
+        bottom: 294px;
+        display: flex;
+        flex-direction: column;
+        z-index: 4;
+      }
+      .lit .ttl {
+        margin-top: 4px;
+      }
+      .lit .step {
+        margin-top: 14px;
+      }
+      .lit .bar {
+        margin-top: 28px;
+      }
+      .lit .mins {
+        margin-top: 14px;
+      }
+      .lit .note {
+        margin-top: 18px;
+      }
+
+      /* ═════════════ Screen 3 · task page ═════════════ */
+      .when {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        height: 44px;
+        padding: 0 16px 0 14px;
+        border-radius: 22px;
+        background: var(--stone);
+        box-shadow: inset 0 0 0 1px var(--hair-light);
+        font-size: 15px;
+        line-height: 20px;
+        font-weight: 600;
+        color: var(--charcoal);
+      }
+      .when .dot,
+      .when .dur {
+        color: var(--muted);
+        font-weight: 500;
+      }
+      .when.on-dark {
+        background: transparent;
+        box-shadow: inset 0 0 0 1px rgba(169, 175, 171, 0.36);
+        color: var(--white);
+      }
+      .when.on-dark .dot,
+      .when.on-dark .dur {
+        color: var(--ash);
+      }
+      .on-dark .addstep,
+      .lbl.on-dark {
+        color: var(--ash);
+      }
+      .whenrow {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .addstep {
+        display: flex;
+        align-items: center;
+        height: 44px;
+        gap: 18px;
+        padding-left: 2px;
+        font-size: 17px;
+        line-height: 22px;
+        font-weight: 500;
+        color: var(--muted);
+      }
+
+      /* ═════════════ Screen 4 · Focus ═════════════ */
+      .ctx {
+        font-size: 15px;
+        line-height: 20px;
+        font-weight: 500;
+        color: var(--ash);
+        white-space: nowrap;
+      }
+      .ctx b {
+        font-weight: 600;
+        color: var(--white);
+      }
+      /* Focus names itself in ash at the head of its context line, as Lantern's Focus had only the
+         context there, so the step is the one white heading on the screen */
+      .ctx b.fl {
+        font-weight: 650;
+        color: var(--ash);
+      }
+      .doneline {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        height: 24px;
+        font-size: 17px;
+        line-height: 22px;
+        font-weight: 500;
+        color: var(--ash);
+      }
+      .after {
+        font-size: 17px;
+        line-height: 22px;
+        font-weight: 500;
+        color: var(--ash);
+      }
+      .after b {
+        font-weight: 650;
+      }
+      .nexttext {
+        font-size: 15px;
+        line-height: 20px;
+        font-weight: 500;
+        color: var(--ash);
+        white-space: nowrap;
+      }
+
+      /* ═════════════ Screen 5 · Capture: sheet and keyboard ═════════════ */
+      .sheet {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 280px;
+        bottom: 0;
+        background: var(--stone);
+        border-radius: 24px 24px 0 0;
+        box-shadow: var(--sh-sheet);
+        z-index: 12;
+      }
+      .sheet-in {
+        position: absolute;
+        inset: 0;
+        z-index: 13;
+        color: var(--charcoal);
+      }
+      .sheet-in .a {
+        z-index: 14;
+      }
+      .textbtn {
+        position: absolute;
+        height: 44px;
+        padding: 0 4px;
+        display: grid;
+        place-items: center;
+        font-size: 17px;
+        line-height: 22px;
+        font-weight: 600;
+        color: var(--charcoal);
+        z-index: 14;
+      }
+      /* a sheet's title leads in charcoal; Close is the quieter text button beside it */
+      .sheettitle {
+        font-size: 17px;
+        line-height: 22px;
+        font-weight: 650;
+        letter-spacing: -0.005em;
+        color: var(--charcoal);
+      }
+      .textbtn.quiet {
+        color: var(--muted);
+      }
+      .field {
+        position: absolute;
+        left: 24px;
+        width: 342px;
+        top: 344px;
+        height: 56px;
+        border-radius: 16px;
+        background: var(--white);
+        padding: 14px;
+        display: flex;
+        align-items: center;
+        font-size: 22px;
+        line-height: 28px;
+        font-weight: 500;
+        letter-spacing: -0.01em;
+        color: var(--charcoal);
+        z-index: 14;
+      }
+      .caret {
+        display: inline-block;
+        width: 2px;
+        height: 26px;
+        margin-left: 2px;
+        border-radius: 1px;
+        background: var(--charcoal);
+      }
+      .save {
+        position: absolute;
+        left: 270px;
+        top: 442px;
+        width: 96px;
+        height: 44px;
+        border-radius: 22px;
+        background: var(--terra);
+        color: var(--charcoal);
+        display: grid;
+        place-items: center;
+        font-size: 17px;
+        line-height: 22px;
+        font-weight: 600;
+        z-index: 14;
+      }
+
+      /* the light system keyboard, drawn as a stand-in */
+      .kb {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 508px;
+        bottom: 0;
+        background: linear-gradient(180deg, #eceef1 0%, #e1e4e8 100%);
+        border-radius: 30px 30px 0 0;
+        box-shadow:
+          inset 0 1px 0 rgba(255, 255, 255, 0.9),
+          0 -4px 18px rgba(0, 0, 0, 0.12);
+        z-index: 15;
+        color: var(--charcoal);
+        font-family: var(--sys);
+      }
+      .kb .sugg {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 4px;
+        height: 44px;
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        align-items: center;
+      }
+      .kb .sugg span {
+        position: relative;
+        text-align: center;
+        font-size: 17px;
+        line-height: 22px;
+        font-weight: 450;
+      }
+      .kb .sugg span + span::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 2px;
+        bottom: 2px;
+        width: 1px;
+        background: rgba(34, 38, 36, 0.12);
+      }
+      .kb .krow {
+        position: absolute;
+        display: flex;
+        gap: 6px;
+        height: 42px;
+      }
+      .key {
+        width: 33px;
+        height: 42px;
+        border-radius: 9px;
+        background: #fff;
+        box-shadow: 0 0.5px 1px rgba(0, 0, 0, 0.14);
+        display: grid;
+        place-items: center;
+        font-size: 22px;
+        line-height: 26px;
+        font-weight: 400;
+        padding-bottom: 2px;
+      }
+      .key.sp {
+        background: #c8ccd2;
+      }
+      .key.word {
+        font-size: 16px;
+        line-height: 20px;
+      }
+      .kb .sysg {
+        position: absolute;
+        top: 270px;
+        color: #3f4341;
+      }
+
+      /* inset: Focus with the sheet risen, half size, top 520 */
+      .inset {
+        display: flex;
+        gap: 18px;
+        align-items: flex-start;
+      }
+      /* cropped below the field (screen y 400) and faded over the plain stone under it, so no line of
+         text sits in the fade */
+      .inset-frame {
+        flex: none;
+        width: 207px;
+        height: 224px;
+        padding: 6px 6px 0;
+        border-radius: 33px 33px 0 0;
+        background: linear-gradient(160deg, #2a2d2c 0%, #0c0d0d 50%, #0c0d0d 100%);
+        box-shadow:
+          0 0 0 1px #5a5f5c,
+          0 18px 30px -16px rgba(20, 24, 22, 0.45);
+        overflow: hidden;
+        -webkit-mask-image: linear-gradient(180deg, #000 92%, transparent 100%);
+        mask-image: linear-gradient(180deg, #000 92%, transparent 100%);
+      }
+      .inset-clip {
+        width: 195px;
+        height: 218px;
+        border-radius: 27px 27px 0 0;
+        overflow: hidden;
+      }
+      .inset-clip .screen {
+        height: 508px;
+        border-radius: 54px 54px 0 0;
+        transform: scale(0.5);
+        transform-origin: 0 0;
+      }
+      .inset-label {
+        padding-top: 4px;
+        font-size: 13px;
+        line-height: 18px;
+        font-weight: 500;
+        color: var(--muted);
+      }
+
+      /* ═════════════ Screen 7 · idle lantern ═════════════ */
+      .idle1 {
+        font-size: 15px;
+        line-height: 20px;
+        font-weight: 500;
+        color: var(--ash);
+        white-space: nowrap;
+      }
+      .idle1 b {
+        font-size: 17px;
+        line-height: 22px;
+        font-weight: 650;
+        color: var(--white);
+      }
+      /* the idle sentence is a size smaller than a running step, so idle and running differ by size too */
+      .step.idle {
+        font-size: 32px;
+        line-height: 38px;
+        letter-spacing: -0.022em;
+      }
+
+      /* ═════════════ Screen 8 · Lock Screen and the Live Activity ═════════════ */
+      .lockdate {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 92px;
+        text-align: center;
+        font-family: var(--sys);
+        font-size: 19px;
+        line-height: 24px;
+        font-weight: 600;
+        z-index: 4;
+      }
+      .lockclock {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 128px;
+        text-align: center;
+        font-family: var(--sys);
+        font-size: 104px;
+        line-height: 108px;
+        font-weight: 600;
+        letter-spacing: -0.04em;
+        z-index: 4;
+      }
+      .lockctl {
+        position: absolute;
+        top: 772px;
+        width: 50px;
+        height: 50px;
+        border-radius: 25px;
+        background: rgba(255, 255, 255, 0.16);
+        box-shadow:
+          inset 0 0 0 1px rgba(255, 255, 255, 0.26),
+          inset 0 1px 1px rgba(255, 255, 255, 0.35),
+          0 4px 12px rgba(0, 0, 0, 0.18);
+        -webkit-backdrop-filter: blur(12px);
+        backdrop-filter: blur(12px);
+        color: var(--white);
+        display: grid;
+        place-items: center;
+        z-index: 4;
+      }
+
+      .la {
+        position: relative;
+        width: 358px;
+        height: 156px;
+        border-radius: 24px;
+        background: var(--charcoal);
+        color: var(--white);
+        padding: 16px 16px 14px;
+      }
+      .la.on-board {
+        box-shadow: 0 12px 24px -12px rgba(20, 24, 22, 0.36);
+      }
+      .la.on-wall {
+        box-shadow: 0 14px 30px -10px rgba(0, 0, 0, 0.45);
+      }
+      .la .r1 {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        height: 18px;
+        font-size: 13px;
+        line-height: 18px;
+        font-weight: 500;
+        color: var(--ash);
+        white-space: nowrap;
+      }
+      .la .r1 .ctx2 {
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .mark {
+        flex: none;
+        width: 18px;
+        height: 18px;
+        border-radius: 5px;
+        background: var(--stone);
+        display: grid;
+        place-items: center;
+      }
+      .mark svg {
+        display: block;
+        width: 13px;
+        height: 12px;
+      }
+      .la .r2 {
+        margin-top: 6px;
+        font-size: 22px;
+        line-height: 28px;
+        font-weight: 700;
+        letter-spacing: -0.015em;
+      }
+      .la .bar {
+        margin-top: 12px;
+      }
+      .la .r4 {
+        margin-top: 10px;
+        height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+      }
+      /* minutes stacked over the end time: side by side they need 337 of the 326 available */
+      .la .r4 .m {
+        display: flex;
+        flex-direction: column;
+        white-space: nowrap;
+      }
+      .la .r4 .m strong {
+        font-size: 17px;
+        line-height: 22px;
+        font-weight: 600;
+        color: var(--terra);
+      }
+      .la .r4 .m span {
+        font-size: 14px;
+        line-height: 18px;
+        font-weight: 500;
+        color: var(--ash);
+      }
+      .spill {
+        flex: none;
+        height: 44px;
+        border-radius: 22px;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 0 16px 0 13px;
+        font-size: 15px;
+        line-height: 20px;
+        font-weight: 600;
+        white-space: nowrap;
+      }
+      .spill.white {
+        background: var(--white);
+        color: var(--charcoal);
+      }
+      .spill.ash {
+        background: var(--ash-20);
+        color: var(--white);
+      }
+
+      /* Dynamic Island (black, system-drawn) */
+      .isl {
+        background: #000;
+        color: var(--white);
+      }
+      .isl-c {
+        width: 250px;
+        height: 37px;
+        border-radius: 19px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 16px;
+      }
+      .isl-c b {
+        font-size: 15px;
+        line-height: 20px;
+        font-weight: 650;
+        color: var(--terra);
+      }
+      .isl-pill {
+        width: 124px;
+        height: 37px;
+        border-radius: 19px;
+      }
+      .isl-min {
+        width: 37px;
+        height: 37px;
+        border-radius: 19px;
+        display: grid;
+        place-items: center;
+        font-size: 14px;
+        line-height: 18px;
+        font-weight: 650;
+        color: var(--terra);
+      }
+      .isl-pair {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      /* expanded: the camera sits in the top centre, so only short things go beside it (leading and
+         trailing); the step and everything after it start below the camera, at 42 */
+      .isl-x {
+        position: relative;
+        width: 370px;
+        height: 160px;
+        border-radius: 42px;
+        padding: 38px 24px 0;
+      }
+      .isl-x .camzone {
+        position: absolute;
+        left: 123px;
+        top: 0;
+        width: 124px;
+        height: 36px;
+        border-radius: 18px;
+        background: #000; /* the camera; the system never shows it inside the Island */
+      }
+      .isl-x .lead {
+        position: absolute;
+        left: 24px;
+        top: 8px;
+        height: 20px;
+        line-height: 20px;
+      }
+      .isl-x .trail {
+        position: absolute;
+        right: 24px;
+        top: 9px;
+        font-size: 13px;
+        line-height: 18px;
+        font-weight: 500;
+        color: var(--ash);
+      }
+      .isl-x .x1 {
+        height: 22px;
+        font-size: 17px;
+        line-height: 22px;
+        font-weight: 700;
+        letter-spacing: -0.005em;
+        white-space: nowrap;
+      }
+      .isl-x .bar {
+        margin-top: 6px;
+      }
+      /* minutes stacked at the left and the two buttons at the right, as on the Lock Screen card */
+      .isl-x .x4 {
+        margin-top: 12px;
+        height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 8px;
+      }
+      .isl-x .x4 .m {
+        flex: 1;
+        min-width: 0;
+        margin-right: 4px;
+        display: flex;
+        flex-direction: column;
+        white-space: nowrap;
+      }
+      .isl-x .x4 .m strong {
+        font-size: 15px;
+        line-height: 20px;
+        font-weight: 650;
+        color: var(--terra);
+      }
+      .isl-x .x4 .m span {
+        font-size: 13px;
+        line-height: 18px;
+        font-weight: 500;
+        color: var(--ash);
+      }
+      .isl-x .x5 {
+        margin-top: 4px;
+        font-size: 13px;
+        line-height: 18px;
+        font-weight: 500;
+        color: var(--ash);
+        white-space: nowrap;
+      }
+
+      /* ═════════════ Board composition: notes under row 2, row 3, and outside the app ═════════════ */
+      .row.tiered {
+        grid-template-rows: auto auto;
+        row-gap: 40px;
+      }
+      .under {
+        grid-row: 2;
+        align-self: start;
+      }
+      .under.c1 {
+        grid-column: 1;
+      }
+      .under.c2 {
+        grid-column: 2;
+        padding-left: 12px;
+      }
+      .under.c34 {
+        grid-column: 3 / 5;
+      }
+      /* the panels in a band share its height, so their frames end on one line */
+      .under.bnote {
+        align-self: stretch;
+      }
+      .row3.tiered {
+        grid-template-rows: auto auto;
+        row-gap: 40px;
+      }
+      /* under row 3: one panel across the row, its heading over 7 and its text in three columns, each
+         set on a phone's column */
+      .under.c14 {
+        grid-column: 1 / 5;
+      }
+      .bnote.wide {
+        display: grid;
+        grid-template-columns: repeat(4, 366px);
+        column-gap: 104px;
+        align-items: start;
+      }
+      .bnote.wide p {
+        margin-top: 0;
+      }
+      .bnote.wide > p {
+        padding-top: 1px;
+      }
+      .bnote.wide p.test {
+        margin-top: 8px;
+      }
+      .bnote {
+        border: 1px solid rgba(34, 38, 36, 0.14);
+        border-radius: 18px;
+        padding: 20px 24px 22px;
+      }
+      .bnote .n {
+        font-size: 13px;
+        line-height: 18px;
+        font-weight: 650;
+        color: var(--muted);
+        letter-spacing: 0.01em;
+      }
+      .bnote h3 {
+        margin: 6px 0 0;
+        font-size: 18px;
+        line-height: 24px;
+        font-weight: 650;
+        letter-spacing: -0.01em;
+        color: var(--charcoal);
+      }
+      .bnote p {
+        margin-top: 8px;
+        font-size: 14px;
+        line-height: 21px;
+        font-weight: 450;
+        color: var(--board-text);
+      }
+      .bnote p b {
+        font-weight: 650;
+        color: var(--charcoal);
+      }
+      .bnote .cols {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        column-gap: 32px;
+      }
+
+      .row3,
+      .row4 {
+        display: grid;
+        grid-template-columns: repeat(4, 414px);
+        column-gap: 56px;
+        align-items: start;
+        margin-top: 80px;
+      }
+      /* outside the app, at actual size */
+      .outside {
+        grid-column: 3 / 5;
+        display: grid;
+        grid-template-columns: 414px 414px;
+        column-gap: 56px;
+        align-items: start;
+      }
+      .rowhead {
+        grid-column: 1 / -1;
+        margin-bottom: 36px;
+        padding-top: 22px;
+        border-top: 1px solid rgba(34, 38, 36, 0.14);
+      }
+      .rowhead .n {
+        font-size: 13px;
+        line-height: 18px;
+        font-weight: 650;
+        color: var(--muted);
+        letter-spacing: 0.01em;
+      }
+      .undocol {
+        grid-column: 2;
+        padding: 4px 12px 0;
+        display: grid;
+        gap: 16px;
+        align-content: start;
+      }
+      .undocol .stext {
+        margin-bottom: 8px;
+      }
+      .undocol .stext .n,
+      .undocol .fn {
+        font-size: 13px;
+        line-height: 18px;
+        font-weight: 650;
+        color: var(--muted);
+        letter-spacing: 0.01em;
+      }
+      .undocol .fn {
+        font-weight: 500;
+        letter-spacing: 0;
+        margin-top: 4px;
+      }
+      .undocol .stext h2 {
+        margin-top: 6px;
+        font-size: 20px;
+        line-height: 26px;
+        font-weight: 650;
+        letter-spacing: -0.012em;
+      }
+      .undocol .stext p.t {
+        margin-top: 8px;
+        font-size: 15px;
+        line-height: 22px;
+        font-weight: 450;
+        color: var(--board-text);
+      }
+      /* the folded Next line in its six seconds after a tap, drawn at actual size: the top of the
+         drawer, so it is rounded on top only */
+      .ustrip {
+        position: relative;
+        width: 390px;
+        height: 92px;
+        border-radius: 28px 28px 0 0;
+        background: var(--stone);
+        box-shadow: 0 -4px 14px -6px rgba(20, 24, 22, 0.28);
+        color: var(--charcoal);
+      }
+      /* the strip is the top of the drawer, so it fades into the board at its foot rather than ending flat */
+      .ustrip::after {
+        content: '';
+        position: absolute;
+        left: -16px;
+        right: -16px;
+        top: 66px;
+        height: 30px;
+        background: linear-gradient(180deg, rgba(228, 230, 226, 0), var(--board) 86%);
+        pointer-events: none;
+      }
+      .ustrip .l1 {
+        position: absolute;
+        left: 24px;
+        top: 20px;
+      }
+      .ustrip .l2 {
+        position: absolute;
+        left: 24px;
+        right: 114px; /* 12 clear of the Undo pill, which starts at 288 */
+        top: 40px;
+        height: 22px;
+        display: flex;
+        align-items: center;
+        white-space: nowrap;
+      }
+      .ustrip .ti {
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        font-size: 17px;
+        line-height: 22px;
+        font-weight: 600;
+        letter-spacing: -0.005em;
+      }
+      /* Undo: a 44 pt pill at the right of the handle, beside both lines */
+      .undo {
+        position: absolute;
+        right: 24px;
+        top: 18px;
+        height: 44px;
+        padding: 0 20px;
+        border-radius: 22px;
+        background: var(--tint-stone);
+        color: var(--charcoal);
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 15px;
+        line-height: 20px;
+        font-weight: 600;
+      }
+
+      /* Android's ongoing notification, drawn as a stand-in in the system's own face */
+      .andn {
+        width: 358px;
+        border-radius: 24px;
+        background: #1b1d1c;
+        color: var(--white);
+        padding: 14px 16px 6px;
+        font-family: var(--sys);
+        box-shadow: 0 12px 24px -12px rgba(20, 24, 22, 0.36);
+      }
+      .andn .ah {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        height: 20px;
+        font-size: 12px;
+        line-height: 16px;
+        font-weight: 500;
+        color: var(--ash);
+      }
+      .andn .ah .sep {
+        margin: 0;
+      }
+      .andn .chip {
+        margin-left: auto;
+        height: 20px;
+        padding: 0 8px;
+        border-radius: 10px;
+        background: var(--terra);
+        color: var(--charcoal);
+        font-size: 12px;
+        line-height: 20px;
+        font-weight: 650;
+      }
+      .andn .at {
+        margin-top: 8px;
+        font-size: 16px;
+        line-height: 22px;
+        font-weight: 600;
+      }
+      .andn .ax {
+        font-size: 14px;
+        line-height: 20px;
+        font-weight: 450;
+        color: var(--ash);
+      }
+      .andn .bar {
+        margin-top: 12px;
+      }
+      .andn .aa {
+        margin-top: 6px;
+        height: 44px;
+        display: flex;
+        align-items: center;
+        font-size: 14px;
+        line-height: 20px;
+        font-weight: 600;
+        color: var(--white);
+      }
+      .outside .scol {
+        display: grid;
+        gap: 34px;
+        align-content: start;
+        padding: 4px 12px 0;
+      }
+      .outside .stext {
+        max-width: 560px;
+      }
+      .outside .stext .n {
+        font-size: 13px;
+        line-height: 18px;
+        font-weight: 650;
+        color: var(--muted);
+        letter-spacing: 0.01em;
+      }
+      .outside .stext h2 {
+        margin-top: 6px;
+        font-size: 20px;
+        line-height: 26px;
+        font-weight: 650;
+        letter-spacing: -0.012em;
+      }
+      .outside .stext p.t {
+        margin-top: 8px;
+        font-size: 15px;
+        line-height: 22px;
+        font-weight: 450;
+        color: var(--board-text);
+      }
+      .outside figcaption {
+        margin-top: 14px;
+        font-size: 13px;
+        line-height: 18px;
+        font-weight: 500;
+        color: var(--muted);
+        max-width: 358px;
+      }
+      .outside .cards {
+        display: flex;
+        gap: 40px;
+        align-items: flex-start;
+      }
+
+      /* the capsule's other states, in the header */
+      .lstates {
+        margin-top: 40px;
+      }
+      .lstates h2 {
+        font-size: 17px;
+        line-height: 22px;
+        font-weight: 650;
+        color: var(--charcoal);
+        letter-spacing: -0.005em;
+      }
+      .cstates {
+        display: flex;
+        gap: 16px;
+        margin-top: 18px;
+      }
+      /* the capsule on light beside the capsule lifted on a piece of the charcoal canvas */
+      .cpair {
+        display: flex;
+        gap: 16px;
+        align-items: center;
+      }
+      .ctile {
+        flex: none;
+        padding: 14px 16px;
+        border-radius: 24px;
+        background: var(--charcoal);
+      }
+      /* Routines: a row opens the routine; Morning says only that it ran today */
+      .rrow.routine {
+        height: 62px;
+        gap: 12px;
+      }
+      .rrow.routine .rt {
+        flex: 1;
+      }
+      .rrow.routine > svg {
+        flex: none;
+        margin-right: -4px; /* the chevron's ink ends at 366 */
+        color: var(--ash);
+      }
+      /* "Ran today" on charcoal: an ash check and the words, no filled disc, so the plain fact is no
+         brighter than the titles */
+      .ran {
+        flex: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 15px;
+        line-height: 20px;
+        font-weight: 500;
+        color: var(--ash);
+      }
+
+      /* ═════════════ Screen 6b · a place on the canvas ═════════════ */
+      .place.on-dark {
+        color: var(--white);
+      }
+      .meta.on-dark {
+        color: var(--ash);
+      }
+
+      /* ═════════════ Screen 8 · the running task's own page (Lantern's, kept) ═════════════ */
+      .tmeta {
+        display: block;
+        font-size: 15px;
+        line-height: 20px;
+        font-weight: 500;
+        color: var(--ash);
+        white-space: nowrap;
+      }
+      .tmeta b {
+        font-weight: 600;
+        color: var(--white);
+      }
+      .timerow {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        white-space: nowrap;
+      }
+      .timerow strong {
+        font-size: 15px;
+        line-height: 20px;
+        font-weight: 650;
+        color: var(--terra);
+      }
+      .timerow span.e {
+        font-size: 15px;
+        line-height: 20px;
+        font-weight: 500;
+        color: var(--ash);
+      }
+      /* the rail: every step on one pitch, the current one marked Now beside its words */
+      .steps {
+        position: absolute;
+        left: 24px;
+        right: 24px;
+        z-index: 4;
+      }
+      .steps::before {
+        content: '';
+        position: absolute;
+        left: 13px;
+        top: 29px;
+        bottom: 29px;
+        width: 2px;
+        border-radius: 1px;
+        background: var(--hair-dark);
+      }
+      .steps li {
+        position: relative;
+        display: grid;
+        grid-template-columns: 28px 1fr;
+        column-gap: 16px;
+        align-items: center;
+        height: 58px;
+      }
+      .mk {
+        position: relative;
+        z-index: 1;
+        width: 28px;
+        height: 28px;
+        border-radius: 14px;
+        display: grid;
+        place-items: center;
+        font-size: 14px;
+        line-height: 1;
+        font-weight: 700;
+      }
+      /* a done step's disc is a 44 pt button that un-ticks it. Every disc carries the same 5 pt
+         charcoal ring, so the rail is cut the same way at all three */
+      .mk.done {
+        background: var(--sage);
+        color: var(--charcoal);
+        box-shadow: 0 0 0 5px var(--charcoal);
+      }
+      .hit {
+        position: relative;
+        z-index: 1;
+        flex: none;
+        width: 44px;
+        height: 44px;
+        display: grid;
+        place-items: center;
+      }
+      .mk.cur {
+        background: var(--white);
+        color: var(--charcoal);
+        box-shadow: 0 0 0 5px var(--charcoal);
+      }
+      .mk.next {
+        background: var(--charcoal);
+        color: var(--ash);
+        box-shadow:
+          inset 0 0 0 1.5px rgba(169, 175, 171, 0.55),
+          0 0 0 5px var(--charcoal);
+      }
+      .steps .s {
+        font-size: 17px;
+        line-height: 22px;
+        font-weight: 500;
+        color: var(--ash);
+        white-space: nowrap;
+      }
+      .steps li.current .s {
+        display: flex;
+        align-items: baseline;
+        gap: 12px;
+        color: var(--white);
+        font-size: 22px;
+        line-height: 28px;
+        font-weight: 600;
+        letter-spacing: -0.012em;
+      }
+      .steps li.current .s .nowtag {
+        letter-spacing: 0;
+      }
+
+      .notecard {
+        position: absolute;
+        left: 24px;
+        right: 24px;
+        z-index: 4;
+        background: var(--ash-8);
+        color: var(--white);
+        border-radius: 20px;
+        padding: 14px 18px 16px;
+      }
+      .notecard .nl {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        font-size: 13px;
+        line-height: 18px;
+        font-weight: 650;
+        color: var(--ash);
+      }
+      .notecard p.nt {
+        margin-top: 5px;
+        font-size: 17px;
+        line-height: 23px;
+        font-weight: 500;
+      }
+
+      /* ═════════════ Draft 3 additions ═════════════ */
+      /* the lantern's light: a static falloff of ash over charcoal around the block, never moving.
+         At its brightest it is #323634 (1.25 against the canvas): white 12.5, ash 5.5, terracotta 5.1.
+         Centred a little above the block (y 380 on Today), so it reaches up toward the header and the
+         dark above the step reads as light dropping away, while the corners and the dock row stay dark */
+      .screen.lamp {
+        background:
+          radial-gradient(
+            ellipse 360px 300px at var(--lx, 170px) var(--ly, 380px),
+            #323634 0%,
+            rgba(50, 54, 52, 0.66) 38%,
+            rgba(50, 54, 52, 0.22) 72%,
+            rgba(34, 38, 36, 0) 100%
+          ),
+          var(--charcoal);
+      }
+      /* Focus: its name as a title, the context beside it */
+      .ftitle {
+        display: flex;
+        align-items: baseline;
+        gap: 12px;
+        white-space: nowrap;
+      }
+      .ftitle b {
+        font-size: 22px;
+        line-height: 28px;
+        font-weight: 700;
+        letter-spacing: -0.015em;
+        color: var(--white);
+      }
+      .ftitle span {
+        font-size: 15px;
+        line-height: 20px;
+        font-weight: 500;
+        color: var(--ash);
+      }
+      /* Focus: the minutes stacked, as on the Lock Screen card, with +5 min beside them */
+      .fmins {
+        display: flex;
+        flex-direction: column;
+        white-space: nowrap;
+      }
+      .fmins strong {
+        font-size: 24px;
+        line-height: 30px;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+        color: var(--terra);
+      }
+      .fmins span {
+        font-size: 15px;
+        line-height: 20px;
+        font-weight: 500;
+        color: var(--ash);
+      }
+      .pill.hpill44 {
+        height: 44px;
+        border-radius: 22px;
+        padding: 0 20px;
+        font-size: 15px;
+        line-height: 20px;
+      }
+      .stoneband {
+        position: absolute;
+        left: 0;
+        right: 0;
+        background: var(--stone);
+        z-index: 7;
+      }
+      /* the half drawer: the tabs' band is drawn as the cover the list goes under, a faint shadow along
+         its top edge falling 10 pt onto the list, so the covered row reads as passing beneath it */
+      .stoneband.cover {
+        box-shadow: 0 -6px 10px -6px rgba(34, 38, 36, 0.16);
+      }
+      .wall {
+        position: absolute;
+        inset: 0;
+        z-index: 0;
+      }
+      .cstates + .exlabel {
+        margin-top: 16px;
+        max-width: 1000px;
+      }
+      /* squares beside 13/18 text keep their size and sit on that line's x-height */
+      .rrow .rt small .dur .m {
+        top: 0.5px;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- ═════════════ Icons. App set: 1.75 stroke, round caps and joins; check and plus at 2.25 where they are 20 pt or larger. ═════════════ -->
+    <svg width="0" height="0" style="position: absolute" aria-hidden="true" focusable="false">
+      <defs>
+        <symbol id="i-check" viewBox="0 0 24 24">
+          <path
+            d="M5.5 12.5l4.25 4.25L18.5 8"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.25"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            vector-effect="non-scaling-stroke"
+          />
+        </symbol>
+        <symbol id="i-check-s" viewBox="0 0 24 24">
+          <path
+            d="M5.5 12.5l4.25 4.25L18.5 8"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.75"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            vector-effect="non-scaling-stroke"
+          />
+        </symbol>
+        <symbol id="i-plus" viewBox="0 0 24 24">
+          <path
+            d="M12 5v14M5 12h14"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.25"
+            stroke-linecap="round"
+            vector-effect="non-scaling-stroke"
+          />
+        </symbol>
+        <symbol id="i-pause" viewBox="0 0 24 24">
+          <rect x="6.5" y="5" width="3.75" height="14" rx="1.4" fill="currentColor" />
+          <rect x="13.75" y="5" width="3.75" height="14" rx="1.4" fill="currentColor" />
+        </symbol>
+        <symbol id="i-play" viewBox="0 0 24 24">
+          <path
+            d="M8 6.2v11.6a1 1 0 0 0 1.53.85l9.2-5.8a1 1 0 0 0 0-1.7l-9.2-5.8A1 1 0 0 0 8 6.2z"
+            fill="currentColor"
+          />
+        </symbol>
+        <symbol id="i-back" viewBox="0 0 24 24">
+          <path
+            d="M14.5 5.75L8.25 12l6.25 6.25"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.75"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            vector-effect="non-scaling-stroke"
+          />
+        </symbol>
+        <symbol id="i-right" viewBox="0 0 24 24">
+          <path
+            d="M9.5 5.75L15.75 12 9.5 18.25"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.75"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            vector-effect="non-scaling-stroke"
+          />
+        </symbol>
+        <symbol id="i-down" viewBox="0 0 24 24">
+          <path
+            d="M5.75 9.25L12 15.5l6.25-6.25"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.75"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            vector-effect="non-scaling-stroke"
+          />
+        </symbol>
+        <symbol id="i-up" viewBox="0 0 24 24">
+          <path
+            d="M5.75 14.75L12 8.5l6.25 6.25"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.75"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            vector-effect="non-scaling-stroke"
+          />
+        </symbol>
+        <symbol id="i-note" viewBox="0 0 24 24">
+          <g
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.75"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path
+              vector-effect="non-scaling-stroke"
+              d="M6.5 3.75h8l4 4v11.5a1 1 0 0 1-1 1h-11a1 1 0 0 1-1-1V4.75a1 1 0 0 1 1-1z"
+            />
+            <path
+              vector-effect="non-scaling-stroke"
+              d="M14.25 3.75V8h4.25M8.75 12.5h6.5M8.75 16h4"
+            />
+          </g>
+        </symbol>
+        <symbol id="i-cal" viewBox="0 0 24 24">
+          <g
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.75"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <rect
+              vector-effect="non-scaling-stroke"
+              x="3.75"
+              y="5.25"
+              width="16.5"
+              height="15"
+              rx="2.75"
+            />
+            <path
+              vector-effect="non-scaling-stroke"
+              d="M3.75 10.25h16.5M8.25 3.25v4M15.75 3.25v4"
+            />
+          </g>
+        </symbol>
+        <symbol id="i-more" viewBox="0 0 24 24">
+          <g fill="currentColor">
+            <circle cx="5.75" cy="12" r="1.75" />
+            <circle cx="12" cy="12" r="1.75" />
+            <circle cx="18.25" cy="12" r="1.75" />
+          </g>
+        </symbol>
+        <symbol id="i-ring" viewBox="0 0 24 24">
+          <circle
+            cx="12"
+            cy="12"
+            r="11.125"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.75"
+            vector-effect="non-scaling-stroke"
+          />
+        </symbol>
+        <symbol id="i-today" viewBox="0 0 24 24">
+          <g fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round">
+            <circle vector-effect="non-scaling-stroke" cx="12" cy="12" r="3.75" />
+            <path
+              vector-effect="non-scaling-stroke"
+              d="M12 3v1.75M12 19.25V21M3 12h1.75M19.25 12H21M5.64 5.64l1.24 1.24M17.12 17.12l1.24 1.24M5.64 18.36l1.24-1.24M17.12 6.88l1.24-1.24"
+            />
+          </g>
+        </symbol>
+        <symbol id="i-tasks" viewBox="0 0 24 24">
+          <path
+            vector-effect="non-scaling-stroke"
+            d="M4 6.5l1.6 1.6L8.75 5M4 12.5l1.6 1.6 3.15-3.1M4.5 18.25h3.5M12 6.75h8M12 12.75h8M12 18.25h8"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.75"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </symbol>
+        <symbol id="i-routines" viewBox="0 0 24 24">
+          <g
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.75"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path vector-effect="non-scaling-stroke" d="M16.5 3.5l3 3-3 3" />
+            <path vector-effect="non-scaling-stroke" d="M19.5 6.5H9a4.5 4.5 0 0 0-4.5 4.5v.5" />
+            <path vector-effect="non-scaling-stroke" d="M7.5 20.5l-3-3 3-3" />
+            <path vector-effect="non-scaling-stroke" d="M4.5 17.5H15a4.5 4.5 0 0 0 4.5-4.5v-.5" />
+          </g>
+        </symbol>
+        <symbol id="i-library" viewBox="0 0 24 24">
+          <g
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.75"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path
+              vector-effect="non-scaling-stroke"
+              d="M12 6.5c-1.6-1.3-4-2-7.25-2v13.25c3.25 0 5.65.7 7.25 2 1.6-1.3 4-2 7.25-2V4.5c-3.25 0-5.65.7-7.25 2z"
+            />
+            <path vector-effect="non-scaling-stroke" d="M12 6.5v13.25" />
+          </g>
+        </symbol>
+
+        <!-- filled tab glyphs: the current tab is marked by a filled glyph and a heavier label, not by colour -->
+        <symbol id="i-today-f" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="4.9" fill="currentColor" />
+          <path
+            vector-effect="non-scaling-stroke"
+            d="M12 2.75v1.9M12 19.35v1.9M2.75 12h1.9M19.35 12h1.9M5.46 5.46l1.34 1.34M17.2 17.2l1.34 1.34M5.46 18.54l1.34-1.34M17.2 6.8l1.34-1.34"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.25"
+            stroke-linecap="round"
+          />
+        </symbol>
+        <symbol id="i-tasks-f" viewBox="0 0 24 24">
+          <circle cx="6" cy="6.6" r="3.35" fill="currentColor" />
+          <circle cx="6" cy="12.7" r="3.35" fill="currentColor" />
+          <path
+            vector-effect="non-scaling-stroke"
+            d="M4.6 6.7l1 1 1.85-1.95M4.6 12.8l1 1 1.85-1.95"
+            fill="none"
+            stroke="#fff"
+            stroke-width="1.4"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+          <path
+            vector-effect="non-scaling-stroke"
+            d="M4.25 18.5h3.5M12 6.75h8M12 12.75h8M12 18.5h8"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.25"
+            stroke-linecap="round"
+          />
+        </symbol>
+        <symbol id="i-routines-f" viewBox="0 0 24 24">
+          <g
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.25"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path vector-effect="non-scaling-stroke" d="M18 6.5H9a4.5 4.5 0 0 0-4.5 4.5v.5" />
+            <path vector-effect="non-scaling-stroke" d="M6 17.5H15a4.5 4.5 0 0 0 4.5-4.5v-.5" />
+          </g>
+          <path
+            d="M16 2.9l4.3 3.6-4.3 3.6z"
+            fill="currentColor"
+            stroke="currentColor"
+            stroke-width="1"
+            stroke-linejoin="round"
+          />
+          <path
+            d="M8 13.9l-4.3 3.6 4.3 3.6z"
+            fill="currentColor"
+            stroke="currentColor"
+            stroke-width="1"
+            stroke-linejoin="round"
+          />
+        </symbol>
+        <symbol id="i-library-f" viewBox="0 0 24 24">
+          <path
+            d="M12 6.5c-1.6-1.3-4-2-7.25-2v13.25c3.25 0 5.65.7 7.25 2 1.6-1.3 4-2 7.25-2V4.5c-3.25 0-5.65.7-7.25 2z"
+            fill="currentColor"
+            stroke="currentColor"
+            stroke-width="1.75"
+            stroke-linejoin="round"
+          />
+          <path
+            vector-effect="non-scaling-stroke"
+            d="M12 7.25v11.5"
+            fill="none"
+            stroke="#fff"
+            stroke-width="1.5"
+            stroke-linecap="round"
+          />
+        </symbol>
+
+        <!-- the app's own mark (assets/logo.svg), for the Live Activity; its clip paths are renamed so they stay unique -->
+        <clipPath id="mk-g"><polygon points="0,0 880,0 392,488 392,1400 0,1400" /></clipPath>
+        <clipPath id="mk-t"><polygon points="880,0 1400,0 1400,1400 392,1400 392,488" /></clipPath>
+        <symbol id="app-mark" viewBox="0 0 464 416">
+          <g transform="translate(-160,-372)">
+            <path
+              d="M372 382 C345 392 305 440 289 482 C274 516 205 660 168 781 L228 781 Q254 781 262 757 L380 507 Q386 494 392 488 Q398 494 404 507 L522 757 Q530 781 556 781 L616 781 C579 660 510 516 495 482 C479 440 439 392 412 382 C406 374 378 374 372 382 Z"
+              fill="#728871"
+              clip-path="url(#mk-g)"
+            />
+            <path
+              d="M372 382 C345 392 305 440 289 482 C274 516 205 660 168 781 L228 781 Q254 781 262 757 L380 507 Q386 494 392 488 Q398 494 404 507 L522 757 Q530 781 556 781 L616 781 C579 660 510 516 495 482 C479 440 439 392 412 382 C406 374 378 374 372 382 Z"
+              fill="#CA7F58"
+              clip-path="url(#mk-t)"
+            />
+            <circle cx="392" cy="708" r="44" fill="#CA7F58" />
+          </g>
+        </symbol>
+
+        <!-- system glyphs, drawn as stand-ins -->
+        <symbol id="s-signal" viewBox="0 0 18 12">
+          <g fill="currentColor">
+            <rect x="0" y="8" width="3" height="4" rx="0.8" />
+            <rect x="5" y="5.5" width="3" height="6.5" rx="0.8" />
+            <rect x="10" y="3" width="3" height="9" rx="0.8" />
+            <rect x="15" y="0" width="3" height="12" rx="0.8" />
+          </g>
+        </symbol>
+        <symbol id="s-wifi" viewBox="0 0 16 12">
+          <g fill="currentColor">
+            <path
+              d="M8 2.2c2.4 0 4.6.9 6.3 2.5l1.2-1.25C13.5 1.5 10.9.4 8 .4S2.5 1.5.5 3.45L1.7 4.7C3.4 3.1 5.6 2.2 8 2.2z"
+            />
+            <path
+              d="M8 5.6c1.5 0 2.8.55 3.85 1.5l1.2-1.25A7.4 7.4 0 0 0 8 3.8a7.4 7.4 0 0 0-5.05 2.05l1.2 1.25A5.6 5.6 0 0 1 8 5.6z"
+            />
+            <path d="M8 9.1c.6 0 1.1.2 1.5.55L8 11.6 6.5 9.65c.4-.35.9-.55 1.5-.55z" />
+          </g>
+        </symbol>
+        <symbol id="s-batt" viewBox="0 0 27 13">
+          <rect
+            x="0.6"
+            y="0.6"
+            width="22.8"
+            height="11.8"
+            rx="3.6"
+            fill="none"
+            stroke="currentColor"
+            stroke-opacity="0.45"
+            stroke-width="1.2"
+          />
+          <rect x="2.4" y="2.4" width="16.5" height="8.2" rx="2.1" fill="currentColor" />
+          <path
+            d="M25 4.4v4.2c.9-.35 1.5-1.2 1.5-2.1s-.6-1.75-1.5-2.1z"
+            fill="currentColor"
+            fill-opacity="0.5"
+          />
+        </symbol>
+        <symbol id="s-lock" viewBox="0 0 16 20">
+          <path
+            d="M4.5 8.5V6a3.5 3.5 0 0 1 7 0v2.5"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.75"
+            stroke-linecap="round"
+          />
+          <rect x="1.5" y="8.25" width="13" height="10.5" rx="2.5" fill="currentColor" />
+        </symbol>
+        <symbol id="s-camera" viewBox="0 0 24 24">
+          <g fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round">
+            <path
+              vector-effect="non-scaling-stroke"
+              d="M4.75 7.75h3l1.6-2.25h5.3l1.6 2.25h3a1.5 1.5 0 0 1 1.5 1.5v8.5a1.5 1.5 0 0 1-1.5 1.5H4.75a1.5 1.5 0 0 1-1.5-1.5v-8.5a1.5 1.5 0 0 1 1.5-1.5z"
+            />
+            <circle vector-effect="non-scaling-stroke" cx="12" cy="13.25" r="3.4" />
+          </g>
+        </symbol>
+        <symbol id="s-emoji" viewBox="0 0 24 24">
+          <g fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round">
+            <circle vector-effect="non-scaling-stroke" cx="12" cy="12" r="9" />
+            <path
+              vector-effect="non-scaling-stroke"
+              d="M8.25 14.25c1 1.35 2.25 2 3.75 2s2.75-.65 3.75-2"
+            />
+          </g>
+          <circle cx="9" cy="9.75" r="1.15" fill="currentColor" />
+          <circle cx="15" cy="9.75" r="1.15" fill="currentColor" />
+        </symbol>
+        <symbol id="s-mic" viewBox="0 0 24 24">
+          <g fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round">
+            <rect vector-effect="non-scaling-stroke" x="9" y="3" width="6" height="11.5" rx="3" />
+            <path
+              vector-effect="non-scaling-stroke"
+              d="M5.75 11.5a6.25 6.25 0 0 0 12.5 0M12 17.75V21"
+            />
+          </g>
+        </symbol>
+        <symbol id="s-shift" viewBox="0 0 24 24">
+          <path
+            vector-effect="non-scaling-stroke"
+            d="M12 4.5l7.5 7.75h-4v6.75h-7v-6.75h-4z"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.75"
+            stroke-linejoin="round"
+          />
+        </symbol>
+        <symbol id="s-del" viewBox="0 0 24 24">
+          <g
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.75"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path
+              vector-effect="non-scaling-stroke"
+              d="M8.5 5.5h11a1.5 1.5 0 0 1 1.5 1.5v10a1.5 1.5 0 0 1-1.5 1.5h-11L3 12z"
+            />
+            <path vector-effect="non-scaling-stroke" d="M11.25 9.25l5.5 5.5M16.75 9.25l-5.5 5.5" />
+          </g>
+        </symbol>
+      </defs>
+    </svg>
+
+    <main class="board">
+      <header class="intro">
+        <div>
+          <p class="eyebrow">
+            Adnotia <span class="sep">·</span> phone app <span class="sep">·</span> design direction
+          </p>
+          <h1>Lantern</h1>
+          <p class="subtitle">with Glasshouse's pinned Now capsule</p>
+          <p class="idea">
+            <b>A dark charcoal canvas lit by one sentence:</b> the step you are on, in very large
+            white type, with one terracotta bar burning down beneath it. Everywhere else, that
+            sentence rides folded in a Now capsule, one tap from anywhere, in the row that never
+            moves.
+          </p>
+          <ul class="swatches" aria-label="Palette">
+            <li class="sw">
+              <i style="background: #222624"></i><b>Charcoal</b> #222624 now, and the canvas
+            </li>
+            <li class="sw">
+              <i style="background: #ffffff"></i><b>White</b> #FFFFFF text on charcoal, and the
+              places if chosen
+            </li>
+            <li class="sw">
+              <i style="background: #a9afab"></i><b>Ash</b> #A9AFAB on charcoal only
+            </li>
+            <li class="sw">
+              <i style="background: #f28c5e"></i><b>Terracotta</b> #F28C5E time and capture
+            </li>
+            <li class="sw">
+              <i style="background: #eef0ec"></i><b>Stone</b> #EEF0EC the rest of today
+            </li>
+            <li class="sw"><i style="background: #dfe9e0"></i><b>Sage</b> #DFE9E0 done</li>
+            <li class="sw">
+              <i style="background: #595c5b"></i><b>Muted</b> #595C5B on light only
+            </li>
+          </ul>
+          <p class="typenote">
+            <b>Instrument Sans</b>, SIL Open Font License, variable width 75–100 and weight 400–700,
+            bundled in the app. Step 40/46 and 44/50 at 700; the idle sentence 32/38. Nothing below
+            12 pt, no weight under 400. Text measures 4.7:1 to 15.3:1 against the pixels under it.
+          </p>
+          <section class="lstates" aria-labelledby="states-h">
+            <h2 id="states-h">The capsule paused, over its estimate, and with a long name</h2>
+            <div class="cstates">
+              <div
+                class="capsule"
+                role="button"
+                aria-label="Paused: Write the question, step 2 of 3 of Write the school email. 18 of 25 minutes left."
+              >
+                <p class="c1">
+                  <span class="ptag">Paused</span><span class="cstep">Write the question</span>
+                </p>
+                <span class="bar cap paused" style="--w: 238px; --h: 4px; --p: 72%"
+                  ><i class="fill"></i><i class="end"></i
+                ></span>
+                <p class="c2">
+                  <b class="w">18 min left</b><span class="sep">·</span
+                  ><span class="tn">Write the school email</span>
+                </p>
+              </div>
+              <div
+                class="capsule"
+                role="button"
+                aria-label="Now: Write the question, step 2 of 3 of Write the school email. 27 minutes so far, estimate 25."
+              >
+                <p class="c1">
+                  <span class="nowtag">Now</span><span class="cstep">Write the question</span>
+                </p>
+                <span class="bar cap over" style="--w: 238px; --h: 4px; --p: 0%"
+                  ><i class="fill"></i><i class="end"></i
+                ></span>
+                <p class="c2"><b>27 min so far</b></p>
+              </div>
+              <div
+                class="capsule"
+                role="button"
+                aria-label="Now: Find the old policy, step 1 of 4 of Renew the car insurance online. 12 of 20 minutes left, ends 10:17."
+              >
+                <p class="c1">
+                  <span class="nowtag">Now</span><span class="cstep">Find the old policy</span>
+                </p>
+                <span class="bar cap" style="--w: 238px; --h: 4px; --p: 60%"
+                  ><i class="fill"></i><i class="end"></i
+                ></span>
+                <p class="c2"><b>12 min left</b></p>
+              </div>
+            </div>
+            <p class="exlabel">
+              Paused is said in words where Now was, with the bar frozen in ash and the minutes in
+              white. Over the estimate, the track is an empty outline and the time counts up; "27
+              min so far" leaves no room for the name, so the name gives way. A longer name gives
+              way the same way: "Renew the car insurance online" does not fit beside "12 min left",
+              so line 2 shows the minutes alone and the name stays in the spoken label. A name is
+              shown whole or not at all, never cut to a fragment.
+            </p>
+          </section>
+        </div>
+        <aside class="objects" aria-labelledby="obj-h">
+          <h2 id="obj-h">One object at every size</h2>
+          <p class="exlabel from">
+            From Glasshouse: the capsule's place above the tabs, its rule that it hides while the
+            lit step shows, and white places, drawn only as one side of a choice (3b, 6b).
+          </p>
+          <div class="exhibit">
+            <div class="cpair">
+              <div
+                class="capsule"
+                role="button"
+                aria-label="Now: Write the question, step 2 of 3 of Write the school email. 18 of 25 minutes left, ends 10:23."
+              >
+                <p class="c1">
+                  <span class="nowtag">Now</span><span class="cstep">Write the question</span>
+                </p>
+                <span class="bar cap" style="--w: 238px; --h: 4px; --p: 72%"
+                  ><i class="fill"></i><i class="end"></i
+                ></span>
+                <p class="c2">
+                  <b>18 min left</b><span class="sep">·</span
+                  ><span class="tn">Write the school email</span>
+                </p>
+              </div>
+              <div class="ctile">
+                <div
+                  class="capsule lift"
+                  role="button"
+                  aria-label="Now: Put shoes on, step 2 of 4 of Leaving the house. 2 of 3 minutes left, ends 10:08."
+                >
+                  <p class="c1">
+                    <span class="nowtag">Now</span><span class="cstep">Put shoes on</span>
+                  </p>
+                  <span class="bar cap" style="--w: 238px; --h: 4px; --p: 66%"
+                    ><i class="fill"></i><i class="end"></i
+                  ></span>
+                  <p class="c2">
+                    <b>2 min left</b><span class="sep">·</span
+                    ><span class="tn">Leaving the house</span>
+                  </p>
+                </div>
+              </div>
+            </div>
+            <p class="exlabel">
+              The Now capsule, in the lantern's order: the step, the bar, then the minutes left and
+              the task's name, set a little narrower so "Write the school email" fits whole. On a
+              white place it is the one dark thing. On a charcoal place it is lifted on a lighter
+              fill with a full ash edge (right, carrying a routine step).
+            </p>
+          </div>
+          <div class="exhibit">
+            <div class="islands">
+              <div
+                class="isl isl-c"
+                role="img"
+                aria-label="Dynamic Island, compact: 18 minutes left"
+              >
+                <span class="bar mini" style="--w: 34px; --h: 6px; --p: 72%"
+                  ><i class="fill"></i></span
+                ><b>18m</b>
+              </div>
+              <div class="isl-pair" role="img" aria-label="Dynamic Island, minimal: 18">
+                <span class="isl isl-pill"></span><span class="isl isl-min">18</span>
+              </div>
+            </div>
+            <div
+              class="isl isl-x"
+              style="margin-top: 14px"
+              role="group"
+              aria-label="Dynamic Island, expanded"
+            >
+              <span class="camzone" aria-hidden="true"></span>
+              <p class="lead"><span class="nowtag">Now</span></p>
+              <p class="trail">step 2 of 3</p>
+              <p class="x1">Write the question</p>
+              <span class="bar" style="--w: 322px; --h: 6px; --p: 72%"
+                ><i class="fill"></i><i class="end"></i
+              ></span>
+              <div class="x4">
+                <p class="m"><strong>18 min left</strong><span>ends 10:23</span></p>
+                <span class="spill white"
+                  ><svg class="i i16" aria-hidden="true"><use href="#i-check-s" /></svg>Step
+                  done</span
+                >
+                <span class="spill ash"
+                  ><svg class="i i16" aria-hidden="true"><use href="#i-pause" /></svg>Pause</span
+                >
+              </div>
+              <p class="x5">Next <span class="sep">·</span> 10:30 Call the dentist</p>
+            </div>
+            <p class="exlabel">
+              Dynamic Island: compact, minimal, and expanded on a long press. It never shows while
+              the app is in front.
+            </p>
+          </div>
+          <p class="colcap">
+            The step, the bar and the minutes, in the same order, on Today, in Focus, in the
+            capsule, on the Lock Screen and in the Island.
+          </p>
+        </aside>
+      </header>
+      <div class="row">
+        <section class="device" aria-labelledby="c1">
+          <div class="frame" data-shot="01-today">
+            <div class="screen dark lamp">
+              <div class="status" aria-hidden="true">
+                <span class="clock">10:05</span><span class="cam"></span
+                ><span class="sys"
+                  ><svg style="width: 18px; height: 12px"><use href="#s-signal" /></svg
+                  ><svg style="width: 16px; height: 12px"><use href="#s-wifi" /></svg
+                  ><svg style="width: 27px; height: 13px"><use href="#s-batt" /></svg
+                ></span>
+              </div>
+              <header class="hdr">
+                <p class="date">Tuesday 24 November</p>
+                <a class="me on-dark" href="#me">Me</a>
+              </header>
+              <a
+                class="lit"
+                href="#focus"
+                aria-label="Now: Write the question. Step 2 of 3 of Write the school email. 18 of 25 minutes left, ends 10:23. Note: When is the permission slip due?"
+              >
+                <p class="nowline">
+                  <span class="nowtag">Now</span> <span class="sep">·</span> step 2 of 3<span
+                    class="flabel"
+                    aria-hidden="true"
+                    >Focus<svg class="i i20"><use href="#i-right" /></svg
+                  ></span>
+                </p>
+                <p class="ttl">Write the school email</p>
+                <h2 class="step">Write the question</h2>
+                <span class="bar glow" style="--w: 342px; --h: 10px; --p: 72%"
+                  ><i class="fill"></i><i class="end"></i
+                ></span>
+                <p class="mins">
+                  <strong>18 min left</strong
+                  ><span>of 25 <span class="sep">·</span> ends 10:23</span>
+                </p>
+                <p class="note">
+                  <svg class="i i18" aria-hidden="true"><use href="#i-note" /></svg
+                  ><span><b>Note</b>&ensp;When is the permission slip due?</span>
+                </p>
+              </a>
+              <button
+                class="pill white dock"
+                style="left: 24px; width: 138px; padding-right: 2px"
+                aria-label="Step done: Write the question"
+              >
+                <svg class="i i20" aria-hidden="true"><use href="#i-check" /></svg>Step done</button
+              ><button class="pill ash dock" style="left: 172px; width: 120px; padding-right: 4px">
+                <svg class="i i20" aria-hidden="true"><use href="#i-pause" /></svg>Pause
+              </button>
+              <button class="capture on-dark" aria-label="Capture">
+                <svg class="i i28" aria-hidden="true"><use href="#i-plus" /></svg>
+              </button>
+              <div class="drawer" style="top: 684px"></div>
+              <span class="grab" style="top: 692px" aria-hidden="true"></span>
+              <a
+                class="handle"
+                href="#rest"
+                aria-label="Next, in 25 minutes: 10:30, Call the dentist. Rest of today."
+                ><p class="l1 lbl">Next <span class="sep">·</span> in 25 min</p>
+                <span class="more" aria-hidden="true"
+                  >Rest of today<svg class="i i20"><use href="#i-up" /></svg
+                ></span>
+                <p class="l2">
+                  <span class="t">10:30</span><span class="ti">Call the dentist</span>
+                </p></a
+              >
+              <span class="hair" style="top: 754px"></span>
+              <nav class="tabs" aria-label="Main">
+                <a class="tab" href="#today" aria-current="page"
+                  ><svg class="i" aria-hidden="true"><use href="#i-today-f" /></svg>Today</a
+                >
+                <a class="tab" href="#tasks"
+                  ><svg class="i" aria-hidden="true"><use href="#i-tasks" /></svg>Tasks</a
+                >
+                <a class="tab" href="#routines"
+                  ><svg class="i" aria-hidden="true"><use href="#i-routines" /></svg>Routines</a
+                >
+                <a class="tab" href="#library"
+                  ><svg class="i" aria-hidden="true"><use href="#i-library" /></svg>Library</a
+                >
+              </nav>
+              <span class="homebar k"></span>
+            </div>
+          </div>
+          <div class="caption" id="c1">
+            <p class="n">1 <span class="sep">·</span> Today</p>
+            <h2>One sentence lit</h2>
+            <p class="t">
+              The app opens on the current step, its bar burning down and the light falling off
+              around it. The Next line names what comes next and opens the rest of today, and the
+              row under the thumb holds Step done, Pause and capture.
+            </p>
+          </div>
+        </section>
+        <section class="device" aria-labelledby="c2">
+          <div class="frame" data-shot="02-rest-of-today">
+            <div class="screen dark">
+              <div class="status" aria-hidden="true">
+                <span class="clock">10:05</span><span class="cam"></span
+                ><span class="sys"
+                  ><svg style="width: 18px; height: 12px"><use href="#s-signal" /></svg
+                  ><svg style="width: 16px; height: 12px"><use href="#s-wifi" /></svg
+                  ><svg style="width: 27px; height: 13px"><use href="#s-batt" /></svg
+                ></span>
+              </div>
+              <div class="drawer" style="top: 60px"></div>
+              <span class="grab" style="top: 66px" aria-hidden="true"></span>
+              <header class="hdr" style="top: 76px">
+                <h2 class="place">Rest of today</h2>
+                <a class="me on-stone" href="#me">Me</a>
+              </header>
+              <p class="a lbl" style="top: 132px">Later today</p>
+              <div class="trow two" style="top: 154px; height: 62px">
+                <span class="t">10:30</span
+                ><span class="ti"><b>Call the dentist</b><small>in 25 min</small></span
+                ><span class="dur"
+                  >10 min<span class="m" style="--min: 10" aria-hidden="true"></span
+                ></span>
+              </div>
+              <div class="trow" style="top: 216px; height: 44px">
+                <span class="t">11:00</span><span class="ti">Walk to the park</span
+                ><span class="dur"
+                  >20 min<span class="m" style="--min: 20" aria-hidden="true"></span
+                ></span>
+              </div>
+              <div class="trow" style="top: 260px; height: 44px">
+                <span class="t">14:00</span><span class="ti">Ring the bank</span
+                ><span class="dur"
+                  >15 min<span class="m" style="--min: 15" aria-hidden="true"></span
+                ></span>
+              </div>
+              <p class="a lbl" style="top: 320px">Anytime today</p>
+              <div class="rrow" style="top: 342px">
+                <svg class="i ring" aria-hidden="true"><use href="#i-ring" /></svg
+                ><span class="rt"><span>Renew the parking permit</span></span>
+              </div>
+              <div class="rrow" style="top: 386px">
+                <svg class="i ring" aria-hidden="true"><use href="#i-ring" /></svg
+                ><span class="rt"><span>Order printer ink</span></span>
+              </div>
+              <div class="rrow" style="top: 430px">
+                <svg class="i ring" aria-hidden="true"><use href="#i-ring" /></svg
+                ><span class="rt"><span>Book the boiler service</span></span>
+              </div>
+              <div class="rrow" style="top: 474px">
+                <svg class="i ring" aria-hidden="true"><use href="#i-ring" /></svg
+                ><span class="rt"><span>Pay the window cleaner</span></span>
+              </div>
+              <div class="rrow" style="top: 518px">
+                <svg class="i ring" aria-hidden="true"><use href="#i-ring" /></svg
+                ><span class="rt"><span>Text Sam about Saturday</span></span>
+              </div>
+              <div class="rrow cue" style="top: 562px">
+                <svg class="i ring" aria-hidden="true"><use href="#i-ring" /></svg
+                ><span class="rt"><span>Water the plants</span></span>
+              </div>
+              <span class="stoneband cover" style="top: 606px; bottom: 0"></span>
+              <a
+                class="capsule slot"
+                href="#focus"
+                aria-label="Now: Write the question, step 2 of 3 of Write the school email. 18 of 25 minutes left, ends 10:23."
+                ><p class="c1">
+                  <span class="nowtag">Now</span><span class="cstep">Write the question</span>
+                </p>
+                <span class="bar cap" style="--w: 238px; --h: 4px; --p: 72%"
+                  ><i class="fill"></i><i class="end"></i
+                ></span>
+                <p class="c2">
+                  <b>18 min left</b><span class="sep">·</span
+                  ><span class="tn">Write the school email</span>
+                </p></a
+              >
+              <button class="capture on-light" aria-label="Capture">
+                <svg class="i i28" aria-hidden="true"><use href="#i-plus" /></svg>
+              </button>
+              <a class="handle open" href="#today" aria-label="Hide the rest of today"
+                ><span class="more"
+                  ><svg class="i i20" aria-hidden="true"><use href="#i-down" /></svg>Hide</span
+                ></a
+              >
+              <span class="hair" style="top: 754px; z-index: 8"></span>
+              <nav class="tabs" aria-label="Main" style="z-index: 9">
+                <a class="tab" href="#today" aria-current="page"
+                  ><svg class="i" aria-hidden="true"><use href="#i-today-f" /></svg>Today</a
+                >
+                <a class="tab" href="#tasks"
+                  ><svg class="i" aria-hidden="true"><use href="#i-tasks" /></svg>Tasks</a
+                >
+                <a class="tab" href="#routines"
+                  ><svg class="i" aria-hidden="true"><use href="#i-routines" /></svg>Routines</a
+                >
+                <a class="tab" href="#library"
+                  ><svg class="i" aria-hidden="true"><use href="#i-library" /></svg>Library</a
+                >
+              </nav>
+              <span class="homebar k" style="z-index: 21"></span>
+            </div>
+          </div>
+          <div class="caption" id="c2">
+            <p class="n">2 <span class="sep">·</span> The rest of today</p>
+            <h2>The day pulled up, the step carried</h2>
+            <p class="t">
+              Opening the day keeps the light on: the step, bar and minutes fold into the Now
+              capsule. The list ends above it on a covered row, its ring and title greying together
+              toward their foot, and scrolls up from there, so no task hides behind the capsule.
+              Hide sits where Rest of today was, so the drawer closes from the spot that opened it.
+              Me sits 18 lower, below this drawer's edge.
+            </p>
+          </div>
+        </section>
+        <section class="device" aria-labelledby="c3a">
+          <div class="frame" data-shot="03a-task-opened-charcoal">
+            <div class="screen dark on-dark">
+              <div class="status" aria-hidden="true">
+                <span class="clock">10:05</span><span class="cam"></span
+                ><span class="sys"
+                  ><svg style="width: 18px; height: 12px"><use href="#s-signal" /></svg
+                  ><svg style="width: 16px; height: 12px"><use href="#s-wifi" /></svg
+                  ><svg style="width: 27px; height: 13px"><use href="#s-batt" /></svg
+                ></span>
+              </div>
+              <header class="hdr">
+                <a class="hpill on-dark" href="#today"
+                  ><svg class="i i20" aria-hidden="true"><use href="#i-back" /></svg>Today</a
+                ><span class="grow"></span
+                ><button class="circ on-dark" aria-label="More">
+                  <svg class="i" aria-hidden="true"><use href="#i-more" /></svg></button
+                ><a class="me on-dark" href="#me">Me</a>
+              </header>
+              <h2 class="a ptitle" style="top: 122px; color: var(--white)">Call the dentist</h2>
+              <div class="a whenrow" style="top: 176px">
+                <button class="when on-dark">
+                  <svg class="i i18" aria-hidden="true"><use href="#i-cal" /></svg>Today, 10:30<span
+                    class="dot"
+                    >·</span
+                  ><span class="dur">10 min</span><span class="dot">·</span
+                  ><span class="dur">in 25 min</span>
+                </button>
+              </div>
+              <button class="pill ash pad" style="left: 24px; top: 240px">
+                <svg class="i i20" aria-hidden="true"><use href="#i-play" /></svg>Start this instead
+              </button>
+              <p class="a meta on-dark" style="top: 308px">
+                Starting this stops the timer on Write the school email. It keeps its place at step
+                2.
+              </p>
+              <p class="a lbl on-dark" style="top: 372px">Steps</p>
+              <button class="a addstep" style="top: 394px">
+                <svg class="i i20" aria-hidden="true"><use href="#i-plus" /></svg>Add a step
+              </button>
+              <span class="fade dark"></span>
+              <a
+                class="capsule slot lift"
+                href="#focus"
+                aria-label="Now: Write the question, step 2 of 3 of Write the school email. 18 of 25 minutes left, ends 10:23."
+                ><p class="c1">
+                  <span class="nowtag">Now</span><span class="cstep">Write the question</span>
+                </p>
+                <span class="bar cap" style="--w: 238px; --h: 4px; --p: 72%"
+                  ><i class="fill"></i><i class="end"></i
+                ></span>
+                <p class="c2">
+                  <b>18 min left</b><span class="sep">·</span
+                  ><span class="tn">Write the school email</span>
+                </p></a
+              >
+              <button class="capture on-dark" aria-label="Capture">
+                <svg class="i i28" aria-hidden="true"><use href="#i-plus" /></svg>
+              </button>
+              <div class="drawer flat" style="top: 684px"></div>
+              <span class="dshadow" style="top: 684px" aria-hidden="true"></span>
+              <span class="grab" style="top: 692px" aria-hidden="true"></span>
+              <a
+                class="handle"
+                href="#rest"
+                aria-label="Next, in 25 minutes: 10:30, Call the dentist. Rest of today."
+                ><p class="l1 lbl">Next <span class="sep">·</span> in 25 min</p>
+                <span class="more" aria-hidden="true"
+                  >Rest of today<svg class="i i20"><use href="#i-up" /></svg
+                ></span>
+                <p class="l2">
+                  <span class="t">10:30</span><span class="ti">Call the dentist</span>
+                </p></a
+              >
+              <span class="hair" style="top: 754px"></span>
+              <nav class="tabs" aria-label="Main">
+                <a class="tab" href="#today" aria-current="page"
+                  ><svg class="i" aria-hidden="true"><use href="#i-today-f" /></svg>Today</a
+                >
+                <a class="tab" href="#tasks"
+                  ><svg class="i" aria-hidden="true"><use href="#i-tasks" /></svg>Tasks</a
+                >
+                <a class="tab" href="#routines"
+                  ><svg class="i" aria-hidden="true"><use href="#i-routines" /></svg>Routines</a
+                >
+                <a class="tab" href="#library"
+                  ><svg class="i" aria-hidden="true"><use href="#i-library" /></svg>Library</a
+                >
+              </nav>
+              <span class="homebar k"></span>
+            </div>
+          </div>
+          <div class="caption" id="c3a">
+            <p class="n">3a <span class="sep">·</span> A task opened, charcoal</p>
+            <h2>Another task, the email still in reach</h2>
+            <p class="t">
+              Lantern's default. Start this instead is a quiet ash pill under the when, with the
+              sentence that says what it will do to the running task. Unlit, the page sits close to
+              the running task's own (8); the capsule is what says another task runs.
+            </p>
+          </div>
+        </section>
+        <section class="device" aria-labelledby="c3b">
+          <div class="frame" data-shot="03b-task-opened-white">
+            <div class="screen light">
+              <div class="status" aria-hidden="true">
+                <span class="clock">10:05</span><span class="cam"></span
+                ><span class="sys"
+                  ><svg style="width: 18px; height: 12px"><use href="#s-signal" /></svg
+                  ><svg style="width: 16px; height: 12px"><use href="#s-wifi" /></svg
+                  ><svg style="width: 27px; height: 13px"><use href="#s-batt" /></svg
+                ></span>
+              </div>
+              <header class="hdr">
+                <a class="hpill on-white" href="#today"
+                  ><svg class="i i20" aria-hidden="true"><use href="#i-back" /></svg>Today</a
+                ><span class="grow"></span
+                ><button class="circ on-white" aria-label="More">
+                  <svg class="i" aria-hidden="true"><use href="#i-more" /></svg></button
+                ><a class="me on-white" href="#me">Me</a>
+              </header>
+              <h2 class="a ptitle" style="top: 122px">Call the dentist</h2>
+              <div class="a whenrow" style="top: 176px">
+                <button class="when">
+                  <svg class="i i18" aria-hidden="true"><use href="#i-cal" /></svg>Today, 10:30<span
+                    class="dot"
+                    >·</span
+                  ><span class="dur">10 min</span><span class="dot">·</span
+                  ><span class="dur">in 25 min</span>
+                </button>
+              </div>
+              <button class="pill quiet pad" style="left: 24px; top: 240px">
+                <svg class="i i20" aria-hidden="true"><use href="#i-play" /></svg>Start this instead
+              </button>
+              <p class="a meta" style="top: 308px">
+                Starting this stops the timer on Write the school email. It keeps its place at step
+                2.
+              </p>
+              <p class="a lbl" style="top: 372px">Steps</p>
+              <button class="a addstep" style="top: 394px">
+                <svg class="i i20" aria-hidden="true"><use href="#i-plus" /></svg>Add a step
+              </button>
+              <span class="fade white"></span>
+              <a
+                class="capsule slot"
+                href="#focus"
+                aria-label="Now: Write the question, step 2 of 3 of Write the school email. 18 of 25 minutes left, ends 10:23."
+                ><p class="c1">
+                  <span class="nowtag">Now</span><span class="cstep">Write the question</span>
+                </p>
+                <span class="bar cap" style="--w: 238px; --h: 4px; --p: 72%"
+                  ><i class="fill"></i><i class="end"></i
+                ></span>
+                <p class="c2">
+                  <b>18 min left</b><span class="sep">·</span
+                  ><span class="tn">Write the school email</span>
+                </p></a
+              >
+              <button class="capture on-light" aria-label="Capture">
+                <svg class="i i28" aria-hidden="true"><use href="#i-plus" /></svg>
+              </button>
+              <div class="drawer flat" style="top: 684px"></div>
+              <span class="dshadow on-light" style="top: 684px" aria-hidden="true"></span>
+              <span class="grab" style="top: 692px" aria-hidden="true"></span>
+              <a
+                class="handle"
+                href="#rest"
+                aria-label="Next, in 25 minutes: 10:30, Call the dentist. Rest of today."
+                ><p class="l1 lbl">Next <span class="sep">·</span> in 25 min</p>
+                <span class="more" aria-hidden="true"
+                  >Rest of today<svg class="i i20"><use href="#i-up" /></svg
+                ></span>
+                <p class="l2">
+                  <span class="t">10:30</span><span class="ti">Call the dentist</span>
+                </p></a
+              >
+              <span class="hair" style="top: 754px"></span>
+              <nav class="tabs" aria-label="Main">
+                <a class="tab" href="#today" aria-current="page"
+                  ><svg class="i" aria-hidden="true"><use href="#i-today-f" /></svg>Today</a
+                >
+                <a class="tab" href="#tasks"
+                  ><svg class="i" aria-hidden="true"><use href="#i-tasks" /></svg>Tasks</a
+                >
+                <a class="tab" href="#routines"
+                  ><svg class="i" aria-hidden="true"><use href="#i-routines" /></svg>Routines</a
+                >
+                <a class="tab" href="#library"
+                  ><svg class="i" aria-hidden="true"><use href="#i-library" /></svg>Library</a
+                >
+              </nav>
+              <span class="homebar k"></span>
+            </div>
+          </div>
+          <div class="caption" id="c3b">
+            <p class="n">3b <span class="sep">·</span> A task opened, white</p>
+            <h2>The same page, if the places are white</h2>
+            <p class="t">
+              Here the capsule is the one dark thing on the page. Start this instead is a filled
+              grey pill with an edge and a slight lift, set apart from the when by its height. The
+              Next line names the true next item, even when it is this one.
+            </p>
+          </div>
+        </section>
+      </div>
+      <div class="row tiered">
+        <section class="device" aria-labelledby="c4">
+          <div class="frame" data-shot="04-focus">
+            <div class="screen dark lamp" style="--lx: 190px; --ly: 330px">
+              <div class="status" aria-hidden="true">
+                <span class="clock">10:05</span><span class="cam"></span
+                ><span class="sys"
+                  ><svg style="width: 18px; height: 12px"><use href="#s-signal" /></svg
+                  ><svg style="width: 16px; height: 12px"><use href="#s-wifi" /></svg
+                  ><svg style="width: 27px; height: 13px"><use href="#s-batt" /></svg
+                ></span>
+              </div>
+              <header class="hdr">
+                <a class="hpill on-dark" href="#today" aria-label="Back to Today"
+                  ><svg class="i i20" aria-hidden="true"><use href="#i-down" /></svg>Today</a
+                ><span class="grow"></span><a class="me on-dark" href="#me">Me</a>
+              </header>
+              <h2 class="a ctx" style="top: 166px">
+                <b class="fl">Focus</b> <span class="sep">·</span> Write the school email
+                <span class="sep">·</span> step 2 of 3
+              </h2>
+              <p class="a doneline" style="top: 210px">
+                <button
+                  class="hit"
+                  style="margin: -10px"
+                  aria-label="Undo step done: Find the school address"
+                >
+                  <span class="disc"
+                    ><svg class="i i16" aria-hidden="true"><use href="#i-check-s" /></svg
+                  ></span></button
+                ><span aria-hidden="true">Find the school address</span>
+              </p>
+              <h3 class="a step focus" style="top: 252px">Write the question</h3>
+              <p class="a after" style="top: 366px"><b>After this:</b> Read it once and send</p>
+              <span
+                class="bar glow horizon"
+                style="
+                  position: absolute;
+                  left: 0;
+                  top: 420px;
+                  z-index: 4;
+                  --w: 390px;
+                  --h: 12px;
+                  --p: 72%;
+                "
+                role="meter"
+                aria-label="Time left"
+                aria-valuemin="0"
+                aria-valuemax="25"
+                aria-valuenow="18"
+                aria-valuetext="18 of 25 minutes left"
+                ><i class="fill"></i
+              ></span>
+              <p class="a fmins" style="top: 452px">
+                <strong>18 min left</strong><span>of 25 <span class="sep">·</span> ends 10:23</span>
+              </p>
+              <button
+                class="pill ash hpill44"
+                style="right: 24px; top: 455px"
+                aria-label="Add 5 minutes"
+              >
+                +5 min
+              </button>
+              <p class="a note" style="top: 526px">
+                <svg class="i i18" aria-hidden="true"><use href="#i-note" /></svg
+                ><span><b>Note</b>&ensp;When is the permission slip due?</span>
+              </p>
+              <button
+                class="pill white dock"
+                style="left: 24px; width: 138px; padding-right: 2px"
+                aria-label="Step done: Write the question"
+              >
+                <svg class="i i20" aria-hidden="true"><use href="#i-check" /></svg>Step done</button
+              ><button class="pill ash dock" style="left: 172px; width: 120px; padding-right: 4px">
+                <svg class="i i20" aria-hidden="true"><use href="#i-pause" /></svg>Pause
+              </button>
+              <button class="capture on-dark" aria-label="Capture">
+                <svg class="i i28" aria-hidden="true"><use href="#i-plus" /></svg>
+              </button>
+              <span class="hair dark" style="top: 754px"></span>
+              <p class="a nexttext" style="top: 776px">
+                Later today <span class="sep">·</span> 10:30 Call the dentist
+                <span class="sep">·</span> in 25 min
+              </p>
+              <span class="homebar w"></span>
+            </div>
+          </div>
+          <div class="caption" id="c4">
+            <p class="n">4 <span class="sep">·</span> Focus</p>
+            <h2>The capsule opened all the way</h2>
+            <p class="t">
+              The step sits at eye height between the step before and after it, the one white
+              heading, and outranks the clock. Focus names itself in ash above it, the bar runs edge
+              to edge, and +5 min sits with the minutes it changes. The row under the thumb is
+              Today's; the foot says what is later.
+            </p>
+          </div>
+        </section>
+        <section class="device" aria-labelledby="c5">
+          <div class="frame" data-shot="05-capture">
+            <div class="screen dark lamp" style="--lx: 170px; --ly: 190px">
+              <div class="status" aria-hidden="true">
+                <span class="clock">10:05</span><span class="cam"></span
+                ><span class="sys"
+                  ><svg style="width: 18px; height: 12px"><use href="#s-signal" /></svg
+                  ><svg style="width: 16px; height: 12px"><use href="#s-wifi" /></svg
+                  ><svg style="width: 27px; height: 13px"><use href="#s-batt" /></svg
+                ></span>
+              </div>
+              <header class="hdr">
+                <p class="date">Tuesday 24 November</p>
+                <a class="me on-dark" href="#me">Me</a>
+              </header>
+              <div aria-hidden="true">
+                <p class="a nowline" style="top: 112px">
+                  <span class="nowtag">Now</span> <span class="sep">·</span> step 2 of 3
+                  <span class="sep">·</span> Write the school email
+                </p>
+                <p class="a step" style="top: 144px">Write the question</p>
+                <span class="a bar glow" style="top: 206px; --w: 342px; --h: 10px; --p: 72%"
+                  ><i class="fill"></i><i class="end"></i
+                ></span>
+                <p class="a mins" style="top: 228px">
+                  <strong>18 min left</strong
+                  ><span>of 25 <span class="sep">·</span> ends 10:23</span>
+                </p>
+              </div>
+              <div class="sheet"></div>
+              <div class="sheet-in" role="dialog" aria-modal="true" aria-labelledby="cap5-h">
+                <span class="grab" style="top: 288px; z-index: 14"></span>
+                <h2 class="a sheettitle" id="cap5-h" style="top: 307px">Capture</h2>
+                <button class="textbtn quiet" style="right: 20px; top: 296px">Close</button>
+                <div class="field" role="textbox" aria-label="Capture">
+                  Ask Ana about Friday<span class="caret"></span>
+                </div>
+                <p class="a lbl" style="top: 412px; font-weight: 500; letter-spacing: 0">
+                  Goes to the inbox with no date. Plan it later if you like.
+                </p>
+                <div
+                  class="switch on-stone"
+                  style="left: 24px; top: 442px; width: 176px; grid-template-columns: 1fr 1fr"
+                  role="radiogroup"
+                  aria-label="Where it goes"
+                >
+                  <span role="radio" aria-checked="true"><b>Inbox</b></span
+                  ><span role="radio" aria-checked="false"><b>Today</b></span>
+                </div>
+                <button class="save">Save</button>
+              </div>
+              <div class="kb" aria-hidden="true">
+                <div class="sugg">
+                  <span>“Friday”</span><span>Friday's</span><span>Fridays</span>
+                </div>
+                <div class="krow" style="left: 3px; top: 54px">
+                  <span class="key">q</span><span class="key">w</span><span class="key">e</span
+                  ><span class="key">r</span><span class="key">t</span><span class="key">y</span
+                  ><span class="key">u</span><span class="key">i</span><span class="key">o</span
+                  ><span class="key">p</span>
+                </div>
+                <div class="krow" style="left: 22.5px; top: 108px">
+                  <span class="key">a</span><span class="key">s</span><span class="key">d</span
+                  ><span class="key">f</span><span class="key">g</span><span class="key">h</span
+                  ><span class="key">j</span><span class="key">k</span><span class="key">l</span>
+                </div>
+                <div class="krow" style="left: 3px; top: 162px">
+                  <span class="key sp" style="width: 42px; margin-right: 10.5px"
+                    ><svg class="i i20"><use href="#s-shift" /></svg></span
+                  ><span class="key">z</span><span class="key">x</span><span class="key">c</span
+                  ><span class="key">v</span><span class="key">b</span><span class="key">n</span
+                  ><span class="key">m</span
+                  ><span class="key sp" style="width: 42px; margin-left: 10.5px"
+                    ><svg class="i i20"><use href="#s-del" /></svg
+                  ></span>
+                </div>
+                <div class="krow" style="left: 3px; top: 216px">
+                  <span class="key sp word" style="width: 88px">123</span
+                  ><span class="key word" style="width: 196px">space</span
+                  ><span class="key sp word" style="width: 88px">return</span>
+                </div>
+                <svg class="i sysg" style="left: 30px; width: 26px; height: 26px">
+                  <use href="#s-emoji" />
+                </svg>
+                <svg class="i sysg" style="left: 334px; width: 26px; height: 26px">
+                  <use href="#s-mic" />
+                </svg>
+              </div>
+              <span class="homebar k"></span>
+            </div>
+          </div>
+          <div class="caption" id="c5">
+            <p class="n">5 <span class="sep">·</span> Capture</p>
+            <h2>The thought goes in, the step stays lit</h2>
+            <p class="t">
+              The disc opens a sheet with the keyboard already up. The lantern rises into the top
+              third and keeps burning. Me still works above the sheet and keeps the draft, so help
+              stays two taps away. Below: the same sheet from Focus.
+            </p>
+          </div>
+        </section>
+        <section class="device" aria-labelledby="c6a">
+          <div class="frame" data-shot="06a-tasks-charcoal">
+            <div class="screen dark on-dark">
+              <div class="status" aria-hidden="true">
+                <span class="clock">10:05</span><span class="cam"></span
+                ><span class="sys"
+                  ><svg style="width: 18px; height: 12px"><use href="#s-signal" /></svg
+                  ><svg style="width: 16px; height: 12px"><use href="#s-wifi" /></svg
+                  ><svg style="width: 27px; height: 13px"><use href="#s-batt" /></svg
+                ></span>
+              </div>
+              <header class="hdr">
+                <h2 class="place on-dark">Tasks</h2>
+                <a class="me on-dark" href="#me">Me</a>
+              </header>
+              <div
+                class="switch on-dark"
+                style="
+                  left: 24px;
+                  top: 114px;
+                  width: 342px;
+                  grid-template-columns: 75.57px 78.63px 114.07px 73.73px;
+                "
+                role="tablist"
+                aria-label="Lists"
+              >
+                <span role="tab" aria-selected="true"><b>Inbox</b></span
+                ><span role="tab" aria-selected="false"><b>Today</b></span
+                ><span role="tab" aria-selected="false"><b>Coming up</b></span
+                ><span role="tab" aria-selected="false"><b>Done</b></span>
+              </div>
+              <p class="a meta on-dark" style="top: 172px">Anything with no date waits here.</p>
+              <div class="rrow tall" style="top: 200px">
+                <svg class="i ring" aria-hidden="true"><use href="#i-ring" /></svg
+                ><span class="rt"><span>Birthday present for Mum</span></span>
+              </div>
+              <div class="rrow tall two" style="top: 244px">
+                <svg class="i ring" aria-hidden="true"><use href="#i-ring" /></svg
+                ><span class="rt"><span>Cancel the gym trial</span><small>2 steps</small></span>
+              </div>
+              <div class="rrow tall two" style="top: 306px">
+                <svg class="i ring" aria-hidden="true"><use href="#i-ring" /></svg
+                ><span class="rt"
+                  ><span>Ask about the boiler quote</span
+                  ><small
+                    ><svg class="i i12" aria-hidden="true"><use href="#i-note" /></svg>Thursday or
+                    Friday morning</small
+                  ></span
+                >
+              </div>
+              <div class="rrow tall two" style="top: 368px">
+                <svg class="i ring" aria-hidden="true"><use href="#i-ring" /></svg
+                ><span class="rt"
+                  ><span>Look into swimming lessons</span
+                  ><small
+                    >3 steps <span class="sep">·</span>
+                    <span class="dur on-dark"
+                      >30 min<span
+                        class="m"
+                        style="--min: 30"
+                        aria-hidden="true"
+                      ></span></span></small
+                ></span>
+              </div>
+              <div class="rrow tall two" style="top: 430px">
+                <svg class="i ring" aria-hidden="true"><use href="#i-ring" /></svg
+                ><span class="rt"
+                  ><span>Return the library books</span
+                  ><small
+                    ><span class="dur on-dark"
+                      >15 min<span
+                        class="m"
+                        style="--min: 15"
+                        aria-hidden="true"
+                      ></span></span></small
+                ></span>
+              </div>
+              <div class="rrow tall" style="top: 492px">
+                <svg class="i ring" aria-hidden="true"><use href="#i-ring" /></svg
+                ><span class="rt"><span>Fix the bike light</span></span>
+              </div>
+              <div class="rrow tall" style="top: 536px">
+                <svg class="i ring" aria-hidden="true"><use href="#i-ring" /></svg
+                ><span class="rt"><span>Ask Ana about Friday</span></span>
+              </div>
+              <span class="fade dark"></span>
+              <a
+                class="capsule slot lift"
+                href="#focus"
+                aria-label="Now: Write the question, step 2 of 3 of Write the school email. 18 of 25 minutes left, ends 10:23."
+                ><p class="c1">
+                  <span class="nowtag">Now</span><span class="cstep">Write the question</span>
+                </p>
+                <span class="bar cap" style="--w: 238px; --h: 4px; --p: 72%"
+                  ><i class="fill"></i><i class="end"></i
+                ></span>
+                <p class="c2">
+                  <b>18 min left</b><span class="sep">·</span
+                  ><span class="tn">Write the school email</span>
+                </p></a
+              >
+              <button class="capture on-dark" aria-label="Capture">
+                <svg class="i i28" aria-hidden="true"><use href="#i-plus" /></svg>
+              </button>
+              <div class="drawer flat" style="top: 684px"></div>
+              <span class="dshadow" style="top: 684px" aria-hidden="true"></span>
+              <span class="grab" style="top: 692px" aria-hidden="true"></span>
+              <a
+                class="handle"
+                href="#rest"
+                aria-label="Next, in 25 minutes: 10:30, Call the dentist. Rest of today."
+                ><p class="l1 lbl">Next <span class="sep">·</span> in 25 min</p>
+                <span class="more" aria-hidden="true"
+                  >Rest of today<svg class="i i20"><use href="#i-up" /></svg
+                ></span>
+                <p class="l2">
+                  <span class="t">10:30</span><span class="ti">Call the dentist</span>
+                </p></a
+              >
+              <span class="hair" style="top: 754px"></span>
+              <nav class="tabs" aria-label="Main">
+                <a class="tab" href="#today"
+                  ><svg class="i" aria-hidden="true"><use href="#i-today" /></svg>Today</a
+                >
+                <a class="tab" href="#tasks" aria-current="page"
+                  ><svg class="i" aria-hidden="true"><use href="#i-tasks-f" /></svg>Tasks</a
+                >
+                <a class="tab" href="#routines"
+                  ><svg class="i" aria-hidden="true"><use href="#i-routines" /></svg>Routines</a
+                >
+                <a class="tab" href="#library"
+                  ><svg class="i" aria-hidden="true"><use href="#i-library" /></svg>Library</a
+                >
+              </nav>
+              <span class="homebar k"></span>
+            </div>
+          </div>
+          <div class="caption" id="c6a">
+            <p class="n">6a <span class="sep">·</span> Tasks, charcoal</p>
+            <h2>The inbox, on the canvas</h2>
+            <p class="t">
+              Lantern's default: one dark app. Anything with no date waits here, in the order it
+              came in, with no count and nothing about how long. The capsule is lifted off the
+              canvas by a lighter fill and a full ash edge, so it still reads as an object.
+            </p>
+          </div>
+        </section>
+        <section class="device" aria-labelledby="c6b">
+          <div class="frame" data-shot="06b-tasks-white">
+            <div class="screen light">
+              <div class="status" aria-hidden="true">
+                <span class="clock">10:05</span><span class="cam"></span
+                ><span class="sys"
+                  ><svg style="width: 18px; height: 12px"><use href="#s-signal" /></svg
+                  ><svg style="width: 16px; height: 12px"><use href="#s-wifi" /></svg
+                  ><svg style="width: 27px; height: 13px"><use href="#s-batt" /></svg
+                ></span>
+              </div>
+              <header class="hdr">
+                <h2 class="place">Tasks</h2>
+                <a class="me on-white" href="#me">Me</a>
+              </header>
+              <div
+                class="switch on-white"
+                style="
+                  left: 24px;
+                  top: 114px;
+                  width: 342px;
+                  grid-template-columns: 75.57px 78.63px 114.07px 73.73px;
+                "
+                role="tablist"
+                aria-label="Lists"
+              >
+                <span role="tab" aria-selected="true"><b>Inbox</b></span
+                ><span role="tab" aria-selected="false"><b>Today</b></span
+                ><span role="tab" aria-selected="false"><b>Coming up</b></span
+                ><span role="tab" aria-selected="false"><b>Done</b></span>
+              </div>
+              <p class="a meta" style="top: 172px">Anything with no date waits here.</p>
+              <div class="rrow tall" style="top: 200px">
+                <svg class="i ring" aria-hidden="true"><use href="#i-ring" /></svg
+                ><span class="rt"><span>Birthday present for Mum</span></span>
+              </div>
+              <div class="rrow tall two" style="top: 244px">
+                <svg class="i ring" aria-hidden="true"><use href="#i-ring" /></svg
+                ><span class="rt"><span>Cancel the gym trial</span><small>2 steps</small></span>
+              </div>
+              <div class="rrow tall two" style="top: 306px">
+                <svg class="i ring" aria-hidden="true"><use href="#i-ring" /></svg
+                ><span class="rt"
+                  ><span>Ask about the boiler quote</span
+                  ><small
+                    ><svg class="i i12" aria-hidden="true"><use href="#i-note" /></svg>Thursday or
+                    Friday morning</small
+                  ></span
+                >
+              </div>
+              <div class="rrow tall two" style="top: 368px">
+                <svg class="i ring" aria-hidden="true"><use href="#i-ring" /></svg
+                ><span class="rt"
+                  ><span>Look into swimming lessons</span
+                  ><small
+                    >3 steps <span class="sep">·</span>
+                    <span class="dur"
+                      >30 min<span
+                        class="m"
+                        style="--min: 30"
+                        aria-hidden="true"
+                      ></span></span></small
+                ></span>
+              </div>
+              <div class="rrow tall two" style="top: 430px">
+                <svg class="i ring" aria-hidden="true"><use href="#i-ring" /></svg
+                ><span class="rt"
+                  ><span>Return the library books</span
+                  ><small
+                    ><span class="dur"
+                      >15 min<span
+                        class="m"
+                        style="--min: 15"
+                        aria-hidden="true"
+                      ></span></span></small
+                ></span>
+              </div>
+              <div class="rrow tall" style="top: 492px">
+                <svg class="i ring" aria-hidden="true"><use href="#i-ring" /></svg
+                ><span class="rt"><span>Fix the bike light</span></span>
+              </div>
+              <div class="rrow tall" style="top: 536px">
+                <svg class="i ring" aria-hidden="true"><use href="#i-ring" /></svg
+                ><span class="rt"><span>Ask Ana about Friday</span></span>
+              </div>
+              <span class="fade white"></span>
+              <a
+                class="capsule slot"
+                href="#focus"
+                aria-label="Now: Write the question, step 2 of 3 of Write the school email. 18 of 25 minutes left, ends 10:23."
+                ><p class="c1">
+                  <span class="nowtag">Now</span><span class="cstep">Write the question</span>
+                </p>
+                <span class="bar cap" style="--w: 238px; --h: 4px; --p: 72%"
+                  ><i class="fill"></i><i class="end"></i
+                ></span>
+                <p class="c2">
+                  <b>18 min left</b><span class="sep">·</span
+                  ><span class="tn">Write the school email</span>
+                </p></a
+              >
+              <button class="capture on-light" aria-label="Capture">
+                <svg class="i i28" aria-hidden="true"><use href="#i-plus" /></svg>
+              </button>
+              <div class="drawer flat" style="top: 684px"></div>
+              <span class="dshadow on-light" style="top: 684px" aria-hidden="true"></span>
+              <span class="grab" style="top: 692px" aria-hidden="true"></span>
+              <a
+                class="handle"
+                href="#rest"
+                aria-label="Next, in 25 minutes: 10:30, Call the dentist. Rest of today."
+                ><p class="l1 lbl">Next <span class="sep">·</span> in 25 min</p>
+                <span class="more" aria-hidden="true"
+                  >Rest of today<svg class="i i20"><use href="#i-up" /></svg
+                ></span>
+                <p class="l2">
+                  <span class="t">10:30</span><span class="ti">Call the dentist</span>
+                </p></a
+              >
+              <span class="hair" style="top: 754px"></span>
+              <nav class="tabs" aria-label="Main">
+                <a class="tab" href="#today"
+                  ><svg class="i" aria-hidden="true"><use href="#i-today" /></svg>Today</a
+                >
+                <a class="tab" href="#tasks" aria-current="page"
+                  ><svg class="i" aria-hidden="true"><use href="#i-tasks-f" /></svg>Tasks</a
+                >
+                <a class="tab" href="#routines"
+                  ><svg class="i" aria-hidden="true"><use href="#i-routines" /></svg>Routines</a
+                >
+                <a class="tab" href="#library"
+                  ><svg class="i" aria-hidden="true"><use href="#i-library" /></svg>Library</a
+                >
+              </nav>
+              <span class="homebar k"></span>
+            </div>
+          </div>
+          <div class="caption" id="c6b">
+            <p class="n">6b <span class="sep">·</span> Tasks, white</p>
+            <h2>The same inbox, if the places are white</h2>
+            <p class="t">
+              On a white page the capsule is the one dark thing, found at a glance, and charcoal
+              means only now. Nothing else on the screen changes.
+            </p>
+          </div>
+        </section>
+        <aside class="under c1 bnote" aria-labelledby="told-h">
+          <p class="n">1 and 4</p>
+          <h3 id="told-h">Today and Focus, told apart</h3>
+          <p>
+            A risk with Lantern was that these two look alike. Each has what the other lacks. Today:
+            the date, the stone drawer and the tabs. Focus: its name at the head of the context
+            line, a bar run edge to edge like a horizon, and +5 min beside the minutes. On both, the
+            step is the one white heading.
+          </p>
+          <p>
+            The row under the thumb is the same on both. While the capsule is opening, and for a
+            second after either screen has grown out of it, Step done and Pause ignore taps, so a
+            tap meant for the capsule cannot land on them.
+          </p>
+        </aside>
+        <div class="under c2">
+          <div class="inset">
+            <div class="inset-frame" data-shot="05b-capture-from-focus">
+              <div class="inset-clip">
+                <div class="screen dark lamp" style="--lx: 190px; --ly: 180px" aria-hidden="true">
+                  <div class="status" aria-hidden="true">
+                    <span class="clock">10:05</span><span class="cam"></span
+                    ><span class="sys"
+                      ><svg style="width: 18px; height: 12px"><use href="#s-signal" /></svg
+                      ><svg style="width: 16px; height: 12px"><use href="#s-wifi" /></svg
+                      ><svg style="width: 27px; height: 13px"><use href="#s-batt" /></svg
+                    ></span>
+                  </div>
+                  <div class="hdr">
+                    <span class="hpill on-dark"
+                      ><svg class="i i20"><use href="#i-down" /></svg>Today</span
+                    ><span class="grow"></span><span class="me on-dark">Me</span>
+                  </div>
+                  <p class="a ctx" style="top: 112px">
+                    <b class="fl">Focus</b> <span class="sep">·</span> Write the school email
+                    <span class="sep">·</span> step 2 of 3
+                  </p>
+                  <p class="a step" style="top: 144px">Write the question</p>
+                  <span
+                    class="bar glow horizon"
+                    style="
+                      position: absolute;
+                      left: 0;
+                      top: 206px;
+                      z-index: 4;
+                      --w: 390px;
+                      --h: 12px;
+                      --p: 72%;
+                    "
+                    ><i class="fill"></i
+                  ></span>
+                  <p class="a mins focus" style="top: 228px">
+                    <strong>18 min left</strong
+                    ><span>of 25 <span class="sep">·</span> ends 10:23</span>
+                  </p>
+                  <div class="sheet"></div>
+                  <div class="sheet-in">
+                    <span class="grab" style="top: 288px; z-index: 14"></span>
+                    <p class="a sheettitle" style="top: 307px">Capture</p>
+                    <span class="textbtn quiet" style="right: 20px; top: 296px">Close</span>
+                    <div class="field">Ask Ana about Friday<span class="caret"></span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <p class="inset-label">
+              From Focus: the same sheet. The step stays lit above it, and saving returns to Focus
+              on the same step.
+            </p>
+          </div>
+        </div>
+        <aside class="under c34 bnote" aria-labelledby="choice-h">
+          <p class="n">3a and 3b, 6a and 6b</p>
+          <h3 id="choice-h">A choice for the owner: the other places in charcoal or in white</h3>
+          <div class="cols">
+            <p>
+              <b>Charcoal, Lantern's default.</b> One dark app, as Lantern drew it, and calmer at
+              night. The capsule is not the one dark thing here, so it is lifted: a lighter fill and
+              a full ash edge, with its Now and its burning bar. A task that is not running is
+              charcoal too, close to the running task's own page. Long lists in white on charcoal
+              may be harder to read in daylight.
+            </p>
+            <p>
+              <b>White, Glasshouse's look.</b> Charcoal keeps one meaning, now: the capsule is the
+              one dark thing on a place, found at a glance, and the change of light says where you
+              are. Moving between Today and a place is a big change of light, and it is bright at
+              night.
+            </p>
+          </div>
+          <p>
+            Nothing else on the board depends on this choice. Stone stays the rest of today either
+            way, and capture and the capsule do not move.
+          </p>
+        </aside>
+      </div>
+      <div class="row3 tiered">
+        <section class="device" aria-labelledby="c7">
+          <div class="frame" data-shot="07-nothing-running">
+            <div class="screen dark lamp" style="--lx: 170px; --ly: 220px">
+              <div class="status" aria-hidden="true">
+                <span class="clock">9:58</span><span class="cam"></span
+                ><span class="sys"
+                  ><svg style="width: 18px; height: 12px"><use href="#s-signal" /></svg
+                  ><svg style="width: 16px; height: 12px"><use href="#s-wifi" /></svg
+                  ><svg style="width: 27px; height: 13px"><use href="#s-batt" /></svg
+                ></span>
+              </div>
+              <header class="hdr">
+                <p class="date">Tuesday 24 November</p>
+                <a class="me on-dark" href="#me">Me</a>
+              </header>
+              <p class="a idle1" style="top: 110px">
+                <b>Nothing running</b> <span class="sep">·</span> free until 10:30
+              </p>
+              <a
+                class="a"
+                href="#task-email"
+                style="top: 152px; height: 130px"
+                aria-label="First on today's list: Write the school email. Starts with Find the school address. 3 steps, 25 minutes, would end about 10:23"
+              >
+                <p class="a meta" style="top: 0; left: 0; right: 0; color: var(--ash)">
+                  First on today's list
+                </p>
+                <p class="a step idle" style="top: 32px; left: 0; right: 0">
+                  Write the school email
+                </p>
+                <p class="a after" style="top: 80px; left: 0; right: 0">
+                  <b>Starts with:</b> Find the school address
+                </p>
+                <p
+                  class="a meta"
+                  style="top: 108px; left: 0; right: 0; color: var(--ash); white-space: nowrap"
+                >
+                  3 steps <span class="sep">·</span> 25 min <span class="sep">·</span> would end
+                  about 10:23
+                </p>
+              </a>
+              <button class="pill white" style="left: 24px; top: 294px; width: 116px">
+                <svg class="i i20" aria-hidden="true"><use href="#i-play" /></svg>Start
+              </button>
+              <div class="drawer" style="top: 366px"></div>
+              <span class="grab" style="top: 374px" aria-hidden="true"></span>
+              <a
+                class="handle strip"
+                href="#rest"
+                style="top: 366px; height: 46px"
+                aria-label="Rest of today"
+                ><span class="row1" aria-hidden="true"
+                  >Rest of today<svg class="i i20"><use href="#i-up" /></svg></span
+              ></a>
+              <p class="a lbl" style="top: 418px">Later today</p>
+              <div class="trow" style="top: 440px; height: 44px">
+                <span class="t">10:30</span><span class="ti">Call the dentist</span
+                ><span class="dur"
+                  >10 min<span class="m" style="--min: 10" aria-hidden="true"></span
+                ></span>
+              </div>
+              <div class="trow" style="top: 484px; height: 44px">
+                <span class="t">11:00</span><span class="ti">Walk to the park</span
+                ><span class="dur"
+                  >20 min<span class="m" style="--min: 20" aria-hidden="true"></span
+                ></span>
+              </div>
+              <div class="trow" style="top: 528px; height: 44px">
+                <span class="t">14:00</span><span class="ti">Ring the bank</span
+                ><span class="dur"
+                  >15 min<span class="m" style="--min: 15" aria-hidden="true"></span
+                ></span>
+              </div>
+              <p class="a lbl" style="top: 584px">Anytime today</p>
+              <div class="rrow lane" style="top: 606px">
+                <svg class="i ring" aria-hidden="true"><use href="#i-ring" /></svg
+                ><span class="rt"><span>Renew the parking permit</span></span>
+              </div>
+              <div class="rrow lane" style="top: 650px">
+                <svg class="i ring" aria-hidden="true"><use href="#i-ring" /></svg
+                ><span class="rt"><span>Order printer ink</span></span>
+              </div>
+              <div class="rrow lane cue" style="top: 694px">
+                <svg class="i ring" aria-hidden="true"><use href="#i-ring" /></svg
+                ><span class="rt"><span>Book the boiler service</span></span>
+              </div>
+              <span class="stoneband cover" style="top: 754px; bottom: 0"></span>
+              <button class="capture on-light" aria-label="Capture">
+                <svg class="i i28" aria-hidden="true"><use href="#i-plus" /></svg>
+              </button>
+              <span class="hair" style="top: 754px; z-index: 8"></span>
+              <nav class="tabs" aria-label="Main" style="z-index: 9">
+                <a class="tab" href="#today" aria-current="page"
+                  ><svg class="i" aria-hidden="true"><use href="#i-today-f" /></svg>Today</a
+                >
+                <a class="tab" href="#tasks"
+                  ><svg class="i" aria-hidden="true"><use href="#i-tasks" /></svg>Tasks</a
+                >
+                <a class="tab" href="#routines"
+                  ><svg class="i" aria-hidden="true"><use href="#i-routines" /></svg>Routines</a
+                >
+                <a class="tab" href="#library"
+                  ><svg class="i" aria-hidden="true"><use href="#i-library" /></svg>Library</a
+                >
+              </nav>
+              <span class="homebar k" style="z-index: 21"></span>
+            </div>
+          </div>
+          <div class="caption" id="c7">
+            <p class="n">7 <span class="sep">·</span> Nothing running</p>
+            <h2>Nothing burns, and the day rests half open</h2>
+            <p class="t">
+              Nothing running is said first, in white, and there is no terracotta on the canvas. The
+              first thing on today's list is lit a size smaller than a running step, and the rest of
+              today waits beneath it, clear of capture, its last row greying where it goes under the
+              tabs. This is the screen after any time away, if anything has today's date.
+            </p>
+          </div>
+        </section>
+        <section class="device" aria-labelledby="c7b">
+          <div class="frame" data-shot="07b-nothing-planned">
+            <div class="screen dark lamp" style="--lx: 170px; --ly: 390px">
+              <div class="status" aria-hidden="true">
+                <span class="clock">9:12</span><span class="cam"></span
+                ><span class="sys"
+                  ><svg style="width: 18px; height: 12px"><use href="#s-signal" /></svg
+                  ><svg style="width: 16px; height: 12px"><use href="#s-wifi" /></svg
+                  ><svg style="width: 27px; height: 13px"><use href="#s-batt" /></svg
+                ></span>
+              </div>
+              <header class="hdr">
+                <p class="date">Monday 14 December</p>
+                <a class="me on-dark" href="#me">Me</a>
+              </header>
+              <p class="a step idle" style="top: 368px">Nothing planned for today</p>
+              <p class="a after" style="top: 454px">Anything without a date is in the inbox.</p>
+              <a class="pill white pad" href="#inbox" style="left: 24px; top: 494px"
+                >Open the inbox</a
+              >
+              <button class="capture on-dark" aria-label="Capture">
+                <svg class="i i28" aria-hidden="true"><use href="#i-plus" /></svg>
+              </button>
+              <div class="drawer" style="top: 730px"></div>
+              <nav class="tabs" aria-label="Main">
+                <a class="tab" href="#today" aria-current="page"
+                  ><svg class="i" aria-hidden="true"><use href="#i-today-f" /></svg>Today</a
+                >
+                <a class="tab" href="#tasks"
+                  ><svg class="i" aria-hidden="true"><use href="#i-tasks" /></svg>Tasks</a
+                >
+                <a class="tab" href="#routines"
+                  ><svg class="i" aria-hidden="true"><use href="#i-routines" /></svg>Routines</a
+                >
+                <a class="tab" href="#library"
+                  ><svg class="i" aria-hidden="true"><use href="#i-library" /></svg>Library</a
+                >
+              </nav>
+              <span class="homebar k"></span>
+            </div>
+          </div>
+          <div class="caption" id="c7b">
+            <p class="n">7b <span class="sep">·</span> Nothing planned</p>
+            <h2>The way back after weeks</h2>
+            <p class="t">
+              Whatever was planned for a day that has passed is back in the inbox, unmarked. So the
+              canvas says only what is true now, low where the lantern sits, and offers one way in:
+              the inbox, opened at its newest end. With nothing for today, the drawer rests at its
+              lip as a plain stone edge: no grabber, no words, no empty line and no zero.
+            </p>
+          </div>
+        </section>
+        <section class="device" aria-labelledby="c7c">
+          <div class="frame" data-shot="07c-paused">
+            <div class="screen dark lamp">
+              <div class="status" aria-hidden="true">
+                <span class="clock">13:20</span><span class="cam"></span
+                ><span class="sys"
+                  ><svg style="width: 18px; height: 12px"><use href="#s-signal" /></svg
+                  ><svg style="width: 16px; height: 12px"><use href="#s-wifi" /></svg
+                  ><svg style="width: 27px; height: 13px"><use href="#s-batt" /></svg
+                ></span>
+              </div>
+              <header class="hdr">
+                <p class="date">Tuesday 24 November</p>
+                <a class="me on-dark" href="#me">Me</a>
+              </header>
+              <a
+                class="a"
+                href="#focus"
+                style="top: 308px; height: 242px"
+                aria-label="Paused: Write the question. Step 2 of 3 of Write the school email. 18 of 25 minutes left. Note: When is the permission slip due?"
+              >
+                <p class="a nowline paused" style="top: 0; left: 0; right: 0">
+                  <svg class="i i16" aria-hidden="true"><use href="#i-pause" /></svg><b>Paused</b>
+                  <span class="sep">·</span> step 2 of 3<span class="flabel" aria-hidden="true"
+                    >Focus<svg class="i i20"><use href="#i-right" /></svg
+                  ></span>
+                </p>
+                <p class="a ttl" style="top: 24px; left: 0; right: 0">Write the school email</p>
+                <h2 class="a step" style="top: 64px; left: 0; right: 0">Write the question</h2>
+                <span
+                  class="a bar paused"
+                  style="top: 138px; left: 0; right: auto; --w: 342px; --h: 10px; --p: 72%"
+                  ><i class="fill"></i><i class="end"></i
+                ></span>
+                <p class="a mins" style="top: 172px; left: 0; right: 0">
+                  <strong class="w">18 min left</strong><span>of 25</span>
+                </p>
+                <p class="a note" style="top: 222px; left: 0; right: 0">
+                  <svg class="i i18" aria-hidden="true"><use href="#i-note" /></svg
+                  ><span><b>Note</b>&ensp;When is the permission slip due?</span>
+                </p>
+              </a>
+              <button
+                class="pill ash hpill44"
+                style="right: 24px; top: 472px"
+                aria-label="Set aside Write the school email. It keeps its place at step 2."
+              >
+                Set aside
+              </button>
+              <button
+                class="pill ash dock"
+                style="left: 24px; width: 138px; padding-right: 2px"
+                aria-label="Step done: Write the question"
+              >
+                <svg class="i i20" aria-hidden="true"><use href="#i-check" /></svg>Step done</button
+              ><button
+                class="pill white dock"
+                style="left: 172px; width: 120px; padding-right: 6px"
+              >
+                <svg class="i i20" aria-hidden="true"><use href="#i-play" /></svg>Resume
+              </button>
+              <button class="capture on-dark" aria-label="Capture">
+                <svg class="i i28" aria-hidden="true"><use href="#i-plus" /></svg>
+              </button>
+              <div class="drawer" style="top: 684px"></div>
+              <span class="grab" style="top: 692px" aria-hidden="true"></span>
+              <a
+                class="handle"
+                href="#rest"
+                aria-label="Anytime today: Call the dentist. Rest of today."
+                ><p class="l1 lbl">Anytime today</p>
+                <span class="more" aria-hidden="true"
+                  >Rest of today<svg class="i i20"><use href="#i-up" /></svg
+                ></span>
+                <p class="l2"><span class="ti">Call the dentist</span></p></a
+              >
+              <span class="hair" style="top: 754px"></span>
+              <nav class="tabs" aria-label="Main">
+                <a class="tab" href="#today" aria-current="page"
+                  ><svg class="i" aria-hidden="true"><use href="#i-today-f" /></svg>Today</a
+                >
+                <a class="tab" href="#tasks"
+                  ><svg class="i" aria-hidden="true"><use href="#i-tasks" /></svg>Tasks</a
+                >
+                <a class="tab" href="#routines"
+                  ><svg class="i" aria-hidden="true"><use href="#i-routines" /></svg>Routines</a
+                >
+                <a class="tab" href="#library"
+                  ><svg class="i" aria-hidden="true"><use href="#i-library" /></svg>Library</a
+                >
+              </nav>
+              <span class="homebar k"></span>
+            </div>
+          </div>
+          <div class="caption" id="c7c">
+            <p class="n">7c <span class="sep">·</span> Paused</p>
+            <h2>Paused, and one tap to let it go</h2>
+            <p class="t">
+              Where the app opens when a task was paused and left. Paused is said in words, the bar
+              stands still in ash, and nothing says how long it has been. Resume is where Pause was,
+              and Set aside puts the task away at its step. The dentist call, whose slot passed
+              meanwhile, is on the Next line under Anytime today, unmarked.
+            </p>
+            <p class="fn">
+              After a clock left running was closed at its estimate, the same screen shows the empty
+              outline and reads "estimate 25" in place of the minutes.
+            </p>
+          </div>
+        </section>
+        <section class="device" aria-labelledby="c8">
+          <div class="frame" data-shot="08-running-task">
+            <div class="screen dark">
+              <div class="status" aria-hidden="true">
+                <span class="clock">10:05</span><span class="cam"></span
+                ><span class="sys"
+                  ><svg style="width: 18px; height: 12px"><use href="#s-signal" /></svg
+                  ><svg style="width: 16px; height: 12px"><use href="#s-wifi" /></svg
+                  ><svg style="width: 27px; height: 13px"><use href="#s-batt" /></svg
+                ></span>
+              </div>
+              <header class="hdr">
+                <a class="hpill on-dark" href="#today"
+                  ><svg class="i i20" aria-hidden="true"><use href="#i-back" /></svg>Today</a
+                ><span class="grow"></span
+                ><button class="circ on-dark" aria-label="More">
+                  <svg class="i" aria-hidden="true"><use href="#i-more" /></svg></button
+                ><a class="me on-dark" href="#me">Me</a>
+              </header>
+              <h2 class="a ptitle" style="top: 122px; color: var(--white)">
+                Write the school email
+              </h2>
+              <p class="a tmeta" style="top: 170px">
+                <b>Today</b>&nbsp;<span class="sep">·</span> 25 min estimate
+                <span class="sep">·</span> 7 min so far
+              </p>
+              <p class="a timerow" style="top: 202px">
+                <span
+                  class="bar glow"
+                  style="--w: 132px; --h: 8px; --p: 72%"
+                  role="meter"
+                  aria-label="Time left"
+                  aria-valuemin="0"
+                  aria-valuemax="25"
+                  aria-valuenow="18"
+                  aria-valuetext="18 of 25 minutes left"
+                  ><i class="fill"></i><i class="end"></i></span
+                ><strong>18 min left</strong><span class="e">ends 10:23</span>
+              </p>
+              <ol class="steps" style="top: 244px" aria-label="Steps">
+                <li>
+                  <button
+                    class="hit"
+                    style="margin: -8px"
+                    aria-label="Undo step done: Find the school address"
+                  >
+                    <span class="mk done"
+                      ><svg class="i i16" aria-hidden="true"><use href="#i-check-s" /></svg
+                    ></span></button
+                  ><span class="s" aria-hidden="true">Find the school address</span>
+                </li>
+                <li class="current" aria-current="step">
+                  <span class="mk cur" aria-hidden="true">2</span
+                  ><span class="s">Write the question<span class="nowtag">Now</span></span>
+                </li>
+                <li>
+                  <span class="mk next" aria-hidden="true">3</span
+                  ><span class="s">Read it once and send</span>
+                </li>
+              </ol>
+              <a class="notecard" href="#note" style="top: 438px"
+                ><p class="nl">
+                  <svg class="i i16" aria-hidden="true"><use href="#i-note" /></svg>Note
+                </p>
+                <p class="nt">When is the permission slip due?</p></a
+              >
+              <a class="pill white dock" href="#focus" style="left: 24px; width: 268px"
+                ><svg class="i i20" aria-hidden="true"><use href="#i-up" /></svg>Focus</a
+              >
+              <button class="capture on-dark" aria-label="Capture">
+                <svg class="i i28" aria-hidden="true"><use href="#i-plus" /></svg>
+              </button>
+              <div class="drawer" style="top: 684px"></div>
+              <span class="grab" style="top: 692px" aria-hidden="true"></span>
+              <a
+                class="handle"
+                href="#rest"
+                aria-label="Next, in 25 minutes: 10:30, Call the dentist. Rest of today."
+                ><p class="l1 lbl">Next <span class="sep">·</span> in 25 min</p>
+                <span class="more" aria-hidden="true"
+                  >Rest of today<svg class="i i20"><use href="#i-up" /></svg
+                ></span>
+                <p class="l2">
+                  <span class="t">10:30</span><span class="ti">Call the dentist</span>
+                </p></a
+              >
+              <span class="hair" style="top: 754px"></span>
+              <nav class="tabs" aria-label="Main">
+                <a class="tab" href="#today" aria-current="page"
+                  ><svg class="i" aria-hidden="true"><use href="#i-today-f" /></svg>Today</a
+                >
+                <a class="tab" href="#tasks"
+                  ><svg class="i" aria-hidden="true"><use href="#i-tasks" /></svg>Tasks</a
+                >
+                <a class="tab" href="#routines"
+                  ><svg class="i" aria-hidden="true"><use href="#i-routines" /></svg>Routines</a
+                >
+                <a class="tab" href="#library"
+                  ><svg class="i" aria-hidden="true"><use href="#i-library" /></svg>Library</a
+                >
+              </nav>
+              <span class="homebar k"></span>
+            </div>
+          </div>
+          <div class="caption" id="c8">
+            <p class="n">8 <span class="sep">·</span> The running task</p>
+            <h2>The task lit, its steps on a rail</h2>
+            <p class="t">
+              Lantern's own task page: steps on an even rail with the current one marked Now, and
+              the note in a dark field so the step stays the brightest thing. Every other task's
+              page carries the capsule here. This one is the lit task itself, so the capsule is not
+              shown and the slot holds Focus, which opens upward from the dock line.
+            </p>
+          </div>
+        </section>
+        <aside class="under c14 bnote wide" aria-labelledby="weighed-h">
+          <div>
+            <p class="n">7, 7b and 7c <span class="sep">·</span> Weighed, not overlooked</p>
+            <h3 id="weighed-h">While something runs, the rest of today stays folded</h3>
+            <p class="test">Whether that is enough is the first thing to test with people.</p>
+          </div>
+          <p>
+            For this audience, a task out of sight is easy to lose track of. Lantern's fold is kept
+            on purpose, so the step stays the one lit thing while it burns. When nothing runs, the
+            day rests half open, as on 7.
+          </p>
+          <p>
+            What answers the risk: the Next line names what comes next and how soon on every tabbed
+            screen, says Rest of today in words, and opens in one tap without putting the step out.
+          </p>
+          <p>
+            A timed item whose slot passes unstarted goes to the top of Anytime today, unmarked. The
+            idle lantern lights it next. While a task runs or is paused, the Next line and Focus's
+            foot name it, as on 7c, unless a timed item starts within 15 minutes or is under way.
+          </p>
+        </aside>
+      </div>
+      <div class="row4">
+        <section class="device" aria-labelledby="c9r">
+          <div class="frame" data-shot="09-routines">
+            <div class="screen dark on-dark">
+              <div class="status" aria-hidden="true">
+                <span class="clock">10:05</span><span class="cam"></span
+                ><span class="sys"
+                  ><svg style="width: 18px; height: 12px"><use href="#s-signal" /></svg
+                  ><svg style="width: 16px; height: 12px"><use href="#s-wifi" /></svg
+                  ><svg style="width: 27px; height: 13px"><use href="#s-batt" /></svg
+                ></span>
+              </div>
+              <header class="hdr">
+                <h2 class="place on-dark">Routines</h2>
+                <a class="me on-dark" href="#me">Me</a>
+              </header>
+              <p class="a meta on-dark" style="top: 114px">Open a routine to start it.</p>
+              <div class="rrow routine" style="top: 142px">
+                <span class="rt"><span>Morning</span><small>6 steps</small></span
+                ><span class="ran"
+                  ><svg class="i i18" aria-hidden="true"><use href="#i-check-s" /></svg>Ran
+                  today</span
+                ><svg class="i i20" aria-hidden="true"><use href="#i-right" /></svg>
+              </div>
+              <div class="rrow routine" style="top: 204px">
+                <span class="rt"><span>Leaving the house</span><small>4 steps</small></span
+                ><svg class="i i20" aria-hidden="true"><use href="#i-right" /></svg>
+              </div>
+              <div class="rrow routine" style="top: 266px">
+                <span class="rt"><span>Evening wind-down</span><small>5 steps</small></span
+                ><svg class="i i20" aria-hidden="true"><use href="#i-right" /></svg>
+              </div>
+              <div class="rrow routine" style="top: 328px">
+                <span class="rt"><span>Sunday reset</span><small>7 steps</small></span
+                ><svg class="i i20" aria-hidden="true"><use href="#i-right" /></svg>
+              </div>
+              <button class="a addstep" style="top: 398px">
+                <svg class="i i20" aria-hidden="true"><use href="#i-plus" /></svg>New routine
+              </button>
+              <span class="fade dark"></span>
+              <a
+                class="capsule slot lift"
+                href="#focus"
+                aria-label="Now: Write the question, step 2 of 3 of Write the school email. 18 of 25 minutes left, ends 10:23."
+                ><p class="c1">
+                  <span class="nowtag">Now</span><span class="cstep">Write the question</span>
+                </p>
+                <span class="bar cap" style="--w: 238px; --h: 4px; --p: 72%"
+                  ><i class="fill"></i><i class="end"></i
+                ></span>
+                <p class="c2">
+                  <b>18 min left</b><span class="sep">·</span
+                  ><span class="tn">Write the school email</span>
+                </p></a
+              >
+              <button class="capture on-dark" aria-label="Capture">
+                <svg class="i i28" aria-hidden="true"><use href="#i-plus" /></svg>
+              </button>
+              <div class="drawer flat" style="top: 684px"></div>
+              <span class="dshadow" style="top: 684px" aria-hidden="true"></span>
+              <span class="grab" style="top: 692px" aria-hidden="true"></span>
+              <a
+                class="handle"
+                href="#rest"
+                aria-label="Next, in 25 minutes: 10:30, Call the dentist. Rest of today."
+                ><p class="l1 lbl">Next <span class="sep">·</span> in 25 min</p>
+                <span class="more" aria-hidden="true"
+                  >Rest of today<svg class="i i20"><use href="#i-up" /></svg
+                ></span>
+                <p class="l2">
+                  <span class="t">10:30</span><span class="ti">Call the dentist</span>
+                </p></a
+              >
+              <span class="hair" style="top: 754px"></span>
+              <nav class="tabs" aria-label="Main">
+                <a class="tab" href="#today"
+                  ><svg class="i" aria-hidden="true"><use href="#i-today" /></svg>Today</a
+                >
+                <a class="tab" href="#tasks"
+                  ><svg class="i" aria-hidden="true"><use href="#i-tasks" /></svg>Tasks</a
+                >
+                <a class="tab" href="#routines" aria-current="page"
+                  ><svg class="i" aria-hidden="true"><use href="#i-routines-f" /></svg>Routines</a
+                >
+                <a class="tab" href="#library"
+                  ><svg class="i" aria-hidden="true"><use href="#i-library" /></svg>Library</a
+                >
+              </nav>
+              <span class="homebar k"></span>
+            </div>
+          </div>
+          <div class="caption" id="c9r">
+            <p class="n">9 <span class="sep">·</span> Routines</p>
+            <h2>The capsule on every place</h2>
+            <p class="t">
+              Four routines and a way to add one. Morning ran earlier today, and that is all the
+              list says about it. A routine starts from its own page, and starting one stops the
+              email's timer, which keeps its place at step 2.
+            </p>
+          </div>
+        </section>
+        <section class="undocol" aria-labelledby="undo-h">
+          <div class="stext">
+            <p class="n">After a tap</p>
+            <h2 id="undo-h">Every quick tap can be taken back</h2>
+            <p class="t">
+              For six seconds after Step done, Done, a tick, Start, Start this instead, Save, Resume
+              or Set aside, the Next line says what happened and offers Undo, in the same place on
+              every screen. Only a newer tap that can be undone ends it early, and it stays while
+              VoiceOver is on it. In Focus the foot line does the same.
+            </p>
+          </div>
+          <div class="ustrip" role="group" aria-label="Next line, just after a tap">
+            <span class="grab" style="top: 8px" aria-hidden="true"></span>
+            <p class="l1 lbl">Step done</p>
+            <p class="l2"><span class="ti">Write the question</span></p>
+            <button class="undo" aria-label="Undo step done: Write the question">Undo</button>
+          </div>
+          <div class="ustrip" role="group" aria-label="Next line, just after a tap">
+            <span class="grab" style="top: 8px" aria-hidden="true"></span>
+            <p class="l1 lbl">Started Call the dentist</p>
+            <p class="l2"><span class="ti">Write the school email at step 2</span></p>
+            <button class="undo" aria-label="Undo: go back to Write the school email at step 2">
+              Undo
+            </button>
+          </div>
+          <div class="ustrip" role="group" aria-label="Next line, just after a tap">
+            <span class="grab" style="top: 8px" aria-hidden="true"></span>
+            <p class="l1 lbl">Saved to the inbox</p>
+            <p class="l2"><span class="ti">Ask Ana about Friday</span></p>
+            <button class="undo" aria-label="Undo: remove Ask Ana about Friday from the inbox">
+              Undo
+            </button>
+          </div>
+          <div class="ustrip" role="group" aria-label="Next line, just after a tap">
+            <span class="grab" style="top: 8px" aria-hidden="true"></span>
+            <p class="l1 lbl">Done</p>
+            <p class="l2"><span class="ti">Renew the parking permit</span></p>
+            <button class="undo" aria-label="Undo done: Renew the parking permit">Undo</button>
+          </div>
+          <p class="fn">
+            A ticked row also stays where it was, its disc a button that un-ticks it, until the list
+            is next opened. A done step's disc does the same in Focus and on the task's page, which
+            is how a Step done from the Lock Screen is taken back.
+          </p>
+        </section>
+        <section class="outside" id="live" aria-labelledby="live-h">
+          <section class="device" aria-labelledby="c9">
+            <div class="frame" data-shot="lock-screen">
+              <div class="screen lock">
+                <svg
+                  class="wall"
+                  viewBox="0 0 390 844"
+                  preserveAspectRatio="none"
+                  aria-hidden="true"
+                >
+                  <defs>
+                    <linearGradient id="wsky" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0" stop-color="#3f5363" />
+                      <stop offset="0.34" stop-color="#5b6f7c" />
+                      <stop offset="0.56" stop-color="#8c8f8e" />
+                      <stop offset="0.7" stop-color="#b8977f" />
+                    </linearGradient>
+                    <radialGradient id="wsun" cx="0.68" cy="0.7" r="0.42">
+                      <stop offset="0" stop-color="#f3cfa6" stop-opacity="0.55" />
+                      <stop offset="1" stop-color="#f3cfa6" stop-opacity="0" />
+                    </radialGradient>
+                  </defs>
+                  <rect width="390" height="844" fill="url(#wsky)" />
+                  <rect width="390" height="844" fill="url(#wsun)" />
+                  <path
+                    d="M0 560 C60 538 110 548 160 532 C215 515 262 540 312 528 C350 519 372 526 390 522 L390 844 L0 844 Z"
+                    fill="#7d867f"
+                  />
+                  <path
+                    d="M0 628 C70 600 120 618 182 602 C240 588 300 612 390 590 L390 844 L0 844 Z"
+                    fill="#5c6861"
+                  />
+                  <path
+                    d="M0 706 C80 688 150 702 220 690 C290 678 340 694 390 684 L390 844 L0 844 Z"
+                    fill="#3e4843"
+                  />
+                  <path
+                    d="M0 778 C90 764 170 776 250 768 C320 761 360 770 390 766 L390 844 L0 844 Z"
+                    fill="#2c3430"
+                  />
+                </svg>
+                <div class="status" aria-hidden="true">
+                  <span class="cam"></span
+                  ><span class="sys"
+                    ><svg style="width: 18px; height: 12px"><use href="#s-signal" /></svg
+                    ><svg style="width: 16px; height: 12px"><use href="#s-wifi" /></svg
+                    ><svg style="width: 27px; height: 13px"><use href="#s-batt" /></svg
+                  ></span>
+                </div>
+                <svg
+                  class="a"
+                  style="left: 187px; top: 56px; width: 16px; height: 20px"
+                  aria-hidden="true"
+                >
+                  <use href="#s-lock" />
+                </svg>
+                <p class="lockdate">Tuesday 24 November</p>
+                <p class="lockclock">10:05</p>
+                <div
+                  class="la on-wall"
+                  style="position: absolute; left: 16px; top: 600px; z-index: 4"
+                  role="group"
+                  aria-label="Adnotia. Write the school email, step 2 of 3. Write the question. 18 of 25 minutes left, ends 10:23. Next: 10:30."
+                >
+                  <p class="r1">
+                    <span class="mark" aria-hidden="true"
+                      ><svg><use href="#app-mark" /></svg></span
+                    ><span class="ctx2"
+                      >Write the school email <span class="sep">·</span> step 2 of 3</span
+                    ><span>Adnotia</span>
+                  </p>
+                  <p class="r2">Write the question</p>
+                  <span class="bar" style="--w: 326px; --h: 8px; --p: 72%"
+                    ><i class="fill"></i><i class="end"></i
+                  ></span>
+                  <div class="r4">
+                    <p class="m">
+                      <strong>18 min left</strong
+                      ><span>ends 10:23 <span class="sep">·</span> next 10:30</span>
+                    </p>
+                    <span class="spill white"
+                      ><svg class="i i16" aria-hidden="true"><use href="#i-check-s" /></svg>Step
+                      done</span
+                    >
+                  </div>
+                </div>
+                <span class="lockctl" style="left: 46px" aria-label="Camera"
+                  ><svg class="i" aria-hidden="true"><use href="#s-camera" /></svg
+                ></span>
+                <span class="lockctl" style="left: 294px" aria-label="Capture"
+                  ><svg class="i" aria-hidden="true"><use href="#i-plus" /></svg
+                ></span>
+                <span class="homebar w"></span>
+              </div>
+            </div>
+            <div class="caption" id="c9">
+              <p class="n">Lock Screen</p>
+              <h2>The Lock Screen: the same object, at actual size</h2>
+              <p class="t">
+                The step, the bar and the minutes, in the same order and colours as the capsule, and
+                when the next booked item is. Step done works without unlocking, and a tap anywhere
+                else opens Focus. There is no Pause here: pausing ends the card. Capture is the
+                right-hand control, under the thumb as in the app; iOS lets the person change it.
+              </p>
+              <p class="fn">
+                System text (the status bar, the keyboard and this clock) is set in Inter, standing
+                in for SF Pro. The wallpaper stands in for the person's own. The card's mark is the
+                app's own, from assets/logo.svg.
+              </p>
+            </div>
+          </section>
+          <div class="scol">
+            <div class="stext">
+              <p class="n">Outside the app</p>
+              <h2 id="live-h">Live Activity, Dynamic Island and Android</h2>
+              <p class="t">
+                Drawn at actual size. The card starts on Start or Resume, and ends on Pause, on
+                done, when another task starts, and with the logging day. The bar and the minutes
+                are the system's own timers, so nothing has to be sent from a server. The Island's
+                three states are in the header.
+              </p>
+            </div>
+            <figure>
+              <div
+                class="la on-board"
+                role="group"
+                aria-label="Adnotia. Write the school email, step 2 of 3. Write the question. 27 minutes so far, estimate 25."
+              >
+                <p class="r1">
+                  <span class="mark" aria-hidden="true"
+                    ><svg><use href="#app-mark" /></svg></span
+                  ><span class="ctx2"
+                    >Write the school email <span class="sep">·</span> step 2 of 3</span
+                  ><span>Adnotia</span>
+                </p>
+                <p class="r2">Write the question</p>
+                <span class="bar over" style="--w: 326px; --h: 8px; --p: 0%"
+                  ><i class="fill"></i><i class="end"></i
+                ></span>
+                <div class="r4">
+                  <p class="m"><strong>27 min so far</strong><span>estimate 25</span></p>
+                  <span class="spill white"
+                    ><svg class="i i16" aria-hidden="true"><use href="#i-check-s" /></svg>Step
+                    done</span
+                  >
+                </div>
+              </div>
+              <figcaption>
+                After the estimate: the track turns to an empty outline, nothing burns, and the time
+                so far counts up. Nothing turns red and nothing alerts. If the app stays in the
+                background 15 minutes past the estimate, the session is closed at the moment the
+                estimate ran out, and the card goes.
+              </figcaption>
+            </figure>
+            <figure>
+              <div
+                class="andn"
+                role="group"
+                aria-label="Android ongoing notification: Write the question. Write the school email, step 2 of 3. 18 minutes left, ends 10:23."
+              >
+                <p class="ah">
+                  <span class="mark" aria-hidden="true"
+                    ><svg><use href="#app-mark" /></svg></span
+                  >Adnotia<span class="sep">·</span>ends 10:23<span class="chip">18m</span>
+                </p>
+                <p class="at">Write the question</p>
+                <p class="ax">Write the school email <span class="sep">·</span> step 2 of 3</p>
+                <span class="bar mini" style="--w: 326px; --h: 6px; --p: 72%"
+                  ><i class="fill"></i
+                ></span>
+                <p class="aa"><span>Step done</span></p>
+              </div>
+              <figcaption>
+                Android 16: an ongoing Live Update with a chip in the status bar. The same step, bar
+                and minutes, a fixed end time that never goes stale, one action, Step done, and no
+                Pause. System text in Inter, as above.
+              </figcaption>
+            </figure>
+          </div>
+        </section>
+      </div>
+    </main>
+  </body>
+</html>

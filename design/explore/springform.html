@@ -1,0 +1,2134 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Springform · Adnotia phone direction</title>
+    <!--
+  Fonts, both from Google Fonts under the SIL Open Font License:
+  - Google Sans Flex (variable: opsz, wght, ROND), the only face drawn.
+  - Roboto Flex, named as the fallback in case Google Sans Flex or its tnum feature is missing.
+  The app would bundle these files; the link is for this static mock-up only.
+-->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:opsz,wght,ROND@6..144,400..700,0..100&family=Roboto+Flex:opsz,wght@8..144,400..700&display=swap"
+    />
+    <style>
+      :root {
+        /* Springform tonal scheme, cobalt seed, Dynamic Color off. No error role is defined. */
+        --primary: #2b5ba0; /* white on it 6.8:1 */
+        --on-primary: #ffffff;
+        --primary-container: #d7e3ff; /* #0A2A57 on it 11.0:1 */
+        --on-primary-container: #0a2a57;
+        --secondary-container: #dce2f9; /* #141B2C on it 13.3:1 */
+        --on-secondary-container: #141b2c;
+        --tertiary-container: #9ef2e0; /* #00201B on it 13.3:1 */
+        --on-tertiary-container: #00201b;
+        --surface: #f9f9ff;
+        --surface-container-lowest: #ffffff;
+        --surface-container: #ededf4;
+        --surface-container-high: #e7e8ef;
+        --on-surface: #1a1c20; /* 16.3:1 on surface */
+        --on-surface-variant: #44474f; /* 8.0:1 on surface-container */
+        --track-on-primary: #7ea2dc;
+        --track-on-container: #b5c8ee;
+
+        --font: 'Google Sans Flex', 'Roboto Flex', system-ui, sans-serif;
+
+        /* Expressive corner scale used here */
+        --r-xs: 4px;
+        --r-sm: 12px;
+        --r-lg: 20px;
+        --r-xl: 28px;
+        --r-xxl: 32px;
+        --r-full: 999px;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+      }
+      body {
+        background: #e6e6ea;
+        color: var(--on-surface);
+        font-family: var(--font);
+        font-optical-sizing: auto;
+        font-variation-settings: 'ROND' 0;
+        -webkit-font-smoothing: antialiased;
+        text-rendering: optimizeLegibility;
+      }
+      button,
+      input {
+        font: inherit;
+        color: inherit;
+      }
+      button {
+        border: 0;
+        background: none;
+        padding: 0;
+        cursor: pointer;
+      }
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+      h1,
+      h2,
+      h3,
+      p,
+      ul,
+      ol {
+        margin: 0;
+        padding: 0;
+      }
+      ul,
+      ol {
+        list-style: none;
+      }
+      .tnum {
+        font-variant-numeric: tabular-nums;
+        font-feature-settings: 'tnum' 1;
+      }
+      .vh {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        white-space: nowrap;
+      }
+      svg.i {
+        width: 24px;
+        height: 24px;
+        flex: none;
+        display: block;
+      }
+      svg.i20 {
+        width: 20px;
+        height: 20px;
+      }
+      svg.i18 {
+        width: 18px;
+        height: 18px;
+      }
+      svg.i28 {
+        width: 28px;
+        height: 28px;
+      }
+      svg.i32 {
+        width: 32px;
+        height: 32px;
+      }
+
+      /* ───────────── Board ───────────── */
+      .board {
+        width: 1304px;
+        margin: 0 auto;
+        padding: 56px 0 72px;
+      }
+      .intro {
+        display: grid;
+        grid-template-columns: 1fr 352px;
+        gap: 56px;
+        align-items: end;
+        margin-bottom: 44px;
+      }
+      .eyebrow {
+        font-size: 14px;
+        line-height: 20px;
+        font-weight: 500;
+        color: #50535b;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .eyebrow .chipshapes {
+        display: inline-flex;
+        gap: 4px;
+        align-items: center;
+      }
+      .eyebrow .chipshapes i {
+        display: block;
+        height: 12px;
+      }
+      .intro h1 {
+        margin: 12px 0 14px;
+        font-size: 68px;
+        line-height: 72px;
+        font-weight: 640;
+        letter-spacing: -0.025em;
+        font-variation-settings: 'ROND' 100;
+        color: #141a26;
+      }
+      .idea {
+        font-size: 19px;
+        line-height: 29px;
+        color: #30333a;
+        max-width: 820px;
+      }
+      .idea b {
+        font-weight: 560;
+        color: #141a26;
+      }
+      .facts {
+        display: grid;
+        gap: 12px;
+        padding-bottom: 6px;
+      }
+      .fact {
+        display: grid;
+        grid-template-columns: 92px 1fr;
+        gap: 12px;
+        font-size: 13.5px;
+        line-height: 20px;
+        color: #3a3d44;
+      }
+      .fact dt {
+        font-weight: 560;
+        color: #141a26;
+      }
+      .fact dd {
+        margin: 0;
+      }
+
+      .phones {
+        display: flex;
+        gap: 40px;
+      }
+      .device {
+        width: 408px;
+      }
+      .frame {
+        width: 408px;
+        height: 862px;
+        padding: 9px;
+        border-radius: 58px;
+        background: linear-gradient(160deg, #2a2c31 0%, #15161a 45%, #0e0f12 100%);
+        box-shadow:
+          0 0 0 1px rgba(255, 255, 255, 0.06) inset,
+          0 40px 70px -30px rgba(18, 26, 48, 0.45),
+          0 12px 24px -12px rgba(18, 26, 48, 0.25);
+      }
+      .screen {
+        position: relative;
+        width: 390px;
+        height: 844px;
+        border-radius: 49px;
+        overflow: hidden;
+        background: var(--surface);
+      }
+      .caption {
+        display: grid;
+        grid-template-columns: 34px 1fr;
+        gap: 4px 10px;
+        margin: 22px 6px 0;
+      }
+      .caption .n {
+        font-size: 15px;
+        line-height: 24px;
+        font-weight: 560;
+        color: #5a5d66;
+        font-variant-numeric: tabular-nums;
+      }
+      .caption h2 {
+        font-size: 18px;
+        line-height: 24px;
+        font-weight: 600;
+        color: #141a26;
+      }
+      .caption p {
+        grid-column: 2;
+        font-size: 14px;
+        line-height: 21px;
+        color: #44474f;
+      }
+
+      /* ───────────── System chrome ───────────── */
+      .statusbar {
+        position: relative;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 6px 28px 0 32px;
+        font-size: 14px;
+        line-height: 20px;
+        font-weight: 500;
+        font-variant-numeric: tabular-nums;
+      }
+      .punch {
+        position: absolute;
+        left: 50%;
+        top: 13px;
+        width: 15px;
+        height: 15px;
+        margin-left: -7.5px;
+        border-radius: 50%;
+        background: #0b0c0e;
+      }
+      .sys {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+      .sys svg {
+        display: block;
+      }
+      .gesture {
+        position: absolute;
+        left: 50%;
+        bottom: 8px;
+        width: 108px;
+        height: 4px;
+        margin-left: -54px;
+        border-radius: 2px;
+        background: var(--on-surface);
+      }
+
+      /* ───────────── Type roles ───────────── */
+      .headline-l {
+        font-size: 32px;
+        line-height: 40px;
+        font-weight: 500;
+        letter-spacing: -0.005em;
+        font-variation-settings: 'ROND' 40;
+      }
+      .headline-m {
+        font-size: 28px;
+        line-height: 36px;
+        font-weight: 500;
+        letter-spacing: -0.005em;
+        font-variation-settings: 'ROND' 40;
+      }
+      .title-l {
+        font-size: 22px;
+        line-height: 28px;
+        font-weight: 500;
+      }
+      .title-m {
+        font-size: 16px;
+        line-height: 24px;
+        font-weight: 500;
+        letter-spacing: 0.01em;
+      }
+      .title-s {
+        font-size: 14px;
+        line-height: 20px;
+        font-weight: 500;
+        letter-spacing: 0.007em;
+      }
+      .body-l {
+        font-size: 16px;
+        line-height: 24px;
+        font-weight: 400;
+      }
+      .body-m {
+        font-size: 14px;
+        line-height: 20px;
+        font-weight: 400;
+      }
+      .label-l {
+        font-size: 14px;
+        line-height: 20px;
+        font-weight: 500;
+        letter-spacing: 0.007em;
+      }
+      .label-m {
+        font-size: 12px;
+        line-height: 16px;
+        font-weight: 500;
+        letter-spacing: 0.04em;
+      }
+      .display-s {
+        font-size: 36px;
+        line-height: 44px;
+        font-weight: 600;
+        letter-spacing: -0.005em;
+        font-variation-settings: 'ROND' 100;
+      }
+      .muted {
+        color: var(--on-surface-variant);
+      }
+
+      /* ───────────── Buttons ───────────── */
+      .btn {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        border-radius: var(--r-full);
+        white-space: nowrap;
+      }
+      /* S buttons draw at 40 but take a 48 touch target, as Android does. */
+      .btn-s {
+        height: 40px;
+        padding: 0 16px 0 12px;
+        font-size: 14px;
+        line-height: 20px;
+        font-weight: 500;
+        letter-spacing: 0.007em;
+      }
+      .btn-s::after {
+        content: '';
+        position: absolute;
+        inset: -4px 0;
+      }
+      .btn-m {
+        height: 56px;
+        padding: 0 24px 0 20px;
+        font-size: 16px;
+        line-height: 24px;
+        font-weight: 500;
+        letter-spacing: 0.01em;
+        gap: 8px;
+      }
+      .btn-l {
+        height: 96px;
+        padding: 0 40px 0 32px;
+        font-size: 24px;
+        line-height: 32px;
+        font-weight: 500;
+        gap: 12px;
+      }
+      .tonal {
+        background: var(--secondary-container);
+        color: var(--on-secondary-container);
+      }
+      .filled {
+        background: var(--primary);
+        color: var(--on-primary);
+      }
+      .icon-btn {
+        width: 48px;
+        height: 48px;
+        border-radius: var(--r-full);
+        display: grid;
+        place-items: center;
+      }
+
+      .fab {
+        position: absolute;
+        right: 16px;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        height: 80px;
+        border-radius: var(--r-lg);
+        background: var(--primary-container);
+        color: var(--on-primary-container);
+        box-shadow:
+          0 6px 14px -4px rgba(10, 42, 87, 0.28),
+          0 2px 4px rgba(10, 42, 87, 0.14);
+      }
+      .fab--ext {
+        padding: 0 26px 0 22px;
+        font-size: 20px;
+        line-height: 28px;
+        font-weight: 500;
+      }
+      .fab--icon {
+        width: 80px;
+        justify-content: center;
+      }
+
+      /* ───────────── Navigation bar (short, 64) ───────────── */
+      .navbar {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        height: 88px;
+        padding-bottom: 24px;
+        display: flex;
+        background: var(--surface-container);
+      }
+      .navbar a {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        padding-top: 6px;
+        font-size: 12px;
+        line-height: 16px;
+        font-weight: 500;
+        letter-spacing: 0.03em;
+        color: var(--on-surface-variant);
+      }
+      .navbar .ind {
+        width: 56px;
+        height: 32px;
+        border-radius: var(--r-full);
+        display: grid;
+        place-items: center;
+      }
+      .navbar a[aria-current='page'] {
+        color: var(--on-surface);
+        font-weight: 640;
+      }
+      .navbar a[aria-current='page'] .ind {
+        background: var(--secondary-container);
+        color: var(--on-secondary-container);
+      }
+
+      /* ───────────── Screen 1 · Today ───────────── */
+      .appbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 4px 16px 12px 28px;
+      }
+      .appbar .date {
+        margin-top: 2px;
+      }
+      .me {
+        padding: 0 18px 0 12px;
+      }
+
+      .hero {
+        margin: 0 16px;
+        padding: 18px 22px 20px 24px;
+        border-radius: var(--r-xxl);
+        background: var(--primary);
+        color: var(--on-primary);
+      }
+      .hero__top {
+        color: var(--primary-container);
+      }
+      /* The task's steps, each in the shape of its state: done circle, now pill, next square. */
+      .track {
+        display: flex;
+        gap: 6px;
+        margin-top: 12px;
+      }
+      .track li {
+        flex: none;
+        height: 36px;
+        display: grid;
+        place-items: center;
+      }
+      .t-done {
+        width: 36px;
+        border-radius: 50%;
+        background: var(--tertiary-container);
+        color: var(--on-tertiary-container);
+      }
+      .track .t-now {
+        flex: 1 1 auto;
+        min-width: 0;
+        display: block;
+        padding: 0 16px;
+        border-radius: var(--r-full);
+        background: #1c4889; /* primary, one tone deeper; white on it 9.0:1 */
+        color: #ffffff;
+        font-size: 16px;
+        line-height: 36px;
+        font-weight: 500;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .t-next {
+        width: 36px;
+        border-radius: var(--r-sm);
+        background: var(--track-on-primary);
+        color: var(--on-primary-container); /* 5.5:1 */
+        font-size: 15px;
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
+      }
+      .shapes {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+      }
+      .shapes i {
+        display: block;
+        flex: none;
+      }
+      .shapes .s-done {
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        background: var(--tertiary-container);
+        position: relative;
+      }
+      .shapes .s-done::after {
+        content: '';
+        position: absolute;
+        left: 4px;
+        top: 3.4px;
+        width: 4.5px;
+        height: 2.6px;
+        border: solid var(--on-tertiary-container);
+        border-width: 0 0 1.6px 1.6px;
+        transform: rotate(-45deg);
+      }
+      .shapes .s-now {
+        width: 26px;
+        height: 14px;
+        border-radius: 7px;
+        background: #ffffff;
+      }
+      .shapes .s-next {
+        width: 14px;
+        height: 14px;
+        border-radius: 4px;
+        background: var(--track-on-primary);
+      }
+      .hero h2 {
+        margin-top: 8px;
+      }
+      .bar-row {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        margin-top: 14px;
+      }
+      .lp {
+        flex: 1;
+        display: flex;
+        gap: 4px;
+        height: 8px;
+      }
+      .lp__ind {
+        border-radius: 4px;
+        background: #ffffff;
+      }
+      .lp__track {
+        position: relative;
+        border-radius: 4px;
+        background: var(--track-on-primary);
+      }
+      .lp__track i {
+        position: absolute;
+        right: 2px;
+        top: 2px;
+        width: 4px;
+        height: 4px;
+        border-radius: 2px;
+        background: #ffffff;
+      }
+      .bar-row .left {
+        font-size: 16px;
+        line-height: 24px;
+        font-weight: 600;
+        letter-spacing: 0.01em;
+      }
+      .hero .cta {
+        width: 100%;
+        margin-top: 16px;
+        background: var(--primary-container);
+        color: var(--on-primary-container);
+      }
+
+      .group-label {
+        padding: 0 32px;
+        margin: 18px 0 8px;
+        color: var(--on-surface-variant);
+      }
+      .group {
+        margin: 0 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+      .group .row {
+        border-radius: var(--r-xs);
+        background: var(--surface-container);
+      }
+      .group li:first-child .row {
+        border-top-left-radius: var(--r-xl);
+        border-top-right-radius: var(--r-xl);
+      }
+      .group li:last-child .row {
+        border-bottom-left-radius: var(--r-xl);
+        border-bottom-right-radius: var(--r-xl);
+      }
+      .row {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+      }
+      .row--time {
+        min-height: 64px;
+        padding: 8px 12px 8px 8px;
+      }
+      /* An upcoming item sits in the upcoming shape: a 12 dp rounded square. */
+      .tile {
+        width: 52px;
+        height: 48px;
+        border-radius: var(--r-sm);
+        background: var(--surface-container-lowest);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        flex: none;
+      }
+      .tile b {
+        font-size: 15px;
+        line-height: 19px;
+        font-weight: 600;
+        letter-spacing: 0;
+      }
+      .tile small {
+        font-size: 12px;
+        line-height: 14px;
+        font-weight: 500;
+        color: var(--on-surface-variant);
+      }
+      .row__text {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+      }
+      .row__sup {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--on-surface-variant);
+      }
+      .dur {
+        display: block;
+        height: 6px;
+        border-radius: 3px;
+        background: var(--primary);
+      }
+      .chev {
+        color: var(--on-surface-variant);
+      }
+      /* Same text column as the timed rows above; the box is the upcoming shape and
+         would morph into the done circle when ticked. */
+      .row--check {
+        min-height: 52px;
+        padding: 0 16px 0 8px;
+        gap: 16px;
+        cursor: pointer;
+      }
+      .cbx {
+        width: 52px;
+        height: 44px;
+        display: grid;
+        place-items: center;
+        flex: none;
+      }
+      .cbx input {
+        appearance: none;
+        -webkit-appearance: none;
+        margin: 0;
+        width: 24px;
+        height: 24px;
+        border-radius: 7px;
+        border: 2px solid var(--on-surface-variant);
+        background: var(--surface-container-lowest);
+      }
+      .today .fab {
+        bottom: 104px;
+      }
+
+      /* ───────────── Screen 2 · Task ───────────── */
+      .topbar {
+        height: 64px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 4px;
+      }
+      .task-head {
+        padding: 4px 24px 0;
+      }
+      .meta {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        margin-top: 8px;
+        color: var(--on-surface-variant);
+      }
+      .meta span {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .sec-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 16px 0 24px;
+        margin: 28px 0 12px;
+      }
+      .sec-head h2 {
+        color: var(--on-surface-variant);
+      }
+      .steps {
+        margin: 0 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .step {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+      }
+      .step .lead {
+        width: 40px;
+        flex: none;
+        display: grid;
+        place-items: center;
+      }
+      .step .txt {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+      }
+      .step--done {
+        min-height: 56px;
+        padding: 0 8px;
+      }
+      .step--done .lead {
+        height: 40px;
+        border-radius: 50%;
+        background: var(--tertiary-container);
+        color: var(--on-tertiary-container);
+      }
+      .step--done .state {
+        color: #00513f;
+      }
+      .step--now {
+        min-height: 72px;
+        padding: 0 20px 0 8px;
+        border-radius: var(--r-full);
+        background: var(--primary);
+        color: #fff;
+      }
+      .step--now .lead {
+        font-size: 22px;
+        line-height: 28px;
+        font-weight: 600;
+        color: var(--primary-container);
+        font-variant-numeric: tabular-nums;
+      }
+      .step--now .state {
+        color: var(--primary-container);
+      }
+      .step--now .trail {
+        font-size: 14px;
+        line-height: 20px;
+        font-weight: 600;
+        color: #fff;
+        font-variant-numeric: tabular-nums;
+      }
+      .step--next {
+        min-height: 64px;
+        padding: 0 20px 0 8px;
+        border-radius: var(--r-sm);
+        background: var(--surface-container-high);
+      }
+      .step--next .lead {
+        font-size: 22px;
+        line-height: 28px;
+        font-weight: 600;
+        color: var(--on-surface-variant);
+        font-variant-numeric: tabular-nums;
+      }
+      .step--next .state {
+        color: var(--on-surface-variant);
+      }
+
+      .card {
+        margin: 12px 16px 0;
+        padding: 18px 20px 20px;
+        border-radius: var(--r-xl);
+        background: var(--surface-container-high);
+      }
+      .card--first {
+        margin-top: 24px;
+      }
+      .card__label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--on-surface-variant);
+      }
+      .card p.body-l {
+        margin-top: 6px;
+      }
+      .seg {
+        display: flex;
+        align-items: center;
+        gap: 2px;
+        height: 14px;
+        margin-top: 12px;
+      }
+      .seg i {
+        flex: 1;
+        display: block;
+      }
+      .seg .l {
+        height: 14px;
+        border-radius: 4px;
+        background: var(--primary);
+      }
+      .seg .u {
+        height: 4px;
+        border-radius: 2px;
+        background: #6f7a93; /* 3.5:1 on the card */
+      }
+      .seg-key {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        margin-top: 10px;
+      }
+
+      .dock {
+        position: absolute;
+        left: 16px;
+        right: 16px;
+        bottom: 28px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .dock .btn-m {
+        flex: 1;
+      }
+      /* Beside a button, capture pairs as a floating toolbar does: one height, 56. */
+      .dock .fab {
+        position: static;
+        width: 56px;
+        height: 56px;
+        border-radius: 16px;
+      }
+
+      /* ───────────── Screen 3 · Focus ───────────── */
+      .focus {
+        background: var(--primary-container);
+        color: var(--on-primary-container);
+      }
+      .focus .gesture {
+        background: var(--on-primary-container);
+      }
+      .focus-top {
+        height: 64px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        padding: 0 16px 0 4px;
+      }
+      .focus-top .ttl {
+        flex: 1;
+        min-width: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .cap {
+        background: var(--surface-container-lowest);
+        color: var(--on-primary-container);
+      }
+      .focus-main {
+        padding: 48px 24px 0;
+      }
+      .now-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        height: 32px;
+        padding: 0 14px 0 12px;
+        border-radius: var(--r-full);
+        background: var(--primary);
+        color: #fff;
+      }
+      .now-pill .shapes .s-next {
+        background: var(--track-on-primary);
+      }
+      .focus h1 {
+        margin-top: 16px;
+      }
+      .timer-row {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        margin-top: 40px;
+      }
+      .ring {
+        position: relative;
+        width: 112px;
+        height: 112px;
+        flex: none;
+      }
+      .ring svg {
+        position: absolute;
+        inset: 0;
+      }
+      .ring__num {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+      }
+      .ring__num b {
+        font-size: 22px;
+        line-height: 26px;
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
+      }
+      .ring__num small {
+        font-size: 12px;
+        line-height: 16px;
+        font-weight: 500;
+      }
+      .bgroup {
+        flex: 1;
+        display: flex;
+        gap: 6px;
+      }
+      .bgroup .pause {
+        flex: 1;
+        min-width: 0;
+        padding: 0 20px 0 16px;
+        background: var(--surface-container-lowest);
+        color: var(--on-primary-container);
+      }
+      /* A pill, not a circle: in this app a circle means done. */
+      .bgroup .plus5 {
+        flex: none;
+        height: 56px;
+        padding: 0 18px;
+        background: var(--track-on-container);
+        color: var(--on-primary-container);
+        font-size: 16px;
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .fsteps {
+        margin-top: 36px;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+      .fstep {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        min-height: 48px;
+      }
+      .fstep .mk {
+        width: 32px;
+        height: 32px;
+        flex: none;
+        display: grid;
+        place-items: center;
+      }
+      .fstep--done .mk {
+        border-radius: 50%;
+        background: var(--tertiary-container);
+        color: var(--on-tertiary-container);
+      }
+      .fstep--next .mk {
+        border-radius: 10px;
+        background: var(--track-on-container);
+        color: var(--on-primary-container);
+        font-size: 14px;
+        font-weight: 600;
+      }
+      .fstep .t {
+        flex: 1;
+      }
+      .fstep .badge {
+        color: #00513f;
+      }
+      .fstep--done .t {
+        color: var(--on-primary-container);
+      }
+      .fstep--next .t {
+        color: var(--on-surface-variant);
+      }
+      .fnote {
+        margin-top: 24px;
+        padding: 16px 20px 18px;
+        border-radius: var(--r-xl);
+        background: var(--surface-container-lowest);
+        color: var(--on-surface);
+      }
+      .fnote .card__label {
+        color: var(--on-surface-variant);
+      }
+      .fnote p {
+        margin-top: 6px;
+      }
+      .focus .done-btn {
+        position: absolute;
+        left: 24px;
+        right: 24px;
+        bottom: 36px;
+      }
+
+      /* ───────────── Legend ───────────── */
+      .legend {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 24px;
+        margin-top: 56px;
+      }
+      .lcard {
+        background: #f7f7fa;
+        border-radius: 28px;
+        padding: 22px 24px 24px;
+      }
+      .lcard h3 {
+        font-size: 16px;
+        line-height: 22px;
+        font-weight: 600;
+        color: #141a26;
+      }
+      .lcard > p {
+        margin-top: 6px;
+        font-size: 13.5px;
+        line-height: 20px;
+        color: #3e4148;
+      }
+      .keyrows {
+        margin-top: 16px;
+        display: grid;
+        gap: 12px;
+      }
+      .keyrow {
+        display: grid;
+        grid-template-columns: 60px 1fr;
+        align-items: center;
+        gap: 12px;
+        font-size: 13.5px;
+        line-height: 19px;
+        color: #3e4148;
+      }
+      .keyrow b {
+        display: block;
+        font-weight: 600;
+        color: #141a26;
+      }
+      .kshape {
+        display: grid;
+        place-items: center;
+        height: 32px;
+      }
+      .kshape i {
+        display: grid;
+        place-items: center;
+      }
+      .k-done {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: var(--tertiary-container);
+        color: var(--on-tertiary-container);
+      }
+      .k-now {
+        width: 56px;
+        height: 32px;
+        border-radius: 16px;
+        background: var(--primary);
+      }
+      .k-next {
+        width: 32px;
+        height: 32px;
+        border-radius: 10px;
+        background: var(--surface-container-high);
+        box-shadow: inset 0 0 0 1px #d9dae2;
+      }
+
+      .sizes {
+        margin-top: 18px;
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 12px;
+      }
+      .sz {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+        font-size: 12.5px;
+        line-height: 16px;
+        color: #3e4148;
+      }
+      .sz b {
+        display: block;
+        font-weight: 600;
+        color: #141a26;
+        font-variant-numeric: tabular-nums;
+      }
+      .sz i {
+        display: block;
+        background: var(--primary);
+      }
+      .sz .l {
+        width: 76px;
+        height: 48px;
+        border-radius: 24px;
+      }
+      .sz .f {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        background: var(--primary-container);
+      }
+      .sz .m {
+        width: 56px;
+        height: 28px;
+        border-radius: 14px;
+      }
+      .sz .s {
+        width: 40px;
+        height: 20px;
+        border-radius: 10px;
+        background: var(--secondary-container);
+      }
+
+      .swatches {
+        margin-top: 16px;
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px 8px;
+      }
+      .morph {
+        margin-top: 18px;
+        display: grid;
+        gap: 10px;
+        font-size: 13.5px;
+        line-height: 19px;
+        color: #3e4148;
+      }
+      .morph b {
+        display: block;
+        font-weight: 600;
+        color: #141a26;
+      }
+      .morph__shapes {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        height: 32px;
+      }
+      .mf {
+        display: grid;
+        place-items: center;
+        height: 32px;
+        border-radius: 16px;
+      }
+      .mf1 {
+        width: 56px;
+        background: var(--primary);
+      }
+      .mf2 {
+        width: 42px;
+        background: #64a6c0; /* halfway through the colour spring; no text on it */
+      }
+      .mf3 {
+        width: 32px;
+        background: var(--tertiary-container);
+        color: var(--on-tertiary-container);
+      }
+      .morph .to {
+        color: #6a6d75;
+      }
+      .sw {
+        font-size: 12px;
+        line-height: 15px;
+        color: #3e4148;
+      }
+      .sw i {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        height: 44px;
+        border-radius: 12px;
+        padding: 0 9px 6px;
+        font-style: normal;
+        font-size: 12px;
+        font-weight: 600;
+        margin-bottom: 6px;
+        font-variant-numeric: tabular-nums;
+      }
+      .sw b {
+        display: block;
+        font-weight: 600;
+        color: #141a26;
+      }
+
+      .sysmock {
+        margin-top: 16px;
+        border-radius: 20px;
+        background: #ffffff;
+        padding: 10px 12px 12px;
+        box-shadow: inset 0 0 0 1px #e3e4ea;
+      }
+      .sysbar {
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        gap: 8px;
+        font-size: 12px;
+        line-height: 16px;
+        font-weight: 500;
+        color: var(--on-surface);
+        font-variant-numeric: tabular-nums;
+      }
+      .lu-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        height: 24px;
+        padding: 0 9px 0 4px;
+        border-radius: 12px;
+        background: var(--primary);
+        color: #fff;
+        font-size: 11.5px;
+        line-height: 16px;
+        font-weight: 600;
+        white-space: nowrap;
+      }
+      .notif {
+        margin-top: 10px;
+        border-radius: 16px;
+        background: var(--surface-container);
+        padding: 12px 14px;
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 2px 12px;
+        align-items: center;
+      }
+      .notif .app {
+        font-size: 11.5px;
+        line-height: 16px;
+        color: var(--on-surface-variant);
+        font-weight: 500;
+      }
+      .notif .nt {
+        grid-column: 1 / -1;
+        font-size: 15px;
+        line-height: 20px;
+        font-weight: 600;
+      }
+      .notif .np {
+        grid-column: 1 / -1;
+        display: flex;
+        gap: 3px;
+        height: 6px;
+        margin-top: 8px;
+      }
+      .notif .np i {
+        display: block;
+        border-radius: 3px;
+      }
+    </style>
+  </head>
+  <body>
+    <svg width="0" height="0" style="position: absolute" aria-hidden="true" focusable="false">
+      <defs>
+        <symbol id="i-back" viewBox="0 0 24 24">
+          <path
+            d="M19.5 12h-15M10.5 5.5 4 12l6.5 6.5"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </symbol>
+        <symbol id="i-close" viewBox="0 0 24 24">
+          <path
+            d="M6.5 6.5l11 11M17.5 6.5l-11 11"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+          />
+        </symbol>
+        <symbol id="i-plus" viewBox="0 0 24 24">
+          <path
+            d="M12 5v14M5 12h14"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+          />
+        </symbol>
+        <symbol id="i-plus-bold" viewBox="0 0 24 24">
+          <path
+            d="M12 4.5v15M4.5 12h15"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.4"
+            stroke-linecap="round"
+          />
+        </symbol>
+        <symbol id="i-check" viewBox="0 0 24 24">
+          <path
+            d="M5 12.5l4.5 4.5L19 7.5"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </symbol>
+        <symbol id="i-check-bold" viewBox="0 0 24 24">
+          <path
+            d="M4.5 12.5l5 5L19.5 7"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.6"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </symbol>
+        <symbol id="i-more" viewBox="0 0 24 24">
+          <g fill="currentColor">
+            <circle cx="12" cy="5.5" r="1.75" />
+            <circle cx="12" cy="12" r="1.75" />
+            <circle cx="12" cy="18.5" r="1.75" />
+          </g>
+        </symbol>
+        <symbol id="i-person" viewBox="0 0 24 24">
+          <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <circle cx="12" cy="8.25" r="3.75" />
+            <path d="M4.75 19.75c.95-3.4 3.85-5.25 7.25-5.25s6.3 1.85 7.25 5.25" />
+          </g>
+        </symbol>
+        <symbol id="i-today" viewBox="0 0 24 24">
+          <g
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <rect x="3.75" y="5.25" width="16.5" height="15" rx="3.5" />
+            <path d="M3.75 10h16.5M8.25 3.25v3.5M15.75 3.25v3.5" />
+          </g>
+          <rect x="7.25" y="13" width="4" height="4" rx="1.2" fill="currentColor" />
+        </symbol>
+        <symbol id="i-today-fill" viewBox="0 0 24 24">
+          <path
+            d="M8.25 3.25v3.5M15.75 3.25v3.5"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+          />
+          <path
+            fill="currentColor"
+            fill-rule="evenodd"
+            d="M7.25 4.25h9.5a4.5 4.5 0 0 1 4.5 4.5v8.5a4.5 4.5 0 0 1-4.5 4.5h-9.5a4.5 4.5 0 0 1-4.5-4.5v-8.5a4.5 4.5 0 0 1 4.5-4.5zM4.75 10h14.5v-.5H4.75zM8.45 12.75a1.2 1.2 0 0 0-1.2 1.2v1.6a1.2 1.2 0 0 0 1.2 1.2h1.6a1.2 1.2 0 0 0 1.2-1.2v-1.6a1.2 1.2 0 0 0-1.2-1.2z"
+          />
+        </symbol>
+        <symbol id="i-tasks" viewBox="0 0 24 24">
+          <path
+            d="M3.75 7.25l2 2 3.75-3.75M13 7.75h7.25M3.75 16.25l2 2 3.75-3.75M13 16.75h7.25"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </symbol>
+        <symbol id="i-routines" viewBox="0 0 24 24">
+          <g
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M16.75 3.5l3 3-3 3" />
+            <path d="M19.75 6.5h-10a5.75 5.75 0 0 0-5.75 5.75" />
+            <path d="M7.25 20.5l-3-3 3-3" />
+            <path d="M4.25 17.5h10a5.75 5.75 0 0 0 5.75-5.75" />
+          </g>
+        </symbol>
+        <symbol id="i-library" viewBox="0 0 24 24">
+          <g
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linejoin="round"
+            stroke-linecap="round"
+          >
+            <path
+              d="M12 6.75C10.4 5.25 8 4.75 4 4.75v13.5c4 0 6.4.5 8 2 1.6-1.5 4-2 8-2V4.75c-4 0-6.4.5-8 2z"
+            />
+            <path d="M12 6.75v13.25" />
+          </g>
+        </symbol>
+        <symbol id="i-play" viewBox="0 0 24 24">
+          <path
+            fill="currentColor"
+            d="M8 6.06v11.88a1.2 1.2 0 0 0 1.83 1.02l9.5-5.94a1.2 1.2 0 0 0 0-2.04l-9.5-5.94A1.2 1.2 0 0 0 8 6.06z"
+          />
+        </symbol>
+        <symbol id="i-pause" viewBox="0 0 24 24">
+          <g fill="currentColor">
+            <rect x="6.5" y="5" width="4" height="14" rx="1.6" />
+            <rect x="13.5" y="5" width="4" height="14" rx="1.6" />
+          </g>
+        </symbol>
+        <symbol id="i-note" viewBox="0 0 24 24">
+          <g
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path
+              d="M14.25 20.25H7A3.25 3.25 0 0 1 3.75 17V7A3.25 3.25 0 0 1 7 3.75h10A3.25 3.25 0 0 1 20.25 7v7.25z"
+            />
+            <path d="M20.25 14.25h-3.5a2.5 2.5 0 0 0-2.5 2.5v3.5M8 9h8M8 13h4" />
+          </g>
+        </symbol>
+        <symbol id="i-timer" viewBox="0 0 24 24">
+          <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <circle cx="12" cy="13.5" r="7.25" />
+            <path d="M12 13.5V9.75M9.5 2.75h5" />
+          </g>
+        </symbol>
+        <symbol id="i-chev" viewBox="0 0 24 24">
+          <path
+            d="M9.5 6l6 6-6 6"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </symbol>
+        <symbol id="i-wifi" viewBox="0 0 24 24">
+          <path fill="currentColor" d="M12 20.5 1.2 8.9a15.6 15.6 0 0 1 21.6 0z" />
+        </symbol>
+        <symbol id="i-signal" viewBox="0 0 24 24">
+          <path
+            fill="currentColor"
+            d="M2.5 20.5h17.2a1.8 1.8 0 0 0 1.8-1.8V3.9a.9.9 0 0 0-1.55-.62L2.1 19.2c-.4.43-.1 1.3.4 1.3z"
+          />
+        </symbol>
+      </defs>
+    </svg>
+
+    <main class="board">
+      <header class="intro">
+        <div>
+          <p class="eyebrow">
+            <span class="chipshapes" aria-hidden="true"
+              ><i style="width: 12px; border-radius: 50%; background: #9ef2e0"></i
+              ><i style="width: 22px; border-radius: 6px; background: #2b5ba0"></i
+              ><i style="width: 12px; border-radius: 3px; background: #b9bcc8"></i
+            ></span>
+            Adnotia phone app · design direction
+          </p>
+          <h1>Springform</h1>
+          <p class="idea">
+            A Material 3 Expressive day where <b>shape is the second voice</b>. The running task is
+            the one big cobalt container, each step changes silhouette when its state changes, and
+            the thing to press is always the largest button on the screen.
+          </p>
+        </div>
+        <dl class="facts">
+          <div class="fact">
+            <dt>Draws on</dt>
+            <dd>
+              Material 3 Expressive in Compose: the expressive corner scale, five button sizes,
+              button groups, the 80 dp FAB, the 64 dp bar, spring motion.
+            </dd>
+          </div>
+          <div class="fact">
+            <dt>Typeface</dt>
+            <dd>
+              Google Sans Flex, variable, bundled. Tabular numerals throughout. Roboto Flex if tnum
+              is missing.
+            </dd>
+          </div>
+          <div class="fact">
+            <dt>Colour</dt>
+            <dd>
+              Its own tonal scheme from a cobalt seed, Dynamic Color off. No error role, so nothing
+              in the app is red.
+            </dd>
+          </div>
+        </dl>
+      </header>
+
+      <div class="phones">
+        <!-- ═════════════ 1 · TODAY ═════════════ -->
+        <section class="device" aria-labelledby="cap1">
+          <div class="frame">
+            <div class="screen today">
+              <div class="statusbar" aria-hidden="true">
+                <span>9:47</span><span class="punch"></span>
+                <span class="sys">
+                  <svg width="16" height="16"><use href="#i-wifi" /></svg>
+                  <svg width="15" height="15"><use href="#i-signal" /></svg>
+                  <svg width="24" height="13" viewBox="0 0 24 13">
+                    <rect
+                      x=".75"
+                      y=".75"
+                      width="20"
+                      height="11.5"
+                      rx="3.6"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-opacity=".45"
+                      stroke-width="1.5"
+                    />
+                    <rect x="2.6" y="2.6" width="13.5" height="7.8" rx="2" fill="currentColor" />
+                    <rect
+                      x="22.2"
+                      y="4.2"
+                      width="1.6"
+                      height="4.6"
+                      rx=".8"
+                      fill="currentColor"
+                      fill-opacity=".45"
+                    />
+                  </svg>
+                </span>
+              </div>
+
+              <header class="appbar">
+                <div>
+                  <h1 class="headline-l">Today</h1>
+                  <p class="title-s muted date">Tuesday 24 November</p>
+                </div>
+                <a class="btn btn-s tonal me" href="#me"
+                  ><svg class="i i20"><use href="#i-person" /></svg>Me</a
+                >
+              </header>
+
+              <article class="hero" aria-labelledby="hero-title">
+                <p class="hero__top label-l">Now · step 2 of 3</p>
+                <h2 class="title-l" id="hero-title">Write the school email</h2>
+                <ol class="track" aria-label="Steps">
+                  <li class="t-done">
+                    <svg class="i i20" aria-hidden="true"><use href="#i-check-bold" /></svg
+                    ><span class="vh">Done: Find the school address</span>
+                  </li>
+                  <li class="t-now" aria-current="step">
+                    <span class="vh">Now: </span>Write the question
+                  </li>
+                  <li class="t-next">
+                    <span aria-hidden="true">3</span
+                    ><span class="vh">Next: Read it once and send</span>
+                  </li>
+                </ol>
+                <div class="bar-row">
+                  <div
+                    class="lp"
+                    role="progressbar"
+                    aria-label="Time left on this task"
+                    aria-valuemin="0"
+                    aria-valuemax="25"
+                    aria-valuenow="18"
+                    aria-valuetext="18 of 25 minutes left"
+                  >
+                    <span class="lp__ind" style="flex: 18"></span
+                    ><span class="lp__track" style="flex: 7"><i></i></span>
+                  </div>
+                  <span class="left tnum">18 min left</span>
+                </div>
+                <a class="btn btn-m cta" href="#focus"
+                  ><svg class="i"><use href="#i-play" /></svg>Continue</a
+                >
+              </article>
+
+              <h2 class="title-s group-label">Later today</h2>
+              <ul class="group">
+                <li>
+                  <a class="row row--time" href="#task-dentist">
+                    <span class="tile tnum" aria-label="10:30am"
+                      ><b>10:30</b><small>am</small></span
+                    >
+                    <span class="row__text">
+                      <span class="title-m">Call the dentist</span>
+                      <span class="row__sup body-m tnum"
+                        ><i class="dur" style="width: 16px" aria-hidden="true"></i>10 min</span
+                      >
+                    </span>
+                    <svg class="i i20 chev" aria-hidden="true"><use href="#i-chev" /></svg>
+                  </a>
+                </li>
+                <li>
+                  <a class="row row--time" href="#task-walk">
+                    <span class="tile tnum" aria-label="11:00am"
+                      ><b>11:00</b><small>am</small></span
+                    >
+                    <span class="row__text">
+                      <span class="title-m">Walk to the park</span>
+                      <span class="row__sup body-m tnum"
+                        ><i class="dur" style="width: 32px" aria-hidden="true"></i>20 min</span
+                      >
+                    </span>
+                    <svg class="i i20 chev" aria-hidden="true"><use href="#i-chev" /></svg>
+                  </a>
+                </li>
+              </ul>
+
+              <h2 class="title-s group-label">Anytime</h2>
+              <ul class="group">
+                <li>
+                  <label class="row row--check"
+                    ><span class="cbx"><input type="checkbox" name="anytime1" /></span
+                    ><span class="title-m">Renew the parking permit</span></label
+                  >
+                </li>
+              </ul>
+
+              <a class="fab fab--ext" href="#capture"
+                ><svg class="i i28"><use href="#i-plus-bold" /></svg>Capture</a
+              >
+
+              <nav class="navbar" aria-label="Main">
+                <a href="#today" aria-current="page"
+                  ><span class="ind"
+                    ><svg class="i"><use href="#i-today-fill" /></svg></span
+                  >Today</a
+                >
+                <a href="#tasks"
+                  ><span class="ind"
+                    ><svg class="i"><use href="#i-tasks" /></svg></span
+                  >Tasks</a
+                >
+                <a href="#routines"
+                  ><span class="ind"
+                    ><svg class="i"><use href="#i-routines" /></svg></span
+                  >Routines</a
+                >
+                <a href="#library"
+                  ><span class="ind"
+                    ><svg class="i"><use href="#i-library" /></svg></span
+                  >Library</a
+                >
+              </nav>
+              <span class="gesture" aria-hidden="true"></span>
+            </div>
+          </div>
+          <div class="caption">
+            <span class="n">01</span>
+            <h2 id="cap1">Today</h2>
+            <p>
+              One cobalt container is now, and its steps keep their shapes: done circle, now pill,
+              next square. Time left is a bar and a number. Capture is the floating button.
+            </p>
+          </div>
+        </section>
+
+        <!-- ═════════════ 2 · TASK ═════════════ -->
+        <section class="device" aria-labelledby="cap2">
+          <div class="frame">
+            <div class="screen task">
+              <div class="statusbar" aria-hidden="true">
+                <span>9:47</span><span class="punch"></span>
+                <span class="sys">
+                  <svg width="16" height="16"><use href="#i-wifi" /></svg>
+                  <svg width="15" height="15"><use href="#i-signal" /></svg>
+                  <svg width="24" height="13" viewBox="0 0 24 13">
+                    <rect
+                      x=".75"
+                      y=".75"
+                      width="20"
+                      height="11.5"
+                      rx="3.6"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-opacity=".45"
+                      stroke-width="1.5"
+                    />
+                    <rect x="2.6" y="2.6" width="13.5" height="7.8" rx="2" fill="currentColor" />
+                    <rect
+                      x="22.2"
+                      y="4.2"
+                      width="1.6"
+                      height="4.6"
+                      rx=".8"
+                      fill="currentColor"
+                      fill-opacity=".45"
+                    />
+                  </svg>
+                </span>
+              </div>
+
+              <div class="topbar">
+                <a class="icon-btn" href="#today" aria-label="Back to Today"
+                  ><svg class="i"><use href="#i-back" /></svg
+                ></a>
+                <button class="icon-btn" type="button" aria-label="More for this task">
+                  <svg class="i"><use href="#i-more" /></svg>
+                </button>
+              </div>
+
+              <div class="task-head">
+                <h1 class="headline-m">Write the school email</h1>
+                <p class="meta label-l tnum">
+                  <span
+                    ><svg class="i i18"><use href="#i-today" /></svg>Today</span
+                  >
+                  <span
+                    ><svg class="i i18"><use href="#i-timer" /></svg>25 min estimate</span
+                  >
+                </p>
+              </div>
+
+              <section id="steps" aria-labelledby="steps-h">
+                <div class="sec-head">
+                  <h2 class="title-s" id="steps-h">Steps</h2>
+                  <button class="btn btn-s tonal" type="button">
+                    <svg class="i i18"><use href="#i-plus" /></svg>Add a step
+                  </button>
+                </div>
+                <ol class="steps">
+                  <li class="step step--done">
+                    <span class="lead" aria-hidden="true"
+                      ><svg class="i i20"><use href="#i-check-bold" /></svg
+                    ></span>
+                    <span class="txt"
+                      ><span class="body-l">Find the school address</span
+                      ><span class="label-m state">Done</span></span
+                    >
+                  </li>
+                  <li class="step step--now">
+                    <span class="lead" aria-hidden="true">2</span>
+                    <span class="txt"
+                      ><span class="label-m state">Now</span
+                      ><span class="title-m">Write the question</span></span
+                    >
+                    <span class="trail">18 min left</span>
+                  </li>
+                  <li class="step step--next">
+                    <span class="lead" aria-hidden="true">3</span>
+                    <span class="txt"
+                      ><span class="label-m state">Next</span
+                      ><span class="body-l">Read it once and send</span></span
+                    >
+                  </li>
+                </ol>
+              </section>
+
+              <section class="card card--first" id="note" aria-labelledby="note-h">
+                <h2 class="title-s card__label" id="note-h">
+                  <svg class="i i18"><use href="#i-note" /></svg>Note
+                </h2>
+                <p class="body-l">When is the permission slip due?</p>
+              </section>
+
+              <section class="card" id="time" aria-labelledby="time-h">
+                <h2 class="title-s card__label" id="time-h">
+                  <svg class="i i18"><use href="#i-timer" /></svg>Time
+                </h2>
+                <div class="seg" role="img" aria-label="25 one-minute blocks: 18 left, 7 used">
+                  <i class="l"></i><i class="l"></i><i class="l"></i><i class="l"></i
+                  ><i class="l"></i><i class="l"></i><i class="l"></i><i class="l"></i
+                  ><i class="l"></i><i class="l"></i><i class="l"></i><i class="l"></i
+                  ><i class="l"></i><i class="l"></i><i class="l"></i><i class="l"></i
+                  ><i class="l"></i><i class="l"></i><i class="u"></i><i class="u"></i
+                  ><i class="u"></i><i class="u"></i><i class="u"></i><i class="u"></i
+                  ><i class="u"></i>
+                </div>
+                <div class="seg-key tnum">
+                  <span class="title-m">18 min left</span
+                  ><span class="body-m muted">7 of 25 min used</span>
+                </div>
+              </section>
+
+              <div class="dock">
+                <a class="btn btn-m filled" href="#focus"
+                  ><svg class="i"><use href="#i-play" /></svg>Back to it</a
+                >
+                <a class="fab fab--icon" href="#capture" aria-label="Capture"
+                  ><svg class="i"><use href="#i-plus-bold" /></svg
+                ></a>
+              </div>
+              <span class="gesture" aria-hidden="true"></span>
+            </div>
+          </div>
+          <div class="caption">
+            <span class="n">02</span>
+            <h2 id="cap2">Task opened</h2>
+            <p>
+              Each step takes the shape of its state: a circle when done, a pill when now, a square
+              when next. Time is 25 one-minute blocks.
+            </p>
+          </div>
+        </section>
+
+        <!-- ═════════════ 3 · FOCUS ═════════════ -->
+        <section class="device" aria-labelledby="cap3">
+          <div class="frame">
+            <div class="screen focus">
+              <div class="statusbar" aria-hidden="true">
+                <span>9:47</span><span class="punch"></span>
+                <span class="sys">
+                  <svg width="16" height="16"><use href="#i-wifi" /></svg>
+                  <svg width="15" height="15"><use href="#i-signal" /></svg>
+                  <svg width="24" height="13" viewBox="0 0 24 13">
+                    <rect
+                      x=".75"
+                      y=".75"
+                      width="20"
+                      height="11.5"
+                      rx="3.6"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-opacity=".45"
+                      stroke-width="1.5"
+                    />
+                    <rect x="2.6" y="2.6" width="13.5" height="7.8" rx="2" fill="currentColor" />
+                    <rect
+                      x="22.2"
+                      y="4.2"
+                      width="1.6"
+                      height="4.6"
+                      rx=".8"
+                      fill="currentColor"
+                      fill-opacity=".45"
+                    />
+                  </svg>
+                </span>
+              </div>
+
+              <header class="focus-top">
+                <a class="icon-btn" href="#task" aria-label="Leave focus"
+                  ><svg class="i"><use href="#i-close" /></svg
+                ></a>
+                <p class="title-s ttl">Write the school email</p>
+                <button class="btn btn-s cap" type="button">
+                  <svg class="i i18"><use href="#i-plus" /></svg>Capture
+                </button>
+              </header>
+
+              <div class="focus-main">
+                <p class="now-pill label-l">
+                  <span class="shapes" aria-hidden="true"
+                    ><i class="s-done"></i><i class="s-now"></i><i class="s-next"></i
+                  ></span>
+                  Step 2 of 3
+                </p>
+                <h1 class="display-s">Write the question</h1>
+
+                <div class="timer-row">
+                  <div class="ring" role="img" aria-label="18 of 25 minutes left">
+                    <svg width="112" height="112" viewBox="0 0 112 112" aria-hidden="true">
+                      <g
+                        transform="rotate(-90 56 56)"
+                        fill="none"
+                        stroke-width="12"
+                        stroke-linecap="round"
+                      >
+                        <circle
+                          cx="56"
+                          cy="56"
+                          r="50"
+                          stroke="#B5C8EE"
+                          stroke-dasharray="67.97 400"
+                          stroke-dashoffset="-236.19"
+                        />
+                        <circle
+                          cx="56"
+                          cy="56"
+                          r="50"
+                          stroke="#2B5BA0"
+                          stroke-dasharray="214.19 400"
+                          stroke-dashoffset="-6"
+                        />
+                      </g>
+                    </svg>
+                    <span class="ring__num" aria-hidden="true"
+                      ><b>18</b><small>min left</small></span
+                    >
+                  </div>
+                  <div class="bgroup">
+                    <button class="btn btn-m pause" type="button">
+                      <svg class="i"><use href="#i-pause" /></svg>Pause
+                    </button>
+                    <button class="btn plus5" type="button" aria-label="Add 5 minutes">
+                      +5 min
+                    </button>
+                  </div>
+                </div>
+
+                <ul class="fsteps">
+                  <li class="fstep fstep--done">
+                    <span class="mk" aria-hidden="true"
+                      ><svg class="i i18"><use href="#i-check-bold" /></svg
+                    ></span>
+                    <span class="t body-l">Find the school address</span>
+                    <span class="badge label-m">Done</span>
+                  </li>
+                  <li class="fstep fstep--next">
+                    <span class="mk" aria-hidden="true">3</span>
+                    <span class="t body-l">Next: Read it once and send</span>
+                  </li>
+                </ul>
+
+                <section class="fnote" aria-labelledby="fnote-h">
+                  <h2 class="title-s card__label" id="fnote-h">
+                    <svg class="i i18"><use href="#i-note" /></svg>Note
+                  </h2>
+                  <p class="body-l">When is the permission slip due?</p>
+                </section>
+              </div>
+
+              <button class="btn btn-l filled done-btn" type="button">
+                <svg class="i i28"><use href="#i-check-bold" /></svg>Step done
+              </button>
+              <span class="gesture" aria-hidden="true"></span>
+            </div>
+          </div>
+          <div class="caption">
+            <span class="n">03</span>
+            <h2 id="cap3">Focus</h2>
+            <p>
+              The step is the largest thing on the screen, then the ring. The one big button
+              finishes the step.
+            </p>
+          </div>
+        </section>
+      </div>
+
+      <section class="legend" aria-label="How the direction works">
+        <div class="lcard">
+          <h3>One shape per state, with a word</h3>
+          <p>Shape carries state, so nothing rests on colour alone.</p>
+          <div class="keyrows">
+            <div class="keyrow">
+              <span class="kshape"
+                ><i class="k-done"
+                  ><svg class="i i18"><use href="#i-check-bold" /></svg></i></span
+              ><span><b>Done</b>A circle, with a check and the word.</span>
+            </div>
+            <div class="keyrow">
+              <span class="kshape"><i class="k-now"></i></span
+              ><span><b>Now</b>A full pill, the one filled container.</span>
+            </div>
+            <div class="keyrow">
+              <span class="kshape"><i class="k-next"></i></span
+              ><span><b>Next</b>A 12 dp rounded square.</span>
+            </div>
+          </div>
+        </div>
+        <div class="lcard">
+          <h3>Size says what to press</h3>
+          <p>One hero action per screen, and it is the biggest button there. Drawn at half size.</p>
+          <div class="sizes" aria-hidden="true">
+            <span class="sz"
+              ><i class="l"></i><span><b>L 96</b>Step done</span></span
+            >
+            <span class="sz"
+              ><i class="f"></i><span><b>FAB 80</b>Capture</span></span
+            >
+            <span class="sz"
+              ><i class="m"></i><span><b>M 56</b>Continue</span></span
+            >
+            <span class="sz"
+              ><i class="s"></i><span><b>S 40</b>Me</span></span
+            >
+          </div>
+          <div class="morph">
+            <span class="morph__shapes" aria-hidden="true"
+              ><i class="mf mf1"></i><svg class="i i18 to"><use href="#i-chev" /></svg
+              ><i class="mf mf2"></i><svg class="i i18 to"><use href="#i-chev" /></svg
+              ><i class="mf mf3"
+                ><svg class="i i18"><use href="#i-check-bold" /></svg></i
+            ></span>
+            <p>
+              <b>Finishing a step</b>The one expressive moment: the pill springs into the done
+              circle. With Reduce Motion on, it cross-fades instead.
+            </p>
+          </div>
+        </div>
+        <div class="lcard">
+          <h3>Cobalt tonal scheme</h3>
+          <p>Text on every fill is 5.2:1 or more.</p>
+          <div class="swatches">
+            <span class="sw"
+              ><i style="background: #2b5ba0; color: #fff">Aa<span>6.8</span></i
+              ><b>Primary</b>#2B5BA0</span
+            >
+            <span class="sw"
+              ><i style="background: #d7e3ff; color: #0a2a57">Aa<span>11.0</span></i
+              ><b>Primary container</b>#D7E3FF</span
+            >
+            <span class="sw"
+              ><i style="background: #dce2f9; color: #141b2c">Aa<span>13.3</span></i
+              ><b>Secondary container</b>#DCE2F9</span
+            >
+            <span class="sw"
+              ><i style="background: #9ef2e0; color: #00201b">Aa<span>13.3</span></i
+              ><b>Tertiary container</b>#9EF2E0</span
+            >
+            <span class="sw"
+              ><i style="background: #ededf4; color: #44474f">Aa<span>8.0</span></i
+              ><b>Surface container</b>#EDEDF4</span
+            >
+            <span class="sw"
+              ><i style="background: #f9f9ff; color: #1a1c20; box-shadow: inset 0 0 0 1px #e1e2ea"
+                >Aa<span>16.3</span></i
+              ><b>Surface</b>#F9F9FF</span
+            >
+          </div>
+        </div>
+        <div class="lcard">
+          <h3>Outside the app</h3>
+          <p>
+            An Android 16 Live Update and the status bar chip carry the same step and the same
+            quantity.
+          </p>
+          <div class="sysmock" aria-hidden="true">
+            <div class="sysbar">
+              <span>9:47</span>
+              <span class="lu-chip">
+                <svg width="16" height="16" viewBox="0 0 16 16">
+                  <circle cx="8" cy="8" r="6" fill="none" stroke="#7EA2DC" stroke-width="2.4" />
+                  <circle
+                    cx="8"
+                    cy="8"
+                    r="6"
+                    fill="none"
+                    stroke="#fff"
+                    stroke-width="2.4"
+                    stroke-linecap="round"
+                    stroke-dasharray="27.1 40"
+                    transform="rotate(-90 8 8)"
+                  />
+                </svg>
+                Write the question · 18 min
+              </span>
+            </div>
+            <div class="notif">
+              <span class="app">Adnotia · step 2 of 3</span
+              ><span class="app tnum">18 min left</span>
+              <span class="nt">Write the question</span>
+              <span class="np"
+                ><i style="flex: 18; background: #2b5ba0"></i
+                ><i style="flex: 7; background: #b5c8ee"></i
+              ></span>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

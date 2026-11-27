@@ -7,18 +7,45 @@ Status: draft 0.1 · September 2026 · Milestones are sequential. Each has a def
 **Superseded in direction, 14 November 2026.** ADR-043 and ADR-044 record the
 owner's decision to rebuild as a phone app around shared domains, and what the
 research settled. Everything below describes the first build and stays as its
-record. Where things stand now:
+record. Where things stand now, refreshed 27 November 2026:
 
 - Done: the decisions (ADR-043, ADR-044), the research report and its notes,
   the full licence text, and two corrections to the evidence documents.
 - Also done: the product brief (`09-product-brief.md`) and the design
-  direction and palette (ADR-045).
+  direction and palette of ADR-045. The owner tried that direction in the
+  prototype and set it aside; the palette stays.
 - All five handoff tasks in `docs/handoff/copilot-tasks.md` are done: the task,
   routine and options models in `src/domains/`, schema version 2 holding them
-  (ADR-046), and the review packet in `docs/review/`. None of the domains is
-  wired into an interface yet.
-- Next: item 2 in the brief's order of work, how the phone apps are built. It
-  is the owner's decision and blocks every real screen.
+  (ADR-046), and the review packet in `docs/review/`. The prototype below is
+  the only interface that uses the domains so far.
+- The design is now Lantern, with the Now capsule. `design/lantern/` holds its
+  specification (`SPEC.md`), the board of phones and the Lock Screen
+  (`board.html`) and their renders (`shots/`). ADR-047 records it and is still
+  proposed: the owner chose the direction and has not yet confirmed the board.
+- The benchmark prototype is rebuilt in that design (brief, order of work item
+  3), from `design/lantern/PROTOTYPE-PLAN.md`. The code is in `src/bench/`, its
+  tests in `tests/bench/`, and it will be served at `/bench/` on the site once
+  the branch named under Next is merged into `main`, which does not hold it
+  yet. It holds Today, the rest of today, Focus, capture, Tasks, a task's own
+  page and its sheets, Routines, the Library and Me, on the real task model,
+  with a Reduce Motion path and an animated one. Running a routine is left out
+  of this round. It bundles Instrument Sans as a trial, recorded in a dated
+  note on ADR-047. It is still plain web code with no framework, so trying it
+  commits to nothing, and it keeps its data under its own storage key and is
+  linked from nowhere.
+- Waiting on the owner: trying it, and the questions it leaves, gathered in
+  `design/lantern/QUESTIONS.md`. They are grouped as behaviour, words, the
+  look, checks only the phone can make, and the defaults the build took so it
+  would not wait. Confirming ADR-047, charcoal or white places and the typeface
+  are among them.
+- Next: the owner tries `/bench/` on the iPhone, in Safari and from the home
+  screen. The site deploys only what has passed the gates on `main` (ADR-040),
+  so this needs the branch `claude/intelligent-darwin-488bx6` merged into
+  `main` first. Then the owner decides how the phone apps are built (item 2).
+  Feeling good in Safari argues for wrapping the web code; feeling not quite
+  like an app argues for React Native or native. What a web page cannot show
+  at all is listed in About this prototype and in section 20 of the plan, and
+  counts in that choice.
 - Waiting on a person: a second reader for evidence tiers, who now has
   `docs/review/claims.md` to work through; someone to confirm the crisis
   numbers in `docs/review/crisis-numbers.md`; and the regulatory and

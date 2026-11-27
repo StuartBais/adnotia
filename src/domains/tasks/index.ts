@@ -146,6 +146,22 @@ export function stopWork(tasks: Tasks, id: string, now: Date): Task[] {
   return update(tasks, id, (task) => stopped(task, now));
 }
 
+/**
+ * Takes back one session as if it had never begun: the session that started
+ * at `start` is removed, and every other session, open or closed, is left
+ * alone. For an undo straight after a start, so a few seconds of work do not
+ * leave the task looking paused. Returns the list unchanged if no session of
+ * this task started then, so an undo applied twice does nothing the second time.
+ */
+export function discardSession(tasks: Tasks, id: string, start: string): Task[] {
+  const target = findTask(tasks, id);
+  if (!target.sessions.some((session) => session.start === start)) return [...tasks];
+  return update(tasks, id, (task) => ({
+    ...task,
+    sessions: task.sessions.filter((session) => session.start !== start),
+  }));
+}
+
 export function complete(tasks: Tasks, id: string, now: Date): Task[] {
   return update(tasks, id, (task) => ({
     ...stopped(task, now),

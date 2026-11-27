@@ -1,0 +1,461 @@
+// Every change a person makes from Today, as a pure step from one state to the
+// next (design/lantern/PROTOTYPE-PLAN.md section 5). Each is one write, so a
+// task and the prototype's own facts about it land together.
+//
+// One running thing: starting a task stops any other, through the model's
+// startWork. The marks the prototype keeps about a task (set aside, a clock
+// the app closed) are cleared when that task starts again, because they were
+// about the session that ended.
+//
+// Every quick tap can be taken back (SPEC 9.8, plan section 12): a change
+// that can returns its six-second lines for the Next line, the Undo pill's
+// spoken name, and an inverse. The inverse works on the state as it is when
+// Undo is pressed, through the model, so anything else done in the meantime
+// stands.
+
+import * as model from '../domains/tasks';
+import { loggingDay } from '../kernel/dates';
+import { stepFacts, timeFacts, type BenchDomains, type BenchState, type UndoLines } from './state';
+import { ANNOUNCE, T, keptAtStep, minutesSpoken, resumedAt, say } from './strings';
+
+/** A change that can be taken back for six seconds. */
+export interface Undo {
+  /** What the Next line says meanwhile (SPEC 9.8, the rows at the foot). */
+  lines: UndoLines;
+  /** The Undo pill's spoken name, naming what it takes back (SPEC 11). */
+  name: string;
+  /** Takes the change back, on the state as it is when Undo is pressed. */
+  inverse: (state: BenchDomains, now: Date) => BenchDomains;
+  /**
+   * The tasks the change was about, and the lines name. Deleting one of them
+   * ends the Undo: what it would take back is gone, and its lines would say a
+   * thing that is no longer so.
+   */
+  about: readonly string[];
+  /** The step a Step done finished, so its disc in Focus can end this Undo. */
+  step?: string;
+  /** The task a tick finished, so its row's disc takes it back the same way. */
+  ticked?: string;
+  /**
+   * After Save: Undo removes the item and opens the capture sheet again with
+   * the text still in it (SPEC 5.5). The sheet is the app's to open.
+   */
+  reopen?: { text: string; to: 'inbox' | 'today' };
+}
+
+export interface Changed {
+  state: BenchDomains;
+  /** What the live region says, if anything (SPEC 11 "Announcements"). */
+  announce?: string;
+  /** Present when the change can be taken back. */
+  undo?: Undo;
+}
+
+const find = (state: BenchDomains, id: string) => state.tasks.find((task) => task.id === id);
+
+type Marks = Pick<BenchState, 'setAside' | 'closedByApp'>;
+
+function clearMarks(bench: BenchState, id: string): BenchState {
+  const { setAside, closedByApp, ...rest } = bench;
+  return {
+    ...rest,
+    ...(setAside && setAside.taskId !== id ? { setAside } : {}),
+    ...(closedByApp && closedByApp.taskId !== id ? { closedByApp } : {}),
+  } as BenchState;
+}
+
+/** Puts back the marks a start cleared, as they were before it. */
+function restoreMarks(bench: BenchState, marks: Marks): BenchState {
+  const { setAside: _setAside, closedByApp: _closed, ...rest } = bench;
+  return {
+    ...rest,
+    ...(marks.setAside ? { setAside: marks.setAside } : {}),
+    ...(marks.closedByApp ? { closedByApp: marks.closedByApp } : {}),
+  } as BenchState;
+}
+
+/**
+ * A new session on the task, every other stopped, and the inverse that takes
+ * the session back as if it had never begun: discardSession, the marks it
+ * cleared put back, and whatever it stopped started again at its step.
+ */
+function begin(
+  state: BenchDomains,
+  id: string,
+  now: Date,
+): {
+  state: BenchDomains;
+  inverse: Undo['inverse'];
+  about: readonly string[];
+  stopped: model.Task | undefined;
+} {
+  const stopped = model.running(state.tasks);
+  const startedAt = now.toISOString();
+  const marks: Marks = {
+    ...(state.bench.setAside ? { setAside: state.bench.setAside } : {}),
+    ...(state.bench.closedByApp ? { closedByApp: state.bench.closedByApp } : {}),
+  };
+  const other = stopped && stopped.id !== id ? stopped : undefined;
+  return {
+    state: {
+      ...state,
+      tasks: model.startWork(state.tasks, id, now),
+      bench: clearMarks(state.bench, id),
+    },
+    stopped: other,
+    about: other ? [id, other.id] : [id],
+    inverse(current, at) {
+      if (!find(current, id)) return current;
+      let tasks = model.discardSession(current.tasks, id, startedAt);
+      const back = other && find({ ...current, tasks }, other.id);
+      if (back && back.doneAt === undefined) tasks = model.startWork(tasks, back.id, at);
+      return { ...current, tasks, bench: restoreMarks(current.bench, marks) };
+    },
+  };
+}
+
+/**
+ * Start: a new session on the task, and every other stopped. Started while
+ * another runs, it is SPEC 5.3's "Start this instead": the six-second lines
+ * say both tasks, and Undo goes back to the other at its step.
+ */
+export function start(state: BenchDomains, id: string, now: Date): Changed {
+  const task = find(state, id);
+  if (!task || task.doneAt !== undefined || model.running(state.tasks)?.id === id) {
+    return { state };
+  }
+  const begun = begin(state, id, now);
+  if (begun.stopped) {
+    const step = stepFacts(state.tasks, begun.stopped).position?.number;
+    const kept = keptAtStep(begun.stopped.title, step);
+    return {
+      state: begun.state,
+      announce: ANNOUNCE.started(task.title, begun.stopped.title, step),
+      undo: {
+        lines: { line1: `${T.started} ${task.title}`, line2: kept },
+        name: say.undoStartInstead(kept),
+        inverse: begun.inverse,
+        about: begun.about,
+      },
+    };
+  }
+  return {
+    state: begun.state,
+    undo: {
+      lines: { line1: T.started, line2: task.title },
+      name: say.undoStart(task.title),
+      inverse: begun.inverse,
+      about: begun.about,
+    },
+  };
+}
+
+/** Resume, on paused Today: the same new session, said as "Resumed". */
+export function resume(state: BenchDomains, id: string, now: Date): Changed {
+  const task = find(state, id);
+  if (!task || task.doneAt !== undefined || model.running(state.tasks)?.id === id) {
+    return { state };
+  }
+  const begun = begin(state, id, now);
+  const step = stepFacts(state.tasks, task).position?.number;
+  return {
+    state: begun.state,
+    undo: {
+      lines: { line1: T.resumed, line2: resumedAt(task.title, step) },
+      name: say.undoResume(task.title),
+      inverse: begun.inverse,
+      about: begun.about,
+    },
+  };
+}
+
+/** Pause is not taken back: Resume is one tap in the same place. */
+export function pause(state: BenchDomains, id: string, now: Date): Changed {
+  if (!find(state, id)) return { state };
+  return {
+    state: { ...state, tasks: model.stopWork(state.tasks, id, now) },
+    announce: ANNOUNCE.paused,
+  };
+}
+
+/**
+ * Step done: the current step is finished. On the last step, or for a task
+ * with no steps, the button reads Done and finishes the task as well; Undo
+ * then reopens both and, if the clock was running, runs it again.
+ */
+export function stepDone(state: BenchDomains, id: string, now: Date): Changed {
+  const task = find(state, id);
+  if (!task || task.doneAt !== undefined) return { state };
+  const steps = stepFacts(state.tasks, task);
+  const step = steps.current;
+  const wasRunning = model.running(state.tasks)?.id === id;
+  let tasks = state.tasks;
+  if (step) tasks = model.complete(tasks, step.id, now);
+
+  if (!step || steps.isLast) {
+    tasks = model.complete(tasks, id, now);
+    return {
+      state: { ...state, tasks },
+      announce: ANNOUNCE.done(task.title),
+      undo: {
+        lines: step
+          ? { line1: T.stepDone, line2: step.title }
+          : { line1: T.done, line2: task.title },
+        name: step ? say.undoStepDone(step.title) : say.undoDone(task.title),
+        about: step ? [id, step.id] : [id],
+        inverse(current, at) {
+          let back = current.tasks;
+          if (step && find(current, step.id)) back = model.reopen(back, step.id);
+          if (!find(current, id)) return { ...current, tasks: back };
+          back = model.reopen(back, id);
+          if (wasRunning && !model.running(back)) back = model.startWork(back, id, at);
+          return { ...current, tasks: back };
+        },
+      },
+    };
+  }
+  return {
+    state: { ...state, tasks },
+    announce: ANNOUNCE.stepDone(steps.after?.title ?? task.title),
+    undo: {
+      lines: { line1: T.stepDone, line2: step.title },
+      name: say.undoStepDone(step.title),
+      step: step.id,
+      about: [id, step.id],
+      inverse: (current) =>
+        find(current, step.id)
+          ? { ...current, tasks: model.reopen(current.tasks, step.id) }
+          : current,
+    },
+  };
+}
+
+/** Set aside: the paused task goes, keeping its place at its step (SPEC 5.7c). */
+export function setAside(state: BenchDomains, id: string, now: Date): Changed {
+  const task = find(state, id);
+  if (!task) return { state };
+  const before = state.bench.setAside;
+  return {
+    state: { ...state, bench: { ...state.bench, setAside: { taskId: id, at: now.toISOString() } } },
+    undo: {
+      lines: { line1: T.setAside, line2: task.title },
+      name: say.undoSetAside(task.title),
+      about: [id],
+      inverse(current) {
+        const { setAside: _gone, ...bench } = current.bench;
+        return {
+          ...current,
+          bench: (before ? { ...bench, setAside: before } : bench) as BenchState,
+        };
+      },
+    },
+  };
+}
+
+/**
+ * +5 min, in Focus (SPEC 5.4): five more minutes on the task's estimate. With
+ * the estimate used up it first comes up to the whole minutes worked, so the
+ * bar shows five minutes left; with no estimate it becomes the whole minutes
+ * worked plus five (owner question 6). Not taken back: SPEC 9.8 lists no six
+ * seconds for it, and the minutes it changed are beside it. SPEC 11 gives it
+ * no announcement; it says what the bar now reads, so a tap is not silent.
+ */
+export function addFive(state: BenchDomains, id: string, now: Date): Changed {
+  const task = find(state, id);
+  if (!task || task.doneAt !== undefined) return { state };
+  const facts = timeFacts(task, now);
+  const base = facts.estimate === undefined ? facts.soFar : Math.max(facts.estimate, facts.soFar);
+  const tasks = model.setEstimate(state.tasks, id, base + 5);
+  // Said as the bar beside it now reads: "23 of 30 minutes left, ends 10:28".
+  const after = timeFacts(find({ ...state, tasks }, id) ?? task, now);
+  return {
+    state: { ...state, tasks },
+    announce: minutesSpoken({
+      kind: 'left',
+      left: after.left ?? 0,
+      estimate: after.estimate ?? 0,
+      endsAt: after.endsAt,
+    }),
+  };
+}
+
+/**
+ * A done step's disc, in Focus (SPEC 9.7): not done after all, and the current
+ * step again. It is its own way back, as a ticked row's disc is.
+ */
+export function reopenStep(state: BenchDomains, stepId: string): Changed {
+  const step = find(state, stepId);
+  if (!step || step.doneAt === undefined) return { state };
+  return {
+    state: { ...state, tasks: model.reopen(state.tasks, stepId) },
+    announce: ANNOUNCE.undoneThen(ANNOUNCE.now(step.title)),
+  };
+}
+
+/**
+ * A ring ticked in a list: the task is done, and stays in place as a disc. In
+ * Tasks › Today the present is listed too, so its ring can finish a running
+ * task; Undo then runs its clock again, as Undo after Done does.
+ */
+export function tick(state: BenchDomains, id: string, now: Date): Changed {
+  const task = find(state, id);
+  if (!task || task.doneAt !== undefined) return { state };
+  const wasRunning = model.running(state.tasks)?.id === id;
+  return {
+    state: { ...state, tasks: model.complete(state.tasks, id, now) },
+    announce: ANNOUNCE.done(task.title),
+    undo: {
+      lines: { line1: T.done, line2: task.title },
+      name: say.undoDone(task.title),
+      ticked: id,
+      about: [id],
+      inverse(current, at) {
+        if (!find(current, id)) return current;
+        let tasks = model.reopen(current.tasks, id);
+        if (wasRunning && !model.running(tasks)) tasks = model.startWork(tasks, id, at);
+        return { ...current, tasks };
+      },
+    },
+  };
+}
+
+/** The ticked row's disc: not done after all. It is its own way back. */
+export function untick(state: BenchDomains, id: string): Changed {
+  const task = find(state, id);
+  if (!task || task.doneAt === undefined) return { state };
+  return {
+    state: { ...state, tasks: model.reopen(state.tasks, id) },
+    announce: ANNOUNCE.undone,
+  };
+}
+
+/**
+ * Save, in the capture sheet (SPEC 5.5): the words go to the inbox with no
+ * date, or onto today's list, anytime, and the kept draft goes in the same
+ * write. Nothing else is asked. An empty field saves nothing. Undo removes the
+ * item, and the app opens the sheet again with the text in it.
+ */
+export function save(state: BenchDomains, text: string, to: 'inbox' | 'today', now: Date): Changed {
+  const title = text.trim();
+  if (title === '') return { state };
+  let tasks = model.capture(state.tasks, title, now);
+  const id = tasks[tasks.length - 1]!.id;
+  if (to === 'today') tasks = model.schedule(tasks, id, { kind: 'anytime', date: loggingDay(now) });
+  const { capture: _kept, ...drafts } = state.bench.drafts;
+  return {
+    state: { ...state, tasks, bench: { ...state.bench, drafts } },
+    announce: to === 'inbox' ? ANNOUNCE.saved : ANNOUNCE.savedToday,
+    undo: {
+      lines: { line1: to === 'inbox' ? T.savedToInbox : T.savedToToday, line2: title },
+      name: say.undoSave(title, to),
+      reopen: { text: title, to },
+      about: [id],
+      inverse: (current) =>
+        find(current, id) ? { ...current, tasks: model.remove(current.tasks, id) } : current,
+    },
+  };
+}
+
+// ---------------------------------------------------------------- a task's page
+
+/**
+ * "Add a step", on a task's page (SPEC 5.3): the words become the task's last
+ * step. The field stays open for the next one, and what it held is no longer
+ * a draft. Not taken back: SPEC 9.8 gives it no six seconds, and the step is
+ * on screen to see.
+ */
+export function addStep(state: BenchDomains, id: string, text: string, now: Date): Changed {
+  const title = text.trim();
+  if (title === '' || !find(state, id)) return { state };
+  const { [stepDraftKey(id)]: _kept, ...fields } = state.bench.drafts.fields;
+  return {
+    state: {
+      ...state,
+      tasks: model.addStep(state.tasks, id, title, now),
+      bench: { ...state.bench, drafts: { ...state.bench.drafts, fields } },
+    },
+  };
+}
+
+/** Where "Add a step" keeps what it holds while it is closed (plan section 13). */
+export const stepDraftKey = (id: string): string => `step:${id}`;
+
+/**
+ * The when sheet's choice (SPEC 12). A booked time keeps the slot's length
+ * and the estimate equal (gap G6, owner question 8). A slot that passed is
+ * no longer a passed slot once it is planned again.
+ */
+export function setWhen(state: BenchDomains, id: string, when: model.When): Changed {
+  const task = find(state, id);
+  if (!task) return { state };
+  let tasks = model.schedule(state.tasks, id, when);
+  if (when.kind === 'timed') tasks = model.setEstimate(tasks, id, when.durationMinutes);
+  // A booked item given another day keeps its length, as its estimate.
+  else if (task.when.kind === 'timed' && task.estimateMinutes === undefined) {
+    tasks = model.setEstimate(tasks, id, task.when.durationMinutes);
+  }
+  return {
+    state: {
+      ...state,
+      tasks,
+      bench: { ...state.bench, passed: state.bench.passed.filter((passed) => passed !== id) },
+    },
+  };
+}
+
+/**
+ * "How long" (SPEC 12): for a booked item, the slot's length and the
+ * estimate together, kept equal; for anything else, the estimate. A booked
+ * slot is never shorter than 5 minutes; an estimate taken below 5 is unset.
+ */
+export function setLength(state: BenchDomains, id: string, minutes: number | undefined): Changed {
+  const task = find(state, id);
+  if (!task) return { state };
+  if (task.when.kind === 'timed') {
+    const length = Math.max(5, minutes ?? 5);
+    let tasks = model.schedule(state.tasks, id, { ...task.when, durationMinutes: length });
+    tasks = model.setEstimate(tasks, id, length);
+    return { state: { ...state, tasks } };
+  }
+  const estimate = minutes === undefined || minutes < 5 ? undefined : minutes;
+  return { state: { ...state, tasks: model.setEstimate(state.tasks, id, estimate) } };
+}
+
+/** The note sheet: the words as they stand. An empty note is no note. */
+export function setNote(state: BenchDomains, id: string, text: string): Changed {
+  const task = find(state, id);
+  if (!task) return { state };
+  const notes = text.trim() === '' ? undefined : text;
+  if ((task.notes ?? undefined) === notes) return { state };
+  return { state: { ...state, tasks: model.setNotes(state.tasks, id, notes) } };
+}
+
+/** Rename: an empty title keeps the one it had. */
+export function rename(state: BenchDomains, id: string, text: string): Changed {
+  const task = find(state, id);
+  const title = text.trim();
+  if (!task || title === '' || title === task.title) return { state };
+  return { state: { ...state, tasks: model.rename(state.tasks, id, title) } };
+}
+
+/**
+ * Delete, after its confirm (plan section 11): the task goes, and its steps
+ * with it. What the prototype kept about it goes too. SPEC 9.8 gives Delete
+ * no Undo, and the confirm says so.
+ */
+export function remove(state: BenchDomains, id: string): Changed {
+  if (!find(state, id)) return { state };
+  const { [stepDraftKey(id)]: _draft, ...fields } = state.bench.drafts.fields;
+  const bench = clearMarks(state.bench, id);
+  return {
+    state: {
+      ...state,
+      tasks: model.remove(state.tasks, id),
+      bench: {
+        ...bench,
+        passed: bench.passed.filter((passed) => passed !== id),
+        drafts: { ...bench.drafts, fields },
+      },
+    },
+  };
+}

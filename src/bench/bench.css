@@ -1,0 +1,3479 @@
+/*
+ * The benchmark prototype, as Lantern with the Now capsule (design/lantern,
+ * ADR-047). A trial, not the design system: it exists to be held on a phone
+ * and judged. Values are lifted from design/lantern/board.html and SPEC.md
+ * sections 3, 7, 8 and 9; where a number appears here it is the board's.
+ *
+ * The face is Instrument Sans, bundled beside this file as a trial
+ * (fonts/README.md). `block` rather than `swap`: nothing in the prototype
+ * waits on measured text, and a flash of the system face would be judged as
+ * the design. The page's `font-src 'self'` is why the file sits here.
+ */
+
+@font-face {
+  font-family: 'Instrument Sans';
+  src: url('./fonts/InstrumentSans-latin.woff2') format('woff2');
+  font-weight: 400 700;
+  font-stretch: 75% 100%;
+  font-style: normal;
+  font-display: block;
+}
+
+/* ═════════════ Tokens (SPEC 7) ═════════════ */
+
+:root {
+  color-scheme: dark;
+
+  --charcoal: #222624; /* the present. white 15.3, ash 6.9, terracotta 6.3 */
+  --white: #ffffff; /* charcoal 15.3 */
+  --ash: #a9afab; /* on charcoal only, 6.9 */
+  --terra: #f28c5e; /* time and capture. charcoal on it 6.3 */
+  --stone: #eef0ec; /* the rest of today. charcoal 13.4, muted 5.9 */
+  --sage: #dfe9e0; /* done discs only */
+  --muted: #595c5b; /* on light only */
+  --ash-20: #3d413f; /* secondary pills on charcoal. white 10.4 */
+  --ash-30: #4b4f4d; /* the bar's track */
+  --ash-8: #2d312f; /* the note field, the dark switch */
+  --ash-15: #363b38; /* the lifted capsule */
+  --ash-edge: #737875; /* the lifted capsule's edge */
+  --tint-stone: #dee0dc; /* charcoal 8% on stone */
+  --tint-white: #edeeed; /* charcoal 8% on white */
+  --hair-dark: rgba(169, 175, 171, 0.16);
+  --hair-light: rgba(34, 38, 36, 0.1);
+  --lamp: #323634; /* the brightest point of the lantern's falloff */
+
+  --font: 'Instrument Sans', -apple-system, system-ui, sans-serif;
+
+  /* Shadows. Every one on the dock line ends inside the 14 pt gap above the drawer. */
+  --sh-drawer: 0 -6px 22px rgba(0, 0, 0, 0.24);
+  --sh-drawer-light: 0 -1px 0 rgba(34, 38, 36, 0.08), 0 -1px 5px rgba(34, 38, 36, 0.08);
+  --sh-cover: 0 -6px 10px -6px rgba(34, 38, 36, 0.16);
+  --sh-capsule: 0 6px 14px -6px rgba(34, 38, 36, 0.4), 0 2px 5px rgba(34, 38, 36, 0.12);
+  --sh-capsule-lift:
+    inset 0 0 0 1px var(--ash-edge), 0 6px 14px -6px rgba(0, 0, 0, 0.7),
+    0 2px 5px rgba(0, 0, 0, 0.4);
+  --sh-disc-dark: 0 6px 14px -6px rgba(0, 0, 0, 0.55);
+  --sh-disc-light:
+    inset 0 0 0 1px rgba(34, 38, 36, 0.15), 0 6px 14px -6px rgba(34, 38, 36, 0.45),
+    0 2px 5px rgba(34, 38, 36, 0.14);
+  --sh-lozenge: 0 1px 3px rgba(34, 38, 36, 0.12);
+  --sh-sheet: 0 -8px 28px rgba(0, 0, 0, 0.28);
+  --halo: 0 0 10px 2px rgba(242, 140, 94, 0.45);
+
+  /* ═════════════ The frame's rows (SPEC 3), from the safe areas ═════════════
+     On 390 x 844 with insets of 54 and 34 these land on the board exactly. */
+  --sa-top: max(env(safe-area-inset-top, 0px), 20px);
+  --sa-bot: env(safe-area-inset-bottom, 0px);
+  --tabs-b: max(calc(var(--sa-bot) - 2px), 12px); /* tabs end at y 812 */
+  --handle: 70px; /* the folded handle, 684–754 */
+  --hair-b: calc(var(--tabs-b) + 58px); /* the hairline, y 754 */
+  --fold-b: calc(var(--hair-b) + var(--handle)); /* the folded drawer's top, y 684 */
+  --dock-b: calc(var(--fold-b) + 14px); /* the dock line, 606–670 */
+  --lit-b: calc(var(--dock-b) + 64px + 56px); /* the lit block's foot, y 550 */
+  --lip-b: calc(var(--tabs-b) + 82px); /* the lip, y 730 */
+  --hdr-t: calc(var(--sa-top) + 4px); /* the header row, 58–102 */
+  --open-t: calc(var(--sa-top) + 6px); /* the open drawer's top, y 60 */
+  --content-t: calc(var(--sa-top) + 56px); /* content from y 110 */
+  --half-t: calc(var(--sa-top) + 312px); /* the half drawer's top at least, y 366 */
+}
+
+/* Compact heights: the handle is one 52 pt line (SPEC 3). */
+@media (max-height: 739px) {
+  :root {
+    --handle: 52px;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  background: var(--charcoal);
+  overscroll-behavior: none;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  color: var(--white);
+  font-family: var(--font);
+  font-size: 15px;
+  line-height: 20px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  font-synthesis: none;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  letter-spacing: inherit;
+  border: 0;
+  background: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  text-align: inherit;
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+h1,
+h2,
+h3,
+p,
+ul,
+ol {
+  margin: 0;
+  padding: 0;
+  font: inherit;
+}
+
+ul,
+ol {
+  list-style: none;
+}
+
+/* The focus ring is the ground's own ink, never terracotta (SPEC 7 keeps it to
+   time and capture): white on charcoal (15.3), charcoal on stone (13.4) and on
+   white (15.3). Each light ground sets --ring below, where it is drawn. */
+:root {
+  --ring: var(--white);
+}
+:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+/* Focus the app put back after a tap, the step once the capture sheet drops
+   (SPEC 5.5 draws no ring there). The next key, or focus moving on, ends it.
+   Above every ground's own --ring, the light disc's included. */
+.app [data-quiet]:focus-visible {
+  --ring: transparent;
+}
+
+.vh {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.sprite {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
+svg.i {
+  display: block;
+  flex: none;
+  width: 24px;
+  height: 24px;
+}
+svg.i12 {
+  width: 12px;
+  height: 12px;
+}
+svg.i16 {
+  width: 16px;
+  height: 16px;
+}
+svg.i18 {
+  width: 18px;
+  height: 18px;
+}
+svg.i20 {
+  width: 20px;
+  height: 20px;
+}
+svg.i28 {
+  width: 28px;
+  height: 28px;
+}
+
+/* ═════════════ Type roles (SPEC 8) ═════════════ */
+
+.t-step-focus {
+  font-size: 44px;
+  line-height: 50px;
+  font-weight: 700;
+  letter-spacing: -0.026em;
+}
+.t-step {
+  font-size: 40px;
+  line-height: 46px;
+  font-weight: 700;
+  letter-spacing: -0.024em;
+}
+.t-idle {
+  font-size: 32px;
+  line-height: 38px;
+  font-weight: 700;
+  letter-spacing: -0.022em;
+}
+.t-place {
+  font-size: 28px;
+  line-height: 34px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.t-min-focus {
+  font-size: 24px;
+  line-height: 30px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.t-min {
+  font-size: 22px;
+  line-height: 28px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.t-field {
+  font-size: 22px;
+  line-height: 28px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+.t-context {
+  font-size: 20px;
+  line-height: 26px;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+}
+.t-control {
+  font-size: 17px;
+  line-height: 22px;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+}
+.t-sheet {
+  font-size: 17px;
+  line-height: 22px;
+  font-weight: 650;
+  letter-spacing: -0.005em;
+}
+.t-row {
+  font-size: 17px;
+  line-height: 22px;
+  font-weight: 500;
+}
+.t-meta {
+  font-size: 15px;
+  line-height: 20px;
+  font-weight: 500;
+}
+.t-label {
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: 650;
+  letter-spacing: 0.01em;
+}
+
+/* One separator everywhere: a word space plus 0.3em either side. */
+.sep {
+  margin: 0 0.3em;
+}
+
+/* ═════════════ The app and its layers (plan section 8) ═════════════ */
+
+.app {
+  position: fixed;
+  inset: 0;
+  /* Clipped, not merely hidden: a hidden overflow can still be scrolled by
+     focus or scrollIntoView, which would slide the whole frame off its rows. */
+  overflow: hidden;
+  overflow: clip;
+  background: var(--charcoal);
+  color: var(--white);
+}
+
+/* For review on a desktop: the phone's width, centred. */
+@media (min-width: 500px) {
+  .app {
+    left: calc(50% - 215px);
+    right: calc(50% - 215px);
+  }
+}
+
+.screen {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
+/* The places, in charcoal (the default) or white (the owner's alternative). */
+.app[data-places='white'][data-ground='place'] .screen {
+  background: var(--white);
+  color: var(--charcoal);
+}
+.app[data-places='white'][data-ground='place'] .screen,
+.app[data-places='white'][data-ground='place']:not([data-focus]) .dock {
+  --ring: var(--charcoal);
+}
+
+/* The lantern's falloff (SPEC 7): a still pool of light around the block. */
+.screen.today {
+  background:
+    radial-gradient(
+      ellipse 360px 300px at 170px var(--ly, 380px),
+      #323634 0%,
+      rgba(50, 54, 52, 0.66) 38%,
+      rgba(50, 54, 52, 0.22) 72%,
+      rgba(34, 38, 36, 0) 100%
+    ),
+    var(--charcoal);
+}
+.screen.today[data-lamp='lit'] {
+  --ly: calc(100% - var(--lit-b) - 170px); /* (170, 380): Today and paused Today */
+}
+.screen.today[data-lamp='idle'] {
+  --ly: calc(var(--sa-top) + 166px); /* (170, 220): nothing running */
+}
+.screen.today[data-lamp='planned'] {
+  --ly: calc(100% - var(--lit-b) - 160px); /* (170, 390): nothing planned */
+}
+
+/* The fade behind the dock line on a place, while a capsule shows. */
+.fade {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: var(--fold-b);
+  height: 102px; /* 582 to the drawer */
+  z-index: 5;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    rgba(34, 38, 36, 0) 0,
+    rgba(34, 38, 36, 0.94) 24px,
+    rgba(34, 38, 36, 0.94) 100%
+  );
+}
+.fade[hidden] {
+  display: none;
+}
+.app[data-places='white'][data-ground='place'] .fade {
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0) 0,
+    rgba(255, 255, 255, 0.94) 24px,
+    rgba(255, 255, 255, 0.94) 100%
+  );
+}
+
+.live {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* ═════════════ Header row, 58–102, and Me (SPEC 9.10) ═════════════ */
+
+.hdr {
+  position: absolute;
+  top: var(--hdr-t);
+  left: 24px;
+  right: 24px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  z-index: 2;
+}
+.hdr > .grow,
+.hdr > .date,
+.hdr > .place-title {
+  flex: 1;
+  min-width: 0;
+}
+.date {
+  color: var(--ash);
+}
+.me {
+  flex: none;
+  width: 52px;
+  height: 44px;
+  border-radius: 22px;
+  display: grid;
+  place-items: center;
+  font-size: 15px;
+  line-height: 20px;
+  font-weight: 600;
+  background: var(--ash-20);
+  color: var(--white);
+}
+.hpill {
+  flex: none;
+  height: 44px;
+  border-radius: 22px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 16px 0 10px;
+  font-size: 15px;
+  line-height: 20px;
+  font-weight: 600;
+  background: var(--ash-20);
+  color: var(--white);
+}
+.app[data-places='white'][data-ground='place'] .screen .me,
+.app[data-places='white'][data-ground='place'] .screen .hpill {
+  background: var(--tint-white);
+  color: var(--charcoal);
+}
+
+/* ═════════════ The lantern (SPEC 9.1), bottom-aligned at y 550 ═════════════ */
+
+.lantern {
+  position: absolute;
+  left: 24px;
+  right: 24px;
+  bottom: var(--lit-b);
+}
+.lit-block {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+.lit-block > * {
+  display: block;
+}
+.nowline {
+  position: relative;
+  height: 20px;
+  white-space: nowrap;
+  color: var(--ash);
+  font-size: 15px;
+  line-height: 20px;
+  font-weight: 500;
+}
+.nowtag {
+  display: inline;
+  white-space: nowrap;
+  color: var(--terra);
+  font-size: 15px;
+  line-height: 20px;
+  font-weight: 650;
+}
+/* The dot is inline so the tag keeps the text's baseline: a crisp 7 pt disc, no halo. */
+.nowtag::before {
+  content: '';
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-right: 6px;
+  vertical-align: 1.5px;
+  border-radius: 50%;
+  background: var(--terra);
+}
+.nowline.paused > svg {
+  display: inline-block;
+  vertical-align: -2.5px;
+  margin-right: 6px;
+  color: var(--ash);
+}
+.nowline.paused b {
+  font-weight: 650;
+  color: var(--white);
+}
+/* "Focus ›" labels the block, which is the target: words and a chevron, no fill. */
+.flabel {
+  position: absolute;
+  right: -4px;
+  top: 0;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  color: var(--ash);
+  font-size: 15px;
+  line-height: 20px;
+  font-weight: 600;
+}
+.lit-block .ttl {
+  margin-top: 4px;
+  color: var(--ash);
+}
+.lit-block .step {
+  margin-top: 14px;
+  color: var(--white);
+  text-wrap: balance;
+}
+.lit-block .bar {
+  margin-top: 28px;
+}
+.mins {
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+  white-space: nowrap;
+}
+.lit-block .mins {
+  margin-top: 14px;
+}
+.mins strong {
+  color: var(--terra);
+}
+.mins strong.still {
+  color: var(--white);
+}
+.mins .rest {
+  color: var(--ash);
+}
+.note {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  height: 20px;
+  color: var(--ash);
+  white-space: nowrap;
+  min-width: 0;
+}
+.note > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.note b {
+  font-weight: 650;
+}
+.lit-block .note {
+  margin-top: 18px;
+}
+
+/* Paused (5.7c): the minutes row makes room for Set aside, 44 tall beside it,
+   so the block starts 14 higher than Today's: minutes at 480–508, Set aside at
+   472–516, the note at 530. */
+.lantern.paused .lit-block .mins {
+  margin-top: 24px;
+}
+.lantern.paused .lit-block .note {
+  margin-top: 22px;
+}
+.lantern .aside {
+  position: absolute;
+  right: 0;
+  bottom: var(--aside-b, 34px);
+}
+
+/* ═════════════ The unlit lantern (5.7) and nothing planned (5.7b) ═════════════ */
+
+.idle {
+  position: absolute;
+  left: 24px;
+  right: 24px;
+  top: var(--content-t);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+.idle-status {
+  height: 22px;
+  white-space: nowrap;
+  color: var(--ash);
+  font-size: 15px;
+  line-height: 22px;
+  font-weight: 500;
+}
+.idle-status b {
+  font-size: 17px;
+  line-height: 22px;
+  font-weight: 650;
+  color: var(--white);
+}
+.idle-block {
+  margin-top: 20px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 2px;
+}
+.idle-block > * {
+  display: block;
+}
+.idle-block .label {
+  color: var(--ash);
+}
+.idle-block .sentence {
+  margin-top: 12px;
+  color: var(--white);
+  text-wrap: balance;
+}
+.idle-block .label + .sentence {
+  margin-top: 12px;
+}
+.idle-block .sentence:first-child {
+  margin-top: 0;
+}
+.idle-block .after {
+  margin-top: 10px;
+  color: var(--ash);
+}
+.idle-block .after b {
+  font-weight: 650;
+}
+.idle-block .meta {
+  margin-top: 6px;
+  color: var(--ash);
+}
+.idle-block .under {
+  margin-top: 10px;
+  color: var(--ash);
+}
+.idle .pill {
+  margin-top: 12px;
+}
+/* Start is drawn 116 wide, x 24–140, its glyph and word centred (5.7). */
+.idle .pill.start {
+  width: 116px;
+  padding: 0;
+}
+
+.planned {
+  position: absolute;
+  left: 24px;
+  right: 24px;
+  bottom: var(--lit-b);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+.planned h1 {
+  color: var(--white);
+  text-wrap: balance;
+}
+.planned p {
+  margin-top: 10px;
+  color: var(--ash);
+}
+/* The board sets the line at 454 (17/22, to 476) and the pill at 494. */
+.planned .pill {
+  margin-top: 18px;
+}
+
+/* ═════════════ The bar (SPEC 9.2) ═════════════ */
+
+.bar {
+  position: relative;
+  display: block;
+  flex: none;
+  width: 100%;
+  height: var(--h);
+  border-radius: calc(var(--h) / 2);
+  background: var(--ash-30);
+}
+.bar-today {
+  --h: 10px;
+}
+.bar-focus {
+  --h: 12px;
+}
+.bar-page {
+  --h: 8px;
+  width: 132px;
+}
+.bar-capsule {
+  --h: 4px;
+}
+.bar .fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: calc(var(--p, 0) * 100%);
+  background: var(--terra);
+  border-radius: calc(var(--h) / 2) 1px 1px calc(var(--h) / 2);
+}
+/* The tick: a white mark 2 wide and 8 taller than the bar, with the one halo. */
+.bar .fill::after {
+  content: '';
+  position: absolute;
+  right: -1px;
+  top: -4px;
+  width: 2px;
+  height: calc(var(--h) + 8px);
+  border-radius: 1px;
+  background: var(--white);
+  box-shadow: var(--halo);
+}
+/* The end cap: a 2 wide ash mark 4 taller than the bar, so the whole estimate reads. */
+.bar .end {
+  position: absolute;
+  right: 0;
+  top: -2px;
+  width: 2px;
+  height: calc(var(--h) + 4px);
+  border-radius: 1px;
+  background: var(--ash);
+}
+/* The capsule's bar keeps the end cap and drops the tick. */
+.bar-capsule .fill {
+  border-radius: calc(var(--h) / 2);
+}
+.bar-capsule .fill::after {
+  display: none;
+}
+/* Focus: edge to edge, square ends; the screen's edge is the end. */
+.bar-focus,
+.bar-focus .fill {
+  border-radius: 0;
+}
+.bar-focus .end {
+  display: none;
+}
+/* Paused: the fill ash and still; the tick and halo go, the cap stays. */
+.bar.is-paused .fill,
+.bar.is-frozen .fill {
+  background: var(--ash);
+}
+.bar.is-paused .fill::after,
+.bar.is-frozen .fill::after {
+  display: none;
+}
+/* Used up: a 1 pt ash outline with nothing inside. */
+.bar.is-over {
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--ash);
+}
+.bar.is-over .fill,
+.bar.is-over .end {
+  display: none;
+}
+/* No estimate: one terracotta length from the leading edge, no track, tick or cap. */
+.bar.is-countUp {
+  background: transparent;
+}
+.bar.is-countUp .fill {
+  border-radius: calc(var(--h) / 2);
+}
+.bar.is-countUp .fill::after,
+.bar.is-countUp .end {
+  display: none;
+}
+
+/* ═════════════ Duration tracks (SPEC 9.2) ═════════════ */
+
+.dur {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  flex: none;
+  font-size: 15px;
+  line-height: 20px;
+  font-weight: 500;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.dur .m {
+  display: block;
+  flex: none;
+  height: 4px;
+  border-radius: 2px;
+  background: currentColor;
+  position: relative;
+  top: 1px; /* centred on the x-height, not on the line box */
+}
+
+/* ═════════════ Pills (SPEC 9.5) ═════════════ */
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex: none;
+  height: 56px;
+  border-radius: 28px;
+  font-size: 17px;
+  line-height: 22px;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  white-space: nowrap;
+}
+.pill.white {
+  background: var(--white);
+  color: var(--charcoal);
+}
+.pill.ash {
+  background: var(--ash-20);
+  color: var(--white);
+}
+.pill.present {
+  background: var(--charcoal);
+  color: var(--white);
+}
+.pill.pad {
+  padding: 0 22px 0 18px;
+}
+.pill.p44 {
+  height: 44px;
+  border-radius: 22px;
+  padding: 0 20px;
+  font-size: 15px;
+  line-height: 20px;
+}
+
+/* ═════════════ The dock line, 606–670 (SPEC 3) ═════════════ */
+
+.dock {
+  position: absolute;
+  left: 24px;
+  right: 24px;
+  bottom: var(--dock-b);
+  height: 64px;
+  z-index: 30;
+  pointer-events: none;
+}
+.dock > * {
+  pointer-events: auto;
+}
+.dock .pill.dock-pill {
+  position: absolute;
+  top: 0;
+  height: 64px;
+  border-radius: 32px;
+}
+/* Glyph and word centred by their ink: Step done +2 on its right, Pause +4, Resume +6.
+   Pause keeps 120 so Resume fits the same slot, and ends where the capsule
+   does; Step done takes the rest, 138 on a 390 pt screen (x 24–162). */
+.dock .stepdone {
+  left: 0;
+  right: 204px;
+  padding-right: 2px;
+}
+.dock .pause {
+  right: 74px;
+  width: 120px;
+  padding-right: 4px;
+}
+.dock .pause.resume {
+  padding-right: 6px;
+}
+
+/* ═════════════ The capture disc (SPEC 9.4): x 302–366, y 606–670 ═════════════ */
+
+.capture {
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 64px;
+  height: 64px;
+  border-radius: 32px;
+  background: var(--terra);
+  color: var(--charcoal);
+  display: grid;
+  place-items: center;
+  box-shadow: var(--sh-disc-dark);
+}
+.capture.on-light {
+  box-shadow: var(--sh-disc-light);
+  --ring: var(--charcoal);
+}
+/* A draft kept (SPEC 9.4): a 12 pt white dot in a 2 pt charcoal ring, at the
+   disc's top right, where its edge meets the corner. */
+.draft-dot {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 8px;
+  background: var(--white);
+  box-shadow: inset 0 0 0 2px var(--charcoal);
+}
+
+/* ═════════════ The Now capsule (SPEC 4): x 24–292, y 606–670 ═════════════ */
+
+.capsule {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: calc(100% - 74px);
+  height: 64px;
+  border-radius: 32px;
+  background: var(--charcoal);
+  color: var(--white);
+  box-shadow: var(--sh-capsule);
+  -webkit-touch-callout: none;
+}
+.capsule.lift {
+  background: var(--ash-15);
+  box-shadow: var(--sh-capsule-lift);
+}
+.capsule .c1 {
+  position: absolute;
+  left: 16px;
+  right: 14px;
+  top: 7px;
+  height: 22px;
+  display: flex;
+  align-items: baseline;
+  white-space: nowrap;
+}
+.capsule .c1 .nowtag {
+  display: block;
+  flex: none;
+  width: 54px;
+}
+/* Paused: the word where Now was, in ash, at width 90 so it fits the 54 pt column. */
+.capsule .c1 .ptag {
+  display: block;
+  flex: none;
+  width: 54px;
+  font-size: 15px;
+  line-height: 20px;
+  font-weight: 650;
+  font-stretch: 90%;
+  color: var(--ash);
+}
+.capsule .c1 .cstep {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 17px;
+  line-height: 22px;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  color: var(--white);
+}
+.capsule > .bar {
+  position: absolute;
+  left: 16px;
+  right: 14px;
+  top: 33px;
+  width: auto;
+}
+/* Line 2 is one row. The task's name wraps out of sight, whole, when it does not fit. */
+.capsule .c2 {
+  position: absolute;
+  left: 16px;
+  right: 14px;
+  top: 40px;
+  height: 20px;
+  overflow: hidden;
+  display: flex;
+  flex-wrap: wrap;
+  font-size: 15px;
+  line-height: 20px;
+  font-weight: 500;
+  color: var(--ash);
+}
+.capsule .c2 > * {
+  white-space: nowrap;
+}
+.capsule .c2 b {
+  font-weight: 650;
+  color: var(--terra);
+}
+.capsule .c2 b.still {
+  color: var(--white);
+}
+/* The name at width 95, so "18 min left · Write the school email" fits 238 whole. */
+.capsule .c2 .tn > span:last-child {
+  font-stretch: 95%;
+}
+
+/* ═════════════ Focus (SPEC 5.4): the capsule opened all the way ═════════════ */
+
+/* Charcoal edge to edge, over everything but the dock line, with the lantern's
+   falloff behind the step at (190, 330). No stone and no white anywhere. */
+.focus {
+  position: absolute;
+  inset: 0;
+  z-index: 26;
+  --fly: calc(var(--sa-top) + 276px); /* the lamp, at (190, 330) */
+  background:
+    radial-gradient(
+      ellipse 360px 300px at 190px var(--fly),
+      var(--lamp) 0%,
+      rgba(50, 54, 52, 0.66) 38%,
+      rgba(50, 54, 52, 0.22) 72%,
+      rgba(34, 38, 36, 0) 100%
+    ),
+    var(--charcoal);
+  color: var(--white);
+}
+/* The foot, below the hairline at 754, read after the dock line. */
+.ffoot {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: var(--hair-b);
+  z-index: 27;
+  color: var(--ash);
+}
+.focus[hidden],
+.ffoot[hidden] {
+  display: none;
+}
+
+/* Reduce Motion (plan section 14, phase A): Focus fades in whole and out
+   again over 200 ms, and the capsule, or Step done and Pause, fade in already
+   in their slot. Nothing travels or scales. With motion on, in a browser that
+   plays it ([data-anim]), moves.ts draws these on their way instead. */
+@keyframes bench-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes bench-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+.app:not([data-anim])[data-focus] .focus,
+.app:not([data-anim])[data-focus] .ffoot,
+.dock .enter {
+  animation: bench-fade-in 200ms ease-out both;
+}
+.app:not([data-anim]) .focus[data-leaving],
+.app:not([data-anim]) .ffoot[data-leaving] {
+  animation: bench-fade-out 200ms ease-in both;
+}
+/* A tab switch, or a page pushed or popped: the new screen fades in over the
+   canvas. Lighting on Start: Today's colours come up over 150 ms where the
+   unlit sentence stood. */
+.screen > .enter {
+  animation: bench-fade-in 200ms ease-out both;
+}
+.screen .lantern.lighting {
+  animation: bench-fade-in 150ms ease-out both;
+}
+
+/* The content, from the context line at 166, scrolling only if a long step or
+   large text would take it under the dock line. */
+.fbody {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: var(--content-t);
+  bottom: calc(var(--dock-b) + 64px + 8px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 56px 24px 16px;
+  -webkit-overflow-scrolling: touch;
+}
+/* 166–186: "Focus" in ash at 650, then the task and the step count at 500.
+   A row: a long title is cut, and the step count keeps its place. */
+.fctx {
+  height: 20px;
+  color: var(--ash);
+  white-space: nowrap;
+  overflow: hidden;
+}
+.fctx b {
+  font-weight: 650;
+}
+.fctx-shown {
+  display: flex;
+  min-width: 0;
+}
+.fctx-shown > * {
+  flex: none;
+}
+.fctx-shown > .fctx-title {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* Paused, said in words where the screen is named: white, as on paused Today. */
+.fctx .fctx-lead {
+  color: var(--white);
+}
+/* 210–234: the done step's sage disc, in a 44 pt target, and the step in ash. */
+.fdone {
+  margin-top: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 17px;
+  line-height: 22px;
+  font-weight: 500;
+  color: var(--ash);
+  white-space: nowrap;
+}
+.fdone-t {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.fdisc {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  margin: -10px;
+  display: grid;
+  place-items: center;
+  color: var(--charcoal);
+}
+.fdisc > span {
+  width: 24px;
+  height: 24px;
+  border-radius: 12px;
+  background: var(--sage);
+  color: var(--charcoal);
+  display: grid;
+  place-items: center;
+}
+/* 252–352: the step, the one white heading, 44/50 at 700. */
+.fstep {
+  margin-top: 18px;
+  color: var(--white);
+  text-wrap: balance;
+}
+/* 366–388: "After this:" at 650, then the next step, in ash. */
+.fafter {
+  margin-top: 14px;
+  min-height: 22px;
+  color: var(--ash);
+}
+.fafter b {
+  font-weight: 650;
+}
+/* 420–432: the bar edge to edge, x 0–390, its ends square. */
+.fbody > .bar {
+  margin: 32px -24px 0;
+  width: auto;
+}
+/* 452–502: the minutes stacked, with +5 min (or Set aside) at 455–499 beside
+   them. Where the two no longer fit on one row, the pill goes under the
+   minutes, at the left (SPEC 11, large text). */
+.frow {
+  margin-top: 20px;
+  min-height: 50px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+}
+.fmins {
+  min-width: 0;
+  white-space: nowrap;
+}
+.fmins-shown {
+  display: flex;
+  flex-direction: column;
+}
+.fmins strong {
+  color: var(--terra);
+}
+.fmins strong.still {
+  color: var(--white);
+}
+.fmins .rest {
+  color: var(--ash);
+}
+/* 526–546: the note, as on Today. */
+.fbody > .note {
+  margin-top: 24px;
+}
+.fnote .note-shown {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+/* Compact heights: the dock line sits higher, so the lamp's gap and the gaps
+   between the parts close up, and a two-line step still clears the dock line
+   on a 667 pt screen. Undrawn: a proposal, as the compact handle is (SPEC 3). */
+@media (max-height: 739px) {
+  .fbody {
+    padding-top: 12px;
+  }
+  .fdone {
+    margin-top: 16px;
+  }
+  .fstep {
+    margin-top: 14px;
+  }
+  .fafter {
+    margin-top: 10px;
+  }
+  .fbody > .bar {
+    margin-top: 22px;
+  }
+  .frow {
+    margin-top: 14px;
+  }
+  .fbody > .note {
+    margin-top: 16px;
+  }
+}
+/* 754: a hairline of hair-dark, where the tabs' hairline is on a tabbed screen. */
+.ffoot .hair {
+  position: absolute;
+  left: 24px;
+  right: 24px;
+  top: 0;
+  height: 1px;
+  background: var(--hair-dark);
+}
+/* 776–796: the foot, text only. A long title is cut; its "in" part keeps its place. */
+.ff-line {
+  position: absolute;
+  left: 24px;
+  right: 24px;
+  bottom: calc(var(--tabs-b) + 16px);
+  height: 20px;
+  white-space: nowrap;
+}
+.ff-line.with-undo {
+  right: 110px;
+}
+.ff-line:focus-visible {
+  outline-offset: 4px;
+}
+.ff-shown {
+  display: flex;
+  min-width: 0;
+}
+.ff-shown > * {
+  flex: none;
+}
+.ff-shown > .ff-item {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* For six seconds after a tap: the Next line's Undo, at 764–808. */
+.ffoot .undo {
+  position: absolute;
+  right: 24px;
+  bottom: calc(var(--tabs-b) + 4px);
+  height: 44px;
+  padding: 0 20px;
+  border-radius: 22px;
+  display: inline-flex;
+  align-items: center;
+  background: var(--tint-stone);
+  color: var(--charcoal);
+  font-size: 15px;
+  line-height: 20px;
+  font-weight: 600;
+}
+
+/* ═════════════ The drawer (SPEC 9.8) ═════════════ */
+
+.drawer {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 100%;
+  z-index: 10;
+  background: var(--stone);
+  color: var(--charcoal);
+  --ring: var(--charcoal);
+  border-radius: 28px 28px 0 0;
+  box-shadow: var(--sh-drawer);
+  transform: translateY(var(--dy));
+  --dy: calc(100% - var(--fold-b));
+  /* Pulled by a mouse in a desktop review, it must not select its words. */
+  -webkit-user-select: none;
+  user-select: none;
+}
+.app[data-drawer='lip'] .drawer {
+  --dy: calc(100% - var(--lip-b));
+}
+.app[data-drawer='half'] .drawer {
+  --dy: var(--half-t);
+}
+.app[data-drawer='open'] .drawer {
+  --dy: var(--open-t);
+}
+/* On a white place the lift is short, so the gap under the capsule stays white. */
+.app[data-places='white'][data-ground='place'] .drawer {
+  box-shadow: var(--sh-drawer-light);
+}
+
+.grab {
+  position: absolute;
+  left: calc(50% - 19px);
+  top: 8px;
+  width: 38px;
+  height: 5px;
+  border-radius: 3px;
+  background: rgba(89, 92, 91, 0.42);
+  pointer-events: none;
+  touch-action: none;
+}
+
+/* The handle: one button the full width of the drawer's top. */
+.handle {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: var(--handle);
+  color: var(--charcoal);
+  touch-action: none;
+  border-radius: 28px 28px 0 0;
+}
+/* The handle spans the drawer's width and meets the tabs, so its ring is drawn
+   inside it, on the stone, following the drawer's top corners. */
+.handle:focus-visible {
+  outline-offset: -4px;
+}
+.handle > span {
+  position: absolute;
+}
+.handle .h-l1 {
+  left: 24px;
+  top: 20px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.handle .h-l2 {
+  left: 24px;
+  top: 40px;
+  width: 222px; /* clear of "Rest of today ⌃", whose ink starts at 266 */
+  height: 22px;
+  display: flex;
+  align-items: center;
+}
+.handle .h-time {
+  flex: none;
+  width: 60px;
+  font-size: 17px;
+  line-height: 22px;
+  font-weight: 650;
+}
+.handle .h-title {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 17px;
+  line-height: 22px;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+}
+/* "Rest of today ⌃", centred across both lines (715–735); it heads no column. */
+.handle .h-more {
+  right: 20px;
+  top: 31px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  color: var(--muted);
+}
+
+/* For six seconds after an undoable tap: Undo, a 44 pt tint-stone pill at the
+   right of the handle beside both lines, from x 288; line 2 runs to 276, 252
+   wide, so "Write the school email at step 2" (249) fits (SPEC 9.8). */
+.handle.with-undo .h-l2 {
+  width: 252px;
+}
+.drawer .undo,
+.foot .undo {
+  position: absolute;
+  right: 24px;
+  top: 18px;
+  height: 44px;
+  padding: 0 20px;
+  border-radius: 22px;
+  display: inline-flex;
+  align-items: center;
+  background: var(--tint-stone);
+  color: var(--charcoal);
+  font-size: 15px;
+  line-height: 20px;
+  font-weight: 600;
+}
+
+/* Compact: one 52 pt line, "Next 10:30 Call the dentist · in 25 min ⌃". */
+@media (max-height: 739px) {
+  .handle.folded .h-l1,
+  .handle.folded .h-l2,
+  .handle.hide.with-undo .h-l1,
+  .handle.hide.with-undo .h-l2 {
+    display: contents;
+  }
+  .handle.folded,
+  .handle.hide.with-undo {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 20px 0 24px;
+  }
+  .handle.folded > span,
+  .handle.folded .h-l1 > *,
+  .handle.folded .h-l2 > *,
+  .handle.hide.with-undo .h-l1 > *,
+  .handle.hide.with-undo .h-l2 > * {
+    position: static;
+  }
+  .handle.hide.with-undo .h-l1 > * {
+    color: var(--muted);
+  }
+  .handle.hide.with-undo .h-title {
+    flex: 0 1 auto;
+  }
+  .handle.folded .h-sec {
+    order: 1;
+    color: var(--muted);
+  }
+  .handle.folded .h-time {
+    order: 2;
+    width: auto;
+  }
+  .handle.folded .h-title {
+    order: 3;
+    flex: 0 1 auto;
+  }
+  .handle.folded .h-l1 .sep {
+    order: 4;
+    margin: 0;
+    color: var(--muted);
+  }
+  .handle.folded .h-when {
+    order: 5;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .handle.folded .h-more {
+    order: 6;
+    margin-left: auto;
+  }
+  .handle.folded .h-more .h-more-words {
+    display: none;
+  }
+  .handle.folded.with-undo,
+  .handle.hide.with-undo {
+    padding-right: 110px;
+  }
+  .drawer .undo,
+  .foot .undo {
+    top: 4px;
+  }
+  .grab {
+    top: 3px;
+  }
+}
+
+/* The half drawer's handle: its name at the left in charcoal, the chevron at 366. */
+.handle.half {
+  height: 46px;
+}
+.handle.half .h-row {
+  left: 24px;
+  right: 20px;
+  top: 20px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.handle.half .h-row svg {
+  color: var(--muted);
+}
+
+/* The half drawer's list, cut at rest to a row boundary above the tabs' cover. */
+.viewport {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 46px;
+  bottom: calc(var(--hair-b) + var(--half-t));
+  overflow: hidden;
+  overflow: clip;
+}
+.list {
+  position: absolute;
+  inset: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 6px 0 96px;
+  -webkit-overflow-scrolling: touch;
+  /* A row Tab scrolls to stops a row above the foot, clear of the covered row,
+     with its ring: a 44 row, and 4 for the ring. */
+  scroll-padding: 8px 0 48px;
+}
+/* The covered row: ring and title under one cover, on one ramp, from nothing at
+   the ring's top (10 below the row's top) to 30% stone at its foot (34 below).
+   Only where the list has more below it (data-more, set by the layout). */
+.covered {
+  display: none;
+  position: absolute;
+  left: 20px;
+  right: 20px;
+  bottom: 10px;
+  height: 24px;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    rgba(238, 240, 236, 0) 0%,
+    rgba(238, 240, 236, 0.3) 92%,
+    rgba(238, 240, 236, 0.3) 100%
+  );
+}
+.app[data-more] .covered {
+  display: block;
+}
+.list .lbl {
+  padding: 0 24px;
+  color: var(--muted);
+}
+.list .lbl + ul {
+  margin-top: 4px;
+}
+.list ul + .lbl {
+  margin-top: 12px;
+}
+
+/* ═════════════ The open drawer (SPEC 5.2), from y 60 ═════════════ */
+
+/* Its grabber at 66, and its header row 76–120: 18 lower than on every other
+   screen, under its own grabber, so the canvas is still felt above it. */
+.app[data-drawer='open'] .drawer .grab {
+  top: 6px;
+}
+/* The screen's own header row, 58–102, would show its top 2 pt above the
+   drawer's edge at 60 (Me, and on a white place the back pill too). It is
+   inert under the drawer already, so it is not drawn either, at rest. Pulled
+   down, the drawer uncovers it, so then it is drawn, cut by the edge. */
+.app[data-drawer='open']:not([data-travel]):not([data-flight]) .screen .hdr {
+  visibility: hidden;
+}
+/* The band above the open drawer's header row, where the grabber is. */
+.grabzone {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 16px;
+  touch-action: none;
+}
+.drawer .hdr {
+  touch-action: none;
+}
+.drawer .hdr {
+  top: 16px;
+}
+.drawer .place-title {
+  color: var(--charcoal);
+}
+.drawer .me {
+  background: var(--tint-stone);
+  color: var(--charcoal);
+}
+/* The list from "Later today" at 132, ending above the dock line at 606. */
+.viewport.open {
+  top: 66px;
+  bottom: calc(var(--open-t) + var(--dock-b) + 64px);
+}
+.viewport.open .list ul + .lbl {
+  margin-top: 16px;
+}
+/* The cover: plain stone from the dock line down, which the capsule and capture
+   sit on with nothing passing behind them. Its faint top shadow falls onto the
+   list only where the list goes on under it (data-more). */
+.coverband {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: calc(var(--open-t) + var(--dock-b) + 64px);
+  background: var(--stone);
+  pointer-events: none;
+}
+.app[data-drawer='open'][data-more] .coverband {
+  box-shadow: var(--sh-cover);
+}
+/* The capsule on the cover is plain charcoal on stone: its ring is charcoal too. */
+.app[data-drawer='open'] .dock {
+  --ring: var(--charcoal);
+}
+
+/* "⌄ Hide": one button over the folded handle's band, 684–754, its words at
+   715–735 with their ink ending at x 366, where "Rest of today ⌃" stands.
+   Only its buttons take a touch: the words fading out after a tap, here for
+   150 ms, never stand in the way of the handle under them. */
+.foot {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: var(--hair-b);
+  height: var(--handle);
+  z-index: 25;
+  --ring: var(--charcoal);
+  pointer-events: none;
+  transition: opacity 150ms ease;
+}
+.foot > button {
+  pointer-events: auto;
+}
+.foot:empty {
+  display: none;
+}
+.handle.hide {
+  height: 100%;
+  border-radius: 0;
+}
+.handle.hide .h-more {
+  right: 24px;
+  gap: 4px;
+}
+@media (max-height: 739px) {
+  .handle.hide .h-more {
+    top: 19px;
+  }
+}
+
+/* ═════════════ The drawer in the hand (drawer.ts; SPEC 9.8 and 10) ═════════════ */
+
+/* Where the drawer's top rests in each position, for the drag to measure:
+   the same lengths the drawer's own --dy is made of. */
+.probes {
+  position: absolute;
+  inset: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+.probes > span {
+  position: absolute;
+  left: 0;
+  width: 0;
+  height: 0;
+}
+.probes > [data-probe='open'] {
+  top: var(--open-t);
+}
+.probes > [data-probe='half'] {
+  top: var(--half-t);
+}
+.probes > [data-probe='folded'] {
+  bottom: var(--fold-b);
+}
+.probes > [data-probe='lip'] {
+  bottom: var(--lip-b);
+}
+
+/* Pulled by a mouse in a desktop review, Hide must not select its word. */
+.foot {
+  -webkit-user-select: none;
+  user-select: none;
+}
+/* "Rest of today ⌃" and "⌄ Hide" hand over in one place, over 150 ms: the
+   words arriving fade in, and those leaving fade out where they stood. */
+.handle .h-more.xin {
+  animation: bench-fade-in 150ms ease-out both;
+}
+.foot > .xghost {
+  pointer-events: none;
+  animation: bench-fade-out 150ms ease-in both;
+}
+
+/* Under a finger or on its spring. Pictures drawn for the journey only: the
+   list rising under the folded handle, or the folded handle over a list.
+   Near its folded place the handle comes back in two steps, never both at
+   once, so the Next line never lies over the header it replaces: first its
+   stone covers what is under it (--fold-bg), then its words fade in on the
+   stone (--fold-fg). Leaving, the reverse. */
+.drawer > .ghost {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+.drawer > .ghost.top {
+  bottom: auto;
+  height: var(--handle);
+  z-index: 3;
+}
+.drawer[data-travel] > .handle.folded,
+.drawer[data-travel] > .undo {
+  z-index: 3;
+}
+.drawer[data-travel] > .grab {
+  z-index: 4;
+}
+.drawer > .ghost.top > .grab {
+  z-index: 1;
+}
+.drawer[data-travel] .handle.folded {
+  background: none;
+}
+.drawer[data-travel] .handle.folded::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--stone);
+  opacity: var(--fold-bg, 1);
+}
+/* The words themselves, not their lines: on a compact screen the two lines
+   are display: contents, which takes no opacity. */
+.drawer[data-travel] .handle.folded .h-l1 > span,
+.drawer[data-travel] .handle.folded .h-l2 > span,
+.drawer[data-travel] .handle.folded .h-more,
+.drawer[data-travel] .undo {
+  opacity: var(--fold-fg, 1);
+}
+/* The half drawer's list runs on to the drawer's foot while it moves, so it
+   never ends above the tabs on the way up; it is cut at rest again. */
+.drawer[data-travel] .viewport:not(.open) {
+  bottom: 0 !important;
+  height: auto !important;
+}
+.drawer[data-travel] .viewport:not(.open) .covered {
+  display: none;
+}
+/* What the drawer carried, where the place it rests at carries another list
+   (half and open): it fades out over the new one. */
+.drawer > .ghost.leaving {
+  z-index: 3;
+  background: var(--stone);
+  border-radius: 28px 28px 0 0;
+  animation: bench-fade-out 150ms ease-in both;
+}
+/* While it moves, Hide leaves the foot, and comes back when it rests open. */
+.app[data-travel] .foot {
+  opacity: 0;
+}
+/* Reduce Motion's form of the lantern and the capsule (SPEC 10): over Today,
+   or the present's own page, the lantern fades as the drawer rises (--lift,
+   0 folded to 1 open), and the capsule appears when it stops; pulled down,
+   the reverse. Step done and Pause, and the capsule, leave within the first
+   few points of the pull (--fold-fg and --open-fg), as they fade "in the
+   first 100 ms" of the morph, so neither lies half-drawn over the list
+   passing under the dock line. Nothing travels or scales. The phase B
+   morph replaces this under full motion (chunk 7). */
+.app[data-travel='present'] .screen .lantern {
+  opacity: calc(1 - var(--lift, 0));
+}
+.app[data-travel='present'] .dock .dock-pill {
+  opacity: var(--fold-fg, 1);
+}
+.app[data-travel='present'] .dock .capsule {
+  opacity: var(--open-fg, 1);
+}
+
+/* ═════════════ The animated path (moves.ts; SPEC 10, plan section 14 phase B) ═════════════
+   Layers that hold only pictures, for as long as a motion runs, and are empty
+   at rest. Above Focus and its foot, under the dock line: what travels between
+   the lantern, the capsule and Focus. Under the page, or over it going back:
+   the page a slide leaves. */
+.morph,
+.ghostscreen {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.morph {
+  z-index: 29;
+}
+.ghostscreen {
+  z-index: 1;
+}
+.ghostscreen.over {
+  z-index: 2;
+}
+.morph:empty,
+.ghostscreen:empty {
+  display: none;
+}
+/* A frame that rounds its corners by transforms alone (motion.ts, frameNode).
+   Drawn only: a tap goes through it, in .morph or out of it. */
+.mframe {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+.mframe > .mf {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform-origin: 0 0;
+  background: var(--mf);
+}
+.mframe > .band {
+  width: 100px;
+  height: 100px;
+}
+.mframe > .disc {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+}
+/* The bar's tick as an element of its own, so it can fade while the bar travels. */
+.morph .m-notick .fill::after {
+  display: none;
+}
+.mtick {
+  position: absolute;
+  right: -1px;
+  top: -4px;
+  width: 2px;
+  height: calc(var(--h) + 8px);
+  border-radius: 1px;
+  background: var(--white);
+  box-shadow: var(--halo);
+}
+/* What the drawer held, carried on its way after a tap. */
+.drawer > .mdrawer {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  border-radius: inherit;
+  background: var(--stone);
+  pointer-events: none;
+}
+/* The page a slide leaves, as it looked: its own ground, frozen on it. */
+.ghostscreen > .mghost {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+/* Focus's ground on its way, under Focus as Focus comes up over it. */
+.app > .mframe {
+  z-index: 26;
+}
+
+/* ═════════════ Rows (SPEC 9.7) ═════════════ */
+
+.row {
+  position: relative;
+  min-height: 44px;
+  margin: 0 24px;
+}
+.rowbtn {
+  display: flex;
+  align-items: flex-start;
+  width: 100%;
+  min-height: 44px;
+  padding: 11px 0;
+  font-size: 17px;
+  line-height: 22px;
+  font-weight: 500;
+  color: inherit;
+}
+.trow .rowbtn {
+  align-items: center;
+}
+/* The next row on the open drawer: its "in 25 min" under the title, the time
+   and the length on the title's line (62 tall). */
+.trow.two .rowbtn {
+  align-items: flex-start;
+}
+.trow.two .dur {
+  margin-top: 1px;
+}
+.trow .t {
+  flex: none;
+  width: 60px;
+  font-weight: 650;
+}
+.trow .ti {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.trow .ti small {
+  display: block;
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: 500;
+  color: var(--muted);
+}
+.rrow .rowbtn {
+  padding-left: 40px;
+}
+.rrow .rt {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* The half drawer: a title wraps to end by x 286, never cut or faded beside the disc. */
+.rrow.lane .rt {
+  max-width: 222px;
+  white-space: normal;
+}
+.ring,
+.disc {
+  position: absolute;
+  left: -10px;
+  top: 0;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  color: var(--charcoal);
+}
+.disc > span {
+  width: 24px;
+  height: 24px;
+  border-radius: 12px;
+  background: var(--sage);
+  color: var(--charcoal);
+  display: grid;
+  place-items: center;
+  box-shadow: inset 0 0 0 1px var(--hair-light);
+}
+.rrow.done .rowbtn,
+.row.donerow {
+  color: var(--muted);
+}
+/* A done row in "Done today": a sage disc with a check and a 10% hairline,
+   the title in muted. A quiet record, not a control. */
+.disc-static {
+  flex: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 12px;
+  background: var(--sage);
+  color: var(--charcoal);
+  display: grid;
+  place-items: center;
+  box-shadow: inset 0 0 0 1px var(--hair-light);
+}
+.row.donerow {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 0;
+  font-size: 17px;
+  line-height: 22px;
+}
+
+/* ═════════════ The tabs (SPEC 9.11), on stone, and the hairline at 754 ═════════════ */
+
+.tabs {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: var(--hair-b);
+  z-index: 20;
+  background: var(--stone);
+  --ring: var(--charcoal);
+}
+.tabs .hair {
+  position: absolute;
+  left: 24px;
+  right: 24px;
+  top: 0;
+  height: 1px;
+  background: var(--hair-light);
+}
+/* At the lip the drawer says nothing, so there is no hairline either. */
+.app[data-drawer='lip'] .tabs .hair {
+  display: none;
+}
+/* On the half drawer the tabs' band is the cover the list goes under, when it does. */
+.app[data-drawer='half'][data-more] .tabs {
+  box-shadow: var(--sh-cover);
+}
+.tabs nav {
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  bottom: var(--tabs-b);
+  height: 52px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+}
+.tab {
+  height: 52px;
+  border-radius: 26px;
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 2px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  text-align: center;
+}
+.tab[aria-current='page'] {
+  background: var(--white);
+  color: var(--charcoal);
+  font-weight: 700;
+  box-shadow: var(--sh-lozenge);
+}
+
+/* ═════════════ Places and pages ═════════════ */
+
+.place-title {
+  color: inherit;
+}
+.body {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(var(--content-t) - 4px);
+  bottom: var(--fold-b);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 4px 24px 96px;
+  -webkit-overflow-scrolling: touch;
+  /* The body runs on under the dock line, so a control Tab scrolls to stops
+     above it with its ring: the 78 from the dock line's top to the body's
+     foot, and 8 for the ring. */
+  scroll-padding: 8px 0 calc(var(--dock-b) - var(--fold-b) + 64px + 8px);
+}
+.page-title {
+  margin: 8px 0 16px;
+  color: inherit;
+}
+.helper {
+  color: var(--ash);
+}
+.app[data-places='white'][data-ground='place'] .helper {
+  color: var(--muted);
+}
+
+/* Me's rows: a title, and a chevron ending at x 366. */
+.menu .row {
+  margin: 0;
+}
+.menu .rowbtn {
+  align-items: center;
+  justify-content: space-between;
+  padding-right: 0;
+}
+.menu .rowbtn svg {
+  color: var(--ash);
+  margin-right: -4px;
+}
+
+.prose {
+  display: grid;
+  gap: 12px;
+}
+.prose p {
+  color: var(--ash);
+}
+.prose .lead {
+  color: var(--white);
+  font-size: 17px;
+  line-height: 22px;
+  font-weight: 600;
+}
+.prose h2 {
+  margin-top: 16px;
+  color: var(--ash);
+}
+.prose .lines {
+  display: grid;
+  gap: 16px;
+  margin-top: 4px;
+}
+.prose .line b {
+  color: var(--white);
+  font-weight: 650;
+}
+.prose a {
+  color: var(--white);
+}
+/* A dial link is a whole target, 44 x 44 at least (SPEC 11), on the page where a
+   mis-tap costs most. It reaches 12 above and below its line and on to the right,
+   without moving the number off the line or the line off its rhythm. */
+.prose .lines a {
+  display: inline-flex;
+  align-items: center;
+  min-width: 44px;
+  min-height: 44px;
+  margin: -12px 0;
+}
+/* What to try: a few plain lists under their names, each line marked by a
+   small dot. */
+.prose h3 {
+  margin-top: 4px;
+  color: var(--white);
+  font-weight: 650;
+}
+.prose .tries {
+  display: grid;
+  gap: 6px;
+}
+.prose .tries li {
+  position: relative;
+  padding-left: 16px;
+  color: var(--ash);
+}
+.prose .tries li::before {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 8px;
+  width: 4px;
+  height: 4px;
+  border-radius: 2px;
+  background: currentColor;
+}
+/* On white places the prose takes the light inks: muted for what is ash on
+   charcoal (ash on white is 2.2), charcoal for what is white. */
+.app[data-places='white'][data-ground='place'] .screen :is(.prose p, .prose h2, .prose .tries li),
+.app[data-places='white'][data-ground='place'] .screen .menu .rowbtn svg,
+.app[data-places='white'][data-ground='place'] .screen .textbtn {
+  color: var(--muted);
+}
+.app[data-places='white'][data-ground='place']
+  .screen
+  :is(.prose .lead, .prose h3, .prose a, .prose .line b) {
+  color: var(--charcoal);
+}
+.scenarios,
+.scenarios > ul {
+  display: grid;
+  gap: 8px;
+  justify-items: start;
+}
+.textbtn {
+  min-height: 44px;
+  font-size: 17px;
+  line-height: 22px;
+  font-weight: 600;
+  color: var(--ash);
+}
+
+/* ═════════════ Switches (SPEC 9.6) ═════════════
+   On charcoal: an ash-8 track, an ash-20 thumb inset 3 pt, the selected label
+   white at 700 and the others ash at 600. On light: a stone track, a white
+   thumb with iOS's own shadow, charcoal at 700 and muted at 600. Each part is
+   a whole 44 pt target; the thumb is drawn inside it. */
+.seg {
+  display: inline-grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  height: 44px;
+  border-radius: 22px;
+  background: var(--ash-8);
+}
+.seg-part {
+  position: relative;
+  height: 44px;
+  padding: 0 18px;
+  text-align: center;
+  font-size: 15px;
+  line-height: 20px;
+  font-weight: 600;
+  color: var(--ash);
+}
+.seg-part::before {
+  content: '';
+  position: absolute;
+  inset: 3px;
+  border-radius: 19px;
+}
+.seg-part[aria-checked='true'] {
+  color: var(--white);
+  font-weight: 700;
+}
+.seg-part[aria-checked='true']::before {
+  background: var(--ash-20);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+}
+/* The label keeps room for itself at 700, so nothing moves with the thumb. */
+.seg-part > span {
+  position: relative;
+  display: inline-grid;
+}
+.seg-part > span::after {
+  content: attr(data-text);
+  height: 0;
+  overflow: hidden;
+  visibility: hidden;
+  font-weight: 700;
+}
+.app[data-places='white'][data-ground='place'] .screen .seg {
+  background: var(--stone);
+}
+.app[data-places='white'][data-ground='place'] .screen .seg-part {
+  color: var(--muted);
+}
+.app[data-places='white'][data-ground='place'] .screen .seg-part[aria-checked='true'] {
+  color: var(--charcoal);
+}
+.app[data-places='white'][data-ground='place'] .screen .seg-part[aria-checked='true']::before {
+  background: var(--white);
+  box-shadow:
+    0 3px 8px rgba(0, 0, 0, 0.12),
+    0 3px 1px rgba(0, 0, 0, 0.04);
+}
+
+/* Settings: each switch under its name and one plain line. */
+.settings {
+  display: grid;
+  gap: 28px;
+}
+.setting .helper {
+  margin-top: 2px;
+}
+.setting .seg {
+  margin-top: 12px;
+}
+
+/* ═════════════ Tasks (SPEC 5.6): the switcher, held still, and four lists ═════════════ */
+
+/* The switcher, x 24–366 and 114–158, outside the list's scroller so a long
+   inbox never scrolls it away. Each part is its word at 700 with the same
+   room either side: the parts start at their words' widths and share what is
+   left of the 342 equally (17.7 pt either side on the board). */
+.tswitch {
+  position: absolute;
+  top: calc(var(--sa-top) + 60px);
+  left: 24px;
+  right: 24px;
+  height: 44px;
+  border-radius: 22px;
+  display: flex;
+  background: var(--ash-8);
+  z-index: 2;
+}
+.tswitch-part {
+  position: relative;
+  flex: 1 1 auto;
+  height: 44px;
+  padding: 0;
+  text-align: center;
+  font-size: 15px;
+  line-height: 20px;
+  font-weight: 600;
+  color: var(--ash);
+}
+.tswitch-part::before {
+  content: '';
+  position: absolute;
+  inset: 3px;
+  border-radius: 19px;
+}
+.tswitch-part[aria-selected='true'] {
+  color: var(--white);
+  font-weight: 700;
+}
+.tswitch-part[aria-selected='true']::before {
+  background: var(--ash-20);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+}
+/* The label keeps room for itself at 700, so nothing moves with the thumb. */
+.tswitch-part > span {
+  position: relative;
+  display: inline-grid;
+}
+.tswitch-part > span::after {
+  content: attr(data-text);
+  height: 0;
+  overflow: hidden;
+  visibility: hidden;
+  font-weight: 700;
+}
+.app[data-places='white'][data-ground='place'] .tswitch {
+  background: var(--stone);
+}
+.app[data-places='white'][data-ground='place'] .tswitch-part {
+  color: var(--muted);
+}
+.app[data-places='white'][data-ground='place'] .tswitch-part[aria-selected='true'] {
+  color: var(--charcoal);
+}
+.app[data-places='white'][data-ground='place'] .tswitch-part[aria-selected='true']::before {
+  background: var(--white);
+  box-shadow:
+    0 3px 8px rgba(0, 0, 0, 0.12),
+    0 3px 1px rgba(0, 0, 0, 0.04);
+}
+
+/* The list under the switcher: its helper line at 172, its rows from 200. */
+.body.tasks {
+  top: calc(var(--sa-top) + 104px);
+  padding-top: 14px;
+}
+.tlist {
+  margin-top: 8px;
+}
+.tlist .row {
+  margin: 0;
+}
+.tlist .lbl {
+  color: var(--ash);
+}
+.tlist .lbl + ul {
+  margin-top: 4px;
+}
+.tlist ul + .lbl {
+  margin-top: 16px;
+}
+.tlist .ring,
+.tlist .trow .ti small,
+.tlist .rrow.done .rowbtn,
+.tlist .row.donerow,
+.tlist .dur {
+  color: var(--ash);
+}
+/* A second line: steps, minutes and their track, or the start of the note. */
+.rrow .rt small {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: 500;
+  color: var(--ash);
+  white-space: nowrap;
+}
+.rrow .rt small .sep {
+  margin: 0 0.15em;
+}
+.rrow .rt small .dur {
+  font-size: 13px;
+  line-height: 18px;
+  gap: 6px;
+  color: inherit;
+}
+.rrow .rt small .dur .m {
+  top: 0.5px;
+}
+.rrow .rt small .nt {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* The ring is centred on the title line, as Reminders does. */
+.rrow.two .ring,
+.rrow.two .disc {
+  top: 0;
+}
+.app[data-places='white'][data-ground='place']
+  .screen
+  :is(
+    .tlist .lbl,
+    .tlist .trow .ti small,
+    .tlist .rrow.done .rowbtn,
+    .tlist .row.donerow,
+    .tlist .dur,
+    .rrow .rt small
+  ) {
+  color: var(--muted);
+}
+.app[data-places='white'][data-ground='place'] .screen .tlist .ring {
+  color: var(--charcoal);
+}
+
+/* The present in a list (SPEC 9.7): on charcoal a terracotta dot and Now,
+   12 after the title; on white a charcoal pill. Paused: the word in ash. */
+.ntag {
+  margin-left: 12px;
+  font-size: 15px;
+  line-height: 20px;
+  font-weight: 650;
+  color: var(--ash);
+  white-space: nowrap;
+}
+.ntag.now {
+  color: var(--terra);
+}
+.ntag.now::before {
+  content: '';
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-right: 6px;
+  vertical-align: 1.5px;
+  border-radius: 50%;
+  background: var(--terra);
+}
+.app[data-places='white'][data-ground='place'] .ntag {
+  color: var(--muted);
+}
+.app[data-places='white'][data-ground='place'] .ntag.now {
+  display: inline-block;
+  height: 22px;
+  padding: 2px 8px;
+  border-radius: 11px;
+  vertical-align: 1px;
+  background: var(--charcoal);
+  color: var(--white);
+  font-size: 13px;
+  line-height: 18px;
+}
+.app[data-places='white'][data-ground='place'] .ntag.now::before {
+  display: none;
+}
+
+/* ═════════════ A task's page (SPEC 5.3 and 5.8) ═════════════ */
+
+/* "⋯", a 44 pt circle just left of Me, x 260–304. */
+.circ {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 22px;
+  display: grid;
+  place-items: center;
+  background: var(--ash-20);
+  color: var(--white);
+}
+.app[data-places='white'][data-ground='place'] .screen .circ {
+  background: var(--tint-white);
+  color: var(--charcoal);
+}
+
+/* Lighting on Start: a colour change, 150 ms under Reduce Motion, 300 ms
+   otherwise, on white places (SPEC 10). The ground eases; the text changes
+   at once a third of the way, where it keeps about 3:1 against the ground
+   either way. Eased with the ground, it passed through the ground's own
+   grey and the title all but vanished. */
+.screen.task {
+  transition:
+    background-color 150ms ease-out,
+    color 0s linear 50ms;
+}
+.app[data-motion='full'] .screen.task {
+  transition:
+    background-color 300ms ease-out,
+    color 0s linear 100ms;
+}
+
+/* The title at 122–160, under the back pill. */
+.page .ptitle {
+  margin-top: 12px;
+  color: inherit;
+}
+
+/* The when pill, 176–220 from x 24, drawn as a field: no fill and a 1 pt
+   edge of ash at 36% on charcoal; stone with an 8% edge on white. */
+.when {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 44px;
+  margin-top: 16px;
+  padding: 0 16px 0 14px;
+  border-radius: 22px;
+  background: transparent;
+  box-shadow: inset 0 0 0 1px rgba(169, 175, 171, 0.36);
+  font-size: 15px;
+  line-height: 20px;
+  font-weight: 600;
+  color: var(--white);
+  white-space: nowrap;
+}
+.when :is(.wdot, .wlen, .wsoon) {
+  color: var(--ash);
+  font-weight: 500;
+}
+.app[data-places='white'][data-ground='place'] .screen .when {
+  background: var(--stone);
+  box-shadow: inset 0 0 0 1px var(--hair-light);
+  color: var(--charcoal);
+}
+.app[data-places='white'][data-ground='place'] .screen .when :is(.wdot, .wlen, .wsoon) {
+  color: var(--muted);
+}
+
+/* Start, or Start this instead, 240–296, as wide as its words. */
+.page .start {
+  display: flex;
+  width: fit-content;
+  margin-top: 20px;
+}
+.page .start.first {
+  background: var(--white);
+  color: var(--charcoal);
+}
+.page .start.instead {
+  background: var(--ash-20);
+  color: var(--white);
+}
+/* On white: Start is the one charcoal button on a white page; Start this
+   instead is the quiet pill, a fill with an edge and the lozenge's lift. */
+.app[data-places='white'][data-ground='place'] .page .start.first {
+  background: var(--charcoal);
+  color: var(--white);
+}
+.app[data-places='white'][data-ground='place'] .page .start.instead,
+.app[data-places='white'][data-ground='place'] .screen .pill.quiet {
+  background: var(--tint-stone);
+  color: var(--charcoal);
+  box-shadow:
+    inset 0 0 0 1px var(--hair-light),
+    var(--sh-lozenge);
+}
+.page .sentence {
+  margin-top: 12px;
+  color: var(--ash);
+}
+.page .steps-lbl {
+  margin-top: 24px;
+  color: var(--ash);
+}
+.page .steps-lbl + .rail {
+  margin-top: 4px;
+}
+.app[data-places='white'][data-ground='place']
+  .screen
+  :is(.page .sentence, .page .steps-lbl, .addstep) {
+  color: var(--muted);
+}
+
+/* "+ Add a step", 394–438, and the field it turns into in the same place. */
+.addstep {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  width: 100%;
+  height: 44px;
+  margin-top: 4px;
+  padding-left: 2px;
+  font-size: 17px;
+  line-height: 22px;
+  font-weight: 500;
+  color: var(--ash);
+}
+.addstep[hidden] {
+  display: none;
+}
+.stepfield {
+  flex: 1;
+  min-width: 0;
+  height: 44px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: inset 0 -1px 0 var(--hair-dark);
+  color: var(--white);
+  caret-color: var(--white);
+  font-family: inherit;
+  font-size: 17px;
+  line-height: 22px;
+  font-weight: 500;
+  -webkit-appearance: none;
+  appearance: none;
+}
+.stepfield::placeholder {
+  color: var(--ash);
+  opacity: 1;
+}
+/* With focus, the line under it thickens rather than a ring boxing it: the
+   caret and the line say where the typing goes, as capture's field does. */
+.stepfield:focus {
+  --ring: transparent;
+  box-shadow: inset 0 -2px 0 var(--ash);
+}
+.app[data-places='white'][data-ground='place'] .screen .stepfield {
+  box-shadow: inset 0 -1px 0 var(--hair-light);
+  color: var(--charcoal);
+  caret-color: var(--charcoal);
+}
+.app[data-places='white'][data-ground='place'] .screen .stepfield::placeholder {
+  color: var(--muted);
+}
+.app[data-places='white'][data-ground='place'] .screen .stepfield:focus {
+  box-shadow: inset 0 -2px 0 var(--muted);
+}
+/* With the keyboard up, the content can scroll its field clear of the keys;
+   the frame stays where it is behind them (SPEC 3). */
+.app[data-typing] .body.page {
+  padding-bottom: calc(max(var(--kb, 0px), 45vh) + 96px);
+}
+
+/* The rail (SPEC 5.8): every row 58 tall, a 2 pt line through the discs'
+   centres, each disc 28 with a 5 pt ring of the ground that cuts the line. */
+.rail {
+  position: relative;
+  --ground: var(--charcoal);
+}
+.rail::before {
+  content: '';
+  position: absolute;
+  left: 13px;
+  top: 29px;
+  bottom: 29px;
+  width: 2px;
+  border-radius: 1px;
+  background: var(--hair-dark);
+}
+.rail li {
+  position: relative;
+  display: grid;
+  grid-template-columns: 28px 1fr;
+  column-gap: 16px;
+  align-items: center;
+  height: 58px;
+}
+.rail .mk {
+  position: relative;
+  z-index: 1;
+  width: 28px;
+  height: 28px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  font-size: 14px;
+  line-height: 1;
+  font-weight: 700;
+}
+.rail .mk.done {
+  background: var(--sage);
+  color: var(--charcoal);
+  box-shadow: 0 0 0 5px var(--ground);
+}
+.rail .mk.cur {
+  background: var(--white);
+  color: var(--charcoal);
+  box-shadow: 0 0 0 5px var(--ground);
+}
+.rail .mk.next {
+  background: var(--ground);
+  color: var(--ash);
+  box-shadow:
+    inset 0 0 0 1.5px rgba(169, 175, 171, 0.55),
+    0 0 0 5px var(--ground);
+}
+.rail .hit {
+  position: relative;
+  z-index: 1;
+  width: 44px;
+  height: 44px;
+  margin: -8px;
+  display: grid;
+  place-items: center;
+}
+.rail .s {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 17px;
+  line-height: 22px;
+  font-weight: 500;
+  color: var(--ash);
+}
+.rail li.current .s {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  color: var(--white);
+  font-size: 22px;
+  line-height: 28px;
+  font-weight: 600;
+  letter-spacing: -0.012em;
+}
+.rail li.current .st {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.rail li.current :is(.nowtag, .ptag) {
+  letter-spacing: 0;
+}
+.rail .ptag {
+  font-size: 15px;
+  line-height: 20px;
+  font-weight: 650;
+  color: var(--ash);
+}
+/* A page that is not lit, on white: the rail in the light inks. */
+.app[data-places='white'][data-ground='place'] .screen .rail {
+  --ground: var(--white);
+}
+.app[data-places='white'][data-ground='place'] .screen .rail::before {
+  background: var(--hair-light);
+}
+.app[data-places='white'][data-ground='place'] .screen .rail .mk.done {
+  box-shadow:
+    inset 0 0 0 1px var(--hair-light),
+    0 0 0 5px var(--ground);
+}
+.app[data-places='white'][data-ground='place'] .screen .rail .mk.next {
+  color: var(--muted);
+  box-shadow:
+    inset 0 0 0 1.5px rgba(89, 92, 91, 0.55),
+    0 0 0 5px var(--ground);
+}
+.app[data-places='white'][data-ground='place'] .screen .rail .s {
+  color: var(--muted);
+}
+
+/* The running task's page: the meta line 170–190, the bar row 202–222, the
+   rail from 244, the note at 438. */
+.page .tmeta {
+  margin-top: 10px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--ash);
+}
+.page .tmeta b {
+  font-weight: 600;
+  color: var(--white);
+}
+.page .timerow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 20px;
+  margin-top: 12px;
+  white-space: nowrap;
+}
+.page .timerow .tmins {
+  display: flex;
+  gap: 12px;
+}
+.page .timerow strong {
+  font-weight: 650;
+  color: var(--terra);
+}
+.page .timerow strong.still {
+  color: var(--white);
+}
+.page .timerow .e {
+  color: var(--ash);
+}
+.page.lit .rail {
+  margin-top: 22px;
+}
+.notecard {
+  display: block;
+  width: 100%;
+  margin-top: 20px;
+  padding: 14px 18px 16px;
+  border-radius: 20px;
+  background: var(--ash-8);
+  color: var(--white);
+  text-align: left;
+}
+.notecard .nl {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--ash);
+}
+.notecard .nt {
+  display: block;
+  margin-top: 5px;
+  font-size: 17px;
+  line-height: 23px;
+  font-weight: 500;
+}
+
+/* A done task's page: a sage Done line, and a quiet way back. */
+.doneline {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 16px;
+}
+.page .notdone {
+  margin-top: 20px;
+}
+.pill.quiet {
+  background: var(--ash-20);
+  color: var(--white);
+}
+
+/* "⌃ Focus" on the dock line, x 24–292, where the capsule sits elsewhere. */
+.dock .focuspill {
+  left: 0;
+  width: calc(100% - 74px);
+}
+
+/* ═════════════ Routines (SPEC 5.9) and the Library (SPEC 12) ═════════════ */
+
+/* The helper line at 114–134, the rows from 142, 62 apart, and "+ New
+   routine" at 398–442. */
+.body.routines .helper {
+  margin-top: 4px;
+}
+.rlist {
+  margin-top: 8px;
+}
+:is(.rlist, .llist) .row {
+  margin: 0;
+}
+/* A row opens the routine: no ring, the title at x 24, "Ran today" and the
+   chevron centred on the row, the chevron's ink ending at x 366. */
+.rrow.routine .rowbtn {
+  height: 62px;
+  padding: 0;
+  align-items: center;
+  gap: 12px;
+}
+.rrow.routine .rt {
+  flex: 1;
+}
+.rrow.routine .rowbtn > svg,
+.lrow .rowbtn > svg {
+  flex: none;
+  margin-right: -4px;
+  color: var(--ash);
+}
+/* "Ran today": an ash check and the words, no disc, no brighter than the titles. */
+.ran {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 15px;
+  line-height: 20px;
+  font-weight: 500;
+  color: var(--ash);
+}
+.addstep.newroutine {
+  margin-top: 8px;
+}
+
+/* The Library: a name in 17/22 over one plain line in 15/20 (SPEC 12). */
+.lrow .rowbtn {
+  align-items: center;
+  gap: 12px;
+}
+.lrow .rt {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.lrow .rt small {
+  font-size: 15px;
+  line-height: 20px;
+  font-weight: 500;
+  color: var(--ash);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.app[data-places='white'][data-ground='place']
+  .screen
+  :is(.ran, .rrow.routine .rowbtn > svg, .lrow .rowbtn > svg, .lrow .rt small) {
+  color: var(--muted);
+}
+
+/* A routine's page: where Start would stand, what is not here yet; then its
+   steps, each with its minutes at the right where it is timed. */
+.page.routine .sentence + .sentence {
+  margin-top: 8px;
+}
+.rail.timed li {
+  grid-template-columns: 28px 1fr auto;
+}
+.rail .sm {
+  font-size: 15px;
+  line-height: 20px;
+  font-weight: 500;
+  color: var(--ash);
+  font-variant-numeric: tabular-nums;
+}
+.app[data-places='white'][data-ground='place'] .screen .rail .sm {
+  color: var(--muted);
+}
+
+/* ═════════════ A page's sheets (SPEC 9.9 and 12) ═════════════
+   The capture sheet's stone panel, grabber and header row. Each reaches at
+   least over the dock line, so nothing of it shows above the sheet; on a
+   place the capsule rides its top edge as a picture. */
+
+.ts-panel {
+  min-height: calc(var(--dock-b) + 80px);
+}
+.app[data-tsheet] .csheet.enter {
+  animation: bench-fade-in 200ms ease-out both;
+}
+.ts-ride {
+  position: absolute;
+  left: 24px;
+  right: 24px;
+  bottom: calc(100% + 14px);
+  height: 64px;
+}
+.opts {
+  display: grid;
+  margin-top: 4px;
+}
+.opt {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 52px;
+  font-size: 17px;
+  line-height: 22px;
+  font-weight: 500;
+  color: var(--charcoal);
+}
+.opt[aria-checked='true'] {
+  font-weight: 700;
+}
+.opt > span {
+  display: inline-grid;
+}
+.opt > svg {
+  color: var(--charcoal);
+}
+.ts-more .opt > svg {
+  color: var(--muted);
+  margin-right: -4px;
+}
+.wpick {
+  display: block;
+  width: 100%;
+  height: 44px;
+  margin: 8px 0 0;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--white);
+  color: var(--charcoal);
+  font-family: inherit;
+  font-size: 17px;
+  line-height: 22px;
+  color-scheme: light;
+}
+.howlong {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 12px;
+  color: var(--charcoal);
+}
+.stepper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.stepper .step {
+  width: 56px;
+  padding: 0;
+}
+.stepper .gap {
+  display: block;
+  height: 44px;
+}
+.wlength {
+  min-width: 64px;
+  text-align: center;
+  font-size: 17px;
+  line-height: 22px;
+  font-weight: 600;
+}
+.ts-panel .pill.quiet {
+  background: var(--tint-stone);
+  color: var(--charcoal);
+  box-shadow: inset 0 0 0 1px var(--hair-light);
+}
+.ts-panel .wdone {
+  margin-top: 20px;
+}
+.m-delete {
+  margin-top: 8px;
+}
+.note-field {
+  display: block;
+  width: 100%;
+  min-height: 120px;
+  margin: 4px 0 0;
+  padding: 12px 14px;
+  border: 0;
+  border-radius: 16px;
+  background: var(--white);
+  color: var(--charcoal);
+  caret-color: var(--charcoal);
+  font-family: inherit;
+  font-size: 17px;
+  line-height: 23px;
+  font-weight: 500;
+  resize: none;
+  -webkit-appearance: none;
+  appearance: none;
+  --ring: transparent;
+}
+.ts-line {
+  margin-top: 4px;
+  color: var(--muted);
+}
+.ts-delete .pill {
+  margin-top: 16px;
+}
+
+/* ═════════════ Capture (SPEC 5.5): the sheet, riding the keyboard ═════════════
+   Above everything, the dock line included. The sheet's foot sits on the
+   keyboard, `--kb` from the foot of the screen (keyboard.ts), and its stone
+   runs on down behind the keys. With no keyboard it rests on the home
+   indicator's inset. On a 390 x 844 screen with the keyboard 336 tall: the
+   sheet from 280, its title row 296–340, the field 344–400, the helper line
+   412–430 and the row 442–486, 22 above the keys at 508. */
+
+.sheet-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+}
+.sheet-layer[hidden] {
+  display: none;
+}
+.csheet {
+  position: absolute;
+  inset: 0;
+}
+/* Reduce Motion: the sheet fades in and out. With motion on the disc grows
+   into it, and it drops (moves.ts). */
+.app:not([data-anim])[data-sheet] .csheet {
+  animation: bench-fade-in 200ms ease-out both;
+}
+.sheet-layer[data-leaving] {
+  pointer-events: none;
+}
+.app:not([data-anim]) .sheet-layer[data-leaving],
+.sheet-layer[data-leaving]:not([data-capture]) {
+  animation: bench-fade-out 200ms ease-in both;
+}
+/* Above the sheet: a tap closes it. Nothing is drawn; the screen shows through.
+   The pointer is what makes iOS send a tap on it as a click. */
+.c-above {
+  position: absolute;
+  inset: 0;
+  cursor: pointer;
+}
+.c-panel {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 8px 24px calc(max(var(--kb, 0px), var(--sa-bot)) + 22px);
+  background: var(--stone);
+  color: var(--charcoal);
+  --ring: var(--charcoal);
+  color-scheme: light;
+  border-radius: 24px 24px 0 0;
+  box-shadow: var(--sh-sheet);
+}
+.c-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 44px;
+  margin-top: 8px;
+  touch-action: none;
+}
+/* The band from the sheet's top edge to its title, with the grabber in it:
+   a pull down here is the sheet's, never the browser's (SPEC 9.9). */
+.c-grip {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 16px;
+  touch-action: none;
+}
+/* Close: the quieter of the two, its ink ending at x 366. */
+.c-close {
+  margin-right: -4px;
+  padding: 0 4px;
+}
+.textbtn.quiet {
+  color: var(--muted);
+}
+.c-field {
+  display: block;
+  width: 100%;
+  height: 56px;
+  margin: 4px 0 0;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 16px;
+  background: var(--white);
+  color: var(--charcoal);
+  caret-color: var(--charcoal);
+  font-family: inherit;
+  -webkit-appearance: none;
+  appearance: none;
+  /* The field always has focus while the sheet is up; its caret says so, as on
+     the board. Its own ring would ring the one field there is. */
+  --ring: transparent;
+}
+.c-field::placeholder {
+  color: var(--muted);
+  opacity: 1;
+}
+.c-help {
+  margin-top: 12px;
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: 500;
+  color: var(--muted);
+}
+.c-row {
+  margin-top: 12px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+/* Inbox or Today on stone: a tint-stone track, a white thumb with iOS's own
+   shadow, charcoal at 700 and muted at 600; two equal parts, x 24–200. */
+.c-row .seg {
+  width: 176px;
+  background: var(--tint-stone);
+}
+.c-row .seg-part {
+  padding: 0;
+  color: var(--muted);
+}
+.c-row .seg-part[aria-checked='true'] {
+  color: var(--charcoal);
+}
+.c-row .seg-part[aria-checked='true']::before {
+  background: var(--white);
+  box-shadow:
+    0 3px 8px rgba(0, 0, 0, 0.12),
+    0 3px 1px rgba(0, 0, 0, 0.04);
+}
+/* Save, x 270–366: the one terracotta control apart from the disc. */
+.c-save {
+  flex: none;
+  width: 96px;
+  height: 44px;
+  border-radius: 22px;
+  display: grid;
+  place-items: center;
+  background: var(--terra);
+  color: var(--charcoal);
+  font-size: 17px;
+  line-height: 22px;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+}
+/* Me above the sheet: a clear target over the Me drawn under it, which still
+   shows, so it looks as it does on the screen it was opened from. */
+.c-me {
+  position: absolute;
+  top: var(--hdr-t);
+  right: 24px;
+  width: 52px;
+  height: 44px;
+  border-radius: 22px;
+}
+.app[data-drawer='open']:not([data-focus]) .c-me {
+  top: calc(var(--open-t) + 16px);
+}
+.app[data-places='white'][data-ground='place']:not([data-focus]) .c-me,
+.app[data-drawer='open']:not([data-focus]) .c-me {
+  --ring: var(--charcoal);
+}
+/* The capsule riding the sheet's top edge, as a picture: 14 above it, as it
+   rests 14 above the drawer. */
+.c-ride {
+  display: none;
+  position: absolute;
+  left: 24px;
+  right: 24px;
+  bottom: calc(100% + 14px);
+  height: 64px;
+}
+.app[data-ride] .c-ride {
+  display: block;
+}
+
+/* From Today: the lantern moved up into the top third, without the note or
+   "Focus ›", the task's title joining the Now line, the lamp following it to
+   (170, 190). The Now line 112–132, the step 144–190, the bar 206–216, the
+   minutes 228–256. */
+.nowline .nowtitle {
+  display: none;
+}
+.app[data-sheet='today'] .lantern {
+  top: calc(var(--sa-top) + 58px);
+  bottom: auto;
+}
+.app[data-sheet='today'] .lantern :is(.ttl, .note, .flabel),
+.app[data-sheet='today'] .lantern > .aside {
+  display: none;
+}
+.app[data-sheet='today'] .lantern .nowline {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.app[data-sheet='today'] .lantern .nowtitle {
+  display: inline;
+}
+.app[data-sheet='today'] .lantern .lit-block .step {
+  margin-top: 12px;
+}
+.app[data-sheet='today'] .lantern .lit-block .bar {
+  margin-top: 16px;
+}
+.app[data-sheet='today'] .lantern .lit-block .mins {
+  margin-top: 12px;
+}
+.app[data-sheet='today'] .screen.today[data-lamp='lit'] {
+  --ly: calc(var(--sa-top) + 136px);
+}
+
+/* From Focus: the context line 112–132, the step at 40 on 144–190, the bar
+   edge to edge on 206–218, the minutes on one line 228–258, and the lamp at
+   (190, 180). The done step, "After this", +5 min and the note wait below. */
+.app[data-sheet='focus'] .focus {
+  --fly: calc(var(--sa-top) + 126px);
+}
+.app[data-sheet='focus'] .fbody {
+  padding-top: 2px;
+  overflow: hidden;
+}
+.app[data-sheet='focus'] .fbody > :is(.fdone, .fafter, .note),
+.app[data-sheet='focus'] .frow > .pill {
+  display: none;
+}
+.app[data-sheet='focus'] .fstep {
+  margin-top: 12px;
+  font-size: 40px;
+  line-height: 46px;
+  letter-spacing: -0.024em;
+}
+.app[data-sheet='focus'] .fbody > .bar {
+  margin-top: 16px;
+}
+.app[data-sheet='focus'] .frow {
+  margin-top: 10px;
+  min-height: 0;
+}
+.app[data-sheet='focus'] .fmins-shown {
+  flex-direction: row;
+  align-items: baseline;
+  gap: 9px;
+}
+
+/* Where it does not fit above the sheet, it is put away and the capsule rides
+   the sheet's edge instead. */
+.app[data-sheet='today'][data-ride] .lantern,
+.app[data-sheet='focus'][data-ride] .fbody {
+  visibility: hidden;
+}
+
+/* Reduce Motion: what is raised fades in where it now stands, going up and
+   coming back down. Nothing travels. With motion on it slides (moves.ts). */
+.app:not([data-anim])[data-sheet='today'] .lantern,
+.app:not([data-anim])[data-sheet='focus'] .fbody {
+  animation: bench-fade-in 200ms ease-out both;
+}
+.app:not([data-anim])[data-lowering] .lantern,
+.app:not([data-anim])[data-lowering] .fbody {
+  animation: bench-fade-back 200ms ease-out both;
+}
+@keyframes bench-fade-back {
+  from {
+    opacity: 0;
+  }
+}
+
+/* ═════════════ When what was stored cannot be read ═════════════ */
+
+.fail {
+  position: fixed;
+  inset: 0;
+  padding: calc(var(--sa-top) + 56px) 24px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: flex-start;
+  background: var(--charcoal);
+  color: var(--white);
+}
+.fail p {
+  color: var(--ash);
+}
+
+/* ═════════════ Display settings (SPEC 10) ═════════════ */
+
+/* ═════════════ Pressed (plan section 13, "CSS for the hand") ═════════════
+   With the tap highlight off, each control shows it is under the finger by a
+   plain change of fill at touch-down: no scaling, no transition, nothing
+   moved. Each pressed fill keeps the control's own words at 4.5:1 or more.
+   A control with no fill of its own takes its ground's tint (--press); a
+   filled one goes a step along its own ramp. Nothing shows pressed while
+   the drawer travels under a finger. WebKit applies :active on a touch only
+   below a touch listener, which mountBench adds. */
+
+:root {
+  --press: var(--ash-8);
+  /* Charcoal over a tint or terracotta: a step darker, as no token is. */
+  --press-tint: linear-gradient(rgba(34, 38, 36, 0.08), rgba(34, 38, 36, 0.08));
+  --press-terra: linear-gradient(rgba(34, 38, 36, 0.12), rgba(34, 38, 36, 0.12));
+}
+.drawer,
+.tabs,
+.foot,
+.c-panel,
+.ts-panel {
+  --press: var(--tint-stone);
+}
+.app[data-places='white'][data-ground='place'] .screen {
+  --press: var(--tint-white);
+}
+
+/* No fill of their own: the ground's tint. */
+.app:not([data-travel])
+  :is(
+    .rowbtn,
+    .textbtn,
+    .addstep,
+    .opt,
+    .handle,
+    .lit-block,
+    .idle-block,
+    .when,
+    .ring,
+    .disc,
+    .fdisc,
+    .hit,
+    .tab
+  ):active {
+  background-color: var(--press);
+}
+.app:not([data-travel]) :is(.ring, .disc, .fdisc, .hit):active {
+  border-radius: 22px;
+}
+.app:not([data-travel]) :is(.lit-block, .idle-block):active {
+  border-radius: 12px;
+  box-shadow: 0 0 0 12px var(--press);
+}
+.app:not([data-travel]) .rowbtn:active {
+  box-shadow:
+    -12px 0 var(--press),
+    12px 0 var(--press);
+}
+.app:not([data-travel])[data-places='white'][data-ground='place'] .screen .when:active {
+  background-color: var(--tint-stone);
+}
+
+/* On charcoal: white goes to stone, ash-20 to ash-30, charcoal to ash-15. */
+.app:not([data-travel]) :is(.pill.white, .page .start.first):active {
+  background: var(--stone);
+}
+.app:not([data-travel]) :is(.pill.ash, .pill.quiet, .me, .hpill, .circ):active,
+.app:not([data-travel]) .page .start.instead:active {
+  background: var(--ash-30);
+}
+/* The current tab is white on stone: it goes to its tint. */
+.app:not([data-travel]) .tab[aria-current='page']:active {
+  background: var(--tint-white);
+}
+.app:not([data-travel]) :is(.capsule, .pill.present):active {
+  background: var(--ash-15);
+}
+.app:not([data-travel]) .capsule.lift:active {
+  background: var(--ash-8);
+}
+.app:not([data-travel]) .notecard:active {
+  background: var(--ash-15);
+}
+.app:not([data-travel])[data-places='white'][data-ground='place'] .page .start.first:active {
+  background: var(--ash-20);
+}
+
+/* On stone and white: a tint goes a step darker; white goes to its tint. */
+.app:not([data-travel]) :is(.drawer .me, .undo):active,
+.app:not([data-travel]) .ts-panel .pill.quiet:active,
+.app:not([data-travel])[data-places='white'][data-ground='place']
+  :is(.page .start.instead, .screen .pill.quiet):active {
+  background: var(--press-tint) var(--tint-stone);
+}
+.app:not([data-travel])[data-places='white'][data-ground='place']
+  .screen
+  :is(.me, .hpill, .circ):active {
+  background: var(--tint-stone);
+}
+
+/* Terracotta: the disc and Save, a step darker. */
+.app:not([data-travel]) :is(.capture, .c-save):active {
+  background: var(--press-terra) var(--terra);
+}
+
+/* Me over a sheet: what is drawn under it shows, a step lighter or darker. */
+.app:not([data-travel]) .c-me:active {
+  background: rgba(255, 255, 255, 0.08);
+}
+.app:not([data-travel])[data-places='white'][data-ground='place']:not([data-focus]) .c-me:active,
+.app:not([data-travel])[data-drawer='open']:not([data-focus]) .c-me:active {
+  background: rgba(34, 38, 36, 0.08);
+}
+
+/* A switch's part: where its thumb would be lights under the finger, and the
+   thumb that is there goes a step along its ramp, as the pills do. */
+.app:not([data-travel])
+  :is(.seg-part, .tswitch-part):not([aria-checked='true']):not(
+    [aria-selected='true']
+  ):active::before {
+  background: var(--ash-15);
+}
+.app:not([data-travel])
+  :is(.seg-part[aria-checked='true'], .tswitch-part[aria-selected='true']):active::before {
+  background: var(--ash-30);
+}
+.app:not([data-travel]) .c-row .seg-part:not([aria-checked='true']):active::before,
+.app:not([data-travel])[data-places='white'][data-ground='place']
+  :is(.seg-part, .tswitch-part):not([aria-checked='true']):not(
+    [aria-selected='true']
+  ):active::before {
+  background: rgba(255, 255, 255, 0.5);
+}
+.app:not([data-travel]) .c-row .seg-part[aria-checked='true']:active::before,
+.app:not([data-travel])[data-places='white'][data-ground='place']
+  :is(.seg-part[aria-checked='true'], .tswitch-part[aria-selected='true']):active::before {
+  background: var(--tint-white);
+}
+
+@media (prefers-contrast: more) {
+  :root {
+    --hair-dark: rgba(169, 175, 171, 0.25);
+    --hair-light: rgba(34, 38, 36, 0.25);
+    --ash-edge: rgba(169, 175, 171, 0.8);
+  }
+  .pill.ash,
+  .me,
+  .hpill {
+    box-shadow: inset 0 0 0 1px var(--ash);
+  }
+  /* Only the ash-20 pills on charcoal (SPEC 10). On white and on stone Me and
+     the back pill are tints, where ash would measure 2.2 and 1.9. */
+  .app[data-places='white'][data-ground='place'] .screen .me,
+  .app[data-places='white'][data-ground='place'] .screen .hpill,
+  .drawer .me,
+  .drawer .hpill {
+    box-shadow: none;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .fade {
+    background: var(--charcoal) !important;
+  }
+  .app[data-places='white'][data-ground='place'] .fade {
+    background: var(--white) !important;
+  }
+}
