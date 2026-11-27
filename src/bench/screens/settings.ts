@@ -51,7 +51,9 @@ function setting<V extends string>(
     'div',
     { class: 'setting' },
     h('h2', { class: 't-control', id: labelId, text: label }),
-    h('p', { class: 'helper t-meta', id: helpId, text: help }),
+    // Read once, as the switch's description: shown, and kept from being
+    // read again on its own as the line before it.
+    h('p', { class: 'helper t-meta', id: helpId, 'aria-hidden': 'true', text: help }),
     segmented({
       id: `s-${key}`,
       labelledBy: labelId,

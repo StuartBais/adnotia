@@ -1001,6 +1001,9 @@ describe('Me, and Settings under it (SPEC 12; plan sections 4 and 11)', () => {
       ],
       ['Motion', 'Reduced moves the bar once a minute, whatever the phone is set to.'],
     ]);
+    // Once only: not again as a line of its own before the switch.
+    const read = readingOrder(m.container);
+    for (const [, hint] of hints) expect(read, String(hint)).not.toContain(hint);
   });
 
   it('flips the places to white at once, keeping focus on the switch', async () => {
